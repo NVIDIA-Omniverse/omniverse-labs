@@ -1,0 +1,83 @@
+{
+  "site": {
+    "title": "Omniverse Labs",
+    "tagline": "Early Omniverse experiments you can run, fork, and learn from.",
+    "description": "A Sketchpad built by NVIDIA Omniverse Teams \u2014 early samples, prototypes, and write-ups for developers exploring Omniverse.",
+    "dataVersion": "20260529a"
+  },
+  "projects": [
+    {
+      "slug": "about-omniverse-labs",
+      "title": "What is Omniverse Labs?",
+      "subtitle": "Why does NVIDIA publish experiments here?",
+      "type": "article",
+      "status": "working",
+      "date": "2026-05-01",
+      "image": "assets/images/card-about.svg",
+      "accent": [
+        "#0d2818",
+        "#76b900"
+      ],
+      "featured": true,
+      "links": {
+        "page": "projects/about-omniverse-labs/"
+      }
+    },
+    {
+      "slug": "ovrtx-agents",
+      "title": "I tried to integrate the NVIDIA Omniverse ovrtx library by hand. The agent beat me by a day.",
+      "subtitle": "The reason wasn't the agent.",
+      "type": "article",
+      "date": "2026-05-29",
+      "image": "assets/images/card-ovrtx-agents.png",
+      "accent": [
+        "#0a0c10",
+        "#76b900"
+      ],
+      "featured": false,
+      "team": "Ashley Goldstein, Lead Tech Marketing | Omniverse",
+      "source": "articles/ovrtx_agents",
+      "links": {
+        "page": "projects/ovrtx-agents/",
+        "repo": "https://github.com/nvidia-omniverse/ovrtx"
+      }
+    },
+    {
+      "slug": "ovrtx-ovphysx-livestream",
+      "title": "ovrtx + ovphysx Livestream Viewer",
+      "subtitle": "Desktop USD viewer with PhysX simulation in a separate process.",
+      "type": "sample",
+      "status": "working",
+      "date": "2026-05-29",
+      "image": "assets/images/card-ovrtx-ovphysx-livestream.png",
+      "accent": [
+        "#1a1f3d",
+        "#5ce1e6"
+      ],
+      "featured": false,
+      "source": "samples/ovrtx_ovphysx_livestream",
+      "links": {
+        "page": "projects/ovrtx-ovphysx-livestream/",
+        "repo": "https://github.com/nvidia-omniverse/omniverse-labs/tree/main/samples/ovrtx_ovphysx_livestream"
+      }
+    },
+    {
+      "slug": "sample-catalog",
+      "title": "Samples",
+      "subtitle": "Runnable code and assets you can try today.",
+      "type": "project",
+      "status": "working",
+      "date": "2026-05-01",
+      "image": "assets/images/card-samples.svg",
+      "accent": [
+        "#1a1f3d",
+        "#5ce1e6"
+      ],
+      "featured": false,
+      "links": {
+        "page": "projects/sample-catalog/",
+        "repo": "https://github.com/nvidia-omniverse/omniverse-labs/tree/main/samples"
+      }
+    }
+  ]
+}

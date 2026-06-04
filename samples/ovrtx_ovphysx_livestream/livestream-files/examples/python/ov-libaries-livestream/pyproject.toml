@@ -1,0 +1,12 @@
+[project]
+name = "ov-libaries-livestream"
+version = "0.1.0"
+description = "Minimal ovrtx example: save render to PNG and open the default image viewer"
+requires-python = ">=3.10,<3.14"
+dependencies = [
+    "numpy==2.2.6; python_version < '3.14'",
+    "numpy==2.4.2; python_version >= '3.14'",
+    "ovphysx==0.3.7",
+    "ovrtx==0.3.0.312915",
+    "pillow==12.2.0",
+]

@@ -1,0 +1,24 @@
+#usda 1.0
+# Robot-OVRTX + renderer "depth" AOV on /Render/Camera (UsdRenderVar).
+# The sample scene ships with LdrColor only on this product; this layer appends the standard RTX
+# raw output name used for linear depth in Omniverse RTX (see skills/reading-render-output).
+(
+    subLayers = [@https://omniverse-content-production.s3.us-west-2.amazonaws.com/Samples/Robot-OVRTX/robot-ovrtx.usda@]
+)
+
+over "Render"
+{
+    over "Vars"
+    {
+        def RenderVar "depth"
+        {
+            string sourceName = "depth"
+            token dataType = "float"
+        }
+    }
+
+    over "Camera"
+    {
+        append rel orderedVars = </Render/Vars/depth>
+    }
+}

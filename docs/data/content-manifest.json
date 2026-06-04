@@ -1,0 +1,21 @@
+{
+  "_comment": "Maps site slugs to repo-root source folders. Run scripts/sync-docs-site.py before publishing so assets land under docs/.",
+  "repo": "https://github.com/nvidia-omniverse/omniverse-labs",
+  "articles": [
+    {
+      "slug": "ovrtx-agents",
+      "source_dir": "articles/ovrtx_agents",
+      "images_dir": "images",
+      "card_image": "images/dsx_output.png",
+      "card_image_dest": "assets/images/card-ovrtx-agents.png"
+    }
+  ],
+  "samples": [
+    {
+      "slug": "ovrtx-ovphysx-livestream",
+      "source_dir": "samples/ovrtx_ovphysx_livestream",
+      "card_image": "livestream-files/examples/python/ov-libaries-livestream/clone_example.png",
+      "card_image_dest": "assets/images/card-ovrtx-ovphysx-livestream.png"
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+#usda 1.0
+# Robot-OVRTX + single-view depth sensor on the Kit viewport RenderProduct.
+# See OmniSensorDepthSensorSingleViewAPI (omni.sensors.nv.camera): outputs DepthSensorDistance.
+#
+# Tuned for **more real DepthSensorDistance samples** (omni.sensors.nv.camera):
+# - maxDistance: must exceed scene extent or far geometry reads as invalid (was clipping warehouse).
+# - maxDisparityPixel: large enough for near objects; absurd values hurt stability.
+# - confidenceThreshold: very small positive (not 0.0—some builds treat 0 as “reject all”).
+# - noiseMean/noiseSigma: small positive avoids shader edge cases; lower = sharper than defaults.
+# - outlierRemoval: omit to keep default (on); turning off can help density on some builds if supported.
+(
+    subLayers = [@https://omniverse-content-production.s3.us-west-2.amazonaws.com/Samples/Robot-OVRTX/robot-ovrtx.usda@]
+)
+
+over "Render"
+{
+    over "Vars"
+    {
+        def RenderVar "depthSensorDepth"
+        {
+            string sourceName = "DepthSensorDistance"
+            token dataType = "float"
+        }
+    }
+
+    over "OmniverseKit"
+    {
+        over "HydraTextures"
+        {
+            over "omni_kit_widget_viewport_ViewportTexture_0" (
+                prepend apiSchemas = ["OmniSensorDepthSensorSingleViewAPI"]
+            )
+            {
+                bool omni:rtx:post:depthSensor:enabled = 1
+
+                float omni:rtx:post:depthSensor:baselineMM = 55.0
+                float omni:rtx:post:depthSensor:focalLengthPixel = 1350.0
+                float omni:rtx:post:depthSensor:sensorSizePixel = 1920.0
+                float omni:rtx:post:depthSensor:maxDisparityPixel = 1536.0
+                float omni:rtx:post:depthSensor:confidenceThreshold = 1e-7
+                float omni:rtx:post:depthSensor:noiseMean = 0.01
+                float omni:rtx:post:depthSensor:noiseSigma = 0.01
+                float omni:rtx:post:depthSensor:noiseDownscaleFactorPixel = 1.0
+                float omni:rtx:post:depthSensor:minDistance = 0.05
+                float omni:rtx:post:depthSensor:maxDistance = 9999.9
+                int omni:rtx:post:depthSensor:rgbDepthOutputMode = 3
+
+                append rel orderedVars = </Render/Vars/depthSensorDepth>
+            }
+        }
+    }
+}

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="PySide6 desktop viewer that renders USD with ovrtx and streams PhysX poses from ovphysx in a separate process."
+    />
+    <title>ovrtx + ovphysx Livestream Viewer — Omniverse Labs</title>
+    <link rel="stylesheet" href="../../assets/css/main.css" />
+  </head>
+  <body data-base="../../">
+    <header class="site-header site-header--compact">
+      <div class="brand-row">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">OL</div>
+          <p class="brand-title"><a href="../../">Omniverse Labs</a></p>
+        </div>
+        <nav class="header-links" aria-label="Site">
+          <a
+            href="https://github.com/nvidia-omniverse/omniverse-labs/tree/main/samples/ovrtx_ovphysx_livestream"
+            target="_blank"
+            rel="noopener noreferrer"
+          >Sample on GitHub</a>
+          <a href="../sample-catalog/">Samples</a>
+        </nav>
+      </div>
+    </header>
+
+    <article class="article-wrap">
+      <header class="article-hero">
+        <p class="article-kicker">Sample</p>
+        <h1 class="article-title">ovrtx + ovphysx Livestream Viewer</h1>
+        <p class="article-deck">
+          A PySide6 desktop viewer that renders USD with ovrtx and streams PhysX simulation poses from ovphysx in a separate process.
+        </p>
+        <div class="article-meta">
+          <span>Status: Working</span>
+          <span>May 2026</span>
+        </div>
+        <img
+          src="../../assets/images/card-ovrtx-ovphysx-livestream.png"
+          alt="Grid of cloned robot models rendered with ovrtx"
+          width="720"
+          height="450"
+        />
+      </header>
+
+      <div class="prose">
+        <p>
+          This sample combines two Omniverse libraries in one interactive desktop app:
+          <strong>ovrtx</strong> for real-time rendering in the main process, and
+          <strong>ovphysx</strong> for physics simulation in child worker processes.
+          The viewer loads OVRTX-ready USD stages, renders offscreen, and displays the result in a Qt window.
+        </p>
+
+        <p>
+          Because ovrtx and ovphysx cannot reliably share the same process after USD loads (Carbonite plugin clashes),
+          PhysX workers run separately and stream pose data as JSON lines on stdout. The viewer applies those transforms
+          with <code>map_attribute</code>, then steps the renderer — the same update-then-render loop used in other ovrtx examples.
+        </p>
+
+        <h2>What's included</h2>
+        <ul>
+          <li>
+            <strong>USD viewer</strong> — PySide6 app with menus for ovrtx tutorials (clone, depth map) and ovphysx workflows (articulation, tensor binding, contact binding, clone)
+          </li>
+          <li>
+            <strong>Standalone tutorials</strong> — minimal ovrtx and ovphysx scripts under <code>ov-libaries-livestream/</code>
+          </li>
+          <li>
+            <strong>Live pose streaming</strong> — subprocess workers that emit version-1 JSON pose payloads the viewer applies each frame
+          </li>
+          <li>
+            <strong>Sample USD stages</strong> — robot, depth sensor, articulation chain, and falling-box scenes tuned for the viewer
+          </li>
+        </ul>
+
+        <h2>Prerequisites</h2>
+        <ul>
+          <li>Python 3.10–3.13</li>
+          <li><a href="https://docs.astral.sh/uv/" target="_blank" rel="noopener noreferrer">uv</a></li>
+          <li>A GPU and environment suitable for running ovrtx</li>
+          <li>Access to the NVIDIA Artifactory index for <code>ovrtx</code> (see the sample <code>pyproject.toml</code>)</li>
+        </ul>
+
+        <h2>How to run</h2>
+        <p>From the repository root, start the desktop viewer:</p>
+
+        <pre><code>cd samples/ovrtx_ovphysx_livestream/livestream-files/examples/python/usd-viewer-example
+uv run main.py</code></pre>
+
+        <p>
+          The default scene is the remote Robot-OVRTX URL. The first run may take noticeable time while shaders compile and cache.
+          Use <strong>File → Open…</strong> to load a local <code>.usda</code> file, or pass a path on the command line:
+        </p>
+
+        <pre><code>uv run main.py path/to/scene.usda</code></pre>
+
+        <p>
+          To try PhysX live streaming, open a local stage such as
+          <code>../ov-libaries-livestream/links_chain_sample.usda</code>, then use the
+          <strong>ovphysx</strong> menu items and press <strong>Play</strong>.
+          PhysX workers require a filesystem path — not an <code>https://</code> URL.
+        </p>
+
+        <p>Minimal PhysX-only smoke test (no viewer):</p>
+
+        <pre><code>cd ../ov-libaries-livestream
+uv run hello_world_physx.py</code></pre>
+
+        <h2>Repository path</h2>
+        <p>
+          Full source, USD assets, run instructions, and troubleshooting live in the sample folder:
+        </p>
+
+        <div class="callout">
+          <p>
+            <strong>Clone and run:</strong>
+            <a
+              href="https://github.com/nvidia-omniverse/omniverse-labs/tree/main/samples/ovrtx_ovphysx_livestream"
+              target="_blank"
+              rel="noopener noreferrer"
+            ><code>samples/ovrtx_ovphysx_livestream/</code></a>
+          </p>
+          <p>
+            Viewer README:
+            <a
+              href="https://github.com/nvidia-omniverse/omniverse-labs/tree/main/samples/ovrtx_ovphysx_livestream/livestream-files/examples/python/usd-viewer-example"
+              target="_blank"
+              rel="noopener noreferrer"
+            ><code>…/usd-viewer-example/README.md</code></a>
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <footer class="site-footer">
+      <div class="site-footer__site">
+        <p class="site-footer__meta">
+          <a href="../../">← All projects</a>
+          <span class="site-footer__sep" aria-hidden="true">·</span>
+          <span>Apache 2.0</span>
+          <span class="site-footer__sep" aria-hidden="true">·</span>
+          <a href="https://github.com/nvidia-omniverse/omniverse-labs/issues">Site feedback</a>
+        </p>
+      </div>
+      <nav class="site-footer__policies" aria-label="NVIDIA legal and policies">
+        <ul>
+          <li>
+            <a href="https://www.nvidia.com/en-us/about-nvidia/privacy-policy/">Privacy Policy</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/about-nvidia/privacy-center/">Your Privacy Choices</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/about-nvidia/terms-of-service/">Terms of Service</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/about-nvidia/accessibility/">Accessibility</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/about-nvidia/company-policies/">Corporate Policies</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/about-nvidia/product-security/">Product Security</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/contact/">Contact</a>
+          </li>
+        </ul>
+      </nav>
+    </footer>
+  </body>
+</html>

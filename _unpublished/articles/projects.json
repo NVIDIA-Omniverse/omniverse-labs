@@ -1,0 +1,33 @@
+{
+  "_comment": "DRAFT ONLY — do not merge this file into docs/data/projects.json. Copy one project object at a time when publishing.",
+  "projects": [
+    {
+      "slug": "ovrtx-agent-ready",
+      "title": "OVRTX Agent-Ready (placeholder)",
+      "subtitle": "Draft article — not on the public site until published from _unpublished/.",
+      "type": "article",
+      "status": "concept",
+      "date": "2026-05-26",
+      "image": "assets/images/card-concept.svg",
+      "accent": ["#1a1f3d", "#76b900"],
+      "featured": false,
+      "links": {
+        "page": "projects/ovrtx-agent-ready/"
+      }
+    },
+    {
+      "slug": "ptc-article",
+      "title": "PTC Article (placeholder)",
+      "subtitle": "Draft article — not on the public site until published from _unpublished/.",
+      "type": "article",
+      "status": "concept",
+      "date": "2026-05-26",
+      "image": "assets/images/card-concept.svg",
+      "accent": ["#2d1a3d", "#5ce1e6"],
+      "featured": false,
+      "links": {
+        "page": "projects/ptc-article/"
+      }
+    }
+  ]
+}

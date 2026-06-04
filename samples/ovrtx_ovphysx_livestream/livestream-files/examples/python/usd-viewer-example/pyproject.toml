@@ -1,0 +1,14 @@
+[project]
+name = "usd-viewer-example"
+version = "0.1.0"
+description = "Desktop USD viewer using ovrtx as the render backend"
+readme = "README.md"
+requires-python = ">=3.10,<3.14"
+dependencies = [
+    "numpy==2.2.6; python_version < '3.14'",
+    "numpy==2.4.2; python_version >= '3.14'",
+    "ovphysx==0.3.7",
+    "ovrtx==0.3.0.312915",
+    "pillow==12.2.0",
+    "pyside6==6.8.2.1",
+]
