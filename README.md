@@ -74,8 +74,8 @@ Most samples require at least one Omniverse Library. Check the sample's own READ
 
 ```bash
 # Install the core library the sample uses — for example:
-pip install ov-render
-pip install ov-physics
+pip install ovrtx
+pip install ovphysx
 
 # Then run:
 python examples/your-sample/main.py
