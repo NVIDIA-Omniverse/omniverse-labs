@@ -23,7 +23,7 @@ Everything here compiles and runs. Nothing here has a support SLA.
 
 Developers who are:
 
-- Building on Omniverse Libraries (`ov-render`, `ov-physics`, `ov-storage`, etc.) and want to see how real workflows are assembled
+- Building on Omniverse Libraries (`ovrtx`, `ovphysx`, `ovstorage`, etc.) and want to see how real workflows are assembled
 - Evaluating whether Omniverse is the right foundation for their use case
 - Looking for starting points they can fork and adapt, not polished end-to-end samples
 - Willing to tell us what they think — what works, what doesn't, what's missing
