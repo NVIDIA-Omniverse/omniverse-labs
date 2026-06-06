@@ -6,7 +6,7 @@ Guidance for AI coding agents working in this repository.
 
 **omniverse-labs** is NVIDIA Omniverse’s public sketchpad: early samples, integration experiments, reference patterns, and proof-of-concept apps that compile and run but have **no support SLA**. Code may change without notice; presence here does not imply a product roadmap commitment.
 
-**Audience:** developers evaluating or building on Omniverse libraries (`ov-render`, `ov-physics`, `ov-storage`, etc.) who want forkable starting points, not polished production SDKs.
+**Audience:** developers evaluating or building on Omniverse libraries (`ovrtx`, `ovphysx`, `ovstorage`, etc.) who want forkable starting points, not polished production SDKs.
 
 **License:** Apache 2.0 ([LICENSE](LICENSE)).
 
