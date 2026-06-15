@@ -59,14 +59,14 @@
           "</span>"
         : "") +
       "</div>" +
+      '<h2 class="project-card__title">' +
+      escapeHtml(project.title) +
+      "</h2>" +
       (project.subtitle
         ? '<p class="project-card__subtitle">' +
           escapeHtml(project.subtitle) +
           "</p>"
         : "") +
-      '<h2 class="project-card__title">' +
-      escapeHtml(project.title) +
-      "</h2>" +
       (project.team
         ? '<span class="project-card__team">' +
           escapeHtml(project.team) +

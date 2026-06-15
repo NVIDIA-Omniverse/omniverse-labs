@@ -1,13 +1,13 @@
-
 # I tried to integrate the NVIDIA Omniverse ovrtx library by hand. The agent beat me by a day. The reason wasn't the agent.
 
 #### Author: Ashley Goldstein, Lead Tech Marketing | Omniverse
 
+
 Last Friday, I had two things on my plate: integrate the NVIDIA Omniverse rendering library, [ovrtx](https://github.com/nvidia-omniverse/ovrtx), into a showfloor demo, and sit in a meeting that I knew was going to run long. I started the agent on the integration while I was getting on the call, expecting to come back to a half-finished scaffold I'd have to clean up. When the meeting ended I came back to a working integration. First try. Compiled, ran, produced a correct rendered frame against the USD scene.
 
-![Rendered output of DSX Racks for showfloor demo using ovrtx library](images/dsx_output.png)
-*Caption: Rendered output of DSX Racks for showfloor demo using ovrtx library*  
-*Alt Caption: Photorealistic 3D rendering output from o-v-r-t-x library of D-S-X server racks in a modern data center, featuring dense cable management overhead and liquid cooling infrastructure.*
+![Rendered output of DSX Racks for a demo](images/dsx_output.png)
+*Caption: Rendered output of DSX Racks for a demo*  
+*Alt Caption: Photorealistic 3D rendering of DSX server racks in a modern data center, featuring dense cable management overhead and liquid cooling infrastructure.*
 
 That composition is a day of work if I do it by hand. The version with an agent-first skill in the loop is closer to the integration this article opened with: I kick it off, take a meeting, come back to something working. 
 
@@ -15,7 +15,7 @@ That had not happened to me before with any library. I spent the next afternoon 
 
 ### What ovrtx is
 
-`ovrtx` is NVIDIA's standalone Python and C library for real-time, physically accurate rendering and sensor simulation, built on the Omniverse RTX renderer. One of NVIDIA's new standalone [Omniverse libraries](https://developer.nvidia.com/omniverse) — meant to be embedded as a `pip install` dependency inside your own application, not launched as a Kit app. Version 0.3 is the current pre-release; everything below is against that.
+ovrtx is NVIDIA's standalone Python and C library for real-time, physically accurate rendering and sensor simulation, built on the Omniverse RTX renderer. One of NVIDIA's new standalone [Omniverse libraries](https://developer.nvidia.com/omniverse) — meant to be embedded as a `pip install` dependency inside your own application, not launched as a Kit app. Version 0.3 is the current release; everything below is against that.
 
 ## TL;DR
 
@@ -27,7 +27,9 @@ The task: get `ovrtx` running in an empty repo against a sample USD scene, step 
 
 I gave the agent a deliberately sparse prompt, because I wanted to see what the library's discoverability did, not what I could compensate for:
 
-` Set up ovrtx in this empty repo to render this DSX rack scene to a PNG for a showfloor demo. Print the resolution of the output to stdout. Use the current released version. `
+> Set up ovrtx in this empty repo to render this DSX rack scene to a PNG for a
+> showfloor demo. Print the resolution of the output to stdout. Use the current
+> released version. 
 
 That's it. No links, no version pins, no documentation references, no template code.
 
@@ -40,7 +42,7 @@ pyproject.toml
 [project]
 name = "ovrtx-render-one-frame"
 version = "0.1.0"
-description = "Minimal ovrtx 0.3 integration"
+description = "Minimal ovrtx 0.3 integration matching the article's example."
 requires-python = ">=3.10"
 dependencies = [
     "ovrtx==0.3.0",
@@ -57,7 +59,7 @@ build-backend = "setuptools.build_meta"
 
 I would have called this lucky and moved on, except I noticed three things that made me stop.
 
-The first was that the shape of the code matched the canonical `ovrtx` pattern almost line for line — `ovrtx.Renderer()`, then `open_usd(...)`, then `step(render_products={...}, delta_time=...)`, then a readback through `render_vars["LdrColor"]` and DLPack into a numpy array. I had not given the agent that shape. It converged on it because that's the shape the docs and examples prefer. Most libraries I've worked with offer at least two or three idiomatic ways to do the same thing depending on which docs page you happen to land on; the `ovrtx` surface seemed to have one. 
+The first was that the shape of the code matched the canonical ovrtx pattern almost line for line — `ovrtx.Renderer()`, then `open_usd(...)`, then `step(render_products={...}, delta_time=...)`, then a readback through `render_vars["LdrColor"]` and DLPack into a numpy array. I had not given the agent that shape. It converged on it because that's the shape the docs and examples prefer. Most libraries I've worked with offer at least two or three idiomatic ways to do the same thing depending on which docs page you happen to land on; the ovrtx surface seemed to have one. 
 
 The second was the version pin. The agent had landed on `ovrtx==0.3.0` and left a brief comment explaining the choice — that 0.3 was the current pre-release version. That's the kind of bookkeeping a human integrator either knows from being burned or learns by reading release notes back to back. **The agent didn't guess**. It either read the release notes properly or read a skill file that captured the same information. 
 
@@ -66,15 +68,13 @@ The third was what happened when I asked the agent to break the integration on p
 ## The actual reason
 
 The actual reason is that the `ovrtx` team decided the agent — not the human — is the first reader of the library, and built the surface around that. I went looking for the apparatus that made that real and found it: \`ovrtx\` ships with a bundle of skill files — short, structured recipes an agent can consult when it's setting up the library, opening a USD, stepping the renderer, or diagnosing common errors. The docs are written in a register that's clearly aware an agent might be reading them: agent skills are organized, examples are short, runnable, and explicit about their assumptions; the API reference uses consistent verbs across object types; the error messages embed suggestions.  
-
 ![Screenshot of Skills folder in ovrtx](images/screenshot_skills.PNG)
-
-*Caption: Screenshot of Skills folder in ovrtx repo*  
+*Caption: Screenshot of Skills folder in ovrtx*  
 *Alt Caption: Screenshot of an IDE UI displaying the folder structure of skills, including all of the subfolders for each type of skill and their respective .md file for the skill.*
 
-The interesting move the `ovrtx` team has made is to declare that the agent is the first reader, not the human — and use that declaration as the forcing function to fund the work that good library teams have always wanted to fund.
+The interesting move `ovrtx` has made is to declare that the agent is the first reader, not the human — and use that declaration as the forcing function to fund the work that good library teams have always wanted to fund.
 
-That, I think, is the part worth writing about. "Designed for agents first" sounds like a marketing line. In practice it means an investment in **API predictability**, in single-shape examples that compile, in **error messages that suggest fixes**, and in tight coupling between docs pages and **runnable samples**. These are the investments every library team I've worked with has wanted to make for human readers and has had to defer because they didn't move quarterly numbers or took valuable engineering time that they couldn't budget for. The agent-first framing is what finally makes the budget appear.
+That, I think, is the part worth writing about. "Designed for agents first" sounds like a marketing line. In practice it means an investment in **API predictability**, in single-shape examples that compile, in **error messages that suggest fixes**, and in tight coupling between docs pages and **runnable samples**. These are the investments every library team I've worked with has wanted to make for human readers and has had to defer because they didn't move quarterly numbers. The agent-first framing is what finally makes the budget appear.
 
 The benefit to me, a human developer, is that I now spend a day less on each `ovrtx` integration. I will take that benefit regardless of which audience the work was nominally done for.
 
@@ -88,7 +88,7 @@ The forcing function only works because agents and humans currently want roughly
 
 ## The example I now keep around
 
-The minimal example below is the scaffold I point the agent to every new `ovrtx` job. It's pulled straight from the public repo, and that's exactly why it's useful — it pins down the `Renderer`, `open_usd`, `step()` with a frame time, and readback through `render_vars["LdrColor"]` into numpy via DLPack. Once that shape is in the agent's context, it stops guessing at the structure of an `ovrtx` integration and starts adding to it, which is most of where the day-saving comes from.
+The minimal example below is the scaffold I point the agent to every new ovrtx job. It's pulled straight from the public repo, and that's exactly why it's useful — it pins down the `Renderer`, `open_usd`, `step()` with a frame time, and readback through `render_vars["LdrColor"]` into numpy via DLPack. Once that shape is in the agent's context, it stops guessing at the structure of an ovrtx integration and starts adding to it, which is most of where the day-saving comes from.
 
 ```py
 import argparse
@@ -147,9 +147,9 @@ if __name__ == "__main__":
 
 The minimal example above gets me one rendered frame. What I actually need most is an interactive, browser-viewable streamed viewport — which on this stack means composing multiple libraries with `ovrtx`. That composition is a day of work if I do it by hand. The version with an agent-first skill in the loop is: I kick it off, take a meeting, come back to something working. 
 
-That skill exists — at least as a working prototype. The `omniverse-realtime-viewer` came out of NVIDIA's internal Omniverse AI Hackathon earlier this year, where teams built a string of agent-driven demos on top of the same libraries this article is about. It's now being polished for a wider release, and the prototype shape is already clear: it's the version of "agent-first" applied one layer up from a single library. Where the minimal `ovrtx` example shows the agent converging on a canonical render call, the omnvierse-realtime-viewer skill is the agent converging on a canonical three-library viewer — same first-try shape, just at a bigger scope. Instead of handing the agent a library and watching it produce an integration, I hand the agent a USD scene and watch it produce a working streamed viewer. 
+That skill exists — at least as a working prototype. The `omniverse-realtime-viewer` came out of NVIDIA's internal Omniverse AI Hackathon earlier this year, where teams built a string of agent-driven demos on top of the same libraries this article is about. It's now being polished for a wider release, and the prototype shape is already clear: it's the version of "agent-first" applied one layer up from a single library. Where the minimal `ovrtx` example shows the agent converging on a canonical render call, the realtime viewer skill is the agent converging on a canonical three-library viewer — same first-try shape, just at a bigger scope. Instead of handing the agent a library and watching it produce an integration, I hand the agent a USD scene and watch it produce a working streamed viewer. 
 
-The thing I'm most curious to validate is whether the skill behaves the way the minimal `ovrtx` example does when the matrix drifts mid-project. When other Omniverse libraries ship on independent release cadences and the wire format between them changes more often than the version numbers suggest. If the skill catches that drift cleanly — at lockfile-write would be ideal, at first-frame is acceptable — it removes my single most common source of integration pain in this stack. If it doesn't, I'll know within a week and we'll have something concrete to push back on.
+The thing I'm most curious to validate is whether the skill behaves the way the minimal ovrtx example does when the matrix drifts mid-project. When other Omniverse libraries ship on independent release cadences and the wire format between them changes more often than the version numbers suggest. If the skill catches that drift cleanly — at lockfile-write would be ideal, at first-frame is acceptable — it removes my single most common source of integration pain in this stack. If it doesn't, I'll know within a week and we'll have something concrete to push back on.
 
 What I'd like this skill to be one year from now is the answer to "I need a viewer on top of this scene" the way `ovrtx.Renderer()` is the answer to "I need a render call." Same level of don't-think-about-it.
 
@@ -165,10 +165,10 @@ I don't know whether this works for libraries with much messier surface areas �
 
 I also don't know the maintenance cost for the library team. Skill files have to be updated when the API changes. Error messages with suggestions become incorrect when the suggested fixes drift. The first-time investment is one thing; the upkeep is another, and I'd want to talk to the `ovrtx` team in a year to see whether the cost is sustainable or whether they're now spending half their week keeping the agent-facing surface honest.
 
-And the open question I'd actually like an answer to: I don't know whether the `ovrtx` experience generalizes, or whether it's specific to the kind of library `ovrtx` happens to be — a real-time renderer with a fairly narrow API surface and a clear contract about what it produces. A library with a fuzzier contract — anything content-generation-shaped, anything where "the right output" is subjective — might not benefit from agent-first preparation the same way, because the agent doesn't have a clean fail signal to lean on. I'd be curious to hear from anyone who's tried to apply the same approach to a less crisp surface and what happened.
+And the open question I'd actually like an answer to: I don't know whether the `ovrtx` experience can be generalized, or whether it's specific to the kind of library `ovrtx` happens to be — a real-time renderer with a fairly narrow API surface and a clear contract about what it produces. A library with a fuzzier contract — anything content-generation-shaped, anything where "the right output" is subjective — might not benefit from agent-first preparation the same way, because the agent doesn't have a clean fail signal to lean on. I'd be curious to hear from anyone who's tried to apply the same approach to a less crisp surface and what happened.
 
 If you want to try it yourself: ovrtx 0.3 is at github.com/nvidia-omniverse/ovrtx — clone it, point it at a USD scene you already have rights to, and hand the integration to whichever agent you're using. What I'd most like to hear back is where the surface broke down: where the agent stumbled, or a skill file should have said more, and if an error message wasn't the help it was trying to be. That's the next round of feedback worth funding. 
 
-Check out the NVIDIA Omniverse ovrtx Github [https://github.com/nvidia-omniverse/ovrtx](https://github.com/nvidia-omniverse/ovrtx)  
-		
+Check out the NVIDIA Omniverse ovrtx Github [https://github.com/nvidia-omniverse/ovrtx](https://github.com/nvidia-omniverse/ovrtx)
 
+Watch: [Build an RTX USD Viewer With NVIDIA Omniverse and One AI Agent Prompt](https://www.youtube.com/watch?v=t2HYd5MF5b4&t=1s)

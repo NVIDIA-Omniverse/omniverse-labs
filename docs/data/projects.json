@@ -13,7 +13,7 @@
       "type": "article",
       "status": "working",
       "date": "2026-05-01",
-      "image": "assets/images/card-about.svg",
+      "image": "assets/images/card-about.jpeg",
       "accent": [
         "#0d2818",
         "#76b900"
@@ -68,7 +68,7 @@
       "type": "project",
       "status": "working",
       "date": "2026-05-01",
-      "image": "assets/images/card-samples.svg",
+      "image": "assets/images/card-samples.jpeg",
       "accent": [
         "#1a1f3d",
         "#5ce1e6"
