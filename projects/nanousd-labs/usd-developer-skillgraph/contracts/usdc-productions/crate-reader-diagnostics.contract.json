@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/usdc-productions/crate-reader-diagnostics.contract.json",
+  "title": "Crate Reader Diagnostics Contract",
+  "version": "0.1",
+  "spec_commit": "6b4f01f2d6d46b01507481524eb516b4ef358c31",
+  "owned_by": "usdc-spec-parser",
+  "co_owners": ["usdc-binary-format", "usdc-value-decoder", "usdc-layer-open"],
+  "spec_refs": [
+    "contracts/diagnostics.schema.json",
+    "specification/file_formats/README.md#binary"
+  ],
+  "scope": {
+    "included": [
+      "stable diagnostic codes for USDC reader failures",
+      "diagnostic ownership by skill boundary",
+      "early-exit ordering: header diagnostics before TOC, TOC before sections, sections before values"
+    ],
+    "deferred": [
+      "diagnostic recovery (the reader fails on the first hard error)",
+      "multi-diagnostic reporting in a single file",
+      "diagnostics for composition, value resolution, or stage population"
+    ]
+  },
+  "diagnostic_codes": {
+    "InvalidUsdcHeader": {
+      "owner": "usdc-binary-format",
+      "spec_ref": "§16.3.8.1",
+      "produced_when": "the opened payload does not begin with the PXR-USDC magic, or the payload is shorter than 24 bytes",
+      "must_precede": ["all section reads", "value representation decoding"]
+    },
+    "UnsupportedUsdcVersion": {
+      "owner": "usdc-binary-format",
+      "spec_ref": "§16.3.8.2",
+      "produced_when": "the version triple has major != 0 or minor outside [8, 12]",
+      "must_precede": ["all section reads", "value representation decoding"]
+    },
+    "MalformedUsdcBootstrap": {
+      "owner": "usdc-binary-format",
+      "spec_ref": "§16.3.8.3",
+      "produced_when": "the table-of-contents offset is outside the opened payload or arithmetic on (offset, size) overflows"
+    },
+    "MalformedUsdcToc": {
+      "owner": "usdc-binary-format",
+      "spec_ref": "§16.3.8.4",
+      "produced_when": "the LZ4-decompressed TOC buffer is too short for the section count, the TOC does not end at the file's last byte, a section name is not ASCII or not NUL-terminated within 16 bytes, a section offset+size exceeds the opened payload, or duplicate section names appear in the TOC",
+      "must_precede": ["any section_bytes call"]
+    },
+    "MalformedUsdcLz4Buffer": {
+      "owner": "usdc-binary-format",
+      "spec_ref": "§16.3.7.1",
+      "produced_when": "the LZ4 envelope chunk count or per-chunk compressed size leads to a buffer overrun, or the LZ4 stream itself is corrupt"
+    },
+    "MalformedUsdcCompressedIntArray": {
+      "owner": "usdc-binary-format",
+      "spec_ref": "§16.3.7.2",
+      "produced_when": "the outer compressed_size leads to an overrun, the inner codepoint stream's non-zero padding is detected, or the per-codepoint values stream exhausts before all elements decode"
+    },
+    "MalformedUsdcSection": {
+      "owner": "usdc-spec-parser",
+      "spec_ref": "§16.3.8.4",
+      "produced_when": "a required section is missing for a feature the layer exercises, a STRINGS/FIELDSETS/PATHS/SPECS index references outside its table, or TOKENS index 0 is referenced from element_token_indices",
+      "must_precede": ["document-model spec construction"]
+    },
+    "MalformedUsdcValueRepresentation": {
+      "owner": "usdc-value-decoder",
+      "spec_ref": "§16.3.9",
+      "produced_when": "an invalid flag combination is encountered (Inlined+Array, Inlined+Compressed, Inlined+Array+Compressed), or a Compressed flag is set on a non-simple type (quat, matrix, etc.)"
+    },
+    "UnsupportedUsdcFeature": {
+      "owner": "usdc-value-decoder",
+      "spec_ref": "§16.3.10",
+      "produced_when": "a value type introduced at Crate 0.10.0 or later is encountered under a version triple that does not require its support (Splines, Relocates, PathExpression), or any value type outside the AOUSD 1.0.1 type table is encountered",
+      "must_not_produce": "placeholder JSON values or silent drops"
+    },
+    "MalformedUsdcSpecForm": {
+      "owner": "usdc-spec-parser",
+      "spec_ref": "§16.3.8.4.6",
+      "produced_when": "a spec form value outside the normative (0, 1, 6, 7, 8, 10, 11) and compatibility (2, 3, 4, 5, 9) sets is encountered"
+    },
+    "DuplicateSpecPath": {
+      "owner": "usdc-spec-parser",
+      "spec_ref": "contracts/diagnostics.schema.json",
+      "produced_when": "two SPECS entries resolve to the same document-model path",
+      "shape": "{severity: 'error', code: 'DuplicateSpecPath', message: 'duplicate spec path', path: '<the duplicated path>'}"
+    },
+    "ResourceOpenFailed": {
+      "owner": "usdc-layer-open",
+      "produced_when": "the layer-open boundary received an opened payload with ok=false from usd-resource-protocol; this code is the canonical pass-through of resource-layer failures"
+    }
+  },
+  "ordering_invariants": [
+    "InvalidUsdcHeader and UnsupportedUsdcVersion must be checked before any TOC byte is read",
+    "MalformedUsdcBootstrap and MalformedUsdcToc must be checked before any section_bytes call",
+    "MalformedUsdcSection (missing or out-of-range table reference) must be checked before any spec is stored in the document model",
+    "MalformedUsdcValueRepresentation and UnsupportedUsdcFeature must be checked before any partial dump is emitted",
+    "a failed parse must not emit a 'layer' object in the canonical dump (per contracts/layer-dump.schema.json)"
+  ],
+  "laws": [
+    "diagnostic codes listed here are the canonical set; ad-hoc codes are a contract violation",
+    "diagnostics are target-native until serialized at the dump-adapter boundary",
+    "the canonical dump must include only diagnostics from the canonical set; goldens match on diagnostic code exactly",
+    "value types deferred at the version-range boundary (Splines, Relocates, PathExpression on minor < 10) must produce UnsupportedUsdcFeature; placeholder JSON is a contract violation",
+    "diagnostic ordering must follow the ordering_invariants; emitting a value-level diagnostic before a TOC-level diagnostic is a contract violation"
+  ],
+  "golden_groups": [
+    "InvalidUsdcHeader: bad magic, truncated header",
+    "UnsupportedUsdcVersion: major=1; minor=7; minor=13",
+    "MalformedUsdcBootstrap: TOC offset beyond payload",
+    "MalformedUsdcToc: decompressed TOC too short, duplicate section names, TOC not at end of file",
+    "MalformedUsdcLz4Buffer: corrupt LZ4 stream",
+    "MalformedUsdcCompressedIntArray: non-zero codepoint padding",
+    "MalformedUsdcSection: STRINGS Index out of TOKENS range; element_token_indices referencing TOKENS index 0",
+    "MalformedUsdcValueRepresentation: Inlined+Array flag combination",
+    "UnsupportedUsdcFeature: PathExpression value encountered under a minor=8 fixture",
+    "MalformedUsdcSpecForm: spec form value 12",
+    "DuplicateSpecPath: two SPECS entries resolving to the same path",
+    "diagnostic ordering: a fixture with both an out-of-range version and a corrupt TOC reports UnsupportedUsdcVersion (not MalformedUsdcToc)"
+  ],
+  "golden_files": [
+    "goldens/unit/usdc-binary-format/binary-format.json",
+    "goldens/unit/usdc-spec-parser/spec-parser.json",
+    "goldens/integration/usdc-single-layer/basic.json"
+  ]
+}

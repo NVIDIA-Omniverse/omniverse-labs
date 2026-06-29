@@ -1,0 +1,241 @@
+#usda 1.0
+(
+    customLayerData = {
+        dictionary SimReady_Metadata = {
+            string asset_location = "simready_content\\common_assets\\props_warehouse\\box_flat_a13\\simready_physx_usd\\sm_box_flat_a13_01.usd"
+            string asset_type = "prop"
+            dictionary validation = {
+                string profile = "Prop-Robotics-Physx"
+                string profile_version = "1.0.0"
+                dictionary validated_features = {
+                    dictionary "2026-02-12" = {
+                        dictionary FET000_CORE = {
+                            string dependencies = "[]"
+                            bool passed = 1
+                            string version = "0.1.0"
+                        }
+                        dictionary FET001_BASE_NEUTRAL = {
+                            string dependencies = "[]"
+                            string "failing requirements" = "['AA.001']"
+                            bool passed = 0
+                            string version = "0.1.0"
+                        }
+                        dictionary FET003_BASE_NEUTRAL = {
+                            string dependencies = "[]"
+                            bool passed = 1
+                            string version = "0.1.0"
+                        }
+                        dictionary FET003_BASE_PHYSX = {
+                            string dependencies = "[{'FET003_BASE_NEUTRAL': {'version': '0.1.0'}}]"
+                            bool passed = 1
+                            string version = "0.1.0"
+                        }
+                        dictionary FET004_BASE_NEUTRAL = {
+                            string dependencies = "[{'FET003_BASE_NEUTRAL': {'version': '0.1.0'}}]"
+                            string "failing requirements" = "['RB.MB.001']"
+                            bool passed = 0
+                            string version = "0.1.0"
+                        }
+                        dictionary FET004_BASE_PHYSX = {
+                            string dependencies = "[{'FET003_BASE_PHYSX': {'version': '0.1.0'}}, {'FET004_BASE_NEUTRAL': {'version': '0.1.0'}}]"
+                            string "failing requirements" = "['RB.MB.001']"
+                            bool passed = 0
+                            string version = "0.1.0"
+                        }
+                        dictionary FET005_BASE_NEUTRAL = {
+                            string dependencies = "[]"
+                            string "failing requirements" = "['GSP.001']"
+                            bool passed = 0
+                            string version = "0.1.0"
+                        }
+                        dictionary FET006_BASE_MDL = {
+                            string dependencies = "[]"
+                            string "failing requirements" = "['VM.MDL.001']"
+                            bool passed = 0
+                            string version = "0.1.0"
+                        }
+                    }
+                }
+            }
+        }
+        string asset_dir = "simready_content/common_assets/props_warehouse/box_flat_a13"
+        string asset_name = "sm_box_flat_a13_01"
+        string asset_type = "prop"
+        dictionary cameraSettings = {
+            dictionary Front = {
+                double3 position = (5, 0, 0)
+                double radius = 5
+            }
+            dictionary Perspective = {
+                double3 position = (0.7275770968169656, 0.9600342016902271, 0.8411473601854862)
+                double3 target = (-0.016217580563950285, 0.03176591237680493, 0.037614489927879635)
+            }
+            dictionary Right = {
+                double3 position = (0.04492390975766412, -49999.99912129344, 0.06599666383907873)
+                double radius = 1.0078946113586427
+            }
+            dictionary Top = {
+                double3 position = (0, 0, 5)
+                double radius = 5
+            }
+            string boundCamera = "/OmniverseKit_Persp"
+        }
+        dictionary omni_layer = {
+            string authoring_layer = "./sm_box_flat_a13_01.usd"
+        }
+        string profile = "Prop-Robotics-Neutral"
+        dictionary renderSettings = {
+        }
+        string source_file = "../simready_usd/sm_box_flat_a13_01.usd"
+        string usd_date_generated = "2026-02-12 15:01:22"
+        bool used_dsrs_exporter = 1
+    }
+    defaultPrim = "RootNode"
+    doc = """Blender v5.0.1
+
+Generated from Composed Stage of root layer C:\\Users\\horde\\AppData\\Local\\Temp\\deploy_pipeline_m7j_uvo8\\install\\sm_box_flat_a13_01.usd
+"""
+    metersPerUnit = 1
+    subLayers = [
+        @./robot.usda@
+    ]
+    upAxis = "Z"
+)
+
+def Xform "RootNode" (
+    prepend apiSchemas = ["SemanticsLabelsAPI:wikidata_class", "SemanticsAPI:wikidata_class", "SemanticsLabelsAPI:wikidata_qcode", "SemanticsAPI:wikidata_qcode"]
+    assetInfo = {
+        asset identifier = @./sm_box_flat_a13_01_1.usd@
+        string name = "sm_box_flat_a13_01"
+    }
+    customData = {
+        dictionary Blender = {
+            bool generated = 1
+        }
+        dictionary omni = {
+            dictionary cip = {
+                string timestamp = "2026-02-12 15:01:41"
+                string type = "prop"
+                dictionary validator = {
+                    string[] rules = []
+                    string version = "1.1.6"
+                }
+            }
+        }
+    }
+)
+{
+    custom string omni:simready:documentation = "box fabricated from cardboard"
+    string semantic:wikidata_class:params:semanticData = "cardboard box"
+    string semantic:wikidata_class:params:semanticType = "wikidata_class"
+    string semantic:wikidata_qcode:params:semanticData = "Q1395006"
+    string semantic:wikidata_qcode:params:semanticType = "wikidata_qcode"
+    token[] semantics:labels:wikidata_class = ["cardboard box"]
+    token[] semantics:labels:wikidata_qcode = ["Q1395006"]
+
+    def Scope "Materials"
+    {
+    }
+
+    def Scope "Geometry"
+    {
+        def Xform "sm_box_flat_a13_obj_00" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI"]
+            instanceable = true
+            prepend references = @./instances.usda@</Instances/sm_box_flat_a13_mesh_00>
+        )
+        {
+            custom bool _renamed = 1
+            custom double4 pxr:physics:principalAxes = (1, 0, 0, 0)
+            custom float3 pxr:usd:physics_centerofmass = (0.011545753, 0.0010381737, 0.088486426)
+            custom double3 pxr:usd:physics_inertia = (0.08052724933981768, 0.024917072006936016, 0.08763440417837585)
+            custom double pxr:usd:physics_mass = 0.8604610891540273
+        }
+    }
+
+    def Scope "ReferencePrims"
+    {
+        def Xform "Empty_joint_00" (
+            prepend apiSchemas = ["CollectionAPI:Empty_joint_00"]
+        )
+        {
+            custom bool _renamed = 1
+            rel collection:Empty_joint_00:includes = </RootNode/Geometry/sm_box_flat_a13_obj_00>
+        }
+    }
+
+    def Scope "Grasp"
+    {
+        def Xform "grasp_identifier"
+        {
+            token visibility = "inherited"
+            quatf xformOp:orient = (1, 0, 0, 0)
+            float3 xformOp:scale = (1, 1, 1)
+            double3 xformOp:translate = (0, 0, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+
+            def BasisCurves "grasp_identifier_curve"
+            {
+                int[] curveVertexCounts = [2]
+                float3[] extent = [(-0.21753258, -0.005, 0.042933922), (0.21908483, 0.005, 0.05387638)]
+                bool omni:scene:visualization:drawWireframe = 1
+                point3f[] points = [(-0.21253258, 0, 0.048876382), (0.21408483, 0, 0.04793392)]
+                int primvars:numSplits = 2
+                float[] primvars:tilt = [0, 0] (
+                    interpolation = "vertex"
+                )
+                uniform token type = "linear"
+                token visibility = "invisible"
+                float[] widths = [0.01, 0.01] (
+                    interpolation = "vertex"
+                )
+                uniform token wrap = "nonperiodic"
+                quatf xformOp:orient = (1, 0, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (0, 0, 0)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+            }
+        }
+    }
+
+    def Scope "PhysicsMaterials"
+    {
+        def Material "physics_mat_opaque__cardboard__brown_standard_a" (
+            prepend apiSchemas = ["PhysicsMaterialAPI"]
+        )
+        {
+            float physics:density = 689
+            float physics:dynamicFriction = 0.7
+            float physics:restitution = 0.4
+            float physics:staticFriction = 0.7
+        }
+
+        def Material "physics_mat_opaque__cardboard__unique_edges_a" (
+            prepend apiSchemas = ["PhysicsMaterialAPI"]
+        )
+        {
+            float physics:density = 689
+            float physics:dynamicFriction = 0.7
+            float physics:restitution = 0.4
+            float physics:staticFriction = 0.7
+        }
+
+        def Material "physics_mat_opaque__nylon__unique_tape_a" (
+            prepend apiSchemas = ["PhysicsMaterialAPI"]
+        )
+        {
+            float physics:density = 900
+            float physics:dynamicFriction = 0.45
+            float physics:restitution = 0.12
+            float physics:staticFriction = 0.5
+        }
+    }
+
+    def Scope "Joints"
+    {
+    }
+
+    def Scope "VisualMaterials"
+    {
+    }
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Renderer Target Architecture Design"
+  short_description: "Design target-grade renderer features"
+  default_prompt: "Use $renderer-target-architecture-design to plan or implement renderer features from the target-quality architecture first, using proven/SOTA techniques and vertical slices instead of dead-end simple implementations."

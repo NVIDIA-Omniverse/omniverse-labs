@@ -1,0 +1,152 @@
+#usda 1.0
+(
+    subLayers = [
+        @./pd_render_setup.usda@
+    ]
+    customLayerData = {
+        dictionary cameraSettings = {
+            dictionary Perspective = {
+                double3 position = (5.0, 3.0, 5.0)
+                double3 target = (0.0, 2.0, 0.0)
+            }
+        }
+    }
+    defaultPrim = "World"
+    endTimeCode = 600
+    metersPerUnit = 1.0
+    startTimeCode = 0
+    timeCodesPerSecond = 60
+    upAxis = "Y"
+)
+
+def Xform "World"
+{
+    def Sphere "Sphere" (
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+    )
+    {
+        float3[] extent = [(-0.25, -0.25, -0.25), (0.25, 0.25, 0.25)]
+        double radius = 0.25
+        double3 xformOp:rotateXYZ = (0, 0, 0)
+        double3 xformOp:scale = (1, 1, 1)
+        double3 xformOp:translate = (0, 5.0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+        float physics:mass = 1.0
+        bool physics:rigidBodyEnabled = 1
+    }
+
+    def FmuInstance "PDControllerFMU"
+    {
+        bool fmi:enabled = 1
+        asset fmi:fmu = @./PDController.fmu3@
+
+        def FmuConnection "ForceConnection"
+        {
+            rel fmi:targets = </World/Sphere>
+
+            # --- Inputs: read body position from physics ---
+            def FmuMapping "PosXRead"
+            {
+                token fmi:direction = "input"
+                token fmi:fmuAttribute = "pos_x"
+                int2 fmi:usdMapping = (0, 1)
+                token fmi:usdAttribute = "physx:position"
+            }
+            def FmuMapping "PosYRead"
+            {
+                token fmi:direction = "input"
+                token fmi:fmuAttribute = "pos_y"
+                int2 fmi:usdMapping = (1, 1)
+                token fmi:usdAttribute = "physx:position"
+            }
+            def FmuMapping "PosZRead"
+            {
+                token fmi:direction = "input"
+                token fmi:fmuAttribute = "pos_z"
+                int2 fmi:usdMapping = (2, 1)
+                token fmi:usdAttribute = "physx:position"
+            }
+
+            # --- Inputs: read body velocity from physics ---
+            def FmuMapping "VelXRead"
+            {
+                token fmi:direction = "input"
+                token fmi:fmuAttribute = "vel_x"
+                int2 fmi:usdMapping = (0, 1)
+                token fmi:usdAttribute = "physx:velocity"
+            }
+            def FmuMapping "VelYRead"
+            {
+                token fmi:direction = "input"
+                token fmi:fmuAttribute = "vel_y"
+                int2 fmi:usdMapping = (1, 1)
+                token fmi:usdAttribute = "physx:velocity"
+            }
+            def FmuMapping "VelZRead"
+            {
+                token fmi:direction = "input"
+                token fmi:fmuAttribute = "vel_z"
+                int2 fmi:usdMapping = (2, 1)
+                token fmi:usdAttribute = "physx:velocity"
+            }
+
+            # --- Outputs: write force to physics ---
+            def FmuMapping "ForceXWrite"
+            {
+                token fmi:direction = "output"
+                token fmi:fmuAttribute = "force_x"
+                int2 fmi:usdMapping = (0, 1)
+                token fmi:usdAttribute = "physx:force"
+            }
+            def FmuMapping "ForceYWrite"
+            {
+                token fmi:direction = "output"
+                token fmi:fmuAttribute = "force_y"
+                int2 fmi:usdMapping = (1, 1)
+                token fmi:usdAttribute = "physx:force"
+            }
+            def FmuMapping "ForceZWrite"
+            {
+                token fmi:direction = "output"
+                token fmi:fmuAttribute = "force_z"
+                int2 fmi:usdMapping = (2, 1)
+                token fmi:usdAttribute = "physx:force"
+            }
+        }
+    }
+}
+
+def Xform "Environment"
+{
+    double3 xformOp:rotateXYZ = (0, 0, 0)
+    double3 xformOp:scale = (1, 1, 1)
+    double3 xformOp:translate = (0, 0, 0)
+    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+
+    def DistantLight "defaultLight" (
+        prepend apiSchemas = ["ShapingAPI"]
+    )
+    {
+        float inputs:angle = 1
+        float inputs:intensity = 3000
+        float inputs:shaping:cone:angle = 180
+        double3 xformOp:rotateXYZ = (315, 0, 0)
+        double3 xformOp:scale = (1, 1, 1)
+        double3 xformOp:translate = (0, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+    }
+
+    def Mesh "Ground"
+    {
+        float3[] extent = [(-10, 0, -10), (10, 0, 10)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 2, 3, 1]
+        normal3f[] normals = [(0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0)] (
+            interpolation = "faceVarying"
+        )
+        point3f[] points = [(-10, 0, -10), (10, 0, -10), (-10, 0, 10), (10, 0, 10)]
+        uniform token subdivisionScheme = "none"
+        double3 xformOp:translate = (0, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+}

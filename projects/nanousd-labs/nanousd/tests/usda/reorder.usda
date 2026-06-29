@@ -1,0 +1,25 @@
+#usda 1.0
+
+reorder rootPrims = ["B", "A", "C"]
+
+def Scope "A"
+{
+    reorder nameChildren = ["Second", "First", "Third"]
+    reorder properties = ["z", "y", "x"]
+
+    float x = 1.0
+    float y = 2.0
+    float z = 3.0
+
+    def Scope "First" {}
+    def Scope "Second" {}
+    def Scope "Third" {}
+}
+
+def Scope "B"
+{
+}
+
+def Scope "C"
+{
+}

@@ -1,0 +1,27 @@
+[project]
+name = "planet-system"
+version = "0.2.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10,<3.14"
+dependencies = [
+    "numpy==2.2.6",
+    "ovrtx==0.3.0.312915",
+    "rerun-sdk==0.29.0",
+    "warp-lang==1.12.1",
+]
+
+[tool.uv]
+# Windows reports x86-64 as AMD64 in PEP 508 platform_machine markers.
+# Wheel tags still use win_amd64; keep those concepts separate.
+environments = [
+    "sys_platform == 'linux' and platform_machine == 'x86_64'",
+    "sys_platform == 'linux' and platform_machine == 'aarch64'",
+    "sys_platform == 'win32' and platform_machine == 'AMD64'",
+]
+required-environments = [
+    "sys_platform == 'linux' and platform_machine == 'x86_64'",
+    "sys_platform == 'linux' and platform_machine == 'aarch64'",
+    "sys_platform == 'win32' and platform_machine == 'AMD64'",
+]
+

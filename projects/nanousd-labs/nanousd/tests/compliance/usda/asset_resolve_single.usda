@@ -1,0 +1,7 @@
+#usda 1.0
+
+def Xform "Mesh"
+{
+    asset inputs:diffuse = @./textures/metal.png@
+    asset inputs:abs = @/global/shared.png@
+}

@@ -1,0 +1,12 @@
+#usda 1.0
+
+# Adaptation from upstream: `add payload = ...` rewritten to
+# `append payload = ...`. `add` is the deprecated pre-standardization
+# spelling of `append`; nanousd ingests only the current spec form.
+
+def DifferentPrimType "B" (
+    append payload = @./pcp_BasicPayloadDiamond_C.usda@</C>
+)
+{
+    custom double B_attr
+}

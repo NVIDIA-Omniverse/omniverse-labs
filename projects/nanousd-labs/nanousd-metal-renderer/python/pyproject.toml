@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nanousd-ovrtx-metal-backend"
+version = "0.1.0"
+description = "Private Metal backend bindings for the nanousd OVRTX facade"
+requires-python = ">=3.10"
+dependencies = ["numpy"]
+
+[tool.setuptools.packages.find]
+where = ["."]

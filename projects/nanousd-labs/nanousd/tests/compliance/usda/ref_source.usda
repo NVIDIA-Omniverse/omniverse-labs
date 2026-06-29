@@ -1,0 +1,15 @@
+#usda 1.0
+(
+    defaultPrim = "Template"
+)
+
+def Xform "Template"
+{
+    float height = 5.0
+    string label = "template_label"
+
+    def Mesh "Geo"
+    {
+        int vertexCount = 100
+    }
+}

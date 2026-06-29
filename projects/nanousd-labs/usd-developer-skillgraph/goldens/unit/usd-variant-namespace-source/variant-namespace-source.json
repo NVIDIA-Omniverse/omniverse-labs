@@ -1,0 +1,840 @@
+{
+  "suite": "usd-variant-namespace-source",
+  "contract": "contracts/handles/variant-namespace-source.handle.json",
+  "spec_tag": "v1.0.1",
+  "spec_commit": "v1.0.1",
+  "cases": [
+    {
+      "id": "selects-single-variant",
+      "input": {
+        "rootLayer": {
+          "identifier": "root.usda",
+          "fields": {"primChildren": {"type": "token[]", "value": ["World"]}},
+          "specs": {
+            "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["World"]}}},
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "typeName": {"type": "token", "value": "Scope"},
+                "variantSetNames": {
+                  "type": "listop<string>",
+                  "value": {"explicit": ["modelingVariant"], "prepend": [], "append": [], "delete": []}
+                },
+                "variantSelection": {
+                  "type": "VariantSetMap",
+                  "value": {"modelingVariant": "high"}
+                },
+                "primChildren": {"type": "token[]", "value": ["Local"]},
+                "propertyChildren": {"type": "token[]", "value": ["localSize"]},
+                "variantSetChildren": {"type": "token[]", "value": ["modelingVariant"]}
+              }
+            },
+            "/World/Local": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World.localSize": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "typeName": {"type": "token", "value": "float"},
+                "variability": {"type": "variability", "value": "varying"},
+                "default": {"type": "float", "value": 4.0}
+              }
+            },
+            "/World{modelingVariant=}": {
+              "kind": "variantSet",
+              "fields": {
+                "variantChildren": {"type": "token[]", "value": ["high", "low"]}
+              }
+            },
+            "/World{modelingVariant=high}": {
+              "kind": "variant",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "over"},
+                "typeName": {"type": "token", "value": "Xform"},
+                "kind": {"type": "string", "value": "component"},
+                "primChildren": {"type": "token[]", "value": ["Geom"]},
+                "propertyChildren": {"type": "token[]", "value": ["detail"]},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World{modelingVariant=high}.detail": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "typeName": {"type": "token", "value": "float"},
+                "variability": {"type": "variability", "value": "varying"},
+                "default": {"type": "float", "value": 1.0}
+              }
+            },
+            "/World{modelingVariant=high}Geom": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "typeName": {"type": "token", "value": "Mesh"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": ["points"]},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World{modelingVariant=high}Geom.points": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "typeName": {"type": "token", "value": "point3f[]"},
+                "variability": {"type": "variability", "value": "varying"},
+                "default": {"type": "array", "value": []}
+              }
+            },
+            "/World{modelingVariant=low}": {
+              "kind": "variant",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "over"},
+                "primChildren": {"type": "token[]", "value": ["Proxy"]},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World{modelingVariant=low}Proxy": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "over"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        },
+        "ops": [
+          {"op": "build_source"},
+          {"op": "inspect_source"},
+          {"op": "variant_summary"},
+          {"op": "prim_input", "path": "/World"},
+          {"op": "prim_input", "path": "/World/Geom"},
+          {"op": "prim_input", "path": "/World/Local"},
+          {"op": "prim_input", "path": "/World/Proxy"},
+          {"op": "property_input", "path": "/World.detail"},
+          {"op": "property_input", "path": "/World.localSize"},
+          {"op": "property_input", "path": "/World/Geom.points"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "build_source", "ok": true},
+          {
+            "op": "inspect_source",
+            "ok": true,
+            "mode": "composed_namespace",
+            "composition": "partial",
+            "value_resolution": "partial",
+            "payload_loading": "absent",
+            "instancing": "absent",
+            "schema_fallbacks": "absent",
+            "child_ordering": "composed",
+            "property_ordering": "composed"
+          },
+          {
+            "op": "variant_summary",
+            "ok": true,
+            "selectedVariants": [
+              {"primPath": "/World", "variantSet": "modelingVariant", "selection": "high", "variantPath": "/World{modelingVariant=high}"}
+            ],
+            "diagnostics": []
+          },
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/World",
+            "exists": true,
+            "kind": "prim",
+            "fields": {
+              "specifier": {"type": "specifier", "value": "def"},
+              "typeName": {"type": "token", "value": "Scope"},
+              "kind": {"type": "string", "value": "component"},
+              "variantSetNames": {
+                "type": "listop<string>",
+                "value": {"append": [], "delete": [], "explicit": ["modelingVariant"], "prepend": []}
+              },
+              "variantSelection": {
+                "type": "VariantSetMap",
+                "value": {"modelingVariant": "high"}
+              },
+              "primChildren": {"type": "token[]", "value": ["Local"]},
+              "propertyChildren": {"type": "token[]", "value": ["localSize"]},
+              "variantSetChildren": {"type": "token[]", "value": ["modelingVariant"]}
+            },
+            "childNames": ["Geom", "Local"],
+            "propertyNames": ["detail", "localSize"],
+            "contributingSources": ["root.usda:/World", "root.usda:/World{modelingVariant=high}"]
+          },
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/World/Geom",
+            "exists": true,
+            "kind": "prim",
+            "fields": {
+              "specifier": {"type": "specifier", "value": "def"},
+              "typeName": {"type": "token", "value": "Mesh"},
+              "primChildren": {"type": "token[]", "value": []},
+              "propertyChildren": {"type": "token[]", "value": ["points"]},
+              "variantSetChildren": {"type": "token[]", "value": []}
+            },
+            "childNames": [],
+            "propertyNames": ["points"],
+            "contributingSources": ["root.usda:/World{modelingVariant=high}Geom"]
+          },
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/World/Local",
+            "exists": true,
+            "kind": "prim",
+            "fields": {
+              "specifier": {"type": "specifier", "value": "def"},
+              "primChildren": {"type": "token[]", "value": []},
+              "propertyChildren": {"type": "token[]", "value": []},
+              "variantSetChildren": {"type": "token[]", "value": []}
+            },
+            "childNames": [],
+            "propertyNames": [],
+            "contributingSources": ["root.usda:/World/Local"]
+          },
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/World/Proxy",
+            "exists": false,
+            "kind": "missing",
+            "fields": {},
+            "childNames": [],
+            "propertyNames": [],
+            "contributingSources": []
+          },
+          {
+            "op": "property_input",
+            "ok": true,
+            "path": "/World.detail",
+            "exists": true,
+            "kind": "attribute",
+            "fields": {
+              "custom": {"type": "bool", "value": false},
+              "typeName": {"type": "token", "value": "float"},
+              "variability": {"type": "variability", "value": "varying"},
+              "default": {"type": "float", "value": 1.0}
+            },
+            "contributingSources": ["root.usda:/World{modelingVariant=high}.detail"]
+          },
+          {
+            "op": "property_input",
+            "ok": true,
+            "path": "/World.localSize",
+            "exists": true,
+            "kind": "attribute",
+            "fields": {
+              "custom": {"type": "bool", "value": false},
+              "typeName": {"type": "token", "value": "float"},
+              "variability": {"type": "variability", "value": "varying"},
+              "default": {"type": "float", "value": 4.0}
+            },
+            "contributingSources": ["root.usda:/World.localSize"]
+          },
+          {
+            "op": "property_input",
+            "ok": true,
+            "path": "/World/Geom.points",
+            "exists": true,
+            "kind": "attribute",
+            "fields": {
+              "custom": {"type": "bool", "value": false},
+              "typeName": {"type": "token", "value": "point3f[]"},
+              "variability": {"type": "variability", "value": "varying"},
+              "default": {"type": "array", "value": []}
+            },
+            "contributingSources": ["root.usda:/World{modelingVariant=high}Geom.points"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "multiple-variant-sets-use-authored-order",
+      "input": {
+        "rootLayer": {
+          "identifier": "root.usda",
+          "fields": {"primChildren": {"type": "token[]", "value": ["World"]}},
+          "specs": {
+            "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["World"]}}},
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "variantSetNames": {
+                  "type": "listop<string>",
+                  "value": {"explicit": ["materialVariant", "geometryVariant"], "prepend": [], "append": [], "delete": []}
+                },
+                "variantSelection": {
+                  "type": "VariantSetMap",
+                  "value": {"materialVariant": "painted", "geometryVariant": "detailed"}
+                },
+                "primChildren": {"type": "token[]", "value": ["Local"]},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": ["materialVariant", "geometryVariant"]}
+              }
+            },
+            "/World/Local": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World{materialVariant=}": {
+              "kind": "variantSet",
+              "fields": {
+                "variantChildren": {"type": "token[]", "value": ["painted"]}
+              }
+            },
+            "/World{materialVariant=painted}": {
+              "kind": "variant",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "over"},
+                "kind": {"type": "string", "value": "material"},
+                "primChildren": {"type": "token[]", "value": ["MaterialChild"]},
+                "propertyChildren": {"type": "token[]", "value": ["displayColor"]},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World{materialVariant=painted}MaterialChild": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World{geometryVariant=}": {
+              "kind": "variantSet",
+              "fields": {
+                "variantChildren": {"type": "token[]", "value": ["detailed"]}
+              }
+            },
+            "/World{geometryVariant=detailed}": {
+              "kind": "variant",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "over"},
+                "kind": {"type": "string", "value": "geometry"},
+                "primChildren": {"type": "token[]", "value": ["Geom"]},
+                "propertyChildren": {"type": "token[]", "value": ["detail"]},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World{geometryVariant=detailed}Geom": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        },
+        "ops": [
+          {"op": "build_source"},
+          {"op": "variant_summary"},
+          {"op": "prim_input", "path": "/World"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "build_source", "ok": true},
+          {
+            "op": "variant_summary",
+            "ok": true,
+            "selectedVariants": [
+              {"primPath": "/World", "variantSet": "materialVariant", "selection": "painted", "variantPath": "/World{materialVariant=painted}"},
+              {"primPath": "/World", "variantSet": "geometryVariant", "selection": "detailed", "variantPath": "/World{geometryVariant=detailed}"}
+            ],
+            "diagnostics": []
+          },
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/World",
+            "exists": true,
+            "kind": "prim",
+            "fields": {
+              "specifier": {"type": "specifier", "value": "def"},
+              "kind": {"type": "string", "value": "material"},
+              "variantSetNames": {
+                "type": "listop<string>",
+                "value": {"append": [], "delete": [], "explicit": ["materialVariant", "geometryVariant"], "prepend": []}
+              },
+              "variantSelection": {
+                "type": "VariantSetMap",
+                "value": {"geometryVariant": "detailed", "materialVariant": "painted"}
+              },
+              "primChildren": {"type": "token[]", "value": ["Local"]},
+              "propertyChildren": {"type": "token[]", "value": []},
+              "variantSetChildren": {"type": "token[]", "value": ["materialVariant", "geometryVariant"]}
+            },
+            "childNames": ["Geom", "MaterialChild", "Local"],
+            "propertyNames": ["detail", "displayColor"],
+            "contributingSources": [
+              "root.usda:/World",
+              "root.usda:/World{materialVariant=painted}",
+              "root.usda:/World{geometryVariant=detailed}"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "no-selection-remains-inert",
+      "input": {
+        "rootLayer": {
+          "identifier": "root.usda",
+          "fields": {"primChildren": {"type": "token[]", "value": ["World"]}},
+          "specs": {
+            "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["World"]}}},
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "variantSetChildren": {"type": "token[]", "value": ["modelingVariant"]},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World{modelingVariant=}": {
+              "kind": "variantSet",
+              "fields": {
+                "variantChildren": {"type": "token[]", "value": ["high"]}
+              }
+            },
+            "/World{modelingVariant=high}": {
+              "kind": "variant",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "over"},
+                "primChildren": {"type": "token[]", "value": ["Geom"]},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World{modelingVariant=high}Geom": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        },
+        "ops": [
+          {"op": "build_source"},
+          {"op": "variant_summary"},
+          {"op": "prim_input", "path": "/World"},
+          {"op": "prim_input", "path": "/World/Geom"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "build_source", "ok": true},
+          {
+            "op": "variant_summary",
+            "ok": true,
+            "selectedVariants": [],
+            "diagnostics": []
+          },
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/World",
+            "exists": true,
+            "kind": "prim",
+            "fields": {
+              "specifier": {"type": "specifier", "value": "def"},
+              "variantSetChildren": {"type": "token[]", "value": ["modelingVariant"]},
+              "primChildren": {"type": "token[]", "value": []},
+              "propertyChildren": {"type": "token[]", "value": []}
+            },
+            "childNames": [],
+            "propertyNames": [],
+            "contributingSources": ["root.usda:/World"]
+          },
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/World/Geom",
+            "exists": false,
+            "kind": "missing",
+            "fields": {},
+            "childNames": [],
+            "propertyNames": [],
+            "contributingSources": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "recursive-selected-variant-authored-selection",
+      "input": {
+        "rootLayer": {
+          "identifier": "root.usda",
+          "fields": {"primChildren": {"type": "token[]", "value": ["World"]}},
+          "specs": {
+            "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["World"]}}},
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "variantSelection": {
+                  "type": "VariantSetMap",
+                  "value": {"modelingVariant": "high"}
+                },
+                "variantSetChildren": {"type": "token[]", "value": ["modelingVariant"]},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World{modelingVariant=}": {
+              "kind": "variantSet",
+              "fields": {
+                "variantChildren": {"type": "token[]", "value": ["high"]}
+              }
+            },
+            "/World{modelingVariant=high}": {
+              "kind": "variant",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "over"},
+                "primChildren": {"type": "token[]", "value": ["Geom"]},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World{modelingVariant=high}Geom": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "variantSelection": {
+                  "type": "VariantSetMap",
+                  "value": {"shapeVariant": "render"}
+                },
+                "variantSetChildren": {"type": "token[]", "value": ["shapeVariant"]},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World{modelingVariant=high}Geom{shapeVariant=}": {
+              "kind": "variantSet",
+              "fields": {
+                "variantChildren": {"type": "token[]", "value": ["render", "proxy"]}
+              }
+            },
+            "/World{modelingVariant=high}Geom{shapeVariant=render}": {
+              "kind": "variant",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "over"},
+                "typeName": {"type": "token", "value": "Mesh"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": ["points"]},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World{modelingVariant=high}Geom{shapeVariant=render}.points": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "typeName": {"type": "token", "value": "point3f[]"},
+                "variability": {"type": "variability", "value": "varying"},
+                "default": {"type": "array", "value": []}
+              }
+            }
+          }
+        },
+        "ops": [
+          {"op": "build_source"},
+          {"op": "variant_summary"},
+          {"op": "prim_input", "path": "/World/Geom"},
+          {"op": "property_input", "path": "/World/Geom.points"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "build_source", "ok": true},
+          {
+            "op": "variant_summary",
+            "ok": true,
+            "selectedVariants": [
+              {"primPath": "/World", "variantSet": "modelingVariant", "selection": "high", "variantPath": "/World{modelingVariant=high}"},
+              {"primPath": "/World/Geom", "variantSet": "shapeVariant", "selection": "render", "variantPath": "/World{modelingVariant=high}Geom{shapeVariant=render}"}
+            ],
+            "diagnostics": []
+          },
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/World/Geom",
+            "exists": true,
+            "kind": "prim",
+            "fields": {
+              "specifier": {"type": "specifier", "value": "def"},
+              "typeName": {"type": "token", "value": "Mesh"},
+              "variantSelection": {
+                "type": "VariantSetMap",
+                "value": {"shapeVariant": "render"}
+              },
+              "variantSetChildren": {"type": "token[]", "value": []},
+              "primChildren": {"type": "token[]", "value": []},
+              "propertyChildren": {"type": "token[]", "value": ["points"]}
+            },
+            "childNames": [],
+            "propertyNames": ["points"],
+            "contributingSources": [
+              "root.usda:/World{modelingVariant=high}Geom{shapeVariant=render}",
+              "root.usda:/World{modelingVariant=high}Geom"
+            ]
+          },
+          {
+            "op": "property_input",
+            "ok": true,
+            "path": "/World/Geom.points",
+            "exists": true,
+            "kind": "attribute",
+            "fields": {
+              "custom": {"type": "bool", "value": false},
+              "typeName": {"type": "token", "value": "point3f[]"},
+              "variability": {"type": "variability", "value": "varying"},
+              "default": {"type": "array", "value": []}
+            },
+            "contributingSources": ["root.usda:/World{modelingVariant=high}Geom{shapeVariant=render}.points"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "previous-selection-reused-for-recursive-set",
+      "input": {
+        "rootLayer": {
+          "identifier": "root.usda",
+          "fields": {"primChildren": {"type": "token[]", "value": ["World"]}},
+          "specs": {
+            "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["World"]}}},
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "variantSelection": {
+                  "type": "VariantSetMap",
+                  "value": {"style": "red"}
+                },
+                "variantSetChildren": {"type": "token[]", "value": ["style"]},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World{style=}": {
+              "kind": "variantSet",
+              "fields": {
+                "variantChildren": {"type": "token[]", "value": ["red", "blue"]}
+              }
+            },
+            "/World{style=red}": {
+              "kind": "variant",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "over"},
+                "primChildren": {"type": "token[]", "value": ["Geom"]},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World{style=red}Geom": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "variantSetChildren": {"type": "token[]", "value": ["style"]},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World{style=red}Geom{style=}": {
+              "kind": "variantSet",
+              "fields": {
+                "variantChildren": {"type": "token[]", "value": ["red", "blue"]}
+              }
+            },
+            "/World{style=red}Geom{style=red}": {
+              "kind": "variant",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "over"},
+                "typeName": {"type": "token", "value": "Mesh"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": ["shade"]},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World{style=red}Geom{style=red}.shade": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "typeName": {"type": "token", "value": "float"},
+                "variability": {"type": "variability", "value": "varying"},
+                "default": {"type": "float", "value": 1.0}
+              }
+            },
+            "/World{style=red}Geom{style=blue}": {
+              "kind": "variant",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "over"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": ["shade"]},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World{style=red}Geom{style=blue}.shade": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "typeName": {"type": "token", "value": "float"},
+                "variability": {"type": "variability", "value": "varying"},
+                "default": {"type": "float", "value": 2.0}
+              }
+            }
+          }
+        },
+        "ops": [
+          {"op": "build_source"},
+          {"op": "variant_summary"},
+          {"op": "prim_input", "path": "/World/Geom"},
+          {"op": "property_input", "path": "/World/Geom.shade"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "build_source", "ok": true},
+          {
+            "op": "variant_summary",
+            "ok": true,
+            "selectedVariants": [
+              {"primPath": "/World", "variantSet": "style", "selection": "red", "variantPath": "/World{style=red}"},
+              {"primPath": "/World/Geom", "variantSet": "style", "selection": "red", "variantPath": "/World{style=red}Geom{style=red}"}
+            ],
+            "diagnostics": []
+          },
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/World/Geom",
+            "exists": true,
+            "kind": "prim",
+            "fields": {
+              "specifier": {"type": "specifier", "value": "def"},
+              "typeName": {"type": "token", "value": "Mesh"},
+              "variantSetChildren": {"type": "token[]", "value": []},
+              "primChildren": {"type": "token[]", "value": []},
+              "propertyChildren": {"type": "token[]", "value": ["shade"]}
+            },
+            "childNames": [],
+            "propertyNames": ["shade"],
+            "contributingSources": [
+              "root.usda:/World{style=red}Geom{style=red}",
+              "root.usda:/World{style=red}Geom"
+            ]
+          },
+          {
+            "op": "property_input",
+            "ok": true,
+            "path": "/World/Geom.shade",
+            "exists": true,
+            "kind": "attribute",
+            "fields": {
+              "custom": {"type": "bool", "value": false},
+              "typeName": {"type": "token", "value": "float"},
+              "variability": {"type": "variability", "value": "varying"},
+              "default": {"type": "float", "value": 1.0}
+            },
+            "contributingSources": ["root.usda:/World{style=red}Geom{style=red}.shade"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "missing-selected-variant",
+      "input": {
+        "rootLayer": {
+          "identifier": "root.usda",
+          "fields": {"primChildren": {"type": "token[]", "value": ["World"]}},
+          "specs": {
+            "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["World"]}}},
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "variantSelection": {
+                  "type": "VariantSetMap",
+                  "value": {"modelingVariant": "medium"}
+                },
+                "variantSetChildren": {"type": "token[]", "value": ["modelingVariant"]},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World{modelingVariant=}": {
+              "kind": "variantSet",
+              "fields": {
+                "variantChildren": {"type": "token[]", "value": ["high", "low"]}
+              }
+            },
+            "/World{modelingVariant=high}": {
+              "kind": "variant",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "over"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        },
+        "ops": [
+          {"op": "build_source"}
+        ]
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {
+            "code": "MissingSelectedVariant",
+            "message": "Selected variant modelingVariant=medium for /World has no variant spec /World{modelingVariant=medium}"
+          }
+        ],
+        "results": [
+          {"op": "build_source", "ok": false}
+        ]
+      }
+    }
+  ]
+}

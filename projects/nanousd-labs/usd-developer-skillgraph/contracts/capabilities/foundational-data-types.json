@@ -1,0 +1,181 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/foundational-data-types.json",
+  "title": "USD Foundational Data Types Capability",
+  "version": "0.1",
+  "spec_commit": "v1.0.1",
+  "purpose": "Define the implementation-neutral catalog and value-shape rules for USD foundational data types.",
+  "scope": {
+    "included": [
+      "scalar type catalog",
+      "dimensioned type catalog",
+      "algebraic opaque type catalog entry",
+      "semantic aliases and alias agreement with underlying types",
+      "semantic role catalog",
+      "array type naming and element constraints",
+      "dictionary value shape and recursive dictionary combining",
+      "value block sentinel tagging",
+      "asset string control-code restriction",
+      "list operation element type eligibility",
+      "native value storage without retained adapter JSON",
+      "implementation-defined typed value payload storage",
+      "stored type identity inspection and checked typed reads",
+      "native numeric payload storage for scalar, dimensioned, and array numeric values",
+      "complete typed payload catalog coverage for scalars, dimensioned values, matrices, quaternions, semantic aliases, arrays, dictionaries, and value blocks"
+    ],
+    "deferred": [
+      "full authored list operation algebra, owned by usd-listops-authored",
+      "path-valued specialized types, owned by usd-paths",
+      "spline, reference, payload, retiming, relocate, variant, and time sample specialized types",
+      "value resolution, interpolation, asset resolution, and schema fallback evaluation",
+      "half-precision arithmetic and rounding behavior beyond preserving half type identity and readable payloads"
+    ]
+  },
+  "dependencies": {
+    "required": [
+      {
+        "provider": "usd-tokens",
+        "capability": "token_identity",
+        "reason": "The token scalar is a foundational type, but its registered-string identity and constant-time equality/hash expectations are owned by usd-tokens."
+      }
+    ],
+    "not_required": [
+      {
+        "provider": "usd-identifiers-and-names",
+        "reason": "Foundational type names are fixed spec names, not parsed identifiers. Identifier scanning belongs to parsers that consume textual syntax."
+      }
+    ]
+  },
+  "scalar_types": {
+    "asset": {"fundamental": "utf8-string-no-c0-c1-controls"},
+    "bool": {"fundamental": "u1"},
+    "double": {"fundamental": "f64"},
+    "float": {"fundamental": "f32"},
+    "half": {"fundamental": "f16"},
+    "int": {"fundamental": "i32"},
+    "int64": {"fundamental": "i64"},
+    "string": {"fundamental": "utf8-string"},
+    "timecode": {"fundamental": "f64", "unitless": true},
+    "token": {"fundamental": "utf8-string", "requires": "token_identity"},
+    "uchar": {"fundamental": "u8"},
+    "uint": {"fundamental": "u32"},
+    "uint64": {"fundamental": "u64"}
+  },
+  "dimensioned_types": {
+    "double2": {"element_type": "double", "shape": [2]},
+    "double3": {"element_type": "double", "shape": [3]},
+    "double4": {"element_type": "double", "shape": [4]},
+    "float2": {"element_type": "float", "shape": [2]},
+    "float3": {"element_type": "float", "shape": [3]},
+    "float4": {"element_type": "float", "shape": [4]},
+    "half2": {"element_type": "half", "shape": [2]},
+    "half3": {"element_type": "half", "shape": [3]},
+    "half4": {"element_type": "half", "shape": [4]},
+    "int2": {"element_type": "int", "shape": [2]},
+    "int3": {"element_type": "int", "shape": [3]},
+    "int4": {"element_type": "int", "shape": [4]},
+    "matrix2d": {"element_type": "double", "shape": [2, 2], "order": "row-major"},
+    "matrix3d": {"element_type": "double", "shape": [3, 3], "order": "row-major"},
+    "matrix4d": {"element_type": "double", "shape": [4, 4], "order": "row-major"},
+    "quatd": {"element_type": "double", "shape": [4], "component_order": "i,j,k,w"},
+    "quatf": {"element_type": "float", "shape": [4], "component_order": "i,j,k,w"},
+    "quath": {"element_type": "half", "shape": [4], "component_order": "i,j,k,w"}
+  },
+  "semantic_aliases": {
+    "color3d": {"underlying_type": "double3", "role": "color"},
+    "color3f": {"underlying_type": "float3", "role": "color"},
+    "color3h": {"underlying_type": "half3", "role": "color"},
+    "color4d": {"underlying_type": "double4", "role": "color"},
+    "color4f": {"underlying_type": "float4", "role": "color"},
+    "color4h": {"underlying_type": "half4", "role": "color"},
+    "normal3d": {"underlying_type": "double3", "role": "normal"},
+    "normal3f": {"underlying_type": "float3", "role": "normal"},
+    "normal3h": {"underlying_type": "half3", "role": "normal"},
+    "point3d": {"underlying_type": "double3", "role": "point"},
+    "point3f": {"underlying_type": "float3", "role": "point"},
+    "point3h": {"underlying_type": "half3", "role": "point"},
+    "vector3d": {"underlying_type": "double3", "role": "vector"},
+    "vector3f": {"underlying_type": "float3", "role": "vector"},
+    "vector3h": {"underlying_type": "half3", "role": "vector"},
+    "frame4d": {"underlying_type": "matrix4d", "role": "frame"},
+    "texCoord2d": {"underlying_type": "double2", "role": "texCoord"},
+    "texCoord2f": {"underlying_type": "float2", "role": "texCoord"},
+    "texCoord2h": {"underlying_type": "half2", "role": "texCoord"},
+    "texCoord3d": {"underlying_type": "double3", "role": "texCoord"},
+    "texCoord3f": {"underlying_type": "float3", "role": "texCoord"},
+    "texCoord3h": {"underlying_type": "half3", "role": "texCoord"},
+    "group": {"underlying_type": "opaque", "role": "group"}
+  },
+  "semantic_roles": {
+    "color": {
+      "aliases": ["color3d", "color3f", "color3h", "color4d", "color4f", "color4h"],
+      "underlying_types": ["double3", "float3", "half3", "double4", "float4", "half4"],
+      "note": "RGB or RGBA color"
+    },
+    "normal": {
+      "aliases": ["normal3d", "normal3f", "normal3h"],
+      "underlying_types": ["double3", "float3", "half3"],
+      "note": "normal direction; unit length is advisory"
+    },
+    "point": {
+      "aliases": ["point3d", "point3f", "point3h"],
+      "underlying_types": ["double3", "float3", "half3"],
+      "note": "position"
+    },
+    "vector": {
+      "aliases": ["vector3d", "vector3f", "vector3h"],
+      "underlying_types": ["double3", "float3", "half3"],
+      "note": "direction and length"
+    },
+    "frame": {
+      "aliases": ["frame4d"],
+      "underlying_types": ["matrix4d"],
+      "note": "3-D coordinate transformation matrix"
+    },
+    "texCoord": {
+      "aliases": ["texCoord2d", "texCoord2f", "texCoord2h", "texCoord3d", "texCoord3f", "texCoord3h"],
+      "underlying_types": ["double2", "float2", "half2", "double3", "float3", "half3"],
+      "note": "2-D or 3-D texture coordinate"
+    },
+    "group": {
+      "aliases": ["group"],
+      "underlying_types": ["opaque"],
+      "note": "proxy for multiple values"
+    }
+  },
+  "algebraic_types": {
+    "opaque": {"serializable": false}
+  },
+  "container_types": {
+    "array": "Append [] to a scalar, dimensioned type, or semantic alias whose underlying type is scalar or dimensioned. Arrays may be empty. Arrays of opaque, including opaque semantic aliases, are not permitted.",
+    "dictionary": "Unordered map of string keys to scalar values, dimensioned values, arrays, or dictionaries.",
+    "listop": "Foundational list operation element types are int, int64, uint, uint64, string, and token. Algebra is owned by usd-listops-authored."
+  },
+  "storage_model": {
+    "json_materialization_rule": "Tagged JSON objects are adapter and serialization output only. Durable foundational values and parser raw values must not retain Json payloads as their authoritative representation.",
+    "dictionary_storage_rule": "Dictionary values are stored as typed native entries and materialize the tagged JSON dictionary shape only when canonical output is requested.",
+    "payload_storage_rule": "Raw and durable values must preserve one observable active USD value type and payload. The physical storage shape is implementation-defined and may be std::variant, tagged union, enum-plus-payload storage, arena-owned values, or a backend-native value container.",
+    "payload_catalog_rule": "Raw and durable values must cover the complete foundational type catalog as typed payload categories: each scalar type preserves its scalar domain and precision/width; each dimensioned type preserves element type and shape; matrix values preserve matrix shape/order; quaternion values preserve component order; semantic aliases preserve authored alias type, semantic role, and underlying type agreement; arrays preserve homogeneous element type, element shape, and alias metadata; dictionaries preserve typed entries; value blocks preserve a distinct sentinel.",
+    "typed_read_rule": "Values expose stored type identity and checked typed reads without materializing or reparsing adapter JSON. A read succeeds only when the requested type agrees with the stored type; otherwise it reports a type mismatch.",
+    "numeric_storage_rule": "Numeric authored values use native numeric payloads as authoritative typed storage. Integers preserve signedness and width/range semantics, floating types preserve numeric floating payloads, and dimensioned/array numeric values preserve numeric element payloads. Decimal strings are permitted only at text/JSON serialization boundaries."
+  },
+  "laws": [
+    "semantic aliases are not foundational types, but each alias agrees with its underlying type",
+    "agreement is defined for alias-underlying and underlying-underlying comparisons, not for two semantic aliases",
+    "array element indexing over dimensioned arrays returns the entire dimensioned value",
+    "dictionary combine is closed and associative over dictionaries",
+    "when combining dictionaries, stronger non-dictionary values replace weaker values with the same key",
+    "when combining dictionaries, values with the same key are recursively combined only if both values are dictionaries",
+    "metadata fields may store underlying foundational types, but not semantic aliases",
+    "foundational raw values and durable values must not retain adapter JSON as their authoritative representation; tagged JSON is materialized on demand for adapters or serialization",
+    "raw and durable values have one observable stored type identity available for inspection without adapter JSON materialization",
+    "raw and durable values expose payload catalog metadata sufficient to distinguish scalar, dimensioned, matrix, quaternion, semantic alias, homogeneous array, dictionary, opaque, and valueBlock payload categories",
+    "half, float, double, and timecode values remain distinct typed payloads even if an implementation stores their bits in a common backend numeric container",
+    "integer scalar values remain distinct typed payloads for uchar, int, uint, int64, and uint64 even if an implementation stores them in a common backend numeric container",
+    "dimensioned, matrix, quaternion, and semantic alias values retain their declared type identity, element type, shape, and role metadata; they must not degrade to an untyped numeric vector for typed reads",
+    "arrays retain homogeneous element type metadata and element payload shape; they must not degrade to heterogeneous adapter arrays as durable storage",
+    "typed reads return the requested payload only when the requested type agrees with the stored type; otherwise they report a type mismatch",
+    "numeric typed values are not stored as decimal strings in raw or durable value payloads",
+    "the contract does not prescribe the physical storage layout for typed value payloads"
+  ]
+}

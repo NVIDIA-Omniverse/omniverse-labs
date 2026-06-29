@@ -1,0 +1,157 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/layer-stack-namespace-source.handle.json",
+  "title": "USD Layer-Stack Namespace Source Contract",
+  "version": "0.1",
+  "spec_commit": "v1.0.1",
+  "capability_contracts": [
+    "contracts/capabilities/namespace-source.json",
+    "contracts/capabilities/semantic-runtime-types.json"
+  ],
+  "dependency_contracts": [
+    "contracts/handles/document-model.handle.json",
+    "contracts/handles/path.handle.json",
+    "contracts/handles/token.handle.json",
+    "contracts/handles/foundational-values.handle.json"
+  ],
+  "performance_contracts": [
+    "contracts/performance/layer-stack-namespace-source.performance.json"
+  ],
+  "coverage_contracts": [
+    "contracts/spec-coverage/sublayer-composition.coverage.json"
+  ],
+  "scope": {
+    "included": [
+      "wrapping a root document-model Layer plus already-opened recursive sublayer Layers as a NamespaceSource",
+      "building a recursive layer stack from subLayers metadata in already-opened Layers",
+      "detecting cycles across recursive subLayers while constructing the in-memory stack",
+      "reporting subLayerOffsets paired with subLayers without applying retiming",
+      "source capability declaration as layer_stack with partial composition",
+      "prim and property contributing-spec discovery across the stack",
+      "effective population specifier selection for stage-population query flags",
+      "strongest authored scalar/token/bool population field exposure",
+      "cross-layer authored listOp field composition for matching listOp field types",
+      "ordered child prim name composition across layer-stack specs",
+      "ordered property name composition across layer-stack specs",
+      "property field maps using strongest authored scalar fields and composed authored listOp fields",
+      "diagnostics for missing or duplicate supplied sublayers"
+    ],
+    "deferred": [
+      "asset resolver search paths",
+      "resource opening for sublayer assets",
+      "relocates application",
+      "reference, payload, inherits, specializes, and variant composition",
+      "dictionary merging across layers",
+      "attribute value resolution, time sample interpolation, and subLayerOffsets retiming",
+      "schema fallback properties",
+      "payload load policy",
+      "scene graph instancing"
+    ]
+  },
+  "model": {
+    "LayerStackNamespaceSource": "A namespace-source provider backed by a root document-model Layer and its already-opened recursive sublayer Layers.",
+    "LayerStackEntry": "One layer in the stack, with an identifier, strength index, and optional Retiming from the immediate authoring layer's subLayerOffsets field.",
+    "StrengthOrder": "The root layer is strongest. Recursive sublayers are weaker than the layer that authored them, ordered depth-first at the authored subLayer site before later sibling sublayers.",
+    "ContributingSpecs": "The strongest-to-weakest ordered specs at one path across stack entries. Queries may iterate them in reverse when applying ordered-child merge rules.",
+    "EffectiveSpecifier": "Population-facing specifier summary: class if the strongest contributing defining specifier is class, def if any contributing def exists and no stronger class applies, otherwise over.",
+    "ComposedListOpField": "A population-facing field value produced by combining same-typed authored listOp field opinions from contributing specs in strong-over-weak layer-stack order.",
+    "ComposedChildNames": "Child prim names merged from weakest contributing spec to strongest, applying each spec's primOrder after that spec contributes primChildren.",
+    "ComposedPropertyNames": "Union of contributing property names, sorted by path element ordering, then reordered by the strongest authored propertyOrder."
+  },
+  "operations": {
+    "build_source": {
+      "input": {
+        "rootLayer": "target-native document-model Layer",
+        "sublayers": "already-opened document-model Layers keyed or ordered by authored subLayer asset identifiers for all recursive sublayers that may be reached from the root"
+      },
+      "output": {
+        "source": "target-native LayerStackNamespaceSource or diagnostics"
+      }
+    },
+    "inspect_source": {
+      "input": {},
+      "output": {
+        "mode": "layer_stack",
+        "composition": "partial",
+        "value_resolution": "partial",
+        "payload_loading": "absent",
+        "instancing": "absent",
+        "schema_fallbacks": "absent",
+        "child_ordering": "composed",
+        "property_ordering": "composed"
+      }
+    },
+    "layer_stack_summary": {
+      "input": {},
+      "output": {
+        "layers": "strong-to-weak layer entries with identifier, strengthIndex, offset, and scale; recursive sublayers appear depth-first immediately after the layer that authored them",
+        "diagnostics": "source construction diagnostics"
+      }
+    },
+    "layer_field": {
+      "input": {
+        "field": "field token"
+      },
+      "output": {
+        "value": "strongest layer-stack field value or missing"
+      }
+    },
+    "prim_input": {
+      "input": {
+        "path": "absolute prim path or /"
+      },
+      "output": {
+        "exists": "whether any layer-stack entry contributes a layer or prim spec at the path",
+        "kind": "layer, prim, or missing",
+        "fields": "population-facing composed field map",
+        "childNames": "composed child prim names before stage mask/active filtering",
+        "propertyNames": "composed property names before schema fallback injection",
+        "contributingLayers": "strong-to-weak identifiers that contributed a spec at this path"
+      }
+    },
+    "property_input": {
+      "input": {
+        "path": "property path"
+      },
+      "output": {
+        "exists": "whether any layer-stack entry contributes an attribute or relationship spec at the path",
+        "kind": "attribute, relationship, or missing",
+        "fields": "population-facing composed field map",
+        "contributingLayers": "strong-to-weak identifiers that contributed a property spec at this path"
+      }
+    },
+    "prim_opinions": {
+      "input": {
+        "path": "absolute prim path, variant-selection prim path, or /"
+      },
+      "output": {
+        "opinions": "strong-to-weak layer-stack scene-object opinions at this path with layer identifier, spec path, fields, child names, and property names"
+      }
+    }
+  },
+  "laws": [
+    "the layer-stack source consumes document-model Layers and must not maintain a second independent durable spec store",
+    "subLayer asset identifiers are matched to already-opened layers at this boundary; this skill must not open files or call an asset resolver",
+    "the source traverses authored subLayers recursively only through layers already supplied at this boundary",
+    "recursive sublayer cycles must fail clearly, include the authored asset identifier that would close the cycle, and must not recurse unboundedly",
+    "root layer is stronger than every recursive sublayer",
+    "recursive sublayers are ordered depth-first at the authored subLayer site, before later sibling sublayers from the same authoring layer",
+    "subLayerOffsets are paired with subLayers for reporting, but are not applied to time samples, splines, clips, timecode-valued fields, or attribute values",
+    "a prim path exists if any layer-stack entry contributes a prim spec at that path; / exists as the root layer scene object",
+    "a property path exists if any layer-stack entry contributes an attribute or relationship spec at that path",
+    "effective specifier must preserve weaker def/class definitions through stronger over specs",
+    "for scalar, token, bool, enum/domain, and opaque payload field keys, field maps expose the strongest authored field value",
+    "for authored listOp field keys with matching listOp element types, field maps expose the listOp produced by combining contributing listOps in strong-over-weak order",
+    "dictionary merging, time-sample value resolution, spline value resolution, and non-listOp value composition remain deferred",
+    "childNames returned by this source are already composition-ordered; stage population must preserve this order for sources declaring child_ordering=composed",
+    "propertyNames returned by this source are already composition-ordered; stage population must preserve this order for sources declaring property_ordering=composed",
+    "child prim names are merged by iterating contributing specs from weakest to strongest, appending primChildren, uniquifying by first occurrence, then applying that spec's primOrder",
+    "property names are the union of contributing spec properties, sorted with usd-paths path element ordering, then reordered by the strongest authored propertyOrder",
+    "relocates authored on layer specs must remain inert field data in this first layer-stack provider",
+    "diagnostics from supplied layer construction are preserved and exposed through the source"
+  ],
+  "adapter_protocol": {
+    "input": "A JSON file containing one case with rootLayer, optional sublayers map/list, and an ops array. The adapter must convert JSON layers into target-native document-model Layers before constructing the source.",
+    "output": "A JSON object with ok, diagnostics, and results."
+  }
+}

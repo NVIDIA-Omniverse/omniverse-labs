@@ -1,0 +1,487 @@
+{
+  "suite": "usd-payload-namespace-source",
+  "contract": "contracts/handles/payload-namespace-source.handle.json",
+  "spec_commit": "v1.0.1",
+  "cases": [
+    {
+      "id": "composes-external-payload-tree",
+      "input": {
+        "rootLayer": {
+          "identifier": "root.usda",
+          "fields": {"primChildren": {"type": "token[]", "value": ["World"]}},
+          "specs": {
+            "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["World"]}}},
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "over"},
+                "kind": {"type": "token", "value": "assembly"},
+                "payload": {
+                  "type": "listop<Payload>",
+                  "value": {
+                    "explicit": [{"asset": "payload.usda", "path": "/PayloadRoot", "offset": 0.0, "scale": 1.0}],
+                    "prepend": [],
+                    "append": [],
+                    "delete": []
+                  }
+                },
+                "primChildren": {"type": "token[]", "value": ["Local"]},
+                "propertyChildren": {"type": "token[]", "value": ["visibility"]},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World/Local": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World.visibility": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "typeName": {"type": "token", "value": "token"},
+                "variability": {"type": "variability", "value": "varying"},
+                "default": {"type": "token", "value": "inherited"}
+              }
+            }
+          }
+        },
+        "payloadLayers": {
+          "payload.usda": {
+            "identifier": "payload.usda",
+            "fields": {"primChildren": {"type": "token[]", "value": ["PayloadRoot"]}},
+            "specs": {
+              "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["PayloadRoot"]}}},
+              "/PayloadRoot": {
+                "kind": "prim",
+                "fields": {
+                  "specifier": {"type": "specifier", "value": "def"},
+                  "typeName": {"type": "token", "value": "Xform"},
+                  "primChildren": {"type": "token[]", "value": ["Geom"]},
+                  "propertyChildren": {"type": "token[]", "value": ["size"]},
+                  "variantSetChildren": {"type": "token[]", "value": []}
+                }
+              },
+              "/PayloadRoot/Geom": {
+                "kind": "prim",
+                "fields": {
+                  "specifier": {"type": "specifier", "value": "def"},
+                  "typeName": {"type": "token", "value": "Mesh"},
+                  "primChildren": {"type": "token[]", "value": []},
+                  "propertyChildren": {"type": "token[]", "value": []},
+                  "variantSetChildren": {"type": "token[]", "value": []}
+                }
+              },
+              "/PayloadRoot.size": {
+                "kind": "attribute",
+                "fields": {
+                  "custom": {"type": "bool", "value": false},
+                  "typeName": {"type": "token", "value": "float"},
+                  "variability": {"type": "variability", "value": "varying"},
+                  "default": {"type": "float", "value": 2.0}
+                }
+              }
+            }
+          }
+        },
+        "ops": [
+          {"op": "build_source"},
+          {"op": "inspect_source"},
+          {"op": "payload_summary"},
+          {"op": "prim_input", "path": "/World"},
+          {"op": "prim_input", "path": "/World/Geom"},
+          {"op": "prim_input", "path": "/World/Local"},
+          {"op": "property_input", "path": "/World.size"},
+          {"op": "property_input", "path": "/World.visibility"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "build_source", "ok": true},
+          {
+            "op": "inspect_source",
+            "ok": true,
+            "mode": "composed_namespace",
+            "composition": "partial",
+            "value_resolution": "partial",
+            "payload_loading": "partial",
+            "instancing": "absent",
+            "schema_fallbacks": "absent",
+            "child_ordering": "composed",
+            "property_ordering": "composed"
+          },
+          {
+            "op": "payload_summary",
+            "ok": true,
+            "payloads": [
+              {"primPath": "/World", "asset": "payload.usda", "targetPath": "/PayloadRoot", "offset": 0.0, "scale": 1.0}
+            ],
+            "diagnostics": []
+          },
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/World",
+            "exists": true,
+            "kind": "prim",
+            "fields": {
+              "specifier": {"type": "specifier", "value": "def"},
+              "typeName": {"type": "token", "value": "Xform"},
+              "primChildren": {"type": "token[]", "value": ["Geom"]},
+              "propertyChildren": {"type": "token[]", "value": ["size"]},
+              "variantSetChildren": {"type": "token[]", "value": []}
+            },
+            "childNames": ["Geom"],
+            "propertyNames": ["size"],
+            "contributingSources": ["payload.usda:/PayloadRoot"]
+          },
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/World/Geom",
+            "exists": true,
+            "kind": "prim",
+            "fields": {
+              "specifier": {"type": "specifier", "value": "def"},
+              "typeName": {"type": "token", "value": "Mesh"},
+              "primChildren": {"type": "token[]", "value": []},
+              "propertyChildren": {"type": "token[]", "value": []},
+              "variantSetChildren": {"type": "token[]", "value": []}
+            },
+            "childNames": [],
+            "propertyNames": [],
+            "contributingSources": ["payload.usda:/PayloadRoot/Geom"]
+          },
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/World/Local",
+            "exists": false,
+            "kind": "missing",
+            "fields": {},
+            "childNames": [],
+            "propertyNames": [],
+            "contributingSources": []
+          },
+          {
+            "op": "property_input",
+            "ok": true,
+            "path": "/World.size",
+            "exists": true,
+            "kind": "attribute",
+            "fields": {
+              "custom": {"type": "bool", "value": false},
+              "typeName": {"type": "token", "value": "float"},
+              "variability": {"type": "variability", "value": "varying"},
+              "default": {"type": "float", "value": 2.0}
+            },
+            "contributingSources": ["payload.usda:/PayloadRoot.size"]
+          },
+          {
+            "op": "property_input",
+            "ok": true,
+            "path": "/World.visibility",
+            "exists": false,
+            "kind": "missing",
+            "fields": {},
+            "contributingSources": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "asset-payload-uses-default-prim",
+      "input": {
+        "rootLayer": {
+          "identifier": "root.usda",
+          "fields": {"primChildren": {"type": "token[]", "value": ["World"]}},
+          "specs": {
+            "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["World"]}}},
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "over"},
+                "payload": {
+                  "type": "listop<Payload>",
+                  "value": {
+                    "explicit": [{"asset": "payload.usda", "offset": 0.0, "scale": 1.0}],
+                    "prepend": [],
+                    "append": [],
+                    "delete": []
+                  }
+                },
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        },
+        "payloadLayers": {
+          "payload.usda": {
+            "identifier": "payload.usda",
+            "fields": {
+              "defaultPrim": {"type": "token", "value": "PayloadRoot"},
+              "primChildren": {"type": "token[]", "value": ["PayloadRoot"]}
+            },
+            "specs": {
+              "/": {
+                "kind": "layer",
+                "fields": {
+                  "defaultPrim": {"type": "token", "value": "PayloadRoot"},
+                  "primChildren": {"type": "token[]", "value": ["PayloadRoot"]}
+                }
+              },
+              "/PayloadRoot": {
+                "kind": "prim",
+                "fields": {
+                  "specifier": {"type": "specifier", "value": "def"},
+                  "typeName": {"type": "token", "value": "Xform"},
+                  "primChildren": {"type": "token[]", "value": ["Geom"]},
+                  "propertyChildren": {"type": "token[]", "value": []},
+                  "variantSetChildren": {"type": "token[]", "value": []}
+                }
+              },
+              "/PayloadRoot/Geom": {
+                "kind": "prim",
+                "fields": {
+                  "specifier": {"type": "specifier", "value": "def"},
+                  "primChildren": {"type": "token[]", "value": []},
+                  "propertyChildren": {"type": "token[]", "value": []},
+                  "variantSetChildren": {"type": "token[]", "value": []}
+                }
+              }
+            }
+          }
+        },
+        "ops": [
+          {"op": "build_source"},
+          {"op": "payload_summary"},
+          {"op": "prim_input", "path": "/World"},
+          {"op": "prim_input", "path": "/World/Geom"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "build_source", "ok": true},
+          {
+            "op": "payload_summary",
+            "ok": true,
+            "payloads": [
+              {"primPath": "/World", "asset": "payload.usda", "targetPath": "/PayloadRoot", "offset": 0.0, "scale": 1.0}
+            ],
+            "diagnostics": []
+          },
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/World",
+            "exists": true,
+            "kind": "prim",
+            "fields": {
+              "specifier": {"type": "specifier", "value": "def"},
+              "typeName": {"type": "token", "value": "Xform"},
+              "primChildren": {"type": "token[]", "value": ["Geom"]},
+              "propertyChildren": {"type": "token[]", "value": []},
+              "variantSetChildren": {"type": "token[]", "value": []}
+            },
+            "childNames": ["Geom"],
+            "propertyNames": [],
+            "contributingSources": ["payload.usda:/PayloadRoot"]
+          },
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/World/Geom",
+            "exists": true,
+            "kind": "prim",
+            "fields": {
+              "specifier": {"type": "specifier", "value": "def"},
+              "primChildren": {"type": "token[]", "value": []},
+              "propertyChildren": {"type": "token[]", "value": []},
+              "variantSetChildren": {"type": "token[]", "value": []}
+            },
+            "childNames": [],
+            "propertyNames": [],
+            "contributingSources": ["payload.usda:/PayloadRoot/Geom"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "missing-payload-layer",
+      "input": {
+        "rootLayer": {
+          "identifier": "root.usda",
+          "fields": {"primChildren": {"type": "token[]", "value": ["World"]}},
+          "specs": {
+            "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["World"]}}},
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "over"},
+                "payload": {
+                  "type": "listop<Payload>",
+                  "value": {
+                    "explicit": [{"asset": "missing.usda", "path": "/PayloadRoot", "offset": 0.0, "scale": 1.0}],
+                    "prepend": [],
+                    "append": [],
+                    "delete": []
+                  }
+                },
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        },
+        "payloadLayers": {},
+        "ops": [
+          {"op": "build_source"}
+        ]
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {
+            "code": "MissingPayloadLayer",
+            "message": "No supplied layer for payload asset missing.usda"
+          }
+        ],
+        "results": [
+          {"op": "build_source", "ok": false}
+        ]
+      }
+    },
+    {
+      "id": "nested-payloads-remain-deferred",
+      "input": {
+        "rootLayer": {
+          "identifier": "root.usda",
+          "fields": {"primChildren": {"type": "token[]", "value": ["World"]}},
+          "specs": {
+            "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["World"]}}},
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "over"},
+                "payload": {
+                  "type": "listop<Payload>",
+                  "value": {
+                    "explicit": [{"asset": "payload.usda", "path": "/PayloadRoot", "offset": 0.0, "scale": 1.0}],
+                    "prepend": [],
+                    "append": [],
+                    "delete": []
+                  }
+                },
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        },
+        "payloadLayers": {
+          "payload.usda": {
+            "identifier": "payload.usda",
+            "fields": {"primChildren": {"type": "token[]", "value": ["PayloadRoot"]}},
+            "specs": {
+              "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["PayloadRoot"]}}},
+              "/PayloadRoot": {
+                "kind": "prim",
+                "fields": {
+                  "specifier": {"type": "specifier", "value": "def"},
+                  "payload": {
+                    "type": "listop<Payload>",
+                    "value": {
+                      "explicit": [{"asset": "nested.usda", "path": "/NestedOnly", "offset": 0.0, "scale": 1.0}],
+                      "prepend": [],
+                      "append": [],
+                      "delete": []
+                    }
+                  },
+                  "primChildren": {"type": "token[]", "value": []},
+                  "propertyChildren": {"type": "token[]", "value": []},
+                  "variantSetChildren": {"type": "token[]", "value": []}
+                }
+              }
+            }
+          },
+          "nested.usda": {
+            "identifier": "nested.usda",
+            "fields": {"primChildren": {"type": "token[]", "value": ["NestedOnly"]}},
+            "specs": {
+              "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["NestedOnly"]}}},
+              "/NestedOnly": {
+                "kind": "prim",
+                "fields": {
+                  "specifier": {"type": "specifier", "value": "def"},
+                  "primChildren": {"type": "token[]", "value": []},
+                  "propertyChildren": {"type": "token[]", "value": []},
+                  "variantSetChildren": {"type": "token[]", "value": []}
+                }
+              }
+            }
+          }
+        },
+        "ops": [
+          {"op": "build_source"},
+          {"op": "prim_input", "path": "/World"},
+          {"op": "prim_input", "path": "/World/NestedOnly"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "build_source", "ok": true},
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/World",
+            "exists": true,
+            "kind": "prim",
+            "fields": {
+              "specifier": {"type": "specifier", "value": "def"},
+              "payload": {
+                "type": "listop<Payload>",
+                "value": {
+                  "append": [],
+                  "delete": [],
+                  "explicit": [{"asset": "nested.usda", "offset": 0.0, "path": "/NestedOnly", "scale": 1.0}],
+                  "prepend": []
+                }
+              },
+              "primChildren": {"type": "token[]", "value": []},
+              "propertyChildren": {"type": "token[]", "value": []},
+              "variantSetChildren": {"type": "token[]", "value": []}
+            },
+            "childNames": [],
+            "propertyNames": [],
+            "contributingSources": ["payload.usda:/PayloadRoot"]
+          },
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/World/NestedOnly",
+            "exists": false,
+            "kind": "missing",
+            "fields": {},
+            "childNames": [],
+            "propertyNames": [],
+            "contributingSources": []
+          }
+        ]
+      }
+    }
+  ]
+}

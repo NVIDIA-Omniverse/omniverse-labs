@@ -1,0 +1,6 @@
+#usda 1.0
+
+def Scope "T"
+{
+    uint negative = -1
+}

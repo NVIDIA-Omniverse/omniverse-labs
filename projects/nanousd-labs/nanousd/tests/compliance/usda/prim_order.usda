@@ -1,0 +1,21 @@
+#usda 1.0
+
+def Xform "Parent" {
+    reorder nameChildren = ["charlie", "alpha", "bravo"]
+
+    def Scope "alpha" {
+    }
+    def Scope "bravo" {
+    }
+    def Scope "charlie" {
+    }
+}
+
+def Xform "Unordered" {
+    def Scope "charlie" {
+    }
+    def Scope "alpha" {
+    }
+    def Scope "bravo" {
+    }
+}

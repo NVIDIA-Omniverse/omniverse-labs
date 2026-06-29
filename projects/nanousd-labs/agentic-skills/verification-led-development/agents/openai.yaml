@@ -1,0 +1,4 @@
+interface:
+  display_name: "Verification Led Development"
+  short_description: "Verify changes with real signals"
+  default_prompt: "Plan and verify this change with focused builds, tests, smoke runs, logs, screenshots, and residual-risk reporting."

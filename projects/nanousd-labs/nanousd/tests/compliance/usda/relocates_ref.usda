@@ -1,0 +1,13 @@
+#usda 1.0
+
+def "Ref"
+{
+    float childInput.connect = </Ref/Child.outputs:value>
+    rel childTarget = </Ref/Child>
+
+    def "Child"
+    {
+        float outputs:value = 7
+        string sourceLabel = "from_ref_child"
+    }
+}

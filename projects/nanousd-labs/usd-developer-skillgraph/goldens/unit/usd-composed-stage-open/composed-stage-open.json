@@ -1,0 +1,114 @@
+{
+  "suite": "usd-composed-stage-open",
+  "contract": "contracts/handles/composed-stage-open.handle.json",
+  "spec_commit": "v1.0.1",
+  "cases": [
+    {
+      "id": "opens-payload-assets-when-inclusion-requested",
+      "input": {
+        "rootLocation": "root.usda",
+        "payloadInclusion": "include",
+        "resources": {
+          "root.usda": "#usda 1.0\n(\n    defaultPrim = \"World\"\n)\n\ndef Xform \"World\" (\n    payload = @payload.usda@</PayloadRoot>\n)\n{\n}\n",
+          "payload.usda": "#usda 1.0\n\ndef Xform \"PayloadRoot\"\n{\n    def Mesh \"Geom\"\n    {\n    }\n    float size = 2\n}\n"
+        },
+        "ops": [
+          {"op": "open_composed_stage_summary"},
+          {"op": "stage_summary"},
+          {"op": "prim_summary", "path": "/World"},
+          {"op": "prim_summary", "path": "/World/Geom"},
+          {"op": "property_summary", "path": "/World.size"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "open_composed_stage_summary",
+            "ok": true,
+            "summary": {
+              "ok": true,
+              "composition": "partial",
+              "payload_loading": "partial",
+              "rootLayerPath": "root.usda",
+              "layerCount": 2,
+              "referenceLayerCount": 0,
+              "payloadLayerCount": 1,
+              "primCount": 2,
+              "diagnostics": [],
+              "layers": [
+                {"role": "local", "identifier": "root.usda", "resolvedLocation": "root.usda"},
+                {"role": "payload", "identifier": "payload.usda", "resolvedLocation": "payload.usda"}
+              ]
+            }
+          },
+          {"op": "stage_summary", "ok": true, "sourceMode": "composed_namespace", "primCount": 2, "defaultPrim": "/World", "diagnostics": []},
+          {"op": "prim_summary", "ok": true, "exists": true, "path": "/World", "name": "World", "parent": "/", "children": ["/World/Geom"], "properties": ["size"], "typeName": "Xform", "specifier": "def", "active": true, "loaded": true, "defined": true, "abstract": false, "instanceable": false},
+          {"op": "prim_summary", "ok": true, "exists": true, "path": "/World/Geom", "name": "Geom", "parent": "/World", "children": [], "properties": [], "typeName": "Mesh", "specifier": "def", "active": true, "loaded": true, "defined": true, "abstract": false, "instanceable": false},
+          {
+            "op": "property_summary",
+            "ok": true,
+            "exists": true,
+            "path": "/World.size",
+            "kind": "attribute",
+            "owner": "/World",
+            "name": "size",
+            "fields": {
+              "custom": {"type": "bool", "value": false},
+              "typeName": {"type": "token", "value": "float"},
+              "variability": {"type": "variability", "value": "varying"},
+              "default": {"type": "float", "value": 2.0}
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "omits-payload-assets-when-inclusion-omitted",
+      "input": {
+        "rootLocation": "root.usda",
+        "payloadInclusion": "omit",
+        "resources": {
+          "root.usda": "#usda 1.0\n(\n    defaultPrim = \"World\"\n)\n\ndef Xform \"World\" (\n    payload = @payload.usda@</PayloadRoot>\n)\n{\n}\n",
+          "payload.usda": "#usda 1.0\n\ndef Xform \"PayloadRoot\"\n{\n    def Mesh \"Geom\"\n    {\n    }\n    float size = 2\n}\n"
+        },
+        "ops": [
+          {"op": "open_composed_stage_summary"},
+          {"op": "stage_summary"},
+          {"op": "prim_summary", "path": "/World"},
+          {"op": "prim_summary", "path": "/World/Geom"},
+          {"op": "property_summary", "path": "/World.size"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "open_composed_stage_summary",
+            "ok": true,
+            "summary": {
+              "ok": true,
+              "composition": "partial",
+              "payload_loading": "absent",
+              "rootLayerPath": "root.usda",
+              "layerCount": 1,
+              "referenceLayerCount": 0,
+              "payloadLayerCount": 0,
+              "primCount": 1,
+              "diagnostics": [],
+              "layers": [
+                {"role": "local", "identifier": "root.usda", "resolvedLocation": "root.usda"}
+              ]
+            }
+          },
+          {"op": "stage_summary", "ok": true, "sourceMode": "composed_namespace", "primCount": 1, "defaultPrim": "/World", "diagnostics": []},
+          {"op": "prim_summary", "ok": true, "exists": true, "path": "/World", "name": "World", "parent": "/", "children": [], "properties": [], "typeName": "Xform", "specifier": "def", "active": true, "loaded": true, "defined": true, "abstract": false, "instanceable": false},
+          {"op": "prim_summary", "ok": true, "exists": false, "path": "/World/Geom"},
+          {"op": "property_summary", "ok": true, "exists": false, "path": "/World.size"}
+        ]
+      }
+    }
+  ]
+}

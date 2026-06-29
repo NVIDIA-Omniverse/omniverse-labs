@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/composition-provenance.json",
+  "title": "USD Composition Provenance Capability",
+  "version": "0.1",
+  "dependency_contracts": [
+    "contracts/capabilities/semantic-runtime-types.json",
+    "contracts/handles/path.handle.json"
+  ],
+  "purpose": "Define the runtime representation for strength-ordered contributor provenance carried by composed namespace sources. The contract prevents generated providers from storing USD object/spec paths as composite strings such as asset.usda:/Prim.",
+  "scope": {
+    "included": [
+      "source or layer identifiers paired with spec paths",
+      "strong-to-weak contributing opinion records returned by composition namespace sources",
+      "summary records for composition arcs that include USD object/spec paths",
+      "adapter conversion of typed provenance into legacy conformance strings"
+    ],
+    "deferred": [
+      "requiring a particular source/layer identifier type",
+      "requiring a particular C++ struct name, ABI layout, allocator, or ownership model",
+      "resource identity semantics beyond not confusing resource identifiers with USD object paths",
+      "full opinion stacks with per-field strength metadata"
+    ]
+  },
+  "model": {
+    "SourceIdentifier": "A target-native or string-backed identifier for a layer, asset, resource, or synthetic source. This is not a USD object path.",
+    "SpecPath": "A semantic USD path handle/reference identifying the contributing prim, property, variant, or other spec path inside the source.",
+    "ContributingOpinion": "A target-native record containing at least a source identifier and semantic spec path, ordered strong-to-weak by the provider.",
+    "BoundaryContributionString": "A diagnostic, JSON, report, or ABI rendering such as source.usda:/World produced from a typed ContributingOpinion at the boundary."
+  },
+  "laws": [
+    "composition providers that expose contributingSources, contributing opinions, or equivalent provenance must store each contributor as a typed record, not as one raw string",
+    "the USD object/spec path component of a contributor must be a SemanticPath value or equivalent target-native path reference",
+    "source identifiers may be strings, resource identifiers, layer handles, or target-native source handles, but they must not be treated as USD object paths unless the authored field type is path-valued",
+    "generated domain logic must not concatenate source identifiers and paths into strings for later equality, lookup, prefix checks, path extraction, or composition decisions",
+    "generated domain logic must not parse contributor display strings to recover paths for validation or composition; it must compare the typed source identifier and semantic path fields directly",
+    "providers that expose flattened NamespaceSource inputs for testing or stage population must still preserve enough separable per-family provenance or family-only opinion views for downstream composition providers that need to ignore one family while consuming another",
+    "composition arc summary records with primPath, sourcePath, targetPath, variantPath, or mapped contributor paths must store those path fields as SemanticPath values in domain code",
+    "adapter JSON, diagnostics, text reports, and C ABI outputs may render ContributingOpinion records as strings, but those strings are boundary representations",
+    "existing conformance fields named contributingSources may remain string arrays in adapter JSON if they are rendered from typed ContributingOpinion records"
+  ]
+}

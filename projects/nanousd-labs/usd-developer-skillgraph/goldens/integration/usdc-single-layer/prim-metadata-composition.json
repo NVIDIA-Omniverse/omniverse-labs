@@ -1,0 +1,103 @@
+{
+  "suite": "usdc-single-layer-prim-metadata-composition",
+  "spec_commit": "6b4f01f2d6d46b01507481524eb516b4ef358c31",
+  "production_contracts": [
+    "contracts/document-model-productions/prim-spec.contract.json",
+    "contracts/document-model-productions/common-metadata.contract.json",
+    "contracts/usdc-productions/prim-spec-mapping.contract.json"
+  ],
+  "notes": "Exercises authored composition arc fields on a prim: references, payload, inheritPaths, specializes, variantSetNames, variantSelection, kind. Composition itself is out of scope per the scope's excluded list; this suite proves the fields are stored as authored layer data without evaluation. Mirrors goldens/integration/usda-single-layer/prim-metadata-composition.json.",
+  "cases": [
+    {
+      "id": "composition-arcs-authored-without-evaluation",
+      "spec_refs": [
+        "contracts/document-model-productions/prim-spec.contract.json#fields",
+        "contracts/usdc-productions/prim-spec-mapping.contract.json#storage_mapping.field_resolution"
+      ],
+      "input": {
+        "fixture": "benchmarks/fixtures/composition_arcs.usdc"
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "layer": {
+          "fields": {
+            "primChildren": {"type": "token[]", "value": ["World"]}
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "primChildren": {"type": "token[]", "value": ["World"]}
+              }
+            },
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "typeName": {"type": "token", "value": "Xform"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []},
+                "kind": {"type": "token", "value": "component"},
+                "references": {
+                  "type": "listop<Reference>",
+                  "value": {
+                    "explicit": [
+                      {"assetPath": "./asset.usda", "primPath": "/Source", "offset": 0.0, "scale": 1.0}
+                    ],
+                    "prepend": [],
+                    "append": [],
+                    "delete": []
+                  }
+                },
+                "payload": {
+                  "type": "listop<Payload>",
+                  "value": {
+                    "explicit": [
+                      {"assetPath": "./payload.usda", "primPath": "/Inner", "offset": 0.0, "scale": 1.0}
+                    ],
+                    "prepend": [],
+                    "append": [],
+                    "delete": []
+                  }
+                },
+                "inheritPaths": {
+                  "type": "listop<ObjectPath>",
+                  "value": {
+                    "explicit": ["/Base"],
+                    "prepend": [],
+                    "append": [],
+                    "delete": []
+                  }
+                },
+                "specializes": {
+                  "type": "listop<ObjectPath>",
+                  "value": {
+                    "explicit": ["/Specialized"],
+                    "prepend": [],
+                    "append": [],
+                    "delete": []
+                  }
+                },
+                "variantSetNames": {
+                  "type": "listop<token>",
+                  "value": {
+                    "explicit": ["style"],
+                    "prepend": [],
+                    "append": [],
+                    "delete": []
+                  }
+                },
+                "variantSelection": {
+                  "type": "VariantSelectionMap",
+                  "value": {"style": "red"}
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

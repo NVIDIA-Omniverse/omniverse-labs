@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<fmiModelDescription
+  fmiVersion="3.0"
+  modelName="PDController"
+  description="PD controller with gravity compensation. Reads body position/velocity, outputs restoring force towards a configurable target."
+  generationTool="ovx-USD-FMI"
+  instantiationToken="{B3F7A2E1-6C84-4D19-9E5A-1F8C0D23B467}">
+
+  <CoSimulation
+    modelIdentifier="PDController"
+    canHandleVariableCommunicationStepSize="true"
+    fixedInternalStepSize="1e-3"/>
+
+  <UnitDefinitions>
+    <Unit name="m">
+      <BaseUnit m="1"/>
+    </Unit>
+    <Unit name="m/s">
+      <BaseUnit m="1" s="-1"/>
+    </Unit>
+    <Unit name="m/s2">
+      <BaseUnit m="1" s="-2"/>
+    </Unit>
+    <Unit name="N">
+      <BaseUnit kg="1" m="1" s="-2"/>
+    </Unit>
+    <Unit name="kg">
+      <BaseUnit kg="1"/>
+    </Unit>
+  </UnitDefinitions>
+
+  <TypeDefinitions>
+    <Float64Type name="Position" quantity="Position" unit="m"/>
+    <Float64Type name="Velocity" quantity="Velocity" unit="m/s"/>
+    <Float64Type name="Force" quantity="Force" unit="N"/>
+    <Float64Type name="Gain" quantity="Gain"/>
+    <Float64Type name="Mass" quantity="Mass" unit="kg"/>
+    <Float64Type name="Acceleration" quantity="Acceleration" unit="m/s2"/>
+  </TypeDefinitions>
+
+  <DefaultExperiment startTime="0" stopTime="10" stepSize="1e-2"/>
+
+  <ModelVariables>
+    <!-- Independent variable (required by FMI 3.0) -->
+    <Float64 name="time" valueReference="16" causality="independent" variability="continuous" description="Simulation time"/>
+
+    <!-- Inputs: body state (set by host each step) -->
+    <Float64 name="pos_x" valueReference="0" causality="input" variability="continuous" start="0" declaredType="Position" description="Current x position of body"/>
+    <Float64 name="pos_y" valueReference="1" causality="input" variability="continuous" start="0" declaredType="Position" description="Current y position of body"/>
+    <Float64 name="pos_z" valueReference="2" causality="input" variability="continuous" start="0" declaredType="Position" description="Current z position of body"/>
+    <Float64 name="vel_x" valueReference="3" causality="input" variability="continuous" start="0" declaredType="Velocity" description="Current x velocity"/>
+    <Float64 name="vel_y" valueReference="4" causality="input" variability="continuous" start="0" declaredType="Velocity" description="Current y velocity"/>
+    <Float64 name="vel_z" valueReference="5" causality="input" variability="continuous" start="0" declaredType="Velocity" description="Current z velocity"/>
+
+    <!-- Outputs: force to apply -->
+    <Float64 name="force_x" valueReference="6" causality="output" variability="continuous" initial="exact" start="0" declaredType="Force" description="X component of control force"/>
+    <Float64 name="force_y" valueReference="7" causality="output" variability="continuous" initial="exact" start="0" declaredType="Force" description="Y component of control force"/>
+    <Float64 name="force_z" valueReference="8" causality="output" variability="continuous" initial="exact" start="0" declaredType="Force" description="Z component of control force"/>
+
+    <!-- Parameters: controller tuning -->
+    <Float64 name="target_x" valueReference="9"  causality="parameter" variability="tunable" initial="exact" start="0"     declaredType="Position" description="Target x position"/>
+    <Float64 name="target_y" valueReference="10" causality="parameter" variability="tunable" initial="exact" start="2"     declaredType="Position" description="Target y position (default: levitate at 2m)"/>
+    <Float64 name="target_z" valueReference="11" causality="parameter" variability="tunable" initial="exact" start="0"     declaredType="Position" description="Target z position"/>
+    <Float64 name="kp"       valueReference="12" causality="parameter" variability="tunable" initial="exact" start="50"    declaredType="Gain"     description="Proportional gain"/>
+    <Float64 name="kd"       valueReference="13" causality="parameter" variability="tunable" initial="exact" start="10"    declaredType="Gain"     description="Derivative gain"/>
+    <Float64 name="mass"     valueReference="14" causality="parameter" variability="tunable" initial="exact" start="1"     declaredType="Mass"     description="Body mass for gravity compensation"/>
+    <Float64 name="gravity"  valueReference="15" causality="parameter" variability="fixed"   initial="exact" start="-9.81" declaredType="Acceleration" description="Gravitational acceleration (negative = downward)"/>
+  </ModelVariables>
+
+  <ModelStructure>
+    <Output valueReference="6"/>
+    <Output valueReference="7"/>
+    <Output valueReference="8"/>
+  </ModelStructure>
+
+</fmiModelDescription>

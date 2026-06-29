@@ -9,6 +9,7 @@
     />
     <title>I tried to integrate ovrtx by hand. The agent beat me by a day. — Omniverse Labs</title>
     <link rel="stylesheet" href="../../assets/css/main.css" />
+    <script src="https://assets.adobedtm.com/5d4962a43b79/814eb6e9b4e1/launch-4bc07f1e0b0b.min.js"></script>
   </head>
   <body data-base="../../">
     <header class="site-header site-header--compact">
@@ -42,7 +43,7 @@
         </div>
         <img
           src="../../assets/images/card-ovrtx-agents.png"
-          alt="Photorealistic 3D rendering output from ovrtx of DSX server racks in a modern data center, featuring dense cable management overhead and liquid cooling infrastructure."
+          alt="Photorealistic 3D rendering of DSX server racks in a modern data center, featuring dense cable management overhead and liquid cooling infrastructure."
           width="720"
           height="450"
         />
@@ -58,10 +59,10 @@
         <figure>
           <img
             src="../../assets/images/card-ovrtx-agents.png"
-            alt="Photorealistic 3D rendering output from ovrtx of DSX server racks in a modern data center, featuring dense cable management overhead and liquid cooling infrastructure."
+            alt="Photorealistic 3D rendering of DSX server racks in a modern data center, featuring dense cable management overhead and liquid cooling infrastructure."
             width="720"
           />
-          <figcaption><em>Rendered output of DSX Racks for showfloor demo using ovrtx library</em></figcaption>
+          <figcaption><em>Rendered output of DSX Racks for a demo</em></figcaption>
         </figure>
 
         <p>
@@ -77,7 +78,7 @@
         <p>
           <code>ovrtx</code> is NVIDIA's standalone Python and C library for real-time, physically accurate rendering and sensor simulation, built on the Omniverse RTX renderer. One of NVIDIA's new standalone
           <a href="https://developer.nvidia.com/omniverse" target="_blank" rel="noopener noreferrer">Omniverse libraries</a>
-          — meant to be embedded as a <code>pip install</code> dependency inside your own application, not launched as a Kit app. Version 0.3 is the current pre-release; everything below is against that.
+          — meant to be embedded as a <code>pip install</code> dependency inside your own application, not launched as a Kit app. Version 0.3 is the current release; everything below is against that.
         </p>
 
         <h2>TL;DR</h2>
@@ -96,7 +97,13 @@
           I gave the agent a deliberately sparse prompt, because I wanted to see what the library's discoverability did, not what I could compensate for:
         </p>
 
-        <pre><code>Set up ovrtx in this empty repo to render this DSX rack scene to a PNG for a showfloor demo. Print the resolution of the output to stdout. Use the current released version.</code></pre>
+        <blockquote>
+          <p>
+            Set up ovrtx in this empty repo to render this DSX rack scene to a PNG for a
+            showfloor demo. Print the resolution of the output to stdout. Use the current
+            released version.
+          </p>
+        </blockquote>
 
         <p>That's it. No links, no version pins, no documentation references, no template code.</p>
 
@@ -109,7 +116,7 @@
         <pre><code>[project]
 name = "ovrtx-render-one-frame"
 version = "0.1.0"
-description = "Minimal ovrtx 0.3 integration"
+description = "Minimal ovrtx 0.3 integration matching the article's example."
 requires-python = "&gt;=3.10"
 dependencies = [
     "ovrtx==0.3.0",
@@ -150,15 +157,15 @@ build-backend = "setuptools.build_meta"</code></pre>
             alt="Screenshot of an IDE UI displaying the folder structure of skills, including all of the subfolders for each type of skill and their respective .md file for the skill."
             width="720"
           />
-          <figcaption><em>Screenshot of Skills folder in ovrtx repo</em></figcaption>
+          <figcaption><em>Screenshot of Skills folder in ovrtx</em></figcaption>
         </figure>
 
         <p>
-          The interesting move the <code>ovrtx</code> team has made is to declare that the agent is the first reader, not the human — and use that declaration as the forcing function to fund the work that good library teams have always wanted to fund.
+          The interesting move <code>ovrtx</code> has made is to declare that the agent is the first reader, not the human — and use that declaration as the forcing function to fund the work that good library teams have always wanted to fund.
         </p>
 
         <p>
-          That, I think, is the part worth writing about. "Designed for agents first" sounds like a marketing line. In practice it means an investment in <strong>API predictability</strong>, in single-shape examples that compile, in <strong>error messages that suggest fixes</strong>, and in tight coupling between docs pages and <strong>runnable samples</strong>. These are the investments every library team I've worked with has wanted to make for human readers and has had to defer because they didn't move quarterly numbers or took valuable engineering time that they couldn't budget for. The agent-first framing is what finally makes the budget appear.
+          That, I think, is the part worth writing about. "Designed for agents first" sounds like a marketing line. In practice it means an investment in <strong>API predictability</strong>, in single-shape examples that compile, in <strong>error messages that suggest fixes</strong>, and in tight coupling between docs pages and <strong>runnable samples</strong>. These are the investments every library team I've worked with has wanted to make for human readers and has had to defer because they didn't move quarterly numbers. The agent-first framing is what finally makes the budget appear.
         </p>
 
         <p>
@@ -243,7 +250,7 @@ if __name__ == "__main__":
         </p>
 
         <p>
-          That skill exists — at least as a working prototype. The <code>omniverse-realtime-viewer</code> came out of NVIDIA's internal Omniverse AI Hackathon earlier this year, where teams built a string of agent-driven demos on top of the same libraries this article is about. It's now being polished for a wider release, and the prototype shape is already clear: it's the version of "agent-first" applied one layer up from a single library. Where the minimal <code>ovrtx</code> example shows the agent converging on a canonical render call, the omniverse-realtime-viewer skill is the agent converging on a canonical three-library viewer — same first-try shape, just at a bigger scope. Instead of handing the agent a library and watching it produce an integration, I hand the agent a USD scene and watch it produce a working streamed viewer.
+          That skill exists — at least as a working prototype. The <code>omniverse-realtime-viewer</code> came out of NVIDIA's internal Omniverse AI Hackathon earlier this year, where teams built a string of agent-driven demos on top of the same libraries this article is about. It's now being polished for a wider release, and the prototype shape is already clear: it's the version of "agent-first" applied one layer up from a single library. Where the minimal <code>ovrtx</code> example shows the agent converging on a canonical render call, the realtime viewer skill is the agent converging on a canonical three-library viewer — same first-try shape, just at a bigger scope. Instead of handing the agent a library and watching it produce an integration, I hand the agent a USD scene and watch it produce a working streamed viewer.
         </p>
 
         <p>
@@ -275,7 +282,7 @@ if __name__ == "__main__":
         </p>
 
         <p>
-          And the open question I'd actually like an answer to: I don't know whether the <code>ovrtx</code> experience generalizes, or whether it's specific to the kind of library <code>ovrtx</code> happens to be — a real-time renderer with a fairly narrow API surface and a clear contract about what it produces. A library with a fuzzier contract — anything content-generation-shaped, anything where "the right output" is subjective — might not benefit from agent-first preparation the same way, because the agent doesn't have a clean fail signal to lean on. I'd be curious to hear from anyone who's tried to apply the same approach to a less crisp surface and what happened.
+          And the open question I'd actually like an answer to: I don't know whether the <code>ovrtx</code> experience can be generalized, or whether it's specific to the kind of library <code>ovrtx</code> happens to be — a real-time renderer with a fairly narrow API surface and a clear contract about what it produces. A library with a fuzzier contract — anything content-generation-shaped, anything where "the right output" is subjective — might not benefit from agent-first preparation the same way, because the agent doesn't have a clean fail signal to lean on. I'd be curious to hear from anyone who's tried to apply the same approach to a less crisp surface and what happened.
         </p>
 
         <p>
@@ -284,12 +291,15 @@ if __name__ == "__main__":
           — clone it, point it at a USD scene you already have rights to, and hand the integration to whichever agent you're using. What I'd most like to hear back is where the surface broke down: where the agent stumbled, or a skill file should have said more, and if an error message wasn't the help it was trying to be. That's the next round of feedback worth funding.
         </p>
 
-        <div class="callout">
-          <p>
-            <strong>Try it yourself:</strong>
-            <a href="https://github.com/nvidia-omniverse/ovrtx" target="_blank" rel="noopener noreferrer">NVIDIA Omniverse ovrtx on GitHub</a>
-          </p>
-        </div>
+        <p>
+          Check out the NVIDIA Omniverse ovrtx Github
+          <a href="https://github.com/nvidia-omniverse/ovrtx" target="_blank" rel="noopener noreferrer">https://github.com/nvidia-omniverse/ovrtx</a>
+        </p>
+
+        <p>
+          Watch:
+          <a href="https://www.youtube.com/watch?v=t2HYd5MF5b4&amp;t=1s" target="_blank" rel="noopener noreferrer">Build an RTX USD Viewer With NVIDIA Omniverse and One AI Agent Prompt</a>
+        </p>
       </div>
     </article>
 
@@ -329,5 +339,6 @@ if __name__ == "__main__":
         </ul>
       </nav>
     </footer>
+    <script type="text/javascript">_satellite.pageBottom();</script>
   </body>
 </html>

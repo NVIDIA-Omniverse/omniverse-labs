@@ -1,0 +1,14 @@
+#usda 1.0
+(
+    subLayers = [
+        @./compose_layer_a.usda@,
+        @./compose_layer_b.usda@,
+        @./compose_layer_c.usda@
+    ]
+    defaultPrim = "Root"
+)
+
+over "Root"
+{
+    string source = "root_layer"
+}

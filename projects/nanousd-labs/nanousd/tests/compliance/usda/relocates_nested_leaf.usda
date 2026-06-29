@@ -1,0 +1,37 @@
+#usda 1.0
+
+def "Leaf"
+{
+    float childInput.connect = </Leaf/Child.outputs:value>
+    rel childTarget = </Leaf/Child>
+    float removedInput.connect = </Leaf/RemoveMe.outputs:value>
+    rel removedTarget = </Leaf/RemoveMe>
+
+    def "Child"
+    {
+        float outputs:value = 11
+        string leafLabel = "from_leaf_child"
+        string winner = "leaf"
+
+        def "GrandChild"
+        {
+            string grandLabel = "from_leaf_grand"
+        }
+
+        def "ValidNested"
+        {
+            string validNestedLabel = "from_leaf_valid_nested"
+        }
+    }
+
+    def "RenamedChild"
+    {
+        string staleTargetLabel = "from_leaf_target_collision"
+    }
+
+    def "RemoveMe"
+    {
+        float outputs:value = 29
+        string removeLabel = "from_leaf_remove"
+    }
+}

@@ -1,0 +1,87 @@
+#usda 1.0
+
+def Scope "TimeSamplesTypes"
+{
+    # Scalar timeSamples
+    float scalarFloat.timeSamples = {
+        0: 1.0,
+        12: 2.0,
+        24: 3.0,
+    }
+
+    double scalarDouble.timeSamples = {
+        0: 0.0,
+        10: 100.0,
+    }
+
+    int scalarInt.timeSamples = {
+        1: 0,
+        2: 42,
+        3: -100,
+    }
+
+    string scalarString.timeSamples = {
+        0: "start",
+        10: "end",
+    }
+
+    bool scalarBool.timeSamples = {
+        0: false,
+        1: true,
+    }
+
+    # Vec timeSamples
+    float3 vecFloat3.timeSamples = {
+        0: (0, 0, 0),
+        12: (10, 20, 30),
+        24: (0, 0, 0),
+    }
+
+    double3 vecDouble3.timeSamples = {
+        0: (0, 0, 0),
+        24: (100, 200, 300),
+    }
+
+    float2 vecFloat2.timeSamples = {
+        0: (0, 0),
+        1: (1, 1),
+    }
+
+    float4 vecFloat4.timeSamples = {
+        0: (1, 0, 0, 0),
+        1: (0, 1, 0, 0),
+    }
+
+    color3f colorAnim.timeSamples = {
+        0: (1, 0, 0),
+        12: (0, 1, 0),
+        24: (0, 0, 1),
+    }
+
+    # Value blocks in timeSamples
+    float withBlocks.timeSamples = {
+        0: 1.0,
+        5: None,
+        10: 2.0,
+    }
+
+    # Negative time keys
+    double negTime.timeSamples = {
+        -10: 0.0,
+        0: 1.0,
+        10: 2.0,
+    }
+
+    # Fractional time keys
+    float fracTime.timeSamples = {
+        0.5: 1.0,
+        1.5: 2.0,
+        2.333: 3.0,
+    }
+
+    # Matrix timeSamples
+    matrix4d xform.timeSamples = {
+        0: ((1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1)),
+        24: ((2, 0, 0, 0), (0, 2, 0, 0), (0, 0, 2, 0), (0, 0, 0, 1)),
+    }
+}

@@ -1,0 +1,25 @@
+nanousd-python
+Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License"); see the LICENSE
+file. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0.
+
+-------------------------------------------------------------------------------
+OpenUSD
+-------------------------------------------------------------------------------
+
+This repository includes content derived from OpenUSD
+(https://github.com/PixarAnimationStudios/OpenUSD), Copyright Pixar, licensed
+under the Apache License, Version 2.0 (license terms at
+https://openusd.org/license). The derived files retain their original
+Pixar / OpenUSD copyright headers.
+
+Derived OpenUSD content:
+
+  - tests/openusd_compat/upstream/ — OpenUSD upstream test suites, copied for
+    cross-implementation conformance testing against nanousd.
+
+For clarity: src/nanousd/pxr_compat/ is original NVIDIA code — a shim that
+implements a subset of the OpenUSD (pxr) Python API so that `from pxr import ...`
+resolves against nanousd. It is not copied from OpenUSD.

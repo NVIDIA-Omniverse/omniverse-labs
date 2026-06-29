@@ -1,0 +1,84 @@
+{
+  "mode": "vulkan_on",
+  "n_envs": 4096,
+  "tile_w": 64,
+  "tile_h": 64,
+  "seed": 42,
+  "preset": "vulkan_renderer",
+  "interop_class": "CudaOwnedInterop",
+  "envs": {
+    "NU_DEFERRED_SHADE": null,
+    "NU_DEFERRED_DEBUG_MODE": null,
+    "NUSD_INVERTED_INTEROP": "1",
+    "NU_TILE_RES": null,
+    "NU_FRAME_SKIP": null
+  },
+  "stats": {
+    "step3_dptr0": {
+      "shape": [
+        4096,
+        64,
+        64,
+        4
+      ],
+      "mean": 171.0,
+      "max": 171,
+      "min": 171,
+      "n_zero": 0,
+      "n_ab": 67108864,
+      "n_total": 67108864,
+      "ab_survival_pct": 100.0
+    },
+    "step3_dptr1": {
+      "shape": [
+        4096,
+        64,
+        64,
+        4
+      ],
+      "mean": 163.67880660295486,
+      "max": 255,
+      "min": 0,
+      "n_zero": 1453531,
+      "n_ab": 548,
+      "n_total": 67108864,
+      "ab_survival_pct": 0.0008165836334228516
+    },
+    "step4_dptr0": {
+      "shape": [
+        4096,
+        64,
+        64,
+        4
+      ],
+      "mean": 163.67582957446575,
+      "max": 255,
+      "min": 0,
+      "n_zero": 1453393,
+      "n_ab": 501,
+      "n_total": 67108864,
+      "ab_survival_pct": 0.0007465481758117676
+    },
+    "step4_dptr1": {
+      "shape": [
+        4096,
+        64,
+        64,
+        4
+      ],
+      "mean": 163.67880660295486,
+      "max": 255,
+      "min": 0,
+      "n_zero": 1453531,
+      "n_ab": 548,
+      "n_total": 67108864,
+      "ab_survival_pct": 0.0008165836334228516
+    }
+  },
+  "saved": [
+    "capture_vulkan_on_step3_dptr0.npy",
+    "capture_vulkan_on_step3_dptr1.npy",
+    "capture_vulkan_on_step4_dptr0.npy",
+    "capture_vulkan_on_step4_dptr1.npy"
+  ]
+}

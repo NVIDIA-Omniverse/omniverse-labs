@@ -1,0 +1,33 @@
+#usda 1.0
+(
+    defaultPrim = "ChessSet"
+    metersPerUnit = 1
+    upAxis = "Y"
+    subLayers = [
+        @./chess_set.usda@
+    ]
+)
+
+def DomeLight "CompareDome"
+{
+    color3f inputs:color = (0.78, 0.82, 0.9)
+    float inputs:intensity = 450
+}
+
+def SphereLight "CompareKey"
+{
+    color3f inputs:color = (1, 0.95, 0.86)
+    float inputs:intensity = 6000
+    float inputs:radius = 0.505910924
+    double3 xformOp:translate = (0.758866387, 1.19750194, 0.607093109)
+    uniform token[] xformOpOrder = ["xformOp:translate"]
+}
+
+def SphereLight "CompareFill"
+{
+    color3f inputs:color = (0.68, 0.76, 1)
+    float inputs:intensity = 1200
+    float inputs:radius = 0.910639664
+    double3 xformOp:translate = (-0.910639664, 0.286862276, -0.708275294)
+    uniform token[] xformOpOrder = ["xformOp:translate"]
+}

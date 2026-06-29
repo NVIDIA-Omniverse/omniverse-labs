@@ -1,0 +1,7 @@
+#usda 1.0
+
+def Xform "Prim" (
+    prepend payload = @./nonexistent_payload_abc.usda@
+)
+{
+}

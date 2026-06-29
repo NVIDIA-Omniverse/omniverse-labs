@@ -1,0 +1,42 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    upAxis = "Y"
+    metersPerUnit = 1
+)
+
+def Xform "World"
+{
+    def Mesh "Quad"
+    {
+        point3f[] points = [(-1, 0, -1), (1, 0, -1), (1, 0, 1), (-1, 0, 1)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        normal3f[] normals = [(0, 1, 0)] (
+            interpolation = "constant"
+        )
+        texCoord2f[] primvars:st = [(0, 0), (1, 0), (1, 1), (0, 1)] (
+            interpolation = "vertex"
+        )
+        rel material:binding = </World/Materials/GenericMDL>
+    }
+
+    def Scope "Materials"
+    {
+        def Material "GenericMDL"
+        {
+            token outputs:surface.connect = </World/Materials/GenericMDL/Shader.outputs:surface>
+
+            def Shader "Shader"
+            {
+                uniform token info:implementationSource = "sourceAsset"
+                asset info:mdl:sourceAsset = @test_mdl_generic.mdl@
+                token info:mdl:sourceAsset:subIdentifier = "generic_pbr"
+                color3f inputs:base_color = (0.72, 0.12, 0.08)
+                float inputs:roughness = 0.81
+                float inputs:opacity = 0.64
+                token outputs:surface
+            }
+        }
+    }
+}

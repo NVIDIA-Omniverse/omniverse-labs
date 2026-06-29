@@ -1,0 +1,28 @@
+#usda 1.0
+(
+    defaultPrim = "Instance"
+)
+
+def Scope "Instance" (
+    references = @./remap_source.usda@</Model>
+)
+{
+    float localInput.connect = </Instance/Local.outputs:value>
+    rel localTarget = </Instance/Local>
+
+    def Scope "Local"
+    {
+        float outputs:value = 1
+    }
+}
+
+def Scope "PayloadInstance" (
+    payload = @./remap_source.usda@</PayloadModel>
+)
+{
+}
+
+def Scope "Outside"
+{
+    float outputs:value = 3
+}

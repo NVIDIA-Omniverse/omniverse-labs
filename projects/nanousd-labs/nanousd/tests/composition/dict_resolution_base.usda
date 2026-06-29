@@ -1,0 +1,23 @@
+#usda 1.0
+(
+    defaultPrim = "Model"
+)
+
+# Weaker opinion — sublayered from dict_resolution_root.usda. Authors
+# `customData` with keys that the root overrides, keys the root leaves
+# alone, and a nested dict that the root partially overrides. The
+# combined result per spec §6.6.2.1 should include keys from both
+# layers, with the root winning on non-dict key conflicts.
+
+def Xform "Model" (
+    customData = {
+        bool fromBase = true
+        int sharedScalar = 10
+        dictionary nested = {
+            string baseOnly = "base"
+            int sharedInNested = 100
+        }
+    }
+)
+{
+}

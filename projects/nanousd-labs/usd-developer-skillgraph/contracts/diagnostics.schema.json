@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/diagnostics.schema.json",
+  "title": "Canonical Diagnostic",
+  "type": "object",
+  "required": ["severity", "code", "message"],
+  "additionalProperties": false,
+  "properties": {
+    "severity": {
+      "enum": ["error", "warning", "info"]
+    },
+    "code": {
+      "type": "string"
+    },
+    "message": {
+      "type": "string"
+    },
+    "path": {
+      "type": "string"
+    },
+    "line": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "column": {
+      "type": "integer",
+      "minimum": 1
+    }
+  }
+}

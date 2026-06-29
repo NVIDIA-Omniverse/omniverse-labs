@@ -1,0 +1,23 @@
+#usda 1.0
+(
+    defaultPrim = "Geo"
+)
+
+# No manifestAssetPath authored → exercises the §12.3.4.3
+# auto-manifest fallback: the manifest is derived from the union of
+# attribute specs across the clip layers. clip_multi.usda authors
+# both radius and color, so both must resolve through clips.
+
+def Scope "Geo" (
+    clips = {
+        dictionary default = {
+            string primPath = "/Geo"
+            asset[] assetPaths = [@./clip_multi.usda@]
+            double2[] active = [(0, 0)]
+        }
+    }
+)
+{
+    float radius
+    color3f color
+}

@@ -1,0 +1,183 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/nanousd-readonly-backend.handle.json",
+  "title": "nanousd Read-Only Backend Contract",
+  "version": "0.1",
+  "spec_commit": "v1.0.1",
+  "capability_contracts": [
+    "contracts/capabilities/nanousd-readonly-c-api-backend.json",
+    "contracts/capabilities/semantic-runtime-types.json"
+  ],
+  "dependency_contracts": [
+    "contracts/handles/composed-stage-open.handle.json",
+    "contracts/handles/stage-population.handle.json",
+    "contracts/handles/document-model.handle.json",
+    "contracts/handles/foundational-values.handle.json",
+    "contracts/handles/path.handle.json",
+    "contracts/handles/token.handle.json",
+    "contracts/handles/listops-authored.handle.json"
+  ],
+  "scope": {
+    "included": [
+      "exported nanousd_create_backend_v1 entry point",
+      "complete NanousdBackend_v1 function pointer population",
+      "total crash-safe C ABI entry points for null, invalid, missing, malformed, and unsupported inputs",
+      "portable generated CMake build metadata",
+      "runtime stage-open benchmark slice for supported local USDA fixtures through usd-composed-stage-open",
+      "composed stage-open result consumption before nanousd stage handle construction",
+      "read-only NanousdBackend_v1 function partition",
+      "stage and prim handle lifetime rules",
+      "C string lifetime rules",
+      "stage and prim traversal reads",
+      "attribute type/default/timeSample reads",
+      "scalar, vector, quaternion, matrix, array, token, string, and asset read mapping",
+      "relationship and connection target reads",
+      "composition diagnostic array and JSON reads backed by composed stage-open diagnostics",
+      "path and listOp utility delegation with typed opaque handles",
+      "deterministic unsupported write stubs"
+    ],
+    "deferred": [
+      "mutating C API behavior",
+      "file serialization",
+      "runtime full recursive sublayer/reference/payload/variant-contained arc expansion through the nanousd backend",
+      "schema fallback and registry behavior",
+      "instancing and prototype semantics",
+      "xformOp evaluation",
+      "zero-copy array pointers",
+      "value interpolation and clips"
+    ]
+  },
+  "operations": {
+    "inspect_backend_contract": {
+      "input": {},
+      "output": {
+        "abi": "NanousdBackend_v1",
+        "entryPoint": "nanousd_create_backend_v1",
+        "linkage": "extern_C",
+        "buildSystem": "generated_cmake",
+        "mode": "read_only",
+        "vtableModel": "complete_vtable_with_unsupported_write_stubs",
+        "vtablePopulation": "all_slots_non_null",
+        "crashSafety": "all_slots_total_for_null_invalid_malformed_missing_and_unsupported_inputs",
+        "cStringFailurePolicy": "stable_empty_string_for_non_owning_string_results",
+        "ownedStringPolicy": "owning_string_results_are_null_or_nanousd_free_string_compatible",
+        "exceptionBoundary": "no_exceptions_cross_c_abi",
+        "unsupportedSlotPolicy": "mutating_or_deferred_slots_use_deterministic_stubs",
+        "stageModel": "generated_composed_stage_open_stage_population_handles",
+        "fieldReadModel": "document_model_checked_reads",
+        "valueReadModel": "foundational_typed_payload_metadata",
+        "stringLifetime": "owned_by_stage_or_handle",
+        "quaternionApiOrder": "w,i,j,k",
+        "quaternionStorageOrder": "i,j,k,w",
+        "matrixOrder": "row_major",
+        "zeroCopyArrayData": "optional_null_until_contiguous_storage_contract",
+        "readOnlyMutatesStage": false
+      }
+    },
+    "classify_function": {
+      "input": {
+        "name": "nanousd C API function name"
+      },
+      "output": {
+        "name": "function name",
+        "category": "stage, prim, attribute, timeSamples, relationships, path, listOp, math, diagnostics, variants, instancing, write, or unsupported",
+        "support": "readonly, utility, unsupported_stub, or deferred",
+        "reason": "short explanation"
+      }
+    },
+    "describe_vtable_entrypoint": {
+      "input": {},
+      "output": {
+        "exportedSymbol": "nanousd_create_backend_v1",
+        "abi": "NanousdBackend_v1",
+        "linkage": "extern_C",
+        "returns": "stable_backend_singleton",
+        "slotPopulation": "all_slots_non_null",
+        "readOnlySlotPolicy": "readonly_or_utility_slots_point_to_generated_implementations",
+        "unsupportedSlotPolicy": "mutating_or_deferred_slots_point_to_deterministic_stubs",
+        "crashSafetyPolicy": "every_slot_total_for_null_invalid_and_unsupported_inputs"
+      }
+    },
+    "describe_vtable_slot": {
+      "input": {
+        "function": "nanousd C API function name"
+      },
+      "output": {
+        "function": "nanousd C API function name",
+        "slot": "NanousdBackend_v1 field name",
+        "nonnull": true,
+        "support": "readonly, utility, unsupported_stub, or deferred",
+        "pointerPolicy": "generated_readonly_implementation, generated_utility_implementation, or deterministic_unsupported_stub"
+      }
+    },
+    "open_stage_summary": {
+      "input": {
+        "path": "supported USDA fixture path"
+      },
+      "output": {
+        "path": "input fixture path",
+        "valid": true,
+        "rootLayerPath": "resolved root layer path reported by nanousd_stage_get_root_layer_path",
+        "layerCount": "number of layers reported by nanousd_stage_n_layers",
+        "firstLayerPath": "first layer path reported by nanousd_stage_layer_path",
+        "primCount": "number of populated traversal prims reported by nanousd_nprims",
+        "totalAttributes": "sum of nanousd_nattribs across traversal prims",
+        "firstPrimPath": "path of the first traversal prim",
+        "firstPrimName": "name of the first traversal prim",
+        "firstPrimTypeName": "typeName of the first traversal prim",
+        "diagnosticCount": "number of diagnostics reported through the backend diagnostics vtable",
+        "error": "backend error string"
+      }
+    },
+    "describe_attribute_reader": {
+      "input": {
+        "function": "nanousd attribute reader name",
+        "storedType": "stored USD field value type",
+        "payloadKind": "scalar, dimensioned, semanticAlias, quaternion, matrix, array, dictionary, or valueBlock"
+      },
+      "output": {
+        "supported": "boolean",
+        "checkedReadType": "USD type requested from document-model/foundational reads",
+        "cOutput": "C API output shape",
+        "conversion": "conversion rule or mismatch reason"
+      }
+    },
+    "describe_sample_reader": {
+      "input": {
+        "function": "nanousd time sample reader name",
+        "storedType": "stored sample value type"
+      },
+      "output": {
+        "supported": "boolean",
+        "timeLookup": "exact_authored_sample_key",
+        "checkedReadType": "USD type requested from the stored sample",
+        "conversion": "conversion rule or mismatch reason"
+      }
+    },
+    "describe_diagnostics_reader": {
+      "input": {},
+      "output": {
+        "source": "composed-stage-open diagnostics plus stage diagnostics",
+        "arrayPolicy": "malloc_array_freed_by_nanousd_free_diagnostics",
+        "jsonPolicy": "malloc_string_freed_by_nanousd_free_string",
+        "severityPolicy": "recoverable composition diagnostics reported as errors until warning taxonomy is contracted",
+        "relocateArcType": 8,
+        "invalidRelocateCategory": 8
+      }
+    },
+    "describe_unsupported_write": {
+      "input": {
+        "function": "nanousd mutating function name"
+      },
+      "output": {
+        "support": "unsupported_stub",
+        "returnPolicy": "0_or_null_without_mutation",
+        "mutatesStage": false
+      }
+    }
+  },
+  "adapter_protocol": {
+    "input": "A JSON file containing one case with ops array. The adapter validates the exported entry point, vtable fill policy, typed read mapping, and minimal stage-open/traversal behavior before every read-only function has full production behavior.",
+    "output": "A JSON object with ok, diagnostics, and results."
+  }
+}

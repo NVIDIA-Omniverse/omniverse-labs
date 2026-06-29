@@ -1,0 +1,3554 @@
+{
+  "version": "0.1",
+  "spec": {
+    "repo": "aousd/specifications-public",
+    "tag": "v1.0.1",
+    "commit": "v1.0.1"
+  },
+  "command_contracts": {
+    "cpp-native-usd-parser": {
+      "profile": "cpp-native",
+      "source_globs": [
+        "generated/cpp/*.h",
+        "generated/cpp/*.cpp"
+      ],
+      "forbidden_file_globs": [
+        "generated/cpp/*.py",
+        "generated/cpp/*.pyc",
+        "generated/cpp/*.sh"
+      ],
+      "toolchains": [
+        {
+          "style": "gcc",
+          "compilers": [
+            "g++",
+            "clang++"
+          ],
+          "compile_flags": [
+            "-std=c++20",
+            "-O2",
+            "-Wall",
+            "-Wextra",
+            "-Werror",
+            "-Igenerated/cpp"
+          ]
+        },
+        {
+          "style": "msvc",
+          "compilers": [
+            "cl"
+          ],
+          "compile_flags": [
+            "/std:c++20",
+            "/O2",
+            "/W4",
+            "/WX",
+            "/EHsc",
+            "/nologo",
+            "/Igenerated/cpp"
+          ]
+        }
+      ],
+      "forbidden_runtime_apis": [
+        "exec",
+        "execv",
+        "execve",
+        "execl",
+        "execlp",
+        "system",
+        "popen",
+        "posix_spawn",
+        "fork",
+        "dlopen",
+        "dlsym",
+        "Py_",
+        "python"
+      ],
+      "oracle_dependency_denylist": [
+        "pxr",
+        "Sdf",
+        "Usd",
+        "Tf",
+        "libusd",
+        "libpxr",
+        "usd_core",
+        "usdcat",
+        "usdchecker"
+      ],
+      "reject_extra_executables": false
+    }
+  },
+  "nodes": {
+    "usd-identifiers-and-names": {
+      "skill": "skills/usd-identifiers-and-names/SKILL.md",
+      "depends_on": [],
+      "provides": [
+        {
+          "capability": "identifier_scanner",
+          "contract": "contracts/capabilities/identifier-scanner.json",
+          "summary": "UTF-8/XID identifier scanning and validation from embedded grammar offsets"
+        },
+        {
+          "capability": "names",
+          "summary": "prim names, property names, namespaced property names, field names, and ASCII type names"
+        }
+      ],
+      "targets": {
+        "python": {
+          "artifacts": [
+            "generated/python/usd_identifiers.py",
+            "generated/python/identifier_adapter.py"
+          ]
+        },
+        "cpp": {
+          "artifacts": [
+            "generated/cpp/usd_identifiers.h",
+            "generated/cpp/usd_identifiers.cpp",
+            "generated/cpp/identifier_adapter.cpp"
+          ],
+          "build_outputs": [
+            "generated/cpp/identifier_adapter.exe"
+          ]
+        }
+      }
+    },
+    "usd-tokens": {
+      "skill": "skills/usd-tokens/SKILL.md",
+      "depends_on": [],
+      "provides": [
+        {
+          "capability": "token_identity",
+          "contract": "contracts/handles/token.handle.json",
+          "summary": "Registered-string token identity, string conversion, equality, and hashing"
+        }
+      ],
+      "targets": {
+        "python": {
+          "artifacts": [
+            "generated/python/usd_tokens.py",
+            "generated/python/token_handle_adapter.py",
+            "generated/python/token_perf_adapter.py"
+          ]
+        },
+        "cpp": {
+          "artifacts": [
+            "generated/cpp/usd_tokens.h",
+            "generated/cpp/usd_tokens.cpp",
+            "generated/cpp/token_handle_adapter.cpp",
+            "generated/cpp/token_perf_adapter.cpp"
+          ],
+          "build_outputs": [
+            "generated/cpp/token_handle_adapter.exe",
+            "generated/cpp/token_perf_adapter.exe"
+          ]
+        }
+      }
+    },
+    "usd-foundational-values": {
+      "skill": "skills/usd-foundational-values/SKILL.md",
+      "depends_on": [
+        "usd-tokens"
+      ],
+      "provides": [
+        {
+          "capability": "foundational_value_model",
+          "contract": "contracts/handles/foundational-values.handle.json",
+          "summary": "Foundational type catalog, value canonicalization, semantic alias agreement, arrays, dictionaries, and value blocks"
+        }
+      ],
+      "consumes": [
+        {
+          "provider": "usd-tokens",
+          "capability": "token_identity",
+          "required": true,
+          "contract": "contracts/handles/token.handle.json",
+          "semantic_owner": "usd-tokens",
+          "allowed_local_logic": [
+            "tagged token value storage",
+            "token scalar participation in arrays, dictionaries, and listOp type eligibility"
+          ],
+          "forbidden_local_logic": [
+            "independent token equality domain",
+            "raw string token identity for comparable token values"
+          ]
+        }
+      ],
+      "targets": {
+        "python": {
+          "artifacts": [
+            "generated/python/usd_values.py",
+            "generated/python/foundational_values_adapter.py"
+          ]
+        },
+        "cpp": {
+          "artifacts": [
+            "generated/cpp/usd_values.h",
+            "generated/cpp/usd_values.cpp",
+            "generated/cpp/foundational_values_adapter.cpp"
+          ],
+          "build_outputs": [
+            "generated/cpp/foundational_values_adapter.exe"
+          ]
+        }
+      }
+    },
+    "usd-paths": {
+      "skill": "skills/usd-paths/SKILL.md",
+      "depends_on": [
+        "usd-identifiers-and-names",
+        "usd-tokens"
+      ],
+      "provides": [
+        "absolute prim paths",
+        "property paths",
+        "path references",
+        "parent/name path construction",
+        "path element ordering",
+        "path handle hot-operation performance targets"
+      ],
+      "consumes": [
+        {
+          "provider": "usd-identifiers-and-names",
+          "capability": "identifier_scanner",
+          "required": true,
+          "contract": "contracts/capabilities/identifier-scanner.json",
+          "semantic_owner": "usd-identifiers-and-names",
+          "allowed_local_logic": [
+            "path delimiters and grammar sequencing",
+            "variant selection punctuation",
+            "canonical path assembly and path-specific errors"
+          ],
+          "forbidden_local_logic": [
+            "independent UTF-8 decode policy",
+            "independent XID start/continue policy",
+            "local identifier validity reimplementation"
+          ],
+          "exceptions": [
+            {
+              "reason": "performance_contract_conflict",
+              "allowed_if": [
+                "consuming the provider entrypoint would violate a declared path performance target",
+                "the target-local fast path passes the provider conformance subset",
+                "the target-local fast path passes path conformance and performance targets",
+                "the exception is declared in the graph or target report"
+              ],
+              "preference_order": [
+                "improve the provider capability API",
+                "add a provider-owned performance-oriented entrypoint",
+                "use a declared target-local fast path as a last resort"
+              ]
+            }
+          ]
+        }
+      ],
+      "targets": {
+        "python": {
+          "artifacts": [
+            "generated/python/usd_paths.py",
+            "generated/python/path_handle_adapter.py",
+            "generated/python/path_perf_adapter.py"
+          ]
+        },
+        "cpp": {
+          "artifacts": [
+            "generated/cpp/usd_paths.h",
+            "generated/cpp/usd_paths.cpp",
+            "generated/cpp/path_handle_adapter.cpp",
+            "generated/cpp/path_perf_adapter.cpp"
+          ],
+          "build_outputs": [
+            "generated/cpp/path_handle_adapter.exe",
+            "generated/cpp/path_perf_adapter.exe"
+          ]
+        }
+      }
+    },
+    "usd-listops-authored": {
+      "skill": "skills/usd-listops-authored/SKILL.md",
+      "depends_on": [
+        "usd-tokens",
+        "usd-foundational-values",
+        "usd-paths"
+      ],
+      "provides": [
+        {
+          "capability": "authored_listops",
+          "contract": "contracts/handles/listops-authored.handle.json",
+          "summary": "Native authored listOp storage, explicit/prepend/append/delete subfields, empty listOps, and last-one-wins subfield authoring"
+        },
+        "explicit list operations",
+        "prepend/append/delete list operations",
+        "authored listOp parsing contract",
+        "last-one-wins per listOp subfield"
+      ],
+      "consumes": [
+        {
+          "provider": "usd-tokens",
+          "capability": "token_identity",
+          "required": true,
+          "contract": "contracts/handles/token.handle.json",
+          "semantic_owner": "usd-tokens"
+        },
+        {
+          "provider": "usd-foundational-values",
+          "capability": "foundational_value_model",
+          "required": true,
+          "contract": "contracts/handles/foundational-values.handle.json",
+          "semantic_owner": "usd-foundational-values"
+        },
+        {
+          "provider": "usd-paths",
+          "capability": "absolute prim paths",
+          "required": true,
+          "semantic_owner": "usd-paths"
+        }
+      ],
+      "targets": {
+        "python": {
+          "artifacts": [
+            "generated/python/usd_listops.py",
+            "generated/python/listops_adapter.py"
+          ]
+        },
+        "cpp": {
+          "artifacts": [
+            "generated/cpp/usd_listops.h",
+            "generated/cpp/usd_listops.cpp",
+            "generated/cpp/listops_adapter.cpp"
+          ],
+          "build_outputs": [
+            "generated/cpp/listops_adapter.exe"
+          ]
+        }
+      }
+    },
+    "usd-document-model": {
+      "skill": "skills/usd-document-model/SKILL.md",
+      "depends_on": [
+        "usd-tokens",
+        "usd-identifiers-and-names",
+        "usd-foundational-values",
+        "usd-paths",
+        "usd-listops-authored"
+      ],
+      "provides": [
+        {
+          "capability": "document_model",
+          "contract": "contracts/handles/document-model.handle.json",
+          "contracts": [
+            "contracts/capabilities/document-data-model.json",
+            "contracts/capabilities/semantic-runtime-types.json"
+          ],
+          "summary": "Layer/spec/field storage, child-list maintenance, and duplicate spec path rejection"
+        },
+        "core metadata field token vocabulary",
+        "Layer",
+        "Spec",
+        "LayerSpec",
+        "PrimSpec",
+        "AttributeSpec",
+        "RelationshipSpec",
+        "field storage",
+        "child list maintenance",
+        "duplicate path rejection"
+      ],
+      "consumes": [
+        {
+          "provider": "usd-tokens",
+          "capability": "token_identity",
+          "required": true,
+          "contract": "contracts/handles/token.handle.json",
+          "semantic_owner": "usd-tokens"
+        },
+        {
+          "provider": "usd-identifiers-and-names",
+          "capability": "names",
+          "required": true,
+          "semantic_owner": "usd-identifiers-and-names"
+        },
+        {
+          "provider": "usd-foundational-values",
+          "capability": "foundational_value_model",
+          "required": true,
+          "contract": "contracts/handles/foundational-values.handle.json",
+          "semantic_owner": "usd-foundational-values"
+        },
+        {
+          "provider": "usd-paths",
+          "capability": "parent/name path construction",
+          "required": true,
+          "semantic_owner": "usd-paths"
+        },
+        {
+          "provider": "usd-listops-authored",
+          "capability": "authored_listops",
+          "required": true,
+          "contract": "contracts/handles/listops-authored.handle.json",
+          "semantic_owner": "usd-listops-authored"
+        }
+      ],
+      "targets": {
+        "python": {
+          "artifacts": [
+            "generated/python/usd_document_model.py",
+            "generated/python/document_model_adapter.py"
+          ]
+        },
+        "cpp": {
+          "artifacts": [
+            "generated/cpp/usd_document_model.h",
+            "generated/cpp/usd_document_model.cpp",
+            "generated/cpp/document_model_adapter.cpp"
+          ],
+          "build_outputs": [
+            "generated/cpp/document_model_adapter.exe"
+          ]
+        }
+      }
+    },
+    "usda-lexical-format": {
+      "skill": "skills/usda-lexical-format/SKILL.md",
+      "depends_on": [
+        "usd-identifiers-and-names"
+      ],
+      "provides": [
+        {
+          "capability": "usda_lexical_format",
+          "contract": "contracts/capabilities/usda-lexical-format.json",
+          "summary": "USDA UTF-8 text lexing, header recognition, comments, literals, and parser token substrate"
+        }
+      ],
+      "consumes": [
+        {
+          "provider": "usd-identifiers-and-names",
+          "capability": "identifier_scanner",
+          "required": true,
+          "contract": "contracts/capabilities/identifier-scanner.json",
+          "semantic_owner": "usd-identifiers-and-names"
+        }
+      ],
+      "targets": {
+        "python": {
+          "artifacts": [
+            "generated/python/usda_lex.py"
+          ]
+        },
+        "cpp": {
+          "artifacts": [
+            "generated/cpp/usda_lex.h",
+            "generated/cpp/usda_lex.cpp"
+          ]
+        }
+      }
+    },
+    "usda-value-parser": {
+      "skill": "skills/usda-value-parser/SKILL.md",
+      "depends_on": [
+        "usda-lexical-format",
+        "usd-foundational-values",
+        "usd-paths",
+        "usd-listops-authored"
+      ],
+      "provides": [
+        {
+          "capability": "usda_value_parser",
+          "contract": "contracts/handles/usda-value-parser.handle.json",
+          "contracts": [
+            "contracts/usda-productions/value-syntax.contract.json"
+          ],
+          "summary": "USDA textual value parsing into foundational values, paths, and authored listOps"
+        }
+      ],
+      "consumes": [
+        {
+          "provider": "usda-lexical-format",
+          "capability": "usda_lexical_format",
+          "required": true,
+          "contract": "contracts/capabilities/usda-lexical-format.json",
+          "semantic_owner": "usda-lexical-format"
+        },
+        {
+          "provider": "usd-foundational-values",
+          "capability": "foundational_value_model",
+          "required": true,
+          "contract": "contracts/handles/foundational-values.handle.json",
+          "semantic_owner": "usd-foundational-values"
+        },
+        {
+          "provider": "usd-paths",
+          "capability": "path references",
+          "required": true,
+          "contract": "contracts/handles/path.handle.json",
+          "semantic_owner": "usd-paths"
+        },
+        {
+          "provider": "usd-listops-authored",
+          "capability": "authored_listops",
+          "required": true,
+          "contract": "contracts/handles/listops-authored.handle.json",
+          "semantic_owner": "usd-listops-authored"
+        }
+      ],
+      "targets": {
+        "python": {
+          "artifacts": [
+            "generated/python/usda_values.py"
+          ]
+        },
+        "cpp": {
+          "artifacts": [
+            "generated/cpp/usda_values.h",
+            "generated/cpp/usda_values.cpp"
+          ]
+        }
+      }
+    },
+    "usda-spec-parser": {
+      "skill": "skills/usda-spec-parser/SKILL.md",
+      "depends_on": [
+        "usda-lexical-format",
+        "usda-value-parser",
+        "usd-document-model",
+        "usd-paths"
+      ],
+      "provides": [
+        {
+          "capability": "usda_spec_parser",
+          "contract": "contracts/handles/usda-spec-parser.handle.json",
+          "contracts": [
+            "contracts/usda-productions/common-metadata.contract.json",
+            "contracts/usda-productions/layer-structure.contract.json",
+            "contracts/usda-productions/layer-metadata.contract.json",
+            "contracts/usda-productions/prim-specs.contract.json",
+            "contracts/usda-productions/attribute-specs.contract.json",
+            "contracts/usda-productions/relationship-specs.contract.json",
+            "contracts/usda-productions/variant-specs.contract.json",
+            "contracts/usda-productions/parser-diagnostics.contract.json",
+            "contracts/spec-coverage/usda-single-layer.coverage.json"
+          ],
+          "summary": "USDA single-layer parser that builds and returns document-model layers"
+        }
+      ],
+      "consumes": [
+        {
+          "provider": "usda-lexical-format",
+          "capability": "usda_lexical_format",
+          "required": true,
+          "contract": "contracts/capabilities/usda-lexical-format.json",
+          "semantic_owner": "usda-lexical-format"
+        },
+        {
+          "provider": "usda-value-parser",
+          "capability": "usda_value_parser",
+          "required": true,
+          "contract": "contracts/handles/usda-value-parser.handle.json",
+          "semantic_owner": "usda-value-parser"
+        },
+        {
+          "provider": "usd-document-model",
+          "capability": "document_model",
+          "required": true,
+          "contract": "contracts/handles/document-model.handle.json",
+          "semantic_owner": "usd-document-model"
+        },
+        {
+          "provider": "usd-paths",
+          "capability": "parent/name path construction",
+          "required": true,
+          "semantic_owner": "usd-paths"
+        }
+      ],
+      "targets": {
+        "python": {
+          "artifacts": [
+            "generated/python/usda_parser.py"
+          ]
+        },
+        "cpp": {
+          "artifacts": [
+            "generated/cpp/usda_parser.h",
+            "generated/cpp/usda_parser.cpp"
+          ]
+        }
+      }
+    },
+    "usd-resource-protocol": {
+      "skill": "skills/usd-resource-protocol/SKILL.md",
+      "depends_on": [],
+      "provides": [
+        {
+          "capability": "resource_protocol",
+          "contract": "contracts/handles/resource.handle.json",
+          "summary": "typed resolved resource locations and local filesystem/file URI resource I/O"
+        }
+      ],
+      "targets": {
+        "python": {
+          "artifacts": [
+            "generated/python/usd_resource_protocol.py",
+            "generated/python/resource_protocol_adapter.py"
+          ]
+        },
+        "cpp": {
+          "artifacts": [
+            "generated/cpp/usd_resource_protocol.h",
+            "generated/cpp/usd_resource_protocol.cpp",
+            "generated/cpp/resource_protocol_adapter.cpp"
+          ],
+          "build_outputs": [
+            "generated/cpp/resource_protocol_adapter.exe"
+          ]
+        }
+      }
+    },
+    "usda-layer-open": {
+      "skill": "skills/usda-layer-open/SKILL.md",
+      "depends_on": [
+        "usda-spec-parser"
+      ],
+      "provides": [
+        {
+          "capability": "usda_layer_format",
+          "contract": "contracts/handles/usda-layer-open.handle.json",
+          "summary": "USDA text layer format handler for generic layer-open dispatch"
+        }
+      ],
+      "consumes": [
+        {
+          "provider": "usda-spec-parser",
+          "capability": "usda_spec_parser",
+          "required": true,
+          "contract": "contracts/handles/usda-spec-parser.handle.json",
+          "semantic_owner": "usda-spec-parser",
+          "allowed_local_logic": [
+            "UTF-8 resource decoding before parser handoff",
+            "USDA format handler diagnostics before parser handoff",
+            "target-native layer result pass-through from parser output"
+          ],
+          "forbidden_local_logic": [
+            "direct document-model mutation",
+            "parser-local USDA grammar parsing",
+            "parser-local value parsing",
+            "parser-local path construction"
+          ]
+        }
+      ],
+      "targets": {
+        "python": {
+          "artifacts": [
+            "generated/python/usda_layer_open.py"
+          ]
+        },
+        "cpp": {
+          "artifacts": [
+            "generated/cpp/usda_layer_open.h",
+            "generated/cpp/usda_layer_open.cpp"
+          ]
+        }
+      }
+    },
+    "usdc-binary-format": {
+      "skill": "skills/usdc-binary-format/SKILL.md",
+      "depends_on": [],
+      "provides": [
+        {
+          "capability": "usdc_binary_format",
+          "contract": "contracts/handles/usdc-binary-format.handle.json",
+          "contracts": [
+            "contracts/usdc-productions/crate-header-bootstrap.contract.json",
+            "contracts/usdc-productions/crate-toc.contract.json",
+            "contracts/usdc-productions/crate-compression.contract.json"
+          ],
+          "summary": "USDC Crate byte cursor, header/version validation, table-of-contents reads, and compressed buffer primitives"
+        },
+        "Crate byte cursor",
+        "little-endian primitive reads",
+        "USDC header and version validation",
+        "Crate bootstrap and table of contents",
+        "LZ4 buffer decompression",
+        "compressed integer array decoding"
+      ],
+      "targets": {
+        "python": {
+          "artifacts": [
+            "generated/python/usdc_binary.py"
+          ]
+        },
+        "cpp": {
+          "artifacts": [
+            "generated/cpp/usdc_binary.h",
+            "generated/cpp/usdc_binary.cpp",
+            "generated/cpp/usdc_binary_format_adapter.cpp",
+            "generated/cpp/usdc_binary_format_perf_adapter.cpp"
+          ],
+          "build_outputs": [
+            "generated/cpp/usdc_binary_format_adapter.exe",
+            "generated/cpp/usdc_binary_format_perf_adapter.exe"
+          ]
+        }
+      }
+    },
+    "usdc-value-decoder": {
+      "skill": "skills/usdc-value-decoder/SKILL.md",
+      "depends_on": [
+        "usdc-binary-format",
+        "usd-tokens",
+        "usd-foundational-values",
+        "usd-paths",
+        "usd-listops-authored"
+      ],
+      "provides": [
+        {
+          "capability": "usdc_value_decoder",
+          "contract": "contracts/handles/usdc-value-decoder.handle.json",
+          "contracts": [
+            "contracts/usdc-productions/crate-value-representations.contract.json",
+            "contracts/usdc-productions/attribute-spec-mapping.contract.json",
+            "contracts/usdc-productions/parser-diagnostics-mapping.contract.json"
+          ],
+          "summary": "USDC Crate value representation decoding into canonical USD field values"
+        },
+        "Crate value representation decoding",
+        "token, string, and path index resolution",
+        "scalar and vector values used by initial USDC fixtures",
+        "dictionaries",
+        "authored listOp values",
+        "specifier and variability values"
+      ],
+      "consumes": [
+        {
+          "provider": "usdc-binary-format",
+          "capability": "usdc_binary_format",
+          "required": true,
+          "contract": "contracts/handles/usdc-binary-format.handle.json",
+          "semantic_owner": "usdc-binary-format"
+        },
+        {
+          "provider": "usd-tokens",
+          "capability": "token_identity",
+          "required": true,
+          "contract": "contracts/handles/token.handle.json",
+          "semantic_owner": "usd-tokens"
+        },
+        {
+          "provider": "usd-foundational-values",
+          "capability": "foundational_value_model",
+          "required": true,
+          "contract": "contracts/handles/foundational-values.handle.json",
+          "semantic_owner": "usd-foundational-values"
+        },
+        {
+          "provider": "usd-paths",
+          "capability": "path references",
+          "required": true,
+          "semantic_owner": "usd-paths"
+        },
+        {
+          "provider": "usd-listops-authored",
+          "capability": "authored_listops",
+          "required": true,
+          "contract": "contracts/handles/listops-authored.handle.json",
+          "semantic_owner": "usd-listops-authored"
+        }
+      ],
+      "targets": {
+        "python": {
+          "artifacts": [
+            "generated/python/usdc_values.py"
+          ]
+        },
+        "cpp": {
+          "artifacts": [
+            "generated/cpp/usdc_values.h",
+            "generated/cpp/usdc_values.cpp",
+            "generated/cpp/usdc_value_decoder_adapter.cpp"
+          ],
+          "build_outputs": [
+            "generated/cpp/usdc_value_decoder_adapter.exe"
+          ]
+        }
+      }
+    },
+    "usdc-spec-parser": {
+      "skill": "skills/usdc-spec-parser/SKILL.md",
+      "depends_on": [
+        "usdc-binary-format",
+        "usdc-value-decoder",
+        "usd-document-model",
+        "usd-paths"
+      ],
+      "provides": [
+        {
+          "capability": "usdc_spec_parser",
+          "contract": "contracts/handles/usdc-spec-parser.handle.json",
+          "contracts": [
+            "contracts/usdc-productions/crate-section-layouts.contract.json",
+            "contracts/usdc-productions/crate-reader-diagnostics.contract.json",
+            "contracts/usdc-productions/prim-spec-mapping.contract.json",
+            "contracts/usdc-productions/attribute-spec-mapping.contract.json",
+            "contracts/usdc-productions/relationship-spec-mapping.contract.json",
+            "contracts/usdc-productions/variant-spec-mapping.contract.json",
+            "contracts/usdc-productions/layer-spec-mapping.contract.json",
+            "contracts/usdc-productions/parser-diagnostics-mapping.contract.json"
+          ],
+          "summary": "USDC section parser that maps Crate tables into target-native document-model Layer results"
+        },
+        "USDC section parser",
+        "Crate spec form mapping",
+        "document-model spec construction",
+        "authored field attachment",
+        "target-native document-model Layer result"
+      ],
+      "consumes": [
+        {
+          "provider": "usdc-binary-format",
+          "capability": "usdc_binary_format",
+          "required": true,
+          "contract": "contracts/handles/usdc-binary-format.handle.json",
+          "semantic_owner": "usdc-binary-format"
+        },
+        {
+          "provider": "usdc-value-decoder",
+          "capability": "usdc_value_decoder",
+          "required": true,
+          "contract": "contracts/handles/usdc-value-decoder.handle.json",
+          "semantic_owner": "usdc-value-decoder"
+        },
+        {
+          "provider": "usd-document-model",
+          "capability": "document_model",
+          "required": true,
+          "contract": "contracts/handles/document-model.handle.json",
+          "semantic_owner": "usd-document-model"
+        },
+        {
+          "provider": "usd-paths",
+          "capability": "parent/name path construction",
+          "required": true,
+          "semantic_owner": "usd-paths"
+        }
+      ],
+      "targets": {
+        "python": {
+          "artifacts": [
+            "generated/python/usdc_parser.py"
+          ]
+        },
+        "cpp": {
+          "artifacts": [
+            "generated/cpp/usdc_parser.h",
+            "generated/cpp/usdc_parser.cpp",
+            "generated/cpp/usdc_spec_parser_adapter.cpp"
+          ],
+          "build_outputs": [
+            "generated/cpp/usdc_spec_parser_adapter.exe"
+          ]
+        }
+      }
+    },
+    "usdc-layer-open": {
+      "skill": "skills/usdc-layer-open/SKILL.md",
+      "depends_on": [
+        "usdc-spec-parser"
+      ],
+      "provides": [
+        {
+          "capability": "usdc_layer_format",
+          "contract": "contracts/handles/usdc-layer-open.handle.json",
+          "summary": "USDC binary layer format handler for generic layer-open dispatch"
+        }
+      ],
+      "consumes": [
+        {
+          "provider": "usdc-spec-parser",
+          "capability": "usdc_spec_parser",
+          "required": true,
+          "contract": "contracts/handles/usdc-spec-parser.handle.json",
+          "semantic_owner": "usdc-spec-parser",
+          "allowed_local_logic": [
+            "USDC extension recognition before parser handoff",
+            "USDC format handler diagnostics before parser handoff",
+            "target-native layer result pass-through from parser output"
+          ],
+          "forbidden_local_logic": [
+            "direct document-model mutation",
+            "parser-local Crate section mapping",
+            "parser-local Crate value decoding",
+            "USDA lexer, value parser, or spec parser calls"
+          ]
+        }
+      ],
+      "targets": {
+        "python": {
+          "artifacts": [
+            "generated/python/usdc_layer_open.py"
+          ]
+        },
+        "cpp": {
+          "artifacts": [
+            "generated/cpp/usdc_layer_open.h",
+            "generated/cpp/usdc_layer_open.cpp",
+            "generated/cpp/usdc_layer_open_adapter.cpp"
+          ],
+          "build_outputs": [
+            "generated/cpp/usdc_layer_open_adapter.exe"
+          ]
+        }
+      }
+    },
+    "usdz-package-format": {
+      "skill": "skills/usdz-package-format/SKILL.md",
+      "depends_on": [],
+      "provides": [
+        {
+          "capability": "usdz_package_format",
+          "contract": "contracts/handles/usdz-package-format.handle.json",
+          "contracts": [
+            "contracts/usdz-productions/package-layout.contract.json",
+            "contracts/usdz-productions/package-diagnostics.contract.json"
+          ],
+          "summary": "USDZ ZIP structure indexing, entry validation, default selection, explicit lookup, and non-owning entry byte views"
+        },
+        "USDZ archive index",
+        "USDZ entry byte view",
+        "default package layer selection",
+        "explicit package entry lookup"
+      ],
+      "targets": {
+        "cpp": {
+          "artifacts": [
+            "generated/cpp/usdz_package.h",
+            "generated/cpp/usdz_package.cpp",
+            "generated/cpp/usdz_package_adapter.cpp"
+          ],
+          "build_outputs": [
+            "generated/cpp/usdz_package_adapter.exe"
+          ]
+        }
+      }
+    },
+    "usdz-layer-open": {
+      "skill": "skills/usdz-layer-open/SKILL.md",
+      "depends_on": [
+        "usdz-package-format",
+        "usda-layer-open",
+        "usdc-layer-open"
+      ],
+      "provides": [
+        {
+          "capability": "usdz_layer_format",
+          "contract": "contracts/handles/usdz-layer-open.handle.json",
+          "summary": "USDZ package layer handler for generic layer-open dispatch"
+        }
+      ],
+      "consumes": [
+        {
+          "provider": "usdz-package-format",
+          "capability": "usdz_package_format",
+          "required": true,
+          "contract": "contracts/handles/usdz-package-format.handle.json",
+          "semantic_owner": "usdz-package-format"
+        },
+        {
+          "provider": "usda-layer-open",
+          "capability": "usda_layer_format",
+          "required": true,
+          "contract": "contracts/handles/usda-layer-open.handle.json",
+          "semantic_owner": "usda-layer-open"
+        },
+        {
+          "provider": "usdc-layer-open",
+          "capability": "usdc_layer_format",
+          "required": true,
+          "contract": "contracts/handles/usdc-layer-open.handle.json",
+          "semantic_owner": "usdc-layer-open"
+        }
+      ],
+      "targets": {
+        "cpp": {
+          "artifacts": [
+            "generated/cpp/usdz_layer_open.h",
+            "generated/cpp/usdz_layer_open.cpp",
+            "generated/cpp/usdz_layer_open_adapter.cpp"
+          ],
+          "build_outputs": [
+            "generated/cpp/usdz_layer_open_adapter.exe"
+          ]
+        }
+      }
+    },
+    "usd-layer-open": {
+      "skill": "skills/usd-layer-open/SKILL.md",
+      "depends_on": [
+        "usd-resource-protocol"
+      ],
+      "optional_depends_on": [
+        "usda-layer-open",
+        "usdc-layer-open",
+        "usdz-layer-open"
+      ],
+      "consumes": [
+        {
+          "provider": "usd-resource-protocol",
+          "capability": "resource_protocol",
+          "required": true,
+          "contract": "contracts/handles/resource.handle.json",
+          "semantic_owner": "usd-resource-protocol",
+          "allowed_local_logic": [
+            "format dispatch from an opened resolved location",
+            "entrypoint argument handling and canonical dump adapter output"
+          ],
+          "forbidden_local_logic": [
+            "independent URI parsing",
+            "local file URI conversion outside the resource protocol",
+            "parser-local package resource splitting",
+            "falling back from unsupported URI schemes to filesystem paths"
+          ]
+        },
+        {
+          "provider": "usda-layer-open",
+          "capability": "usda_layer_format",
+          "required": false,
+          "contract": "contracts/handles/usda-layer-open.handle.json",
+          "semantic_owner": "usda-layer-open",
+          "allowed_local_logic": [
+            "USDA format selection from resolved location metadata",
+            "USDA handler invocation",
+            "unsupported format diagnostics when no handler matches"
+          ],
+          "forbidden_local_logic": [
+            "direct USDA grammar parsing",
+            "direct usda-spec-parser invocation",
+            "USDC binary parsing",
+            "USDZ package parsing"
+          ]
+        },
+        {
+          "provider": "usdc-layer-open",
+          "capability": "usdc_layer_format",
+          "required": false,
+          "contract": "contracts/handles/usdc-layer-open.handle.json",
+          "semantic_owner": "usdc-layer-open",
+          "allowed_local_logic": [
+            "USDC format selection from resolved location metadata",
+            "USDC handler invocation",
+            "unsupported format diagnostics when no handler matches"
+          ],
+          "forbidden_local_logic": [
+            "direct Crate byte parsing",
+            "direct usdc-spec-parser invocation",
+            "USDA grammar parsing",
+            "USDZ package parsing"
+          ]
+        },
+        {
+          "provider": "usdz-layer-open",
+          "capability": "usdz_layer_format",
+          "required": false,
+          "contract": "contracts/handles/usdz-layer-open.handle.json",
+          "semantic_owner": "usdz-layer-open",
+          "allowed_local_logic": [
+            "USDZ format selection from resolved location metadata",
+            "package outer resource handoff",
+            "explicit package entry handoff"
+          ],
+          "forbidden_local_logic": [
+            "direct ZIP central directory parsing",
+            "direct package entry byte slicing",
+            "USDA grammar parsing",
+            "USDC binary parsing"
+          ]
+        }
+      ],
+      "provides": [
+        {
+          "capability": "layer_open",
+          "contract": "contracts/handles/layer-open.handle.json",
+          "summary": "open resolved layer resources, dispatch to layer-format handlers, and return document-model layers"
+        }
+      ],
+      "targets": {
+        "python": {
+          "artifacts": [
+            "generated/python/dump_layer.py"
+          ]
+        },
+        "cpp": {
+          "artifacts": [
+            "generated/cpp/dump_layer.cpp"
+          ],
+          "build_outputs": [
+            "generated/cpp/dump_layer.exe"
+          ]
+        }
+      }
+    },
+    "usd-single-layer-namespace-source": {
+      "skill": "skills/usd-single-layer-namespace-source/SKILL.md",
+      "depends_on": [
+        "usd-document-model",
+        "usd-paths",
+        "usd-tokens"
+      ],
+      "consumes": [
+        {
+          "provider": "usd-document-model",
+          "capability": "document_model",
+          "required": true,
+          "contract": "contracts/handles/document-model.handle.json",
+          "semantic_owner": "usd-document-model",
+          "allowed_local_logic": [
+            "wrapping an existing document-model Layer as a namespace source",
+            "bulk enumeration of layer specs through document-model APIs",
+            "source capability reporting for single-layer inputs"
+          ],
+          "forbidden_local_logic": [
+            "independent layer/spec/field storage",
+            "parser-local USDA tree access",
+            "composition arc evaluation",
+            "inactive pruning"
+          ]
+        },
+        {
+          "provider": "usd-paths",
+          "capability": "parent/name path construction",
+          "required": true,
+          "contract": "contracts/handles/path.handle.json",
+          "semantic_owner": "usd-paths"
+        },
+        {
+          "provider": "usd-tokens",
+          "capability": "token_identity",
+          "required": true,
+          "contract": "contracts/handles/token.handle.json",
+          "semantic_owner": "usd-tokens"
+        }
+      ],
+      "provides": [
+        {
+          "capability": "namespace_source",
+          "contract": "contracts/handles/single-layer-namespace-source.handle.json",
+          "contracts": [
+            "contracts/capabilities/namespace-source.json",
+            "contracts/capabilities/semantic-runtime-types.json"
+          ],
+          "summary": "degenerate namespace source backed by one document-model Layer"
+        }
+      ],
+      "targets": {
+        "python": {
+          "artifacts": [
+            "generated/python/usd_namespace_source.py",
+            "generated/python/namespace_source_adapter.py"
+          ]
+        },
+        "cpp": {
+          "artifacts": [
+            "generated/cpp/usd_namespace_source.h",
+            "generated/cpp/usd_namespace_source.cpp",
+            "generated/cpp/namespace_source_adapter.cpp",
+            "generated/cpp/namespace_source_adapter.exe"
+          ]
+        }
+      }
+    },
+    "usd-layer-stack-namespace-source": {
+      "skill": "skills/usd-layer-stack-namespace-source/SKILL.md",
+      "depends_on": [
+        "usd-document-model",
+        "usd-paths",
+        "usd-tokens"
+      ],
+      "consumes": [
+        {
+          "provider": "usd-document-model",
+          "capability": "document_model",
+          "required": true,
+          "contract": "contracts/handles/document-model.handle.json",
+          "semantic_owner": "usd-document-model",
+          "allowed_local_logic": [
+            "wrapping already-opened document-model Layers as a direct layer-stack namespace source",
+            "indexing contributing specs across root and direct sublayers",
+            "partial sublayer composition of population fields and child/property name lists",
+            "source capability reporting for layer-stack inputs"
+          ],
+          "forbidden_local_logic": [
+            "independent layer/spec/field storage",
+            "parser-local USDA tree access",
+            "asset resolution or file opening for sublayer identifiers",
+            "recursive sublayer stack loading",
+            "reference, payload, inherits, specializes, variant, or relocate composition",
+            "stage population or inactive pruning"
+          ]
+        },
+        {
+          "provider": "usd-paths",
+          "capability": "parent/name path construction",
+          "required": true,
+          "contract": "contracts/handles/path.handle.json",
+          "semantic_owner": "usd-paths"
+        },
+        {
+          "provider": "usd-tokens",
+          "capability": "token_identity",
+          "required": true,
+          "contract": "contracts/handles/token.handle.json",
+          "semantic_owner": "usd-tokens"
+        }
+      ],
+      "provides": [
+        {
+          "capability": "namespace_source",
+          "contract": "contracts/handles/layer-stack-namespace-source.handle.json",
+          "contracts": [
+            "contracts/capabilities/namespace-source.json",
+            "contracts/capabilities/semantic-runtime-types.json",
+            "contracts/spec-coverage/sublayer-composition.coverage.json",
+            "contracts/performance/layer-stack-namespace-source.performance.json"
+          ],
+          "summary": "partial composed namespace source backed by a root layer and direct already-opened sublayers"
+        }
+      ],
+      "targets": {
+        "python": {
+          "artifacts": [
+            "generated/python/usd_layer_stack_namespace_source.py",
+            "generated/python/layer_stack_namespace_source_adapter.py"
+          ]
+        },
+        "cpp": {
+          "artifacts": [
+            "generated/cpp/usd_layer_stack_namespace_source.h",
+            "generated/cpp/usd_layer_stack_namespace_source.cpp",
+            "generated/cpp/layer_stack_namespace_source_adapter.cpp",
+            "generated/cpp/layer_stack_namespace_source_adapter.exe"
+          ]
+        }
+      }
+    },
+    "usd-layer-stack-open": {
+      "skill": "skills/usd-layer-stack-open/SKILL.md",
+      "depends_on": [
+        "usd-layer-open",
+        "usda-layer-open",
+        "usd-resource-protocol",
+        "usd-layer-stack-namespace-source"
+      ],
+      "consumes": [
+        {
+          "provider": "usd-layer-open",
+          "capability": "layer_open",
+          "required": true,
+          "contract": "contracts/handles/layer-open.handle.json",
+          "semantic_owner": "usd-layer-open",
+          "allowed_local_logic": [
+            "root layer open orchestration",
+            "direct sublayer open orchestration",
+            "layer-open diagnostic aggregation"
+          ],
+          "forbidden_local_logic": [
+            "direct resource reads that bypass usd-layer-open",
+            "direct USDA parser invocation",
+            "local document-model mutation outside opened Layer results"
+          ]
+        },
+        {
+          "provider": "usd-resource-protocol",
+          "capability": "resource_protocol",
+          "required": true,
+          "contract": "contracts/handles/resource.handle.json",
+          "semantic_owner": "usd-resource-protocol",
+          "allowed_local_logic": [
+            "local root-relative sublayer identifier resolution before layer-open calls",
+            "unsupported sublayer resource diagnostics"
+          ],
+          "forbidden_local_logic": [
+            "ad hoc URI parsing",
+            "unsupported URI fallback to filesystem paths",
+            "package resource loading",
+            "network protocol loading"
+          ]
+        },
+        {
+          "provider": "usd-layer-stack-namespace-source",
+          "capability": "namespace_source",
+          "required": true,
+          "contract": "contracts/handles/layer-stack-namespace-source.handle.json",
+          "semantic_owner": "usd-layer-stack-namespace-source",
+          "allowed_local_logic": [
+            "passing opened root and direct sublayer Layers to the layer-stack source",
+            "returning the constructed source through a layer-stack-open result"
+          ],
+          "forbidden_local_logic": [
+            "reimplementing child/property composition",
+            "reimplementing effective specifier rules",
+            "stage population"
+          ]
+        }
+      ],
+      "provides": [
+        {
+          "capability": "layer_stack_open",
+          "contract": "contracts/handles/layer-stack-open.handle.json",
+          "contracts": [
+            "contracts/spec-coverage/sublayer-loading.coverage.json"
+          ],
+          "summary": "open a root layer and direct local sublayers into a layer-stack namespace source"
+        }
+      ],
+      "targets": {
+        "python": {
+          "artifacts": [
+            "generated/python/usd_layer_stack_open.py",
+            "generated/python/layer_stack_open_adapter.py"
+          ]
+        },
+        "cpp": {
+          "artifacts": [
+            "generated/cpp/usd_layer_stack_open.h",
+            "generated/cpp/usd_layer_stack_open.cpp",
+            "generated/cpp/layer_stack_open_adapter.cpp",
+            "generated/cpp/layer_stack_open_adapter.exe"
+          ]
+        }
+      }
+    },
+    "usd-variant-namespace-source": {
+      "skill": "skills/usd-variant-namespace-source/SKILL.md",
+      "depends_on": [
+        "usd-specializes-namespace-source",
+        "usd-document-model",
+        "usd-paths",
+        "usd-tokens"
+      ],
+      "consumes": [
+        {
+          "provider": "usd-specializes-namespace-source",
+          "capability": "namespace_source",
+          "required": true,
+          "contract": "contracts/capabilities/non-variant-namespace-source-input.json",
+          "concrete_provider_contract": "contracts/handles/specializes-namespace-source.handle.json",
+          "semantic_owner": "non-variant-namespace-source-input",
+          "role": "terminal_non_variant_namespace_source",
+          "allowed_local_logic": [
+            "wrapping base namespace-source opinions with direct selected variant composition",
+            "computing selected variants after terminal non-variant opinions are available",
+            "reading source-visible variantSelection fields from strength-ordered prim opinions",
+            "recursively discovering selected variants from composed selected-variant namespaces",
+            "inserting selected variant opinions at their LIVERPS strength relative to local, inherits, relocates, reference, payload, and specializes opinions"
+          ],
+          "forbidden_local_logic": [
+            "bypassing the namespace-source boundary to inspect parser-local state",
+            "reimplementing sublayer, reference, payload, relocates, inherits, or specializes composition",
+            "stage population or inactive pruning"
+          ]
+        },
+        {
+          "provider": "usd-document-model",
+          "capability": "document_model",
+          "required": true,
+          "contract": "contracts/handles/document-model.handle.json",
+          "semantic_owner": "usd-document-model",
+          "allowed_local_logic": [
+            "using target-native field values exposed by the base namespace source",
+            "projecting selected variant specs into the owning prim namespace"
+          ],
+          "forbidden_local_logic": [
+            "independent layer/spec/field storage",
+            "direct parser-local variant storage reads",
+            "canonical JSON layer dump storage"
+          ]
+        },
+        {
+          "provider": "usd-paths",
+          "capability": "parent/name path construction",
+          "required": true,
+          "contract": "contracts/handles/path.handle.json",
+          "semantic_owner": "usd-paths"
+        },
+        {
+          "provider": "usd-tokens",
+          "capability": "token_identity",
+          "required": true,
+          "contract": "contracts/handles/token.handle.json",
+          "semantic_owner": "usd-tokens"
+        }
+      ],
+      "provides": [
+        {
+          "capability": "namespace_source",
+          "contract": "contracts/handles/variant-namespace-source.handle.json",
+          "contracts": [
+            "contracts/capabilities/namespace-source.json",
+            "contracts/capabilities/non-variant-namespace-source-input.json",
+            "contracts/capabilities/semantic-runtime-types.json",
+            "contracts/capabilities/composition-provenance.json",
+            "contracts/spec-coverage/variant-composition.coverage.json"
+          ],
+          "summary": "partial composed namespace source that applies selected variants, including recursive selected variants, from the base namespace source"
+        }
+      ],
+      "targets": {
+        "python": {
+          "artifacts": [
+            "generated/python/usd_variant_namespace_source.py",
+            "generated/python/variant_namespace_source_adapter.py",
+            "generated/python/variant_stage_population_adapter.py"
+          ]
+        },
+        "cpp": {
+          "artifacts": [
+            "generated/cpp/usd_variant_namespace_source.h",
+            "generated/cpp/usd_variant_namespace_source.cpp",
+            "generated/cpp/variant_namespace_source_adapter.cpp",
+            "generated/cpp/variant_stage_population_adapter.cpp",
+            "generated/cpp/variant_namespace_source_adapter.exe",
+            "generated/cpp/variant_stage_population_adapter.exe"
+          ]
+        }
+      }
+    },
+    "usd-schema-namespace-source": {
+      "skill": "skills/usd-schema-namespace-source/SKILL.md",
+      "depends_on": [
+        "usd-variant-namespace-source",
+        "usd-document-model",
+        "usd-paths",
+        "usd-tokens"
+      ],
+      "consumes": [
+        {
+          "provider": "usd-variant-namespace-source",
+          "capability": "namespace_source",
+          "required": true,
+          "contract": "contracts/handles/variant-namespace-source.handle.json",
+          "semantic_owner": "usd-variant-namespace-source",
+          "role": "composed_namespace_source",
+          "allowed_local_logic": [
+            "wrapping a composed namespace source with schema-derived prim definitions",
+            "reading composed typeName, apiSchemas, and fallbackPrimTypes fields through the namespace-source boundary",
+            "expanding registry-supplied built-in and auto-apply schema inclusions",
+            "propagating multiple applied schema instance names through schema inclusions",
+            "applying registry-supplied override properties as sparse stronger schema fields",
+            "emitting diagnostics for invalid schema inclusions and override properties",
+            "injecting schema-defined property names and fields as weaker than authored property opinions",
+            "preserving authored-plus-schema property ordering as composed property ordering"
+          ],
+          "forbidden_local_logic": [
+            "bypassing the namespace-source boundary to inspect parser-local state",
+            "OpenUSD schema registry lookup or plugin loading",
+            "evaluating composition arcs or asset resolution",
+            "stage population or value interpolation"
+          ]
+        },
+        {
+          "provider": "usd-document-model",
+          "capability": "document_model",
+          "required": true,
+          "contract": "contracts/handles/document-model.handle.json",
+          "semantic_owner": "usd-document-model",
+          "allowed_local_logic": [
+            "using target-native field values in schema property definitions",
+            "preserving schema fallback defaults as typed field values"
+          ],
+          "forbidden_local_logic": [
+            "canonical JSON layer dump storage",
+            "parser-local schema syntax reads"
+          ]
+        },
+        {
+          "provider": "usd-paths",
+          "capability": "parent/name path construction",
+          "required": true,
+          "contract": "contracts/handles/path.handle.json",
+          "semantic_owner": "usd-paths"
+        },
+        {
+          "provider": "usd-tokens",
+          "capability": "token_identity",
+          "required": true,
+          "contract": "contracts/handles/token.handle.json",
+          "semantic_owner": "usd-tokens"
+        }
+      ],
+      "provides": [
+        {
+          "capability": "namespace_source",
+          "contract": "contracts/handles/schema-namespace-source.handle.json",
+          "contracts": [
+            "contracts/capabilities/namespace-source.json",
+            "contracts/capabilities/schema-registry.json",
+            "contracts/capabilities/semantic-runtime-types.json",
+            "contracts/spec-coverage/schema-fallbacks.coverage.json"
+          ],
+          "summary": "schema-aware namespace source that builds registry-backed prim definitions, including schema inclusions, override properties, and schema fallback fields"
+        }
+      ],
+      "targets": {
+        "cpp": {
+          "artifacts": [
+            "generated/cpp/usd_schema_namespace_source.h",
+            "generated/cpp/usd_schema_namespace_source.cpp",
+            "generated/cpp/schema_namespace_source_adapter.cpp",
+            "generated/cpp/schema_namespace_source_adapter.exe"
+          ]
+        }
+      }
+    },
+    "usd-reference-namespace-source": {
+      "skill": "skills/usd-reference-namespace-source/SKILL.md",
+      "depends_on": [
+        "usd-layer-stack-namespace-source",
+        "usd-document-model",
+        "usd-paths",
+        "usd-tokens"
+      ],
+      "consumes": [
+        {
+          "provider": "usd-layer-stack-namespace-source",
+          "capability": "namespace_source",
+          "required": true,
+          "contract": "contracts/handles/layer-stack-namespace-source.handle.json",
+          "semantic_owner": "usd-layer-stack-namespace-source",
+          "allowed_local_logic": [
+            "wrapping base namespace-source opinions with direct reference composition",
+            "reading source-visible references fields from prim inputs",
+            "preserving base-source local opinions as stronger than referenced opinions",
+            "exposing reference-family-only opinion views for downstream composition providers"
+          ],
+          "forbidden_local_logic": [
+            "bypassing the namespace-source boundary to inspect parser-local state",
+            "reimplementing sublayer composition",
+            "stage population or inactive pruning"
+          ]
+        },
+        {
+          "provider": "usd-document-model",
+          "capability": "document_model",
+          "required": true,
+          "contract": "contracts/handles/document-model.handle.json",
+          "semantic_owner": "usd-document-model",
+          "allowed_local_logic": [
+            "consuming already-opened referenced Layers supplied by callers or adapters",
+            "mapping referenced target specs into the referring namespace"
+          ],
+          "forbidden_local_logic": [
+            "independent layer/spec/field storage",
+            "reference asset opening or resource reads",
+            "canonical JSON layer dump storage"
+          ]
+        },
+        {
+          "provider": "usd-paths",
+          "capability": "parent/name path construction",
+          "required": true,
+          "contract": "contracts/handles/path.handle.json",
+          "semantic_owner": "usd-paths"
+        },
+        {
+          "provider": "usd-tokens",
+          "capability": "token_identity",
+          "required": true,
+          "contract": "contracts/handles/token.handle.json",
+          "semantic_owner": "usd-tokens"
+        }
+      ],
+      "provides": [
+        {
+          "capability": "namespace_source",
+          "contract": "contracts/handles/reference-namespace-source.handle.json",
+          "contracts": [
+            "contracts/capabilities/namespace-source.json",
+            "contracts/capabilities/semantic-runtime-types.json",
+            "contracts/capabilities/composition-provenance.json",
+            "contracts/spec-coverage/reference-composition.coverage.json"
+          ],
+          "summary": "partial composed namespace source that applies direct external references from supplied layers"
+        }
+      ],
+      "targets": {
+        "python": {
+          "artifacts": [
+            "generated/python/usd_reference_namespace_source.py",
+            "generated/python/reference_namespace_source_adapter.py"
+          ]
+        },
+        "cpp": {
+          "artifacts": [
+            "generated/cpp/usd_reference_namespace_source.h",
+            "generated/cpp/usd_reference_namespace_source.cpp",
+            "generated/cpp/reference_namespace_source_adapter.cpp",
+            "generated/cpp/reference_namespace_source_adapter.exe"
+          ]
+        }
+      }
+    },
+    "usd-payload-namespace-source": {
+      "skill": "skills/usd-payload-namespace-source/SKILL.md",
+      "depends_on": [
+        "usd-document-model",
+        "usd-paths",
+        "usd-tokens"
+      ],
+      "consumes": [
+        {
+          "provider": "usd-document-model",
+          "capability": "document_model",
+          "required": true,
+          "contract": "contracts/handles/document-model.handle.json",
+          "semantic_owner": "usd-document-model",
+          "allowed_local_logic": [
+            "consuming already-opened payload Layers supplied by callers or adapters",
+            "mapping payload target specs into the payload-bearing namespace"
+          ],
+          "forbidden_local_logic": [
+            "independent layer/spec/field storage",
+            "payload asset opening or resource reads",
+            "canonical JSON layer dump storage"
+          ]
+        },
+        {
+          "provider": "usd-paths",
+          "capability": "parent/name path construction",
+          "required": true,
+          "contract": "contracts/handles/path.handle.json",
+          "semantic_owner": "usd-paths"
+        },
+        {
+          "provider": "usd-tokens",
+          "capability": "token_identity",
+          "required": true,
+          "contract": "contracts/handles/token.handle.json",
+          "semantic_owner": "usd-tokens"
+        }
+      ],
+      "provides": [
+        {
+          "capability": "namespace_source",
+          "contract": "contracts/handles/payload-namespace-source.handle.json",
+          "contracts": [
+            "contracts/capabilities/namespace-source.json",
+            "contracts/capabilities/semantic-runtime-types.json",
+            "contracts/capabilities/composition-provenance.json",
+            "contracts/capabilities/composition-opinion-source.json",
+            "contracts/spec-coverage/payload-composition.coverage.json"
+          ],
+          "summary": "direct loaded payload opinion source with a namespace-source-shaped conformance surface"
+        },
+        {
+          "capability": "composition_opinion_source",
+          "contract": "contracts/capabilities/composition-opinion-source.json",
+          "summary": "mapped payload arc opinions before LIVERPS arbitration with local, reference, and other opinions"
+        }
+      ],
+      "targets": {
+        "python": {
+          "artifacts": [
+            "generated/python/usd_payload_namespace_source.py",
+            "generated/python/payload_namespace_source_adapter.py"
+          ]
+        },
+        "cpp": {
+          "artifacts": [
+            "generated/cpp/usd_payload_namespace_source.h",
+            "generated/cpp/usd_payload_namespace_source.cpp",
+            "generated/cpp/payload_namespace_source_adapter.cpp",
+            "generated/cpp/payload_namespace_source_adapter.exe"
+          ]
+        }
+      }
+    },
+    "usd-relocates-namespace-source": {
+      "skill": "skills/usd-relocates-namespace-source/SKILL.md",
+      "depends_on": [
+        "usd-reference-namespace-source",
+        "usd-document-model",
+        "usd-paths",
+        "usd-tokens"
+      ],
+      "consumes": [
+        {
+          "provider": "usd-reference-namespace-source",
+          "capability": "namespace_source",
+          "required": true,
+          "contract": "contracts/handles/reference-namespace-source.handle.json",
+          "semantic_owner": "usd-reference-namespace-source",
+          "allowed_local_logic": [
+            "wrapping base namespace-source opinions with direct relocates composition",
+            "reading source-visible layerRelocates fields from root/layer inputs",
+            "mapping source subtree opinions to target subtree paths",
+            "removing source subtrees with empty relocate targets",
+            "consuming reference-family-only source opinions when local source-path opinions must be ignored"
+          ],
+          "forbidden_local_logic": [
+            "bypassing the namespace-source boundary to inspect parser-local state",
+            "reimplementing sublayer or reference composition",
+            "stage population or inactive pruning"
+          ]
+        },
+        {
+          "provider": "usd-document-model",
+          "capability": "document_model",
+          "required": true,
+          "contract": "contracts/handles/document-model.handle.json",
+          "semantic_owner": "usd-document-model",
+          "allowed_local_logic": [
+            "using target-native field values exposed by the base namespace source",
+            "retaining relocate source and target paths as semantic path identities"
+          ],
+          "forbidden_local_logic": [
+            "independent layer/spec/field storage",
+            "direct parser-local relocate storage reads",
+            "canonical JSON layer dump storage"
+          ]
+        },
+        {
+          "provider": "usd-paths",
+          "capability": "parent/name path construction",
+          "required": true,
+          "contract": "contracts/handles/path.handle.json",
+          "semantic_owner": "usd-paths"
+        },
+        {
+          "provider": "usd-tokens",
+          "capability": "token_identity",
+          "required": true,
+          "contract": "contracts/handles/token.handle.json",
+          "semantic_owner": "usd-tokens"
+        }
+      ],
+      "provides": [
+        {
+          "capability": "namespace_source",
+          "contract": "contracts/handles/relocates-namespace-source.handle.json",
+          "contracts": [
+            "contracts/capabilities/namespace-source.json",
+            "contracts/capabilities/non-variant-namespace-source-input.json",
+            "contracts/capabilities/semantic-runtime-types.json",
+            "contracts/capabilities/composition-provenance.json",
+            "contracts/spec-coverage/relocates-composition.coverage.json"
+          ],
+          "summary": "partial composed namespace source that applies direct layerRelocates path mappings"
+        }
+      ],
+      "targets": {
+        "python": {
+          "artifacts": [
+            "generated/python/usd_relocates_namespace_source.py",
+            "generated/python/relocates_namespace_source_adapter.py"
+          ]
+        },
+        "cpp": {
+          "artifacts": [
+            "generated/cpp/usd_relocates_namespace_source.h",
+            "generated/cpp/usd_relocates_namespace_source.cpp",
+            "generated/cpp/relocates_namespace_source_adapter.cpp",
+            "generated/cpp/relocates_namespace_source_adapter.exe"
+          ]
+        }
+      }
+    },
+    "usd-inherits-namespace-source": {
+      "skill": "skills/usd-inherits-namespace-source/SKILL.md",
+      "depends_on": [
+        "usd-relocates-namespace-source",
+        "usd-document-model",
+        "usd-paths",
+        "usd-tokens"
+      ],
+      "consumes": [
+        {
+          "provider": "usd-relocates-namespace-source",
+          "capability": "namespace_source",
+          "required": true,
+          "contract": "contracts/handles/relocates-namespace-source.handle.json",
+          "semantic_owner": "usd-relocates-namespace-source",
+          "allowed_local_logic": [
+            "wrapping base namespace-source opinions with direct inherits composition",
+            "reading source-visible inheritPaths fields from prim inputs",
+            "mapping inherited source subtree opinions to inherit-authoring prim paths",
+            "preserving local target opinions as stronger than inherited opinions"
+          ],
+          "forbidden_local_logic": [
+            "bypassing the namespace-source boundary to inspect parser-local state",
+            "reimplementing sublayer, reference, payload, or relocates composition",
+            "stage population or inactive pruning"
+          ]
+        },
+        {
+          "provider": "usd-document-model",
+          "capability": "document_model",
+          "required": true,
+          "contract": "contracts/handles/document-model.handle.json",
+          "semantic_owner": "usd-document-model",
+          "allowed_local_logic": [
+            "using target-native field values exposed by the base namespace source",
+            "retaining inherit-authoring and inherited source paths as semantic path identities"
+          ],
+          "forbidden_local_logic": [
+            "independent layer/spec/field storage",
+            "direct parser-local inherit storage reads",
+            "canonical JSON layer dump storage"
+          ]
+        },
+        {
+          "provider": "usd-paths",
+          "capability": "parent/name path construction",
+          "required": true,
+          "contract": "contracts/handles/path.handle.json",
+          "semantic_owner": "usd-paths"
+        },
+        {
+          "provider": "usd-tokens",
+          "capability": "token_identity",
+          "required": true,
+          "contract": "contracts/handles/token.handle.json",
+          "semantic_owner": "usd-tokens"
+        }
+      ],
+      "provides": [
+        {
+          "capability": "namespace_source",
+          "contract": "contracts/handles/inherits-namespace-source.handle.json",
+          "contracts": [
+            "contracts/capabilities/namespace-source.json",
+            "contracts/capabilities/non-variant-namespace-source-input.json",
+            "contracts/capabilities/semantic-runtime-types.json",
+            "contracts/capabilities/composition-provenance.json",
+            "contracts/spec-coverage/inherits-composition.coverage.json"
+          ],
+          "summary": "partial composed namespace source that applies direct inheritPaths arcs"
+        }
+      ],
+      "targets": {
+        "python": {
+          "artifacts": [
+            "generated/python/usd_inherits_namespace_source.py",
+            "generated/python/inherits_namespace_source_adapter.py"
+          ]
+        },
+        "cpp": {
+          "artifacts": [
+            "generated/cpp/usd_inherits_namespace_source.h",
+            "generated/cpp/usd_inherits_namespace_source.cpp",
+            "generated/cpp/inherits_namespace_source_adapter.cpp",
+            "generated/cpp/inherits_namespace_source_adapter.exe"
+          ]
+        }
+      }
+    },
+    "usd-specializes-namespace-source": {
+      "skill": "skills/usd-specializes-namespace-source/SKILL.md",
+      "depends_on": [
+        "usd-inherits-namespace-source",
+        "usd-document-model",
+        "usd-paths",
+        "usd-tokens"
+      ],
+      "consumes": [
+        {
+          "provider": "usd-inherits-namespace-source",
+          "capability": "namespace_source",
+          "required": true,
+          "contract": "contracts/handles/inherits-namespace-source.handle.json",
+          "semantic_owner": "usd-inherits-namespace-source",
+          "allowed_local_logic": [
+            "wrapping base namespace-source opinions with direct specializes composition",
+            "reading source-visible specializes fields from prim inputs",
+            "mapping specialized source subtree opinions to specialize-authoring prim paths",
+            "preserving target opinions as stronger than specialized opinions"
+          ],
+          "forbidden_local_logic": [
+            "bypassing the namespace-source boundary to inspect parser-local state",
+            "reimplementing sublayer, reference, payload, relocates, or inherits composition",
+            "stage population or inactive pruning"
+          ]
+        },
+        {
+          "provider": "usd-document-model",
+          "capability": "document_model",
+          "required": true,
+          "contract": "contracts/handles/document-model.handle.json",
+          "semantic_owner": "usd-document-model",
+          "allowed_local_logic": [
+            "using target-native field values exposed by the base namespace source",
+            "retaining specialize-authoring and specialized source paths as semantic path identities"
+          ],
+          "forbidden_local_logic": [
+            "independent layer/spec/field storage",
+            "direct parser-local specialize storage reads",
+            "canonical JSON layer dump storage"
+          ]
+        },
+        {
+          "provider": "usd-paths",
+          "capability": "parent/name path construction",
+          "required": true,
+          "contract": "contracts/handles/path.handle.json",
+          "semantic_owner": "usd-paths"
+        },
+        {
+          "provider": "usd-tokens",
+          "capability": "token_identity",
+          "required": true,
+          "contract": "contracts/handles/token.handle.json",
+          "semantic_owner": "usd-tokens"
+        }
+      ],
+      "provides": [
+        {
+          "capability": "namespace_source",
+          "contract": "contracts/handles/specializes-namespace-source.handle.json",
+          "contracts": [
+            "contracts/capabilities/namespace-source.json",
+            "contracts/capabilities/non-variant-namespace-source-input.json",
+            "contracts/capabilities/semantic-runtime-types.json",
+            "contracts/capabilities/composition-provenance.json",
+            "contracts/spec-coverage/specializes-composition.coverage.json"
+          ],
+          "summary": "partial composed namespace source that applies direct specializes arcs as globally weakest opinions"
+        }
+      ],
+      "targets": {
+        "python": {
+          "artifacts": [
+            "generated/python/usd_specializes_namespace_source.py",
+            "generated/python/specializes_namespace_source_adapter.py",
+            "generated/python/specializes_stage_population_adapter.py"
+          ]
+        },
+        "cpp": {
+          "artifacts": [
+            "generated/cpp/usd_specializes_namespace_source.h",
+            "generated/cpp/usd_specializes_namespace_source.cpp",
+            "generated/cpp/specializes_namespace_source_adapter.cpp",
+            "generated/cpp/specializes_stage_population_adapter.cpp",
+            "generated/cpp/specializes_namespace_source_adapter.exe",
+            "generated/cpp/specializes_stage_population_adapter.exe"
+          ]
+        }
+      }
+    },
+    "usd-composition-arbitrator": {
+      "skill": "skills/usd-composition-arbitrator/SKILL.md",
+      "depends_on": [
+        "usd-layer-stack-namespace-source",
+        "usd-reference-namespace-source",
+        "usd-payload-namespace-source",
+        "usd-relocates-namespace-source",
+        "usd-inherits-namespace-source",
+        "usd-specializes-namespace-source",
+        "usd-variant-namespace-source",
+        "usd-document-model",
+        "usd-paths",
+        "usd-tokens"
+      ],
+      "consumes": [
+        {
+          "provider": "usd-layer-stack-namespace-source",
+          "capability": "namespace_source",
+          "required": true,
+          "contract": "contracts/handles/layer-stack-namespace-source.handle.json",
+          "semantic_owner": "usd-layer-stack-namespace-source",
+          "role": "local_opinion_source",
+          "allowed_local_logic": [
+            "consuming layer-stack prim/property opinions as local LIVERPS opinions",
+            "preserving layer-stack order and typed provenance",
+            "using the layer-stack source as the root namespace source for local fields"
+          ],
+          "forbidden_local_logic": [
+            "reopening sublayers",
+            "reimplementing layer-stack field storage",
+            "treating flattened layer-stack fields as final composition output when arc opinions are available"
+          ]
+        },
+        {
+          "provider": "usd-reference-namespace-source",
+          "capability": "namespace_source",
+          "required": true,
+          "contract": "contracts/handles/reference-namespace-source.handle.json",
+          "semantic_owner": "usd-reference-namespace-source",
+          "role": "reference_opinion_source",
+          "allowed_local_logic": [
+            "consuming reference prim_opinions or equivalent typed contributor records",
+            "placing reference opinions at reference LIVERPS strength",
+            "using reference namespace mappings already owned by the reference source"
+          ],
+          "forbidden_local_logic": [
+            "opening reference assets",
+            "using reference flattened field maps as final composition output",
+            "reimplementing reference namespace mapping from parser-local syntax"
+          ]
+        },
+        {
+          "provider": "usd-payload-namespace-source",
+          "capability": "composition_opinion_source",
+          "required": true,
+          "contract": "contracts/capabilities/composition-opinion-source.json",
+          "semantic_owner": "usd-payload-namespace-source",
+          "role": "loaded_payload_opinion_source",
+          "allowed_local_logic": [
+            "consuming supplied loaded payload opinions when present",
+            "placing payload opinions at payload LIVERPS strength",
+            "declaring payload loading partial or absent according to supplied payload opinions"
+          ],
+          "forbidden_local_logic": [
+            "opening payload assets",
+            "deciding optional payload inclusion policy",
+            "claiming payload composition when no payload opinion source was supplied"
+          ]
+        },
+        {
+          "provider": "usd-relocates-namespace-source",
+          "capability": "namespace_source",
+          "required": true,
+          "contract": "contracts/handles/relocates-namespace-source.handle.json",
+          "semantic_owner": "usd-relocates-namespace-source",
+          "role": "relocates_opinion_source",
+          "allowed_local_logic": [
+            "consuming relocated prim_opinions or equivalent typed contributor records",
+            "placing relocated opinions at relocates LIVERPS strength",
+            "using source and target paths as semantic path identities"
+          ],
+          "forbidden_local_logic": [
+            "reimplementing relocate parsing from layer fields",
+            "using relocated flattened field maps as final composition output",
+            "claiming complete recursive relocate behavior beyond the relocates source capability"
+          ]
+        },
+        {
+          "provider": "usd-inherits-namespace-source",
+          "capability": "namespace_source",
+          "required": true,
+          "contract": "contracts/handles/inherits-namespace-source.handle.json",
+          "semantic_owner": "usd-inherits-namespace-source",
+          "role": "inherits_opinion_source",
+          "allowed_local_logic": [
+            "consuming inherited prim_opinions or equivalent typed contributor records",
+            "placing inherited opinions at inherits LIVERPS strength",
+            "preserving inherit source paths as semantic path identities"
+          ],
+          "forbidden_local_logic": [
+            "reimplementing inherits parsing from layer fields",
+            "using inherited flattened field maps as final composition output",
+            "claiming implied inherits not supplied by the inherits source"
+          ]
+        },
+        {
+          "provider": "usd-specializes-namespace-source",
+          "capability": "namespace_source",
+          "required": true,
+          "contract": "contracts/handles/specializes-namespace-source.handle.json",
+          "semantic_owner": "usd-specializes-namespace-source",
+          "role": "specializes_opinion_source",
+          "allowed_local_logic": [
+            "consuming specializes prim_opinions or equivalent typed contributor records",
+            "placing specializes opinions as globally weakest opinions",
+            "preserving specialize source paths as semantic path identities"
+          ],
+          "forbidden_local_logic": [
+            "reimplementing specializes parsing from layer fields",
+            "using specializes flattened field maps as final composition output",
+            "making specializes stronger because the provider is evaluated before variants"
+          ]
+        },
+        {
+          "provider": "usd-variant-namespace-source",
+          "capability": "namespace_source",
+          "required": true,
+          "contract": "contracts/handles/variant-namespace-source.handle.json",
+          "semantic_owner": "usd-variant-namespace-source",
+          "role": "selected_variant_opinion_source",
+          "allowed_local_logic": [
+            "consuming selected variant prim_opinions or equivalent typed contributor records",
+            "placing selected variant opinions at variant LIVERPS strength",
+            "preserving variant set and selected variant names as semantic identities"
+          ],
+          "forbidden_local_logic": [
+            "recomputing variant selections from parser-local storage",
+            "exposing variant-selection paths to stage population",
+            "using selected variant flattened field maps as final composition output"
+          ]
+        },
+        {
+          "provider": "usd-document-model",
+          "capability": "document_model",
+          "required": true,
+          "contract": "contracts/handles/document-model.handle.json",
+          "semantic_owner": "usd-document-model",
+          "allowed_local_logic": [
+            "carrying target-native typed field values in CompositionOpinion records"
+          ],
+          "forbidden_local_logic": [
+            "independent layer/spec/field storage",
+            "canonical JSON layer dump storage"
+          ]
+        },
+        {
+          "provider": "usd-paths",
+          "capability": "path references",
+          "required": true,
+          "contract": "contracts/handles/path.handle.json",
+          "semantic_owner": "usd-paths"
+        },
+        {
+          "provider": "usd-tokens",
+          "capability": "token_identity",
+          "required": true,
+          "contract": "contracts/handles/token.handle.json",
+          "semantic_owner": "usd-tokens"
+        }
+      ],
+      "provides": [
+        {
+          "capability": "composition_arbitrator",
+          "contract": "contracts/handles/composition-arbitrator.handle.json",
+          "contracts": [
+            "contracts/capabilities/namespace-source.json",
+            "contracts/capabilities/composition-opinion-source.json",
+            "contracts/capabilities/composition-opinion-stack.json",
+            "contracts/capabilities/composition-provenance.json",
+            "contracts/capabilities/semantic-runtime-types.json",
+            "contracts/spec-coverage/composition-arbitrator.coverage.json"
+          ],
+          "summary": "central LIVERPS composition arbitrator that builds prim/property opinion stacks from available composition sources"
+        },
+        {
+          "capability": "namespace_source",
+          "contract": "contracts/handles/composition-arbitrator.handle.json",
+          "contracts": [
+            "contracts/capabilities/namespace-source.json",
+            "contracts/capabilities/composition-opinion-stack.json",
+            "contracts/capabilities/composition-provenance.json",
+            "contracts/capabilities/semantic-runtime-types.json"
+          ],
+          "summary": "terminal composed namespace-source facade for stage population"
+        },
+        {
+          "capability": "composition_provenance",
+          "contract": "contracts/capabilities/composition-provenance.json",
+          "contracts": [
+            "contracts/capabilities/composition-provenance.json",
+            "contracts/capabilities/composition-opinion-stack.json",
+            "contracts/capabilities/semantic-runtime-types.json"
+          ],
+          "summary": "typed composition opinion provenance records exposed by the terminal arbitrator"
+        }
+      ],
+      "targets": {
+        "python": {
+          "artifacts": [
+            "generated/python/usd_composition_arbitrator.py",
+            "generated/python/composition_arbitrator_adapter.py",
+            "generated/python/composition_stage_population_adapter.py"
+          ]
+        },
+        "cpp": {
+          "artifacts": [
+            "generated/cpp/usd_composition_arbitrator.h",
+            "generated/cpp/usd_composition_arbitrator.cpp",
+            "generated/cpp/composition_arbitrator_adapter.cpp",
+            "generated/cpp/composition_stage_population_adapter.cpp",
+            "generated/cpp/composition_arbitrator_adapter.exe",
+            "generated/cpp/composition_stage_population_adapter.exe"
+          ]
+        }
+      }
+    },
+    "usd-value-resolution": {
+      "skill": "skills/usd-value-resolution/SKILL.md",
+      "depends_on": [
+        "usd-composition-arbitrator",
+        "usd-document-model",
+        "usd-foundational-values",
+        "usd-listops-authored",
+        "usd-paths",
+        "usd-tokens"
+      ],
+      "consumes": [
+        {
+          "provider": "usd-composition-arbitrator",
+          "capability": "composition_arbitrator",
+          "required": true,
+          "contract": "contracts/handles/composition-arbitrator.handle.json",
+          "semantic_owner": "usd-composition-arbitrator",
+          "allowed_local_logic": [
+            "consuming composed strong-to-weak opinion stacks",
+            "reading composition provenance for reporting only"
+          ],
+          "forbidden_local_logic": [
+            "evaluating composition arcs",
+            "treating flattened population-facing fields as sufficient for full value resolution"
+          ]
+        },
+        {
+          "provider": "usd-document-model",
+          "capability": "document_model",
+          "required": true,
+          "contract": "contracts/handles/document-model.handle.json",
+          "semantic_owner": "usd-document-model"
+        },
+        {
+          "provider": "usd-foundational-values",
+          "capability": "foundational_value_model",
+          "required": true,
+          "contract": "contracts/handles/foundational-values.handle.json",
+          "semantic_owner": "usd-foundational-values"
+        },
+        {
+          "provider": "usd-listops-authored",
+          "capability": "authored_listops",
+          "required": true,
+          "contract": "contracts/handles/listops-authored.handle.json",
+          "semantic_owner": "usd-listops-authored"
+        },
+        {
+          "provider": "usd-paths",
+          "capability": "path references",
+          "required": true,
+          "contract": "contracts/handles/path.handle.json",
+          "semantic_owner": "usd-paths"
+        },
+        {
+          "provider": "usd-tokens",
+          "capability": "token_identity",
+          "required": true,
+          "contract": "contracts/handles/token.handle.json",
+          "semantic_owner": "usd-tokens"
+        }
+      ],
+      "provides": [
+        {
+          "capability": "value_resolution",
+          "contract": "contracts/handles/value-resolution.handle.json",
+          "contracts": [
+            "contracts/capabilities/composition-opinion-stack.json",
+            "contracts/capabilities/semantic-runtime-types.json",
+            "contracts/spec-coverage/value-resolution.coverage.json"
+          ],
+          "summary": "AOUSD value resolver over composed opinion stacks for metadata, defaults, blocks, time samples, splines, clips, retiming, fallbacks, relationships, and connections"
+        }
+      ],
+      "targets": {
+        "cpp": {
+          "artifacts": [
+            "generated/cpp/usd_value_resolution.h",
+            "generated/cpp/usd_value_resolution.cpp",
+            "generated/cpp/value_resolution_adapter.cpp",
+            "generated/cpp/value_resolution_adapter.exe"
+          ]
+        }
+      }
+    },
+    "usd-stage-population": {
+      "skill": "skills/usd-stage-population/SKILL.md",
+      "depends_on": [
+        "usd-single-layer-namespace-source",
+        "usd-composition-arbitrator",
+        "usd-paths",
+        "usd-tokens"
+      ],
+      "consumes": [
+        {
+          "provider": "usd-single-layer-namespace-source",
+          "capability": "namespace_source",
+          "required": true,
+          "contract": "contracts/handles/single-layer-namespace-source.handle.json",
+          "semantic_owner": "usd-single-layer-namespace-source",
+          "allowed_local_logic": [
+            "stage node/index construction from namespace-source inputs",
+            "population mask filtering",
+            "active descendant pruning",
+            "traversal and query indexing"
+          ],
+          "forbidden_local_logic": [
+            "direct USDA parser access",
+            "direct document-model access that bypasses the namespace-source boundary",
+            "composition arc evaluation beyond the source capability declaration",
+            "value resolution across opinions"
+          ]
+        },
+        {
+          "provider": "usd-composition-arbitrator",
+          "capability": "composition_provenance",
+          "required": false,
+          "contract": "contracts/handles/composition-arbitrator.handle.json",
+          "semantic_owner": "usd-composition-arbitrator",
+          "role": "instance_arc_provenance",
+          "allowed_local_logic": [
+            "reading typed CompositionOpinion provenance for instance matching keys",
+            "requesting instance-filtered reference and payload descendant inputs when supplied by the composed namespace source"
+          ],
+          "forbidden_local_logic": [
+            "evaluating composition arcs locally",
+            "resolving assets or opening layers",
+            "treating local descendant opinions under an instanceable prim as instance source opinions"
+          ]
+        },
+        {
+          "provider": "usd-paths",
+          "capability": "parent/name path construction",
+          "required": true,
+          "contract": "contracts/handles/path.handle.json",
+          "semantic_owner": "usd-paths"
+        },
+        {
+          "provider": "usd-tokens",
+          "capability": "token_identity",
+          "required": true,
+          "contract": "contracts/handles/token.handle.json",
+          "semantic_owner": "usd-tokens"
+        }
+      ],
+      "provides": [
+        {
+          "capability": "stage_population",
+          "contract": "contracts/handles/stage-population.handle.json",
+          "contracts": [
+            "contracts/capabilities/semantic-runtime-types.json",
+            "contracts/spec-coverage/stage-population.coverage.json",
+            "contracts/performance/stage-population.performance.json"
+          ],
+          "summary": "populated target-native stage hierarchy, instance queries, model hierarchy traversal, and general query surface from a namespace source"
+        }
+      ],
+      "targets": {
+        "python": {
+          "artifacts": [
+            "generated/python/usd_stage_population.py",
+            "generated/python/stage_population_adapter.py"
+          ]
+        },
+        "cpp": {
+          "artifacts": [
+            "generated/cpp/usd_stage_population.h",
+            "generated/cpp/usd_stage_population.cpp",
+            "generated/cpp/stage_population_adapter.cpp",
+            "generated/cpp/stage_population_adapter.exe"
+          ]
+        }
+      }
+    },
+    "usd-composed-stage-open": {
+      "skill": "skills/usd-composed-stage-open/SKILL.md",
+      "depends_on": [
+        "usd-layer-stack-open",
+        "usd-reference-namespace-source",
+        "usd-payload-namespace-source",
+        "usd-relocates-namespace-source",
+        "usd-inherits-namespace-source",
+        "usd-specializes-namespace-source",
+        "usd-variant-namespace-source",
+        "usd-composition-arbitrator",
+        "usd-stage-population",
+        "usd-resource-protocol",
+        "usd-layer-open",
+        "usd-document-model",
+        "usd-paths",
+        "usd-tokens"
+      ],
+      "consumes": [
+        {
+          "provider": "usd-layer-stack-open",
+          "capability": "layer_stack_open",
+          "required": true,
+          "contract": "contracts/handles/layer-stack-open.handle.json",
+          "semantic_owner": "usd-layer-stack-open",
+          "allowed_local_logic": [
+            "root stage-open orchestration",
+            "direct local dependency layer-stack opening"
+          ],
+          "forbidden_local_logic": [
+            "direct USDA parser invocation",
+            "independent layer-stack composition"
+          ]
+        },
+        {
+          "provider": "usd-composition-arbitrator",
+          "capability": "namespace_source",
+          "required": true,
+          "contract": "contracts/handles/composition-arbitrator.handle.json",
+          "semantic_owner": "usd-composition-arbitrator",
+          "allowed_local_logic": [
+            "constructing composition-arbitrator inputs from opened graph-owned sources",
+            "passing the composition-arbitrator namespace source to stage population"
+          ],
+          "forbidden_local_logic": [
+            "independent LIVERPS arbitration",
+            "treating provider construction order as composition strength"
+          ]
+        },
+        {
+          "provider": "usd-stage-population",
+          "capability": "stage_population",
+          "required": true,
+          "contract": "contracts/handles/stage-population.handle.json",
+          "semantic_owner": "usd-stage-population",
+          "allowed_local_logic": [
+            "invoking stage population on the composed namespace source",
+            "owning the resulting populated Stage lifetime"
+          ],
+          "forbidden_local_logic": [
+            "local traversal index construction"
+          ]
+        },
+        {
+          "provider": "usd-resource-protocol",
+          "capability": "resource_protocol",
+          "required": true,
+          "contract": "contracts/handles/resource.handle.json",
+          "semantic_owner": "usd-resource-protocol"
+        },
+        {
+          "provider": "usd-layer-open",
+          "capability": "layer_open",
+          "required": true,
+          "contract": "contracts/handles/layer-open.handle.json",
+          "semantic_owner": "usd-layer-open"
+        },
+        {
+          "provider": "usd-document-model",
+          "capability": "document_model",
+          "required": true,
+          "contract": "contracts/handles/document-model.handle.json",
+          "semantic_owner": "usd-document-model"
+        },
+        {
+          "provider": "usd-paths",
+          "capability": "path references",
+          "required": true,
+          "contract": "contracts/handles/path.handle.json",
+          "semantic_owner": "usd-paths"
+        },
+        {
+          "provider": "usd-tokens",
+          "capability": "token_identity",
+          "required": true,
+          "contract": "contracts/handles/token.handle.json",
+          "semantic_owner": "usd-tokens"
+        }
+      ],
+      "provides": [
+        {
+          "capability": "composed_stage_open",
+          "contract": "contracts/handles/composed-stage-open.handle.json",
+          "contracts": [
+            "contracts/capabilities/semantic-runtime-types.json",
+            "contracts/spec-coverage/composed-stage-open.coverage.json"
+          ],
+          "summary": "runtime composed stage open that loads direct local reference dependencies and optional payload-inclusion dependencies before composition and stage population"
+        }
+      ],
+      "targets": {
+        "cpp": {
+          "artifacts": [
+            "generated/cpp/usd_composed_stage_open.h",
+            "generated/cpp/usd_composed_stage_open.cpp",
+            "generated/cpp/composed_stage_open_adapter.cpp",
+            "generated/cpp/composed_stage_open_adapter.exe",
+            "generated/cpp/CMakeLists.txt"
+          ]
+        }
+      }
+    },
+    "nanousd-readonly-backend": {
+      "skill": "skills/nanousd-readonly-backend/SKILL.md",
+      "depends_on": [
+        "usd-composed-stage-open",
+        "usd-document-model",
+        "usd-foundational-values",
+        "usd-paths",
+        "usd-tokens",
+        "usd-listops-authored"
+      ],
+      "consumes": [
+        {
+          "provider": "usd-composed-stage-open",
+          "capability": "composed_stage_open",
+          "required": true,
+          "contract": "contracts/handles/composed-stage-open.handle.json",
+          "semantic_owner": "usd-composed-stage-open",
+          "allowed_local_logic": [
+            "owning nanousd stage handles around a composed stage-open result",
+            "serving nanousd prim/property queries from the populated stage"
+          ],
+          "forbidden_local_logic": [
+            "constructing lower-level composition sources directly",
+            "independent LIVERPS arbitration",
+            "opening reference or payload layers outside usd-composed-stage-open",
+            "parser-local shadow stage construction"
+          ]
+        },
+        {
+          "provider": "usd-document-model",
+          "capability": "document_model",
+          "required": true,
+          "contract": "contracts/handles/document-model.handle.json",
+          "semantic_owner": "usd-document-model"
+        },
+        {
+          "provider": "usd-foundational-values",
+          "capability": "foundational_value_model",
+          "required": true,
+          "contract": "contracts/handles/foundational-values.handle.json",
+          "semantic_owner": "usd-foundational-values"
+        },
+        {
+          "provider": "usd-paths",
+          "capability": "path references",
+          "required": true,
+          "contract": "contracts/handles/path.handle.json",
+          "semantic_owner": "usd-paths"
+        },
+        {
+          "provider": "usd-tokens",
+          "capability": "token_identity",
+          "required": true,
+          "contract": "contracts/handles/token.handle.json",
+          "semantic_owner": "usd-tokens"
+        },
+        {
+          "provider": "usd-listops-authored",
+          "capability": "authored_listops",
+          "required": true,
+          "contract": "contracts/handles/listops-authored.handle.json",
+          "semantic_owner": "usd-listops-authored"
+        }
+      ],
+      "provides": [
+        {
+          "capability": "nanousd_readonly_backend",
+          "contract": "contracts/handles/nanousd-readonly-backend.handle.json",
+          "contracts": [
+            "contracts/capabilities/nanousd-readonly-c-api-backend.json",
+            "contracts/capabilities/semantic-runtime-types.json",
+            "contracts/performance/nanousd-readonly-backend.performance.json"
+          ],
+          "summary": "read-only nanousd C API backend vtable, typed read mapping, and composed stage-open benchmark slice"
+        }
+      ],
+      "targets": {
+        "cpp": {
+          "artifacts": [
+            "generated/cpp/nanousd_readonly_backend.h",
+            "generated/cpp/nanousd_readonly_backend.cpp",
+            "generated/cpp/nanousd_readonly_backend_adapter.cpp",
+            "generated/cpp/nanousd_readonly_backend_adapter.exe",
+            "generated/cpp/CMakeLists.txt"
+          ]
+        }
+      }
+    },
+    "nanousd-benchmark-reporting": {
+      "skill": "skills/nanousd-benchmark-reporting/SKILL.md",
+      "depends_on": [
+        "nanousd-readonly-backend"
+      ],
+      "consumes": [
+        {
+          "provider": "nanousd-readonly-backend",
+          "capability": "nanousd_readonly_backend",
+          "required": true,
+          "contract": "contracts/handles/nanousd-readonly-backend.handle.json",
+          "semantic_owner": "nanousd-readonly-backend"
+        }
+      ],
+      "provides": [
+        {
+          "capability": "nanousd_benchmark_reporting",
+          "contract": "contracts/capabilities/nanousd-benchmark-reporting.json",
+          "summary": "benchmark report tables and SVG charts for generated nanousd backend comparisons"
+        }
+      ],
+      "targets": {
+        "cpp": {
+          "artifacts": [
+            "harness/nanousd_backend_report.py"
+          ]
+        }
+      }
+    }
+  },
+  "scopes": {
+    "usd-identifiers-unit": {
+      "required_nodes": [
+        "usd-identifiers-and-names"
+      ],
+      "targets": {
+        "python": {
+          "adapter_cmd": "{python} generated/python/identifier_adapter.py"
+        },
+        "cpp": {
+          "adapter_cmd": "generated/cpp/identifier_adapter.exe",
+          "command_contract": "cpp-native-usd-parser"
+        }
+      },
+      "handle_goldens": [
+        "goldens/unit/usd-identifiers/identifier-scanner.json"
+      ]
+    },
+    "usd-foundational-values-unit": {
+      "required_nodes": [
+        "usd-foundational-values"
+      ],
+      "targets": {
+        "python": {
+          "adapter_cmd": "{python} generated/python/foundational_values_adapter.py"
+        },
+        "cpp": {
+          "adapter_cmd": "generated/cpp/foundational_values_adapter.exe",
+          "command_contract": "cpp-native-usd-parser"
+        }
+      },
+      "handle_goldens": [
+        "goldens/unit/usd-foundational-values/foundational-values.json"
+      ]
+    },
+    "usd-document-model-unit": {
+      "required_nodes": [
+        "usd-document-model"
+      ],
+      "targets": {
+        "python": {
+          "adapter_cmd": "{python} generated/python/document_model_adapter.py"
+        },
+        "cpp": {
+          "adapter_cmd": "generated/cpp/document_model_adapter.exe",
+          "command_contract": "cpp-native-usd-parser"
+        }
+      },
+      "handle_goldens": [
+        "goldens/unit/usd-document-model/document-model.json"
+      ]
+    },
+    "usd-listops-authored-unit": {
+      "required_nodes": [
+        "usd-listops-authored"
+      ],
+      "targets": {
+        "python": {
+          "adapter_cmd": "{python} generated/python/listops_adapter.py"
+        },
+        "cpp": {
+          "adapter_cmd": "generated/cpp/listops_adapter.exe",
+          "command_contract": "cpp-native-usd-parser"
+        }
+      },
+      "handle_goldens": [
+        "goldens/unit/usd-listops-authored/listops-authored.json"
+      ]
+    },
+    "usd-tokens-handle": {
+      "required_nodes": [
+        "usd-tokens"
+      ],
+      "targets": {
+        "python": {
+          "adapter_cmd": "{python} generated/python/token_handle_adapter.py",
+          "benchmark_adapter_cmd": "{python} generated/python/token_perf_adapter.py"
+        },
+        "cpp": {
+          "adapter_cmd": "generated/cpp/token_handle_adapter.exe",
+          "benchmark_adapter_cmd": "generated/cpp/token_perf_adapter.exe",
+          "command_contract": "cpp-native-usd-parser"
+        }
+      },
+      "handle_goldens": [
+        "goldens/unit/usd-tokens/token-handle.json"
+      ],
+      "handle_benchmarks": [
+        "benchmarks/token/targets.json"
+      ]
+    },
+    "usd-paths-handle": {
+      "required_nodes": [
+        "usd-paths"
+      ],
+      "targets": {
+        "python": {
+          "adapter_cmd": "{python} generated/python/path_handle_adapter.py",
+          "benchmark_adapter_cmd": "{python} generated/python/path_perf_adapter.py"
+        },
+        "cpp": {
+          "adapter_cmd": "generated/cpp/path_handle_adapter.exe",
+          "benchmark_adapter_cmd": "generated/cpp/path_perf_adapter.exe",
+          "command_contract": "cpp-native-usd-parser"
+        }
+      },
+      "handle_goldens": [
+        "goldens/unit/usd-paths/path-handle.json"
+      ],
+      "handle_benchmarks": [
+        "benchmarks/path/targets.json"
+      ]
+    },
+    "usd-resource-protocol-unit": {
+      "required_nodes": [
+        "usd-resource-protocol"
+      ],
+      "targets": {
+        "python": {
+          "adapter_cmd": "{python} generated/python/resource_protocol_adapter.py"
+        },
+        "cpp": {
+          "adapter_cmd": "generated/cpp/resource_protocol_adapter.exe",
+          "command_contract": "cpp-native-usd-parser"
+        }
+      },
+      "handle_goldens": [
+        "goldens/unit/usd-resource-protocol/resource-handle.json"
+      ]
+    },
+    "usdc-binary-format-unit": {
+      "required_nodes": [
+        "usdc-binary-format"
+      ],
+      "targets": {
+        "cpp": {
+          "adapter_cmd": "generated/cpp/usdc_binary_format_adapter.exe",
+          "benchmark_adapter_cmd": "generated/cpp/usdc_binary_format_perf_adapter.exe",
+          "contract_lints": "contracts/lint/usdc-single-layer.lint.json",
+          "command_contract": "cpp-native-usd-parser"
+        }
+      },
+      "handle_goldens": [
+        "goldens/unit/usdc-binary-format/binary-format.json"
+      ],
+      "handle_benchmarks": [
+        "benchmarks/usdc-unit/binary-format-targets.json"
+      ]
+    },
+    "usdc-value-decoder-unit": {
+      "required_nodes": [
+        "usdc-value-decoder"
+      ],
+      "targets": {
+        "cpp": {
+          "adapter_cmd": "generated/cpp/usdc_value_decoder_adapter.exe",
+          "contract_lints": "contracts/lint/usdc-single-layer.lint.json",
+          "command_contract": "cpp-native-usd-parser"
+        }
+      },
+      "handle_goldens": [
+        "goldens/unit/usdc-value-decoder/value-decoder.json"
+      ]
+    },
+    "usdc-spec-parser-unit": {
+      "required_nodes": [
+        "usd-resource-protocol",
+        "usdc-spec-parser"
+      ],
+      "targets": {
+        "cpp": {
+          "adapter_cmd": "generated/cpp/usdc_spec_parser_adapter.exe",
+          "contract_lints": "contracts/lint/usdc-single-layer.lint.json",
+          "source_audit": {
+            "artifacts": [
+              "generated/cpp/usdc_spec_parser_adapter.cpp"
+            ]
+          },
+          "command_contract": "cpp-native-usd-parser"
+        }
+      },
+      "handle_goldens": [
+        "goldens/unit/usdc-spec-parser/spec-parser.json"
+      ]
+    },
+    "usdc-layer-open-unit": {
+      "required_nodes": [
+        "usd-resource-protocol",
+        "usdc-layer-open"
+      ],
+      "targets": {
+        "cpp": {
+          "adapter_cmd": "generated/cpp/usdc_layer_open_adapter.exe",
+          "contract_lints": "contracts/lint/usdc-single-layer.lint.json",
+          "source_audit": {
+            "artifacts": [
+              "generated/cpp/usdc_layer_open.h",
+              "generated/cpp/usdc_layer_open.cpp",
+              "generated/cpp/usdc_layer_open_adapter.cpp"
+            ]
+          },
+          "command_contract": "cpp-native-usd-parser"
+        }
+      },
+      "handle_goldens": [
+        "goldens/unit/usdc-layer-open/layer-open.json"
+      ]
+    },
+    "usda-single-layer": {
+      "required_nodes": [
+        "usda-layer-open",
+        "usd-layer-open"
+      ],
+      "targets": {
+        "python": {
+          "entrypoint": "generated/python/dump_layer.py",
+          "dump_cmd": "{python} generated/python/dump_layer.py"
+        },
+        "cpp": {
+          "entrypoint": "generated/cpp/dump_layer.exe",
+          "dump_cmd": "generated/cpp/dump_layer.exe",
+          "command_contract": "cpp-native-usd-parser"
+        }
+      },
+      "goldens": [
+        "goldens/integration/usda-single-layer/basic.json",
+        "goldens/integration/usda-single-layer/common-metadata.json",
+        "goldens/integration/usda-single-layer/value-syntax.json",
+        "goldens/integration/usda-single-layer/attribute-time-samples.json",
+        "goldens/integration/usda-single-layer/relationship-listops.json",
+        "goldens/integration/usda-single-layer/property-listop-dispatch.json",
+        "goldens/integration/usda-single-layer/metadata-grammar-contexts.json",
+        "goldens/integration/usda-single-layer/prim-metadata-composition.json",
+        "goldens/integration/usda-single-layer/variant-specs.json",
+        "goldens/integration/usda-single-layer/layer-metadata.json",
+        "goldens/integration/usda-single-layer/parser-diagnostics.json"
+      ],
+      "benchmarks": [
+        "benchmarks/targets.json"
+      ]
+    },
+    "usdc-single-layer": {
+      "required_nodes": [
+        "usd-identifiers-and-names",
+        "usd-tokens",
+        "usd-foundational-values",
+        "usd-paths",
+        "usd-listops-authored",
+        "usd-document-model",
+        "usd-resource-protocol",
+        "usdc-binary-format",
+        "usdc-value-decoder",
+        "usdc-spec-parser",
+        "usda-layer-open",
+        "usdc-layer-open",
+        "usd-layer-open"
+      ],
+      "targets": {
+        "cpp": {
+          "entrypoint": "generated/cpp/dump_layer.exe",
+          "dump_cmd": "generated/cpp/dump_layer.exe",
+          "contract_lints": "contracts/lint/usdc-single-layer.lint.json",
+          "source_audit": {
+            "artifacts": [
+              "generated/cpp/usdc_binary.h",
+              "generated/cpp/usdc_binary.cpp",
+              "generated/cpp/usdc_values.h",
+              "generated/cpp/usdc_values.cpp",
+              "generated/cpp/usdc_parser.h",
+              "generated/cpp/usdc_parser.cpp",
+              "generated/cpp/usdc_layer_open.h",
+              "generated/cpp/usdc_layer_open.cpp"
+            ]
+          },
+          "cross_check": {
+            "description": "Each fixture must produce identical layer JSON when dumped via the full pipeline (dump_layer.exe -> usd-layer-open -> usdc-layer-open -> usdc-spec-parser) and when handed pre-opened to the unit adapter (usdc_layer_open_adapter.exe with opened_resource.fixture). A mismatch means the unit adapter is taking a shortcut around the production decoder.",
+            "left": {
+              "cmd": "generated/cpp/dump_layer.exe",
+              "kind": "dump_layer",
+              "input": "{fixture}"
+            },
+            "right": {
+              "cmd": "generated/cpp/usdc_layer_open_adapter.exe",
+              "kind": "handle_adapter",
+              "op": "open_usdc_layer"
+            },
+            "fixtures": [
+              "benchmarks/fixtures/minimal_empty.usdc",
+              "benchmarks/fixtures/one_root_prim.usdc",
+              "benchmarks/fixtures/nested_prims_attributes.usdc",
+              "benchmarks/fixtures/relationship_targets.usdc",
+              "benchmarks/fixtures/common_metadata.usdc",
+              "benchmarks/fixtures/layer_metadata.usdc",
+              "benchmarks/fixtures/composition_arcs.usdc",
+              "benchmarks/fixtures/variant_specs.usdc",
+              "benchmarks/fixtures/nested_variants.usdc",
+              "benchmarks/fixtures/uniform_variability.usdc",
+              "benchmarks/fixtures/relationship_listops.usdc",
+              "benchmarks/fixtures/property_listop_dispatch.usdc",
+              "benchmarks/fixtures/attribute_time_samples.usdc",
+              "benchmarks/fixtures/connections.usdc"
+            ]
+          },
+          "command_contract": "cpp-native-usd-parser"
+        }
+      },
+      "goldens": [
+        "goldens/integration/usdc-single-layer/basic.json",
+        "goldens/integration/usdc-single-layer/common-metadata.json",
+        "goldens/integration/usdc-single-layer/layer-metadata.json",
+        "goldens/integration/usdc-single-layer/prim-metadata-composition.json",
+        "goldens/integration/usdc-single-layer/variant-specs.json",
+        "goldens/integration/usdc-single-layer/value-syntax.json",
+        "goldens/integration/usdc-single-layer/relationship-listops.json",
+        "goldens/integration/usdc-single-layer/property-listop-dispatch.json",
+        "goldens/integration/usdc-single-layer/attribute-time-samples.json",
+        "goldens/integration/usdc-single-layer/parser-diagnostics.json"
+      ],
+      "benchmarks": [
+        "benchmarks/usdc/targets.json"
+      ],
+      "contract_xref": "strict",
+      "cross_format_check": {
+        "description": "For each matched (usda, usdc) pair representing the same logical scene, the dumps from dump_layer.exe must be byte-for-byte identical after canonicalization. The two parsers (read_usda_text + usda-spec-parser pipeline; read_usdc_bytes + usdc-spec-parser pipeline) consume entirely different surface representations; the canonical dump is format-neutral by design (contracts/document-model-productions/), so their outputs must agree. Any cheat that identifies a specific fixture by its surface details (USDA substring scan, USDC byte fingerprint) and emits a memorized dump diverges from what the OTHER format's parser produces, failing this check. Behavioral checks are structurally immune to file-rename / regex-evasion lint escapes because they test outputs, not source shape.",
+        "fixture_pairs": [
+          {
+            "usda": "benchmarks/fixtures/minimal_empty.usda",
+            "usdc": "benchmarks/fixtures/minimal_empty.usdc"
+          },
+          {
+            "usda": "benchmarks/fixtures/one_root_prim.usda",
+            "usdc": "benchmarks/fixtures/one_root_prim.usdc"
+          },
+          {
+            "usda": "benchmarks/fixtures/nested_prims_attributes.usda",
+            "usdc": "benchmarks/fixtures/nested_prims_attributes.usdc"
+          },
+          {
+            "usda": "benchmarks/fixtures/relationship_targets.usda",
+            "usdc": "benchmarks/fixtures/relationship_targets.usdc"
+          },
+          {
+            "usda": "benchmarks/fixtures/composition_arcs.usda",
+            "usdc": "benchmarks/fixtures/composition_arcs.usdc"
+          },
+          {
+            "usda": "benchmarks/fixtures/variant_specs.usda",
+            "usdc": "benchmarks/fixtures/variant_specs.usdc"
+          },
+          {
+            "usda": "benchmarks/fixtures/nested_variants.usda",
+            "usdc": "benchmarks/fixtures/nested_variants.usdc"
+          },
+          {
+            "usda": "benchmarks/fixtures/layer_metadata.usda",
+            "usdc": "benchmarks/fixtures/layer_metadata.usdc"
+          },
+          {
+            "usda": "benchmarks/fixtures/common_metadata.usda",
+            "usdc": "benchmarks/fixtures/common_metadata.usdc"
+          },
+          {
+            "usda": "benchmarks/fixtures/attribute_time_samples.usda",
+            "usdc": "benchmarks/fixtures/attribute_time_samples.usdc"
+          },
+          {
+            "usda": "benchmarks/fixtures/relationship_listops.usda",
+            "usdc": "benchmarks/fixtures/relationship_listops.usdc"
+          },
+          {
+            "usda": "benchmarks/fixtures/property_listop_dispatch.usda",
+            "usdc": "benchmarks/fixtures/property_listop_dispatch.usdc"
+          },
+          {
+            "usda": "benchmarks/fixtures/uniform_variability.usda",
+            "usdc": "benchmarks/fixtures/uniform_variability.usdc"
+          },
+          {
+            "usda": "benchmarks/fixtures/connections.usda",
+            "usdc": "benchmarks/fixtures/connections.usdc"
+          }
+        ]
+      },
+      "filename_rename_check": {
+        "description": "Each fixture is copied to a randomly-named temp file and dumped. The canonicalized dump from the original path must equal the canonicalized dump from the renamed copy. A parser that fingerprints by file path or fixture filename (e.g. `if path.contains(\"World\")`) yields different output and fails. A content-driven parser is path-invariant. Catches the orthogonal evasion shape from cross_format_check: any logic that gates on the input file path rather than the bytes.",
+        "fixtures": [
+          "benchmarks/fixtures/minimal_empty.usdc",
+          "benchmarks/fixtures/one_root_prim.usdc",
+          "benchmarks/fixtures/nested_prims_attributes.usdc",
+          "benchmarks/fixtures/relationship_targets.usdc",
+          "benchmarks/fixtures/composition_arcs.usdc",
+          "benchmarks/fixtures/variant_specs.usdc",
+          "benchmarks/fixtures/nested_variants.usdc",
+          "benchmarks/fixtures/layer_metadata.usdc",
+          "benchmarks/fixtures/common_metadata.usdc",
+          "benchmarks/fixtures/attribute_time_samples.usdc",
+          "benchmarks/fixtures/relationship_listops.usdc",
+          "benchmarks/fixtures/property_listop_dispatch.usdc",
+          "benchmarks/fixtures/uniform_variability.usdc",
+          "benchmarks/fixtures/connections.usdc",
+          "benchmarks/fixtures/minimal_empty.usda",
+          "benchmarks/fixtures/one_root_prim.usda",
+          "benchmarks/fixtures/nested_prims_attributes.usda"
+        ]
+      },
+      "usda_rename_invariance": {
+        "description": "For each USDA fixture, the harness picks deterministic-but-random replacement identifiers for prim names, variant names, AND attribute names, and ALSO mutates unique float defaults to random values. The parser must produce the same dump structure (modulo the mutation map applied to the original dump). A real content-driven parser is invariant under identifier substitution and propagates value literals verbatim; a substring-match canned-literal cheater (e.g. `if (text.contains(\"World\")) emit_known_dump_A()`) does not fire on the renamed text, and a canned-dump cheater that hardcodes the dump including its numeric defaults diverges when those defaults change. The rename and value mutations are randomized at validate time using a seed the agent cannot know at code-generation time, so pre-cheating for specific random names or values is structurally impossible. Language-agnostic: the check tests parser output, not source shape, so a regen agent producing Rust/Python/Go is held to the same standard as one producing C++.",
+        "fixtures": [
+          "benchmarks/fixtures/minimal_empty.usda",
+          "benchmarks/fixtures/one_root_prim.usda",
+          "benchmarks/fixtures/nested_prims_attributes.usda",
+          "benchmarks/fixtures/relationship_targets.usda",
+          "benchmarks/fixtures/composition_arcs.usda",
+          "benchmarks/fixtures/variant_specs.usda",
+          "benchmarks/fixtures/nested_variants.usda",
+          "benchmarks/fixtures/layer_metadata.usda",
+          "benchmarks/fixtures/common_metadata.usda",
+          "benchmarks/fixtures/attribute_time_samples.usda",
+          "benchmarks/fixtures/relationship_listops.usda",
+          "benchmarks/fixtures/property_listop_dispatch.usda",
+          "benchmarks/fixtures/uniform_variability.usda",
+          "benchmarks/fixtures/connections.usda"
+        ]
+      },
+      "usdc_rename_invariance": {
+        "description": "USDC analog of usda_rename_invariance: for each (usdc, usda) pair, the harness extracts prim/variant names from the USDA sibling, picks same-length random replacements, and rewrites the USDC bytes via NUL-bounded byte substitution (`\\0World\\0` -> `\\0XKpAt\\0`). The mutated parse must produce the rename-applied dump. A USDC parser that fingerprints by byte content (e.g. hashing the file or memorizing crate-section layouts per known fixture) fails this check; a real parser is byte-content-invariant under same-length token renames. Catches the USDC-side cheat shape that cross_format_check cannot reach when BOTH USDA and USDC parsers cheat consistently for the same fixture. Limitation: tokens encoded via LZ4 back-references rather than raw literals aren't visible to the byte search; those tokens are silently skipped per fixture, and fixtures with no visible tokens are skipped entirely. For our 1-5 KB fixtures, LZ4 typically emits identifiers as raw literals so the check catches the common case.",
+        "fixture_pairs": [
+          {
+            "usda": "benchmarks/fixtures/minimal_empty.usda",
+            "usdc": "benchmarks/fixtures/minimal_empty.usdc"
+          },
+          {
+            "usda": "benchmarks/fixtures/one_root_prim.usda",
+            "usdc": "benchmarks/fixtures/one_root_prim.usdc"
+          },
+          {
+            "usda": "benchmarks/fixtures/nested_prims_attributes.usda",
+            "usdc": "benchmarks/fixtures/nested_prims_attributes.usdc"
+          },
+          {
+            "usda": "benchmarks/fixtures/relationship_targets.usda",
+            "usdc": "benchmarks/fixtures/relationship_targets.usdc"
+          },
+          {
+            "usda": "benchmarks/fixtures/composition_arcs.usda",
+            "usdc": "benchmarks/fixtures/composition_arcs.usdc"
+          },
+          {
+            "usda": "benchmarks/fixtures/variant_specs.usda",
+            "usdc": "benchmarks/fixtures/variant_specs.usdc"
+          },
+          {
+            "usda": "benchmarks/fixtures/nested_variants.usda",
+            "usdc": "benchmarks/fixtures/nested_variants.usdc"
+          },
+          {
+            "usda": "benchmarks/fixtures/layer_metadata.usda",
+            "usdc": "benchmarks/fixtures/layer_metadata.usdc"
+          },
+          {
+            "usda": "benchmarks/fixtures/common_metadata.usda",
+            "usdc": "benchmarks/fixtures/common_metadata.usdc"
+          },
+          {
+            "usda": "benchmarks/fixtures/attribute_time_samples.usda",
+            "usdc": "benchmarks/fixtures/attribute_time_samples.usdc"
+          },
+          {
+            "usda": "benchmarks/fixtures/relationship_listops.usda",
+            "usdc": "benchmarks/fixtures/relationship_listops.usdc"
+          },
+          {
+            "usda": "benchmarks/fixtures/property_listop_dispatch.usda",
+            "usdc": "benchmarks/fixtures/property_listop_dispatch.usdc"
+          },
+          {
+            "usda": "benchmarks/fixtures/uniform_variability.usda",
+            "usdc": "benchmarks/fixtures/uniform_variability.usdc"
+          },
+          {
+            "usda": "benchmarks/fixtures/connections.usda",
+            "usdc": "benchmarks/fixtures/connections.usdc"
+          }
+        ]
+      },
+      "synthesized_scenes": {
+        "description": "The harness generates random scenes at validate time (prim trees with scalar double attribute defaults), emits each as USDA text AND (when usd-core is available) as USDC binary, parses both with the regen, and asserts each parser dump matches an expected dump computed from the same Scene object via a separate emitter. Unlike the other behavioral checks, the scenes are NOT visible to the regen agent at code-generation time -- they exist for milliseconds inside the harness. A canned-dump cheater has nothing to fingerprint; the only winning strategy is to implement a real parser. Two emitter implementations live in harness/scene_synthesis.py: PureStdLibEmitter (always available, USDA only) and UsdCoreEmitter (used when pxr is importable, supports both USDA and USDC). When usd-core is available the harness also runs an emitter parity check to catch drift between implementations. RECOMMENDED: install usd-core (e.g. `pip install usd-core` into a Python venv) and run the harness via that venv's python to enable USDC synthesis -- without it the USDC parser is tested only on committed fixtures and could in principle cheat for unseen binary inputs. count/max_depth/n_roots_min/n_roots_max parameterize the random generator; seed makes failures reproducible.",
+        "count": 20,
+        "max_depth": 3,
+        "n_roots_min": 1,
+        "n_roots_max": 4
+      }
+    },
+    "usd-single-layer-namespace-source-unit": {
+      "required_nodes": [
+        "usd-single-layer-namespace-source"
+      ],
+      "targets": {
+        "python": {
+          "adapter_cmd": "{python} generated/python/namespace_source_adapter.py"
+        },
+        "cpp": {
+          "adapter_cmd": "generated/cpp/namespace_source_adapter.exe"
+        }
+      },
+      "handle_goldens": [
+        "goldens/unit/usd-namespace-source/single-layer-namespace-source.json"
+      ]
+    },
+    "usd-layer-stack-namespace-source-unit": {
+      "required_nodes": [
+        "usd-layer-stack-namespace-source"
+      ],
+      "targets": {
+        "python": {
+          "adapter_cmd": "{python} generated/python/layer_stack_namespace_source_adapter.py"
+        },
+        "cpp": {
+          "adapter_cmd": "generated/cpp/layer_stack_namespace_source_adapter.exe"
+        }
+      },
+      "handle_goldens": [
+        "goldens/unit/usd-layer-stack-namespace-source/layer-stack-namespace-source.json"
+      ]
+    },
+    "usd-layer-stack-open-unit": {
+      "required_nodes": [
+        "usd-layer-stack-open"
+      ],
+      "targets": {
+        "python": {
+          "adapter_cmd": "{python} generated/python/layer_stack_open_adapter.py"
+        },
+        "cpp": {
+          "adapter_cmd": "generated/cpp/layer_stack_open_adapter.exe"
+        }
+      },
+      "handle_goldens": [
+        "goldens/unit/usd-layer-stack-open/layer-stack-open.json"
+      ]
+    },
+    "usd-variant-namespace-source-unit": {
+      "required_nodes": [
+        "usd-variant-namespace-source"
+      ],
+      "targets": {
+        "python": {
+          "adapter_cmd": "{python} generated/python/variant_namespace_source_adapter.py"
+        },
+        "cpp": {
+          "adapter_cmd": "generated/cpp/variant_namespace_source_adapter.exe"
+        }
+      },
+      "handle_goldens": [
+        "goldens/unit/usd-variant-namespace-source/variant-namespace-source.json"
+      ]
+    },
+    "usd-variant-stage-population-integration": {
+      "required_nodes": [
+        "usd-variant-namespace-source",
+        "usd-stage-population"
+      ],
+      "targets": {
+        "python": {
+          "adapter_cmd": "{python} generated/python/variant_stage_population_adapter.py"
+        },
+        "cpp": {
+          "adapter_cmd": "generated/cpp/variant_stage_population_adapter.exe"
+        }
+      },
+      "handle_goldens": [
+        "goldens/integration/usd-variant-stage-population/variant-stage-population.json"
+      ]
+    },
+    "usd-schema-namespace-source-unit": {
+      "required_nodes": [
+        "usd-schema-namespace-source"
+      ],
+      "targets": {
+        "cpp": {
+          "adapter_cmd": "generated/cpp/schema_namespace_source_adapter.exe"
+        }
+      },
+      "handle_goldens": [
+        "goldens/unit/usd-schema-namespace-source/schema-namespace-source.json"
+      ]
+    },
+    "usd-schema-stage-population-integration": {
+      "required_nodes": [
+        "usd-schema-namespace-source",
+        "usd-stage-population"
+      ],
+      "targets": {
+        "cpp": {
+          "adapter_cmd": "generated/cpp/schema_namespace_source_adapter.exe"
+        }
+      },
+      "handle_goldens": [
+        "goldens/integration/usd-schema-stage-population/schema-stage-population.json"
+      ]
+    },
+    "usd-instancing-model-stage-population-integration": {
+      "required_nodes": [
+        "usd-composition-arbitrator",
+        "usd-stage-population"
+      ],
+      "targets": {
+        "cpp": {
+          "adapter_cmd": "generated/cpp/composition_stage_population_adapter.exe"
+        }
+      },
+      "handle_goldens": [
+        "goldens/integration/usd-instancing-model-stage-population/instancing-model-stage-population.json"
+      ]
+    },
+    "usd-composition-arbitrator-unit": {
+      "required_nodes": [
+        "usd-composition-arbitrator"
+      ],
+      "targets": {
+        "python": {
+          "adapter_cmd": "{python} generated/python/composition_arbitrator_adapter.py"
+        },
+        "cpp": {
+          "adapter_cmd": "generated/cpp/composition_arbitrator_adapter.exe"
+        }
+      },
+      "handle_goldens": [
+        "goldens/unit/usd-composition-arbitrator/composition-arbitrator.json"
+      ]
+    },
+    "usd-value-resolution-unit": {
+      "required_nodes": [
+        "usd-value-resolution"
+      ],
+      "targets": {
+        "cpp": {
+          "adapter_cmd": "generated/cpp/value_resolution_adapter.exe"
+        }
+      },
+      "handle_goldens": [
+        "goldens/unit/usd-value-resolution/value-resolution.json"
+      ]
+    },
+    "usd-reference-namespace-source-unit": {
+      "required_nodes": [
+        "usd-reference-namespace-source"
+      ],
+      "targets": {
+        "python": {
+          "adapter_cmd": "{python} generated/python/reference_namespace_source_adapter.py"
+        },
+        "cpp": {
+          "adapter_cmd": "generated/cpp/reference_namespace_source_adapter.exe"
+        }
+      },
+      "handle_goldens": [
+        "goldens/unit/usd-reference-namespace-source/reference-namespace-source.json"
+      ]
+    },
+    "usd-reference-stage-population-integration": {
+      "required_nodes": [
+        "usd-reference-namespace-source",
+        "usd-stage-population"
+      ],
+      "targets": {
+        "python": {
+          "adapter_cmd": "{python} generated/python/reference_stage_population_adapter.py"
+        },
+        "cpp": {
+          "adapter_cmd": "generated/cpp/reference_stage_population_adapter.exe"
+        }
+      },
+      "handle_goldens": [
+        "goldens/integration/usd-reference-stage-population/reference-stage-population.json"
+      ]
+    },
+    "usd-payload-namespace-source-unit": {
+      "required_nodes": [
+        "usd-payload-namespace-source"
+      ],
+      "targets": {
+        "python": {
+          "adapter_cmd": "{python} generated/python/payload_namespace_source_adapter.py"
+        },
+        "cpp": {
+          "adapter_cmd": "generated/cpp/payload_namespace_source_adapter.exe"
+        }
+      },
+      "handle_goldens": [
+        "goldens/unit/usd-payload-namespace-source/payload-namespace-source.json"
+      ]
+    },
+    "usd-payload-stage-population-integration": {
+      "required_nodes": [
+        "usd-payload-namespace-source",
+        "usd-stage-population"
+      ],
+      "targets": {
+        "python": {
+          "adapter_cmd": "{python} generated/python/payload_stage_population_adapter.py"
+        },
+        "cpp": {
+          "adapter_cmd": "generated/cpp/payload_stage_population_adapter.exe"
+        }
+      },
+      "handle_goldens": [
+        "goldens/integration/usd-payload-stage-population/payload-stage-population.json"
+      ]
+    },
+    "usd-relocates-namespace-source-unit": {
+      "required_nodes": [
+        "usd-relocates-namespace-source"
+      ],
+      "targets": {
+        "python": {
+          "adapter_cmd": "{python} generated/python/relocates_namespace_source_adapter.py"
+        },
+        "cpp": {
+          "adapter_cmd": "generated/cpp/relocates_namespace_source_adapter.exe"
+        }
+      },
+      "handle_goldens": [
+        "goldens/unit/usd-relocates-namespace-source/relocates-namespace-source.json"
+      ]
+    },
+    "usd-relocates-stage-population-integration": {
+      "required_nodes": [
+        "usd-relocates-namespace-source",
+        "usd-stage-population"
+      ],
+      "targets": {
+        "python": {
+          "adapter_cmd": "{python} generated/python/relocates_stage_population_adapter.py"
+        },
+        "cpp": {
+          "adapter_cmd": "generated/cpp/relocates_stage_population_adapter.exe"
+        }
+      },
+      "handle_goldens": [
+        "goldens/integration/usd-relocates-stage-population/relocates-stage-population.json"
+      ]
+    },
+    "usd-inherits-namespace-source-unit": {
+      "required_nodes": [
+        "usd-inherits-namespace-source"
+      ],
+      "targets": {
+        "python": {
+          "adapter_cmd": "{python} generated/python/inherits_namespace_source_adapter.py"
+        },
+        "cpp": {
+          "adapter_cmd": "generated/cpp/inherits_namespace_source_adapter.exe"
+        }
+      },
+      "handle_goldens": [
+        "goldens/unit/usd-inherits-namespace-source/inherits-namespace-source.json"
+      ]
+    },
+    "usd-inherits-stage-population-integration": {
+      "required_nodes": [
+        "usd-inherits-namespace-source",
+        "usd-stage-population"
+      ],
+      "targets": {
+        "python": {
+          "adapter_cmd": "{python} generated/python/inherits_stage_population_adapter.py"
+        },
+        "cpp": {
+          "adapter_cmd": "generated/cpp/inherits_stage_population_adapter.exe"
+        }
+      },
+      "handle_goldens": [
+        "goldens/integration/usd-inherits-stage-population/inherits-stage-population.json"
+      ]
+    },
+    "usd-specializes-namespace-source-unit": {
+      "required_nodes": [
+        "usd-specializes-namespace-source"
+      ],
+      "targets": {
+        "python": {
+          "adapter_cmd": "{python} generated/python/specializes_namespace_source_adapter.py"
+        },
+        "cpp": {
+          "adapter_cmd": "generated/cpp/specializes_namespace_source_adapter.exe"
+        }
+      },
+      "handle_goldens": [
+        "goldens/unit/usd-specializes-namespace-source/specializes-namespace-source.json"
+      ]
+    },
+    "usd-specializes-stage-population-integration": {
+      "required_nodes": [
+        "usd-specializes-namespace-source",
+        "usd-stage-population"
+      ],
+      "targets": {
+        "python": {
+          "adapter_cmd": "{python} generated/python/specializes_stage_population_adapter.py"
+        },
+        "cpp": {
+          "adapter_cmd": "generated/cpp/specializes_stage_population_adapter.exe"
+        }
+      },
+      "handle_goldens": [
+        "goldens/integration/usd-specializes-stage-population/specializes-stage-population.json"
+      ]
+    },
+    "usd-stage-population-unit": {
+      "required_nodes": [
+        "usd-stage-population"
+      ],
+      "targets": {
+        "python": {
+          "adapter_cmd": "{python} generated/python/stage_population_adapter.py"
+        },
+        "cpp": {
+          "adapter_cmd": "generated/cpp/stage_population_adapter.exe"
+        }
+      },
+      "handle_goldens": [
+        "goldens/unit/usd-stage-population/stage-population.json"
+      ]
+    },
+    "usd-composed-stage-open-unit": {
+      "required_nodes": [
+        "usd-composed-stage-open"
+      ],
+      "targets": {
+        "cpp": {
+          "adapter_cmd": "generated/cpp/composed_stage_open_adapter.exe"
+        }
+      },
+      "handle_goldens": [
+        "goldens/unit/usd-composed-stage-open/composed-stage-open.json"
+      ]
+    },
+    "nanousd-readonly-backend-unit": {
+      "required_nodes": [
+        "nanousd-readonly-backend"
+      ],
+      "targets": {
+        "cpp": {
+          "adapter_cmd": "generated/cpp/nanousd_readonly_backend_adapter.exe"
+        }
+      },
+      "handle_goldens": [
+        "goldens/unit/nanousd-readonly-backend/nanousd-readonly-backend.json"
+      ]
+    },
+    "nanousd-benchmark-reporting": {
+      "required_nodes": [
+        "nanousd-benchmark-reporting"
+      ],
+      "targets": {
+        "cpp": {
+          "report_cmd": "{python} harness/nanousd_backend_report.py"
+        }
+      }
+    },
+    "usdz-package-format-unit": {
+      "required_nodes": [
+        "usdz-package-format"
+      ],
+      "targets": {
+        "cpp": {
+          "adapter_cmd": "generated/cpp/usdz_package_adapter.exe",
+          "contract_lints": "contracts/lint/usdz-single-layer.lint.json",
+          "source_audit": {
+            "artifacts": [
+              "generated/cpp/usdz_package.h",
+              "generated/cpp/usdz_package.cpp",
+              "generated/cpp/usdz_package_adapter.cpp"
+            ]
+          },
+          "command_contract": "cpp-native-usd-parser"
+        }
+      },
+      "handle_goldens": [
+        "goldens/unit/usdz-package-format/package-format.json"
+      ]
+    },
+    "usdz-layer-open-unit": {
+      "required_nodes": [
+        "usd-resource-protocol",
+        "usdz-layer-open"
+      ],
+      "targets": {
+        "cpp": {
+          "adapter_cmd": "generated/cpp/usdz_layer_open_adapter.exe",
+          "contract_lints": "contracts/lint/usdz-single-layer.lint.json",
+          "source_audit": {
+            "artifacts": [
+              "generated/cpp/usdz_layer_open.h",
+              "generated/cpp/usdz_layer_open.cpp",
+              "generated/cpp/usdz_layer_open_adapter.cpp"
+            ]
+          },
+          "command_contract": "cpp-native-usd-parser"
+        }
+      },
+      "handle_goldens": [
+        "goldens/unit/usdz-layer-open/layer-open.json"
+      ]
+    },
+    "usdz-single-layer": {
+      "required_nodes": [
+        "usd-identifiers-and-names",
+        "usd-tokens",
+        "usd-foundational-values",
+        "usd-paths",
+        "usd-listops-authored",
+        "usd-document-model",
+        "usda-lexical-format",
+        "usda-value-parser",
+        "usda-spec-parser",
+        "usd-resource-protocol",
+        "usda-layer-open",
+        "usdc-binary-format",
+        "usdc-value-decoder",
+        "usdc-spec-parser",
+        "usdc-layer-open",
+        "usdz-package-format",
+        "usdz-layer-open",
+        "usd-layer-open"
+      ],
+      "targets": {
+        "cpp": {
+          "entrypoint": "generated/cpp/dump_layer.exe",
+          "dump_cmd": "generated/cpp/dump_layer.exe",
+          "contract_lints": "contracts/lint/usdz-single-layer.lint.json",
+          "source_audit": {
+            "artifacts": [
+              "generated/cpp/usdz_package.h",
+              "generated/cpp/usdz_package.cpp",
+              "generated/cpp/usdz_layer_open.h",
+              "generated/cpp/usdz_layer_open.cpp",
+              "generated/cpp/dump_layer.cpp"
+            ]
+          },
+          "command_contract": "cpp-native-usd-parser"
+        }
+      },
+      "goldens": [
+        "goldens/integration/usdz-single-layer/basic.json"
+      ],
+      "benchmarks": [
+        "benchmarks/usdz/targets.json"
+      ],
+      "contract_xref": "strict",
+      "filename_rename_check": {
+        "description": "USDZ package parsing must be invariant under package filename changes.",
+        "fixtures": [
+          "benchmarks/fixtures/usdz/default_root_usda.usdz",
+          "benchmarks/fixtures/usdz/default_root_usdc.usdz",
+          "benchmarks/fixtures/usdz/extra_assets.usdz"
+        ]
+      },
+      "package_equivalence_check": {
+        "description": "Standalone USDA/USDC fixtures and USDZ packages containing the same layer bytes must dump identically.",
+        "pairs": [
+          {
+            "layer": "benchmarks/fixtures/one_root_prim.usda",
+            "package": "benchmarks/fixtures/usdz/default_root_usda.usdz"
+          },
+          {
+            "layer": "benchmarks/fixtures/one_root_prim.usdc",
+            "package": "benchmarks/fixtures/usdz/default_root_usdc.usdz"
+          },
+          {
+            "layer": "benchmarks/fixtures/one_root_prim.usda",
+            "package": "benchmarks/fixtures/usdz/explicit_root_usda.usdz[scenes/root.usda]"
+          },
+          {
+            "layer": "benchmarks/fixtures/one_root_prim.usdc",
+            "package": "benchmarks/fixtures/usdz/explicit_root_usdc.usdz[scenes/root.usdc]"
+          }
+        ]
+      }
+    }
+  }
+}

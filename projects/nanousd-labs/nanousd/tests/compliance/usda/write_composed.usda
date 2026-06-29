@@ -1,0 +1,11 @@
+#usda 1.0
+(
+    subLayers = [
+        @./write_composed_base.usda@
+    ]
+    defaultPrim = "Root"
+)
+
+over "Root" {
+    float strong_val = 100.0
+}

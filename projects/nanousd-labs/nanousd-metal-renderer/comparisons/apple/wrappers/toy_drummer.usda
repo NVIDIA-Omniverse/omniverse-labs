@@ -1,0 +1,33 @@
+#usda 1.0
+(
+    defaultPrim = "toy_drummer_idle"
+    metersPerUnit = 0.01
+    upAxis = "Y"
+    subLayers = [
+        @./toy_drummer_idle.usdc@
+    ]
+)
+
+def DomeLight "CompareDome"
+{
+    color3f inputs:color = (0.78, 0.82, 0.9)
+    float inputs:intensity = 450
+}
+
+def SphereLight "CompareKey"
+{
+    color3f inputs:color = (1, 0.95, 0.86)
+    float inputs:intensity = 6000
+    float inputs:radius = 17.6775515
+    double3 xformOp:translate = (25.2684282, 42.1285949, 22.1798487)
+    uniform token[] xformOpOrder = ["xformOp:translate"]
+}
+
+def SphereLight "CompareFill"
+{
+    color3f inputs:color = (0.68, 0.76, 1)
+    float inputs:intensity = 1200
+    float inputs:radius = 31.8195927
+    double3 xformOp:translate = (-33.0674918, 10.3090022, -23.7817852)
+    uniform token[] xformOpOrder = ["xformOp:translate"]
+}

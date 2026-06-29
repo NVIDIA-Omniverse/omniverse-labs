@@ -1,0 +1,14 @@
+{
+  "mode": "newton_16env",
+  "renderer_head": "(renderer-independent)",
+  "renderer_dirty": false,
+  "env_subset": {
+    "NU_DEFERRED_SHADE": "",
+    "NU_DEFERRED_DEBUG_MODE": "",
+    "NUSD_INVERTED_INTEROP": "",
+    "NU_TILE_RES": "",
+    "NU_FRAME_SKIP": ""
+  },
+  "wrote_at": 1778105307.1018217,
+  "note": "Newton renderer is independent of nanousd-vulkan-renderer; this golden is reused regardless of renderer git HEAD or working-tree dirty state."
+}

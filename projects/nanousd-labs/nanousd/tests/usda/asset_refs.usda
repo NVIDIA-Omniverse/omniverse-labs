@@ -1,0 +1,50 @@
+#usda 1.0
+
+def Scope "AssetRefForms"
+{
+    # Simple asset reference
+    asset simple = @./model.usd@
+
+    # Empty asset reference
+    asset empty = @@
+
+    # Asset ref with spaces in path
+    asset withSpaces = @./path with spaces/model.usd@
+
+    # Asset ref with special characters
+    asset specialChars = @./dir:name/file.usd@
+
+    # Triple-at asset reference (for paths containing @)
+    asset tripleAt = @@@a/path/with@sign/file.usd@@@
+
+    # Asset array
+    asset[] assetList = [
+        @./a.usd@,
+        @./b.usd@,
+        @./c.usd@
+    ]
+}
+
+# References using asset refs with path targets
+def Scope "RefWithAsset" (
+    prepend references = @./source.usd@</Target>
+)
+{
+}
+
+# References using asset ref with layer offset
+def Scope "RefWithOffset" (
+    prepend references = @./source.usd@</Target> (
+        offset = 10
+        scale = 2.0
+    )
+)
+{
+}
+
+# Triple-at in reference
+def Scope "RefTripleAt" (
+    prepend references = @@@source@file.usd@@@</Target>
+)
+{
+}

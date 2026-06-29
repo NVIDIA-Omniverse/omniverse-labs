@@ -1,0 +1,54 @@
+#usda 1.0
+
+# Ported from OpenUSD PCP fixture
+# testPcpMuseum_SubrootReferenceAndVariants.testenv/SubrootReferenceAndVariants/root.usda
+# (Pixar OpenUSD release branch).
+#
+# Exercises ancestral variant selection on subroot references (spec §11.2.5).
+# Two scenarios:
+#
+# /SubrootRef references @target@</Group/Model>. /Group/Model does not
+# exist at that exact path in target.usda — it only exists inside variant
+# bodies at /Group{v=x}/Model and /Group{v=y}/Model. /Group authors
+# variantSelection v=y, so composition must fold in that ancestral
+# selection and materialize /Group{v=y}/Model's content under /SubrootRef.
+# Expected: attribute a = "v_y".
+#
+# /RootRef / /RootRef/Child exercise the independence of variant chains:
+#  * /RootRef references @model@</Model> — brings in modelAttr = "v=x"
+#    (model.usda's own v=x selection).
+#  * /RootRef/Child references @target@</Group/Model> — brings in
+#    a = "v_y" from target.usda's /Group ancestral selection.
+# The two chains must not pollute each other — /RootRef's v=x does NOT
+# propagate into /RootRef/Child's composition, and /Group's v=y does NOT
+# propagate back out to /RootRef.
+#
+# Adaptation from upstream: upstream root.usda also includes an
+# `over "Group" { variants = { string v = "x" } }` declaration. That
+# edit is not kept here because it targets a path that doesn't exist in
+# root namespace. The invalid variant-selection reference target is kept
+# as a diagnostic fixture.
+
+def "SubrootRef" (
+    references = @./pcp_SubrootReferenceAndVariants_target.usda@</Group/Model>
+)
+{
+}
+
+def "RootRef" (
+    references = @./pcp_SubrootReferenceAndVariants_model.usda@</Model>
+)
+{
+    def "Child" (
+        references = @./pcp_SubrootReferenceAndVariants_target.usda@</Group/Model>
+    )
+    {
+    }
+}
+
+def "InvalidSubrootRefWithVariantSelection" (
+    references =
+        @./pcp_SubrootReferenceAndVariants_target.usda@</Group{v=x}/Model>
+)
+{
+}

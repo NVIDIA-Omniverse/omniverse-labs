@@ -1,0 +1,96 @@
+name: usdc-single-layer
+version: 0.1
+
+goal: >
+  Generate a C++ target implementation that opens one resolved local USDC Crate
+  layer resource, returns a target-native document-model Layer, and emits
+  canonical layer dump JSON only through the validation adapter. The target
+  proves that binary Crate decoding composes with resource opening,
+  layer-format dispatch, values, paths, tokens, listOps, and the document model
+  without using USDA parser internals.
+
+required_nodes:
+  - usd-identifiers-and-names
+  - usd-tokens
+  - usd-foundational-values
+  - usd-paths
+  - usd-listops-authored
+  - usd-document-model
+  - usd-resource-protocol
+  - usdc-binary-format
+  - usdc-value-decoder
+  - usdc-spec-parser
+  - usdc-layer-open
+  - usd-layer-open
+
+input_formats:
+  - usdc
+  - local filesystem resource
+
+outputs:
+  - contracts/layer-dump.schema.json
+  - harness/dump_contract.md
+
+goldens:
+  - goldens/integration/usdc-single-layer/basic.json
+
+benchmark_targets:
+  - benchmarks/usdc/targets.json
+
+included:
+  - resolved local filesystem resource opening
+  - generic layer-open dispatch to the USDC binary format handler
+  - Crate header, bootstrap, table-of-contents, and required section reads
+  - TOKENS, STRINGS, FIELDS, FIELDSETS, PATHS, and SPECS section mapping
+  - layer, prim, attribute, and relationship specs
+  - scalar and vector defaults used by initial fixtures
+  - relationship target path listOps
+  - child list fields and property list fields
+  - duplicate spec path diagnostics
+
+excluded:
+  - USDC writing
+  - USDZ package opening
+  - .usd forwarding format dispatch
+  - sublayer composition
+  - references and payload composition
+  - sublayer/reference/payload asset resolution and loading
+  - inherits and specializes composition
+  - variant selection composition
+  - clips
+  - schema fallback
+  - value resolution
+  - stage population
+
+boundary_guards:
+  defer_to:
+    resource_opening: usd-resource-protocol
+    layer_format_dispatch: usd-layer-open
+    usdc_binary_decoding: usdc-binary-format
+    usdc_value_decoding: usdc-value-decoder
+    usdc_section_mapping: usdc-spec-parser
+    paths: usd-paths
+    values: usd-foundational-values
+    listops: usd-listops-authored
+    layer_storage: usd-document-model
+    canonical_dump_json: validation adapter over usd-document-model
+  forbidden_local_reimplementations:
+    - parser-local resource protocol handling
+    - parser-local layer opening or format dispatch
+    - alternate path representation inside the USDC parser
+    - alternate value variant type inside the USDC parser
+    - calls into USDA lexer, USDA value parser, or USDA spec parser
+    - implicit composition semantics
+    - resolving authored values across opinions
+    - filtering inactive prims from the layer
+    - fixture-content-driven dispatch — substring matches, file size, content hash, byte-offset fingerprints, or any other dispatch keyed on opened bytes rather than the document-model state built by section parsing
+    - canned canonical-dump literals selected by section bytes or fixture name
+    - path, spec, or field construction that bypasses the Crate index tables
+    - direct usd-resource-protocol reads from usdc-layer-open or usda-layer-open
+    - format dispatch from raw identifier strings instead of ResolvedLocation
+    - owning std::vector opened-resource byte copies in the Crate read path when usd-resource-protocol exposes a file_backed_path
+
+acceptance:
+  score: "100%"
+  diagnostics: "must match golden diagnostics exactly"
+  hermeticity: "generated target may read only target source, standard toolchain, and provided inputs"

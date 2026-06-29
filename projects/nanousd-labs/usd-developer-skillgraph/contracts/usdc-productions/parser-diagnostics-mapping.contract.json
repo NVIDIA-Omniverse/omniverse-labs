@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/usdc-productions/parser-diagnostics-mapping.contract.json",
+  "title": "USDC Parser Diagnostics Mapping Production Contract",
+  "version": "0.1",
+  "spec_commit": "6b4f01f2d6d46b01507481524eb516b4ef358c31",
+  "owned_by": "usdc-spec-parser",
+  "co_owners": ["usdc-binary-format", "usdc-value-decoder", "usdc-layer-open"],
+  "derives_from": "contracts/document-model-productions/common-metadata.contract.json#diagnostics",
+  "format_neutral_rules": "contracts/document-model-productions/common-metadata.contract.json#diagnostics — the format-neutral diagnostic codes (DuplicateSpecPath, InvalidFieldAlias, ForbiddenFieldOnSpecKind, TypeMismatch) and the canonical diagnostic shape are pinned in the format-neutral production. This contract maps the USDC-specific low-level diagnostic codes (defined in crate-reader-diagnostics.contract.json) to format-neutral codes when surfaced through layer-open dispatch, so the document-model layer can match without format detection.",
+  "spec_refs": [
+    "contracts/diagnostics.schema.json",
+    "specification/file_formats/README.md#binary"
+  ],
+  "dependency_contracts": [
+    "contracts/usdc-productions/crate-reader-diagnostics.contract.json",
+    "contracts/usdc-productions/crate-header-bootstrap.contract.json",
+    "contracts/usdc-productions/crate-section-layouts.contract.json",
+    "contracts/usdc-productions/crate-value-representations.contract.json"
+  ],
+  "diagnostic_layers": {
+    "wire_format_layer": "Diagnostics surfaced by usdc-binary-format and usdc-value-decoder during low-level Crate decoding. Codes are USDC-specific (InvalidUsdcHeader, UnsupportedUsdcVersion, MalformedUsdcBootstrap, MalformedUsdcToc, MalformedUsdcLz4Buffer, MalformedUsdcCompressedIntArray, MalformedUsdcValueRepresentation, UnsupportedUsdcFeature). Defined in contracts/usdc-productions/crate-reader-diagnostics.contract.json.",
+    "spec_parser_layer": "Diagnostics surfaced by usdc-spec-parser during section traversal and document-model construction. Codes include MalformedUsdcSection, MalformedUsdcSpecForm, DuplicateSpecPath. Defined in contracts/usdc-productions/crate-reader-diagnostics.contract.json.",
+    "document_model_layer": "Format-neutral codes surfaced after layer-open dispatch, defined in contracts/document-model-productions/common-metadata.contract.json#diagnostics: DuplicateSpecPath, InvalidFieldAlias, ForbiddenFieldOnSpecKind, TypeMismatch."
+  },
+  "code_reduction_table": {
+    "rule": "When a USDC-layer-specific diagnostic surfaces through usd-layer-open into the canonical layer dump, the document-model-facing code is one of the format-neutral codes. The USDC-specific code is preserved in the diagnostic's message or auxiliary fields for debugging, but a format-neutral consumer matches on the reduced code.",
+    "table": {
+      "DuplicateSpecPath": {
+        "usdc_source_codes": ["DuplicateSpecPath"],
+        "format_neutral_code": "DuplicateSpecPath",
+        "note": "Already format-neutral; the spec-parser emits this code directly when two SPECS entries resolve to the same path. Matches the USDA-side DuplicateSpecPath emission per usda-productions/parser-diagnostics.contract.json."
+      },
+      "ForbiddenFieldOnSpecKind": {
+        "usdc_source_codes": ["MalformedUsdcSection"],
+        "format_neutral_code": "ForbiddenFieldOnSpecKind",
+        "note": "When MalformedUsdcSection is emitted because a FIELDS token name violates the spec-kind admission matrix (e.g. variability bound to a form-8 spec, or payload bound to a form-1 spec), the format-neutral code is ForbiddenFieldOnSpecKind. The MalformedUsdcSection message must name the offending field and spec kind."
+      },
+      "TypeMismatch": {
+        "usdc_source_codes": ["MalformedUsdcValueRepresentation"],
+        "format_neutral_code": "TypeMismatch",
+        "note": "When a default value's Crate value-rep type id disagrees with the attribute's typeName, the format-neutral code is TypeMismatch. The MalformedUsdcValueRepresentation message must name the expected and actual type ids."
+      },
+      "InvalidFieldAlias": {
+        "usdc_source_codes": [],
+        "format_neutral_code": "InvalidFieldAlias",
+        "note": "USDC does not produce this code because alias spellings (doc, inherits, variantSets, variants) are USDA grammar concerns. Crate stores canonical token names directly. The code is reserved for parity with USDA; a USDC parser that emits it is in violation."
+      },
+      "InvalidUsdcHeader": {
+        "usdc_source_codes": ["InvalidUsdcHeader"],
+        "format_neutral_code": "InvalidLayerHeader",
+        "note": "Non-PXR-USDC magic or truncated header. Reduces to a format-neutral 'InvalidLayerHeader' code so the dump-side consumer does not need to distinguish USDA from USDC at the error-reporting boundary."
+      },
+      "UnsupportedUsdcVersion": {
+        "usdc_source_codes": ["UnsupportedUsdcVersion"],
+        "format_neutral_code": "UnsupportedLayerVersion",
+        "note": "Reduces to 'UnsupportedLayerVersion' at the layer-open boundary."
+      },
+      "UnsupportedUsdcFeature": {
+        "usdc_source_codes": ["UnsupportedUsdcFeature"],
+        "format_neutral_code": "UnsupportedFeature",
+        "note": "Value types introduced at Crate 0.10+ (PathExpression, Relocates, Splines) encountered on a lower-version reader. Reduces to 'UnsupportedFeature' at the layer-open boundary; the message names the specific value type id."
+      }
+    }
+  },
+  "canonical_diagnostic_shape": {
+    "reference": "contracts/diagnostics.schema.json and contracts/document-model-productions/common-metadata.contract.json#diagnostics",
+    "fields": {
+      "severity": "always 'error' for the codes above; warnings are out of scope",
+      "code": "the format-neutral code from the reduction table when surfaced through layer-open; the wire-layer code in unit-level adapter output",
+      "message": "human-readable description naming the offending construct (field, type, version, spec kind)",
+      "path": "the affected document-model path when the diagnostic is location-specific (DuplicateSpecPath, ForbiddenFieldOnSpecKind, TypeMismatch). Absent for header / version / TOC failures."
+    }
+  },
+  "ordering_invariants": {
+    "inherits_from": "contracts/usdc-productions/crate-reader-diagnostics.contract.json#ordering_invariants",
+    "additional": [
+      "ForbiddenFieldOnSpecKind must be checked at FIELDS token binding time, before set_field is called on document-model storage",
+      "TypeMismatch on a 'default' field must be checked after value-representation decoding but before the value is stored on the attribute spec",
+      "DuplicateSpecPath must be checked before any spec is materialized at the duplicate path"
+    ]
+  },
+  "laws": [
+    "USDC-specific wire-layer diagnostic codes reduce to format-neutral codes through the code_reduction_table when surfaced through layer-open dispatch",
+    "the canonical diagnostic shape (severity, code, message, optional path) is the same across USDA and USDC; format-neutral consumers must not need to know which format produced the diagnostic",
+    "USDC does not emit InvalidFieldAlias because Crate stores canonical field tokens directly; that code is reserved for USDA-side alias rejection",
+    "ForbiddenFieldOnSpecKind is emitted when a FIELDS token binds a forbidden field to a spec kind per the format-neutral admission matrix; the message names the field and spec kind",
+    "TypeMismatch is emitted when a 'default' field's value-representation type id disagrees with the attribute's typeName; the message names expected and actual type ids",
+    "DuplicateSpecPath retains its USDC-specific spelling and is already format-neutral; the message includes the duplicated path",
+    "wire-layer diagnostics (InvalidUsdcHeader, UnsupportedUsdcVersion, MalformedUsdcLz4Buffer, MalformedUsdcCompressedIntArray) preserve their USDC-specific codes in unit-adapter output but reduce when surfaced through usd-layer-open into the canonical dump"
+  ],
+  "golden_groups": [
+    "DuplicateSpecPath emitted as format-neutral code with path field",
+    "ForbiddenFieldOnSpecKind emitted when variability binds to a form-8 spec",
+    "ForbiddenFieldOnSpecKind emitted when payload binds to a form-1 spec",
+    "TypeMismatch emitted when 'default' value-rep type id disagrees with attribute typeName",
+    "InvalidUsdcHeader reduces to InvalidLayerHeader at the dump boundary",
+    "UnsupportedUsdcVersion reduces to UnsupportedLayerVersion at the dump boundary",
+    "UnsupportedUsdcFeature reduces to UnsupportedFeature at the dump boundary (PathExpression on minor<10 fixture)"
+  ],
+  "golden_files": [
+    "goldens/integration/usdc-single-layer/parser-diagnostics.json",
+    "goldens/unit/usdc-spec-parser/spec-parser.json",
+    "goldens/unit/usdc-layer-open/layer-open.json",
+    "goldens/unit/usdc-binary-format/binary-format.json"
+  ]
+}

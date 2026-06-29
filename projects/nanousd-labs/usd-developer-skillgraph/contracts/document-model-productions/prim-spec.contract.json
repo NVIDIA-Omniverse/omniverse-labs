@@ -1,0 +1,159 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/document-model-productions/prim-spec.contract.json",
+  "title": "Document-Model Prim Spec Production Contract",
+  "version": "0.1",
+  "spec_commit": "6b4f01f2d6d46b01507481524eb516b4ef358c31",
+  "derives_from": "contracts/capabilities/document-data-model.json#spec_forms.prim",
+  "spec_refs": [
+    "specification/document_data_model/README.md#prim-spec",
+    "specification/file_formats/README.md#prim-spec-children",
+    "specification/file_formats/README.md#prim-metadata"
+  ],
+  "summary": "Format-neutral rules a prim spec must satisfy after parsing, regardless of whether the source layer was USDA text or USDC binary. Both contracts/usda-productions/prim-specs.contract.json and contracts/usdc-productions/prim-spec-mapping.contract.json cite this contract via derives_from for the document-model invariants; each format then adds storage_mapping describing how its on-disk encoding produces these fields.",
+  "fields": {
+    "specifier": {
+      "type": "EnumSpecifier",
+      "allowed_values": ["def", "over", "class"],
+      "required": "always emitted on every prim spec; storage is native enum/domain value, not a durable string payload"
+    },
+    "typeName": {
+      "type": "token",
+      "required": "only when authored; absent on prim specs that author no concrete typeName (including USDA-authored variant prim specs)"
+    },
+    "kind": {
+      "type": "token",
+      "required": "only when authored; stored as authored metadata and not schema-interpreted by the parser"
+    },
+    "active": {
+      "type": "bool",
+      "required": "only when authored; active=false must not remove the spec at the layer-storage level"
+    },
+    "hidden": {
+      "type": "bool",
+      "required": "only when authored"
+    },
+    "instanceable": {
+      "type": "bool",
+      "required": "only when authored"
+    },
+    "primChildren": {
+      "type": "token[]",
+      "required": "every prim spec carries this field; the value is the ordered list of child prim spec names. Maintained by usd-document-model when child prims are added.",
+      "default_when_unauthored": "[]"
+    },
+    "propertyChildren": {
+      "type": "token[]",
+      "required": "every prim spec carries this field; the value is the ordered list of child property names (attributes and relationships). Maintained by usd-document-model when properties are added.",
+      "default_when_unauthored": "[]"
+    },
+    "variantSetChildren": {
+      "type": "token[]",
+      "required": "every prim spec carries this field; the value is the ordered list of authored variantSet spec names. Distinct from variantSetNames (which is authored composition metadata).",
+      "default_when_unauthored": "[]"
+    },
+    "primOrder": {
+      "type": "token[]",
+      "required": "only when authored via a child reordering; storage holds the last authored ordering when the source format permits multiple authored orderings"
+    },
+    "propertyOrder": {
+      "type": "token[]",
+      "required": "only when authored via a property reordering"
+    },
+    "references": {
+      "type": "listOp<Reference>",
+      "required": "only when authored",
+      "value_shape": "each Reference item carries optional asset reference, optional target prim path, offset (default 0.0), scale (default 1.0). Authored layer data; composition is not evaluated by the parser. Native Reference records, not bare strings or JSON dictionaries, are required in durable storage."
+    },
+    "payload": {
+      "type": "listOp<Payload>",
+      "required": "only when authored",
+      "value_shape": "each Payload item carries optional asset reference, optional target prim path, offset (default 0.0), scale (default 1.0). Native Payload records."
+    },
+    "inheritPaths": {
+      "type": "listOp<ObjectPath>",
+      "required": "only when authored"
+    },
+    "specializes": {
+      "type": "listOp<ObjectPath>",
+      "required": "only when authored"
+    },
+    "variantSetNames": {
+      "type": "listOp<token>",
+      "required": "only when authored. Distinct from variantSetChildren which lists spec storage."
+    },
+    "variantSelection": {
+      "type": "VariantSelectionMap",
+      "required": "only when authored; dictionary keys are variantSet names, values are selected variant names or empty strings. Authored layer data; the parser does not select or populate variants."
+    },
+    "customData": {
+      "type": "dictionary",
+      "required": "only when authored"
+    },
+    "assetInfo": {
+      "type": "dictionary",
+      "required": "only when authored"
+    },
+    "comment": {
+      "type": "string",
+      "required": "only when authored"
+    },
+    "documentation": {
+      "type": "string",
+      "required": "only when authored"
+    },
+    "displayName": {
+      "type": "string",
+      "required": "only when authored"
+    },
+    "displayGroup": {
+      "type": "string",
+      "required": "only when authored"
+    }
+  },
+  "excluded_fields": {
+    "policy": "Strict AOUSD §7.6 conformance. Fields the spec marks Deprecated are NOT in the live field set: they are recognized as reserved spec tokens and rejected (ForbiddenFieldOnSpecKind), never admitted as live fields and never reinterpreted as generic customData/extension fields. noLoadHint is removed outright because AOUSD lists it only as a deprecated relationship field (§7.6.5.2), never on prims — its prim placement was OpenUSD-only.",
+    "deprecated": {
+      "spec_ref": "specification/document_data_model/README.md#deprecated-fields (§7.6.2.7)",
+      "fields": ["relocates", "permission", "prefix", "prefixSubstitutions", "suffix", "suffixSubstitutions", "symmetricPeer", "symmetryArguments", "symmetryFunction"]
+    },
+    "removed_no_prim_spec_basis": {
+      "note": "Has no AOUSD prim-spec basis (live or deprecated); was OpenUSD-only.",
+      "fields": ["noLoadHint"]
+    }
+  },
+  "listop_subfield_rules": {
+    "subfields": ["explicit", "prepend", "append", "delete", "reorder"],
+    "single_item_is_explicit": "When a source format authors a single item where a listOp is allowed without an explicit listOp prefix, the result is an explicit listOp containing that one item. This applies to references, payload, inheritPaths, specializes, variantSetNames, and connectionPaths.",
+    "none_is_empty_explicit": "A None authored value where a listOp is allowed produces an empty listOp on the named subfield.",
+    "subfield_last_wins": "Within a single source layer, repeated authored subfields of the same listOp use last-one-wins per subfield. Cross-layer composition is out of scope.",
+    "applies_to_fields": ["references", "payload", "inheritPaths", "specializes", "variantSetNames"]
+  },
+  "child_list_invariants": {
+    "primChildren": "the ordered list of names of every child prim spec materialized under this prim. Adding a child appends to this list; child-list and child-spec storage must agree.",
+    "propertyChildren": "the ordered list of every attribute and relationship spec name materialized under this prim. Adding a property appends to this list.",
+    "variantSetChildren": "the ordered list of every variantSet spec name materialized under this prim. Distinct from authored variantSetNames listOp metadata.",
+    "agreement_rule": "for every spec name in a child-list field, a corresponding child spec must exist in document-model storage, and vice versa; mismatch is a contract violation."
+  },
+  "laws": [
+    "every prim spec must carry primChildren, propertyChildren, and variantSetChildren as the format-neutral required field set",
+    "primChildren, propertyChildren, and variantSetChildren are token[] fields maintained by usd-document-model in agreement with stored child specs",
+    "prim specifier is a native EnumSpecifier value (def/over/class), never a durable string or JSON payload",
+    "composition arc fields (references, payload, inheritPaths, specializes, variantSetNames) are authored layer data; their composition semantics are not evaluated by the parser",
+    "a single arc item authored without an explicit listOp prefix is stored as an explicit listOp containing that one item",
+    "None authored where a listOp is allowed produces an empty listOp value on the named subfield",
+    "reference and payload items must be stored as native arc records (asset, prim path, offset, scale), not as JSON dictionaries, bare asset strings, or bare path strings",
+    "variantSelection storage uses the native VariantSelectionMap value, not a string-keyed JSON object",
+    "active=false is preserved as field storage; the parser does not filter inactive prims from the layer"
+  ],
+  "golden_groups": [
+    "all prim specifiers (def, over, class) with and without typeName",
+    "nested prim child storage and primChildren maintenance",
+    "property child storage and propertyChildren maintenance",
+    "variantSet child storage and variantSetChildren maintenance",
+    "references and payload with asset, prim path, offset, and scale",
+    "inheritPaths and specializes single-item and listOp subfield forms",
+    "variantSetNames authored as listOp; variantSelection as VariantSelectionMap",
+    "kind, active, hidden, instanceable authored fields"
+  ]
+}

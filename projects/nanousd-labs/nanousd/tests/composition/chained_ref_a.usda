@@ -1,0 +1,9 @@
+#usda 1.0
+
+def Xform "A" (
+    prepend references = @./chained_ref_b.usda@</B>
+)
+{
+    string opinion = "from_A"
+    float aAttr = 1.0
+}

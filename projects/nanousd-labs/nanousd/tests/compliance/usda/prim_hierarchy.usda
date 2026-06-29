@@ -1,0 +1,19 @@
+#usda 1.0
+(
+    defaultPrim = "Root"
+)
+
+def Xform "Root" {
+    def Mesh "Child" (
+        kind = "component"
+    ) {
+        int faceCount = 6
+        bool active = true
+    }
+
+    def Scope "Empty" {
+    }
+
+    class Xform "Abstract" {
+    }
+}

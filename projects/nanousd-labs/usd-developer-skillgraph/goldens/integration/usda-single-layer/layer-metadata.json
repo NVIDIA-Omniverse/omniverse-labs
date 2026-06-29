@@ -1,0 +1,75 @@
+{
+  "suite": "usda-layer-metadata",
+  "contract": "contracts/usda-productions/layer-metadata.contract.json",
+  "spec_commit": "v1.0.1",
+  "cases": [
+    {
+      "id": "sublayers-offsets-and-relocates",
+      "spec_refs": [
+        "file_formats/README.md:1507 SublayerItem",
+        "file_formats/README.md:1523 RelocatesMetadata",
+        "document_data_model/README.md:520 subLayerOffsets",
+        "document_data_model/README.md:550 layerRelocates"
+      ],
+      "input": {
+        "usda": "#usda 1.0\n(\n    subLayers = [\n        @base.usda@,\n        @anim.usda@ (offset = 10; scale = 0.5; scale = 2)\n    ]\n    relocates = {\n        </World/Old>: </World/New>,\n        </World/Gone>: None\n    }\n)\n\ndef \"World\"\n{\n}\n"
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "layer": {
+          "fields": {
+            "subLayers": {"type": "asset[]", "value": ["base.usda", "anim.usda"]},
+            "subLayerOffsets": {
+              "type": "Retiming[]",
+              "value": [
+                {"offset": 0.0, "scale": 1.0},
+                {"offset": 10.0, "scale": 2.0}
+              ]
+            },
+            "layerRelocates": {
+              "type": "Relocates",
+              "value": {
+                "/World/Old": "/World/New",
+                "/World/Gone": ""
+              }
+            },
+            "primChildren": {"type": "token[]", "value": ["World"]}
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "subLayers": {"type": "asset[]", "value": ["base.usda", "anim.usda"]},
+                "subLayerOffsets": {
+                  "type": "Retiming[]",
+                  "value": [
+                    {"offset": 0.0, "scale": 1.0},
+                    {"offset": 10.0, "scale": 2.0}
+                  ]
+                },
+                "layerRelocates": {
+                  "type": "Relocates",
+                  "value": {
+                    "/World/Old": "/World/New",
+                    "/World/Gone": ""
+                  }
+                },
+                "primChildren": {"type": "token[]", "value": ["World"]}
+              }
+            },
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

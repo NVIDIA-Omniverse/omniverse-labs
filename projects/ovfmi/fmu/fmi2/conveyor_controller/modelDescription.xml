@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<fmiModelDescription
+    fmiVersion="2.0"
+    modelName="ConveyorController"
+    guid="a1bf7394-85a7-4694-bb7b-5e4769bb1b06"
+    generationTool="NVIDIA ovx-USD-FMI"
+    description="Five-zone conveyor controller with timed package reject behavior">
+
+  <CoSimulation modelIdentifier="ConveyorController" canHandleVariableCommunicationStepSize="true"/>
+
+  <ModelVariables>
+    <ScalarVariable name="operatorSpeed" valueReference="0" causality="input" variability="continuous">
+      <Real start="8.0"/>
+    </ScalarVariable>
+    <ScalarVariable name="enable" valueReference="1" causality="input" variability="continuous">
+      <Real start="1.0"/>
+    </ScalarVariable>
+    <ScalarVariable name="eStop" valueReference="2" causality="input" variability="continuous">
+      <Real start="0.0"/>
+    </ScalarVariable>
+    <ScalarVariable name="sensorPresence" valueReference="3" causality="input" variability="continuous">
+      <Real start="0.0"/>
+    </ScalarVariable>
+    <ScalarVariable name="rejectSpeed" valueReference="4" causality="input" variability="continuous">
+      <Real start="8.0"/>
+    </ScalarVariable>
+
+    <ScalarVariable name="zone0Speed" valueReference="10" causality="output" variability="continuous" initial="calculated">
+      <Real/>
+    </ScalarVariable>
+    <ScalarVariable name="zone1Speed" valueReference="11" causality="output" variability="continuous" initial="calculated">
+      <Real/>
+    </ScalarVariable>
+    <ScalarVariable name="zone2Speed" valueReference="12" causality="output" variability="continuous" initial="calculated">
+      <Real/>
+    </ScalarVariable>
+    <ScalarVariable name="zone3Speed" valueReference="13" causality="output" variability="continuous" initial="calculated">
+      <Real/>
+    </ScalarVariable>
+    <ScalarVariable name="zone4Speed" valueReference="14" causality="output" variability="continuous" initial="calculated">
+      <Real/>
+    </ScalarVariable>
+    <ScalarVariable name="rejectActive" valueReference="15" causality="output" variability="continuous" initial="calculated">
+      <Real/>
+    </ScalarVariable>
+
+    <ScalarVariable name="defaultSpeed" valueReference="20" causality="parameter" variability="fixed">
+      <Real start="8.0"/>
+    </ScalarVariable>
+    <ScalarVariable name="rejectDuration" valueReference="21" causality="parameter" variability="fixed">
+      <Real start="5.0"/>
+    </ScalarVariable>
+    <ScalarVariable name="time" valueReference="22" causality="independent" variability="continuous">
+      <Real/>
+    </ScalarVariable>
+  </ModelVariables>
+
+  <ModelStructure>
+    <Outputs>
+      <Unknown index="6"/>
+      <Unknown index="7"/>
+      <Unknown index="8"/>
+      <Unknown index="9"/>
+      <Unknown index="10"/>
+      <Unknown index="11"/>
+    </Outputs>
+  </ModelStructure>
+
+</fmiModelDescription>

@@ -1,0 +1,12 @@
+# LeakSanitizer suppressions for intentional process-lifetime storage.
+#
+# PathPool interns PathData nodes for process lifetime, matching Token's
+# process-wide interning convention. Lazy Path text/elements views are owned
+# by those nodes and intentionally retained until process exit.
+leak:nanousd::PathPool::PathPool
+leak:nanousd::PathPool::Intern
+leak:nanousd::Path::GetText
+leak:nanousd::Path::GetElements
+# Same intentional process-lifetime storage, but now reached via the internal
+# const-reference accessor introduced for compose's prefix/remap hot paths.
+leak:nanousd::GetCachedPathElements

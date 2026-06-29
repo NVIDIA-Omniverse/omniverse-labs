@@ -1,0 +1,17 @@
+#usda 1.0
+# Clip layer authoring both `radius` and `color`. Used by the
+# manifest-gating test: the manifest declares only `radius`, so
+# `color` must be skipped by the clip consultation path even though
+# the clip layer authors it.
+
+def Scope "Geo"
+{
+    float radius.timeSamples = {
+        0: 1.0,
+        10: 2.0,
+    }
+    color3f color.timeSamples = {
+        0: (1, 0, 0),
+        10: (0, 1, 0),
+    }
+}

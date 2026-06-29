@@ -1,0 +1,70 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    metersPerUnit = 0.01
+    upAxis = "Y"
+)
+
+def Xform "World"
+{
+    def Cube "LeftCube"
+    {
+        double size = 24
+        color3f[] primvars:displayColor = [(0.8, 0.1, 0.1)]
+        double3 xformOp:translate = (-45, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Cube "CenterCube"
+    {
+        double size = 24
+        color3f[] primvars:displayColor = [(0.1, 0.8, 0.1)]
+        double3 xformOp:translate = (0, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Cube "RightCube"
+    {
+        double size = 24
+        color3f[] primvars:displayColor = [(0.1, 0.2, 0.9)]
+        double3 xformOp:translate = (45, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Camera "Camera"
+    {
+        float2 clippingRange = (1, 10000)
+        float focalLength = 50
+        float horizontalAperture = 36
+        float verticalAperture = 18
+        token projection = "perspective"
+        double3 xformOp:translate = (0, 0, 220)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def DistantLight "KeyLight"
+    {
+        float intensity = 3000
+        float angle = 0.53
+        float3 xformOp:rotateXYZ = (0, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:rotateXYZ"]
+    }
+}
+
+def Scope "Render"
+{
+    # [snippet:doc-pin-render-product-to-gpu-0-usda]
+    def RenderProduct "Camera"
+    {
+        rel camera = </World/Camera>
+        uint[] deviceIds = [0]
+        int2 resolution = (640, 320)
+        rel orderedVars = <LdrColor>
+
+        def RenderVar "LdrColor"
+        {
+            string sourceName = "LdrColor"
+        }
+    }
+    # [/snippet:doc-pin-render-product-to-gpu-0-usda]
+}

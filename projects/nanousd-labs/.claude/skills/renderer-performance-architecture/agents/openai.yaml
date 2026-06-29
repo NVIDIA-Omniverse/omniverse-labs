@@ -1,0 +1,4 @@
+interface:
+  display_name: "Renderer Performance Architecture"
+  short_description: "Scale renderers to large USD scenes"
+  default_prompt: "Use $renderer-performance-architecture to design scalable renderer architecture for large USD scenes (instancing, residency, batching, acceleration structures, pass gating, telemetry) and replace dead-end paths."

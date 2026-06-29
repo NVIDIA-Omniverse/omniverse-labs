@@ -1,0 +1,42 @@
+#usda 1.0
+(
+    defaultPrim = "Group"
+)
+
+over "class_Base"
+{
+    int groupBaseVal = 120
+    int baseConflictVal = 120
+
+    def "BaseChild"
+    {
+        int groupBaseChildVal = 121
+    }
+}
+
+over "class_Asset"
+{
+    int groupClassVal = 20
+    int classConflictVal = 20
+    int localBeatsSpecializesVal = 20
+
+    def "SharedChild"
+    {
+        int groupChildVal = 21
+    }
+}
+
+def "Group"
+{
+    def "Asset" (
+        references = @./implied_specializes_asset.usda@
+    )
+    {
+    }
+
+    def "NoUpstream" (
+        references = @./implied_specializes_asset.usda@</NoUpstream>
+    )
+    {
+    }
+}

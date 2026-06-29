@@ -1,0 +1,66 @@
+{
+  "measurement_model": {
+    "id": "usdc-binary-format-hot-ops-v1",
+    "description": "Per-operation timing for the USDC binary-format unit. Times validate_header on a small fixture (baseline; expect sub-microsecond), decode_lz4_buffer on 64 KiB synthetic payloads in both 0-chunk and N-chunk forms, and decode_compressed_int_array on 8K-element int32/int64 arrays. Throughput floors are conservative first cuts; first benchmark runs will calibrate. Consumed by harness/handle_benchmark.py through the usdc-binary-format-unit scope's benchmark_adapter_cmd."
+  },
+  "targets": [
+    {
+      "id": "validate_header_min_fixture",
+      "op": "validate_header",
+      "fixture": "benchmarks/fixtures/minimal_empty.usdc",
+      "runs": 10000,
+      "max_ns_per_op": 200,
+      "notes": "Header validation should be sub-microsecond on a warm cache; this baseline catches catastrophic regressions like per-call file I/O"
+    },
+    {
+      "id": "decode_lz4_buffer_zero_chunk_64K",
+      "op": "decode_lz4_buffer",
+      "fixture": "benchmarks/fixtures/usdc-unit/lz4-zero-chunk-64K.bin",
+      "runs": 1000,
+      "max_ns_per_op": 200000,
+      "notes": "64 KiB decompressed; LZ4 typically delivers >2 GB/s on a single core, so 200 us = ~330 MB/s is a wide safety margin around a byte-at-a-time interpreter"
+    },
+    {
+      "id": "decode_lz4_buffer_multi_chunk_64K",
+      "op": "decode_lz4_buffer",
+      "fixture": "benchmarks/fixtures/usdc-unit/lz4-multi-chunk-64K.bin",
+      "runs": 1000,
+      "max_ns_per_op": 300000,
+      "notes": "4 x 16 KiB chunks; per-chunk envelope bookkeeping adds some cost but should not break the throughput floor"
+    },
+    {
+      "id": "decode_compressed_int_array_int32_8K",
+      "op": "decode_compressed_int_array",
+      "element_type": "int32",
+      "fixture": "benchmarks/fixtures/usdc-unit/compint32-8K.bin",
+      "runs": 1000,
+      "max_ns_per_op": 250000,
+      "notes": "8192 int32 elements; tests outer LZ4 decode + codepoint table dispatch + delta running sum"
+    },
+    {
+      "id": "decode_compressed_int_array_int64_8K",
+      "op": "decode_compressed_int_array",
+      "element_type": "int64",
+      "fixture": "benchmarks/fixtures/usdc-unit/compint64-8K.bin",
+      "runs": 1000,
+      "max_ns_per_op": 350000,
+      "notes": "8192 int64 elements; codepoint width pairs are i16/i32/i64 instead of i8/i16/i32"
+    }
+  ],
+  "ratios": [
+    {
+      "id": "lz4_multi_vs_zero_chunk",
+      "numerator": "decode_lz4_buffer_multi_chunk_64K",
+      "denominator": "decode_lz4_buffer_zero_chunk_64K",
+      "max_ratio": 2.0,
+      "rationale": "multi-chunk envelope adds bookkeeping per chunk but should not double throughput cost on equal payload size"
+    },
+    {
+      "id": "compint64_vs_compint32",
+      "numerator": "decode_compressed_int_array_int64_8K",
+      "denominator": "decode_compressed_int_array_int32_8K",
+      "max_ratio": 2.0,
+      "rationale": "int64 path moves twice the bytes per element but should not exceed 2x the int32 cost; higher ratios indicate per-element branching or width-pair confusion"
+    }
+  ]
+}

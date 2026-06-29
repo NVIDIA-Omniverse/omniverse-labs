@@ -1,0 +1,108 @@
+{
+  "suite": "usda-parser-diagnostics",
+  "contract": "contracts/usda-productions/parser-diagnostics.contract.json",
+  "spec_commit": "v1.0.1",
+  "cases": [
+    {
+      "id": "known-type-mismatch-diagnostic",
+      "spec_refs": [
+        "file_formats/README.md:1088 Attribute Types and Value Validation"
+      ],
+      "input": {
+        "usda": "#usda 1.0\n\ndef \"World\"\n{\n    double4 bad = (1, 2, 3)\n}\n"
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {
+            "severity": "error",
+            "code": "TypeMismatch",
+            "message": "dimensioned value has wrong arity"
+          }
+        ]
+      }
+    },
+    {
+      "id": "unterminated-asset-ref-diagnostic",
+      "spec_refs": [
+        "file_formats/README.md:526 AssetRef"
+      ],
+      "input": {
+        "usda": "#usda 1.0\n\ndef \"World\"\n{\n    asset bad = @missing-end\n}\n"
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {
+            "severity": "error",
+            "code": "ParseError",
+            "message": "unterminated asset reference"
+          }
+        ]
+      }
+    },
+    {
+      "id": "default-prim-type-mismatch-diagnostic",
+      "spec_refs": [
+        "document_data_model/README.md:577 defaultPrim"
+      ],
+      "input": {
+        "usda": "#usda 1.0\n(\n    defaultPrim = 7\n)\n"
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {
+            "severity": "error",
+            "code": "TypeMismatch",
+            "message": "expected string defaultPrim"
+          }
+        ]
+      }
+    },
+    {
+      "id": "attribute-metadata-keyword-payload-invalid",
+      "spec_refs": [
+        "file_formats/README.md:431 Keyword",
+        "file_formats/README.md:831 KeyValueMetadata",
+        "file_formats/README.md:878 AttributeMetadataItem",
+        "file_formats/README.md:1249 PayloadMetadata"
+      ],
+      "input": {
+        "usda": "#usda 1.0\n\ndef \"World\"\n{\n    float size (\n        payload = </PayloadRoot>\n    )\n}\n"
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {
+            "severity": "error",
+            "code": "ParseError",
+            "message": "metadata keyword payload is not valid in attribute metadata"
+          }
+        ]
+      }
+    },
+    {
+      "id": "relationship-metadata-keyword-references-invalid",
+      "spec_refs": [
+        "file_formats/README.md:431 Keyword",
+        "file_formats/README.md:831 KeyValueMetadata",
+        "file_formats/README.md:1126 RelationshipMetadataItem",
+        "file_formats/README.md:1226 ReferencesMetadata"
+      ],
+      "input": {
+        "usda": "#usda 1.0\n\ndef \"World\"\n{\n    rel target (\n        references = </Model>\n    )\n}\n"
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {
+            "severity": "error",
+            "code": "ParseError",
+            "message": "metadata keyword references is not valid in relationship metadata"
+          }
+        ]
+      }
+    }
+  ]
+}

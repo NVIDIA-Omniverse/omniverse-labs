@@ -1,0 +1,6113 @@
+{
+  "suite": "usd-foundational-values-basic",
+  "contract": "contracts/handles/foundational-values.handle.json",
+  "spec_commit": "v1.0.1",
+  "cases": [
+    {
+      "id": "catalog-scalar-dimensioned-alias-container-and-opaque",
+      "input": {
+        "ops": [
+          {
+            "op": "inspect_storage"
+          },
+          {
+            "op": "describe_type",
+            "type": "asset"
+          },
+          {
+            "op": "describe_type",
+            "type": "bool"
+          },
+          {
+            "op": "describe_type",
+            "type": "double"
+          },
+          {
+            "op": "describe_type",
+            "type": "float"
+          },
+          {
+            "op": "describe_type",
+            "type": "half"
+          },
+          {
+            "op": "describe_type",
+            "type": "int"
+          },
+          {
+            "op": "describe_type",
+            "type": "int64"
+          },
+          {
+            "op": "describe_type",
+            "type": "string"
+          },
+          {
+            "op": "describe_type",
+            "type": "timecode"
+          },
+          {
+            "op": "describe_type",
+            "type": "token"
+          },
+          {
+            "op": "describe_type",
+            "type": "uchar"
+          },
+          {
+            "op": "describe_type",
+            "type": "uint"
+          },
+          {
+            "op": "describe_type",
+            "type": "uint64"
+          },
+          {
+            "op": "describe_type",
+            "type": "double2"
+          },
+          {
+            "op": "describe_type",
+            "type": "double3"
+          },
+          {
+            "op": "describe_type",
+            "type": "double4"
+          },
+          {
+            "op": "describe_type",
+            "type": "float2"
+          },
+          {
+            "op": "describe_type",
+            "type": "float3"
+          },
+          {
+            "op": "describe_type",
+            "type": "float4"
+          },
+          {
+            "op": "describe_type",
+            "type": "half2"
+          },
+          {
+            "op": "describe_type",
+            "type": "half3"
+          },
+          {
+            "op": "describe_type",
+            "type": "half4"
+          },
+          {
+            "op": "describe_type",
+            "type": "int2"
+          },
+          {
+            "op": "describe_type",
+            "type": "int3"
+          },
+          {
+            "op": "describe_type",
+            "type": "int4"
+          },
+          {
+            "op": "describe_type",
+            "type": "matrix2d"
+          },
+          {
+            "op": "describe_type",
+            "type": "matrix3d"
+          },
+          {
+            "op": "describe_type",
+            "type": "matrix4d"
+          },
+          {
+            "op": "describe_type",
+            "type": "quatd"
+          },
+          {
+            "op": "describe_type",
+            "type": "quatf"
+          },
+          {
+            "op": "describe_type",
+            "type": "quath"
+          },
+          {
+            "op": "describe_type",
+            "type": "color3d"
+          },
+          {
+            "op": "describe_type",
+            "type": "color3f"
+          },
+          {
+            "op": "describe_type",
+            "type": "color3h"
+          },
+          {
+            "op": "describe_type",
+            "type": "color4d"
+          },
+          {
+            "op": "describe_type",
+            "type": "color4f"
+          },
+          {
+            "op": "describe_type",
+            "type": "color4h"
+          },
+          {
+            "op": "describe_type",
+            "type": "normal3d"
+          },
+          {
+            "op": "describe_type",
+            "type": "normal3f"
+          },
+          {
+            "op": "describe_type",
+            "type": "normal3h"
+          },
+          {
+            "op": "describe_type",
+            "type": "point3d"
+          },
+          {
+            "op": "describe_type",
+            "type": "point3f"
+          },
+          {
+            "op": "describe_type",
+            "type": "point3h"
+          },
+          {
+            "op": "describe_type",
+            "type": "vector3d"
+          },
+          {
+            "op": "describe_type",
+            "type": "vector3f"
+          },
+          {
+            "op": "describe_type",
+            "type": "vector3h"
+          },
+          {
+            "op": "describe_type",
+            "type": "frame4d"
+          },
+          {
+            "op": "describe_type",
+            "type": "texCoord2d"
+          },
+          {
+            "op": "describe_type",
+            "type": "texCoord2f"
+          },
+          {
+            "op": "describe_type",
+            "type": "texCoord2h"
+          },
+          {
+            "op": "describe_type",
+            "type": "texCoord3d"
+          },
+          {
+            "op": "describe_type",
+            "type": "texCoord3f"
+          },
+          {
+            "op": "describe_type",
+            "type": "texCoord3h"
+          },
+          {
+            "op": "describe_type",
+            "type": "group"
+          },
+          {
+            "op": "describe_type",
+            "type": "dictionary"
+          },
+          {
+            "op": "describe_type",
+            "type": "opaque"
+          }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "inspect_storage",
+            "ok": true,
+            "jsonStorageModel": "on_demand_only",
+            "dictionaryStorageModel": "typed_raw_entries",
+            "rawValueStorageModel": "typed_value_container",
+            "storageShapePolicy": "implementation_defined",
+            "typedReadModel": "inspect_then_checked_read",
+            "numericStorageModel": "native_numeric_payloads",
+            "typedPayloadCatalogModel": "complete_foundational_catalog",
+            "scalarPayloadModel": "typed_scalar_domains",
+            "shapePayloadModel": "typed_dimensioned_quat_matrix_shapes",
+            "semanticAliasPayloadModel": "alias_role_plus_underlying_type",
+            "dimensionedStorageModel": "native_numeric_element_payloads",
+            "arrayStorageModel": "typed_element_sequences",
+            "adapterNumberModel": "json_number_text_on_output",
+            "adapterJsonAsBackingStorage": false,
+            "numericStringStorage": false
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "asset",
+              "kind": "scalar",
+              "fundamental": "utf8-string-no-c0-c1-controls"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "bool",
+              "kind": "scalar",
+              "fundamental": "u1"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "double",
+              "kind": "scalar",
+              "fundamental": "f64"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "float",
+              "kind": "scalar",
+              "fundamental": "f32"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "half",
+              "kind": "scalar",
+              "fundamental": "f16"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "int",
+              "kind": "scalar",
+              "fundamental": "i32"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "int64",
+              "kind": "scalar",
+              "fundamental": "i64"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "string",
+              "kind": "scalar",
+              "fundamental": "utf8-string"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "timecode",
+              "kind": "scalar",
+              "fundamental": "f64",
+              "unitless": true
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "token",
+              "kind": "scalar",
+              "fundamental": "utf8-string",
+              "requires": "token_identity"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "uchar",
+              "kind": "scalar",
+              "fundamental": "u8"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "uint",
+              "kind": "scalar",
+              "fundamental": "u32"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "uint64",
+              "kind": "scalar",
+              "fundamental": "u64"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "double2",
+              "kind": "dimensioned",
+              "elementType": "double",
+              "shape": [
+                2
+              ]
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "double3",
+              "kind": "dimensioned",
+              "elementType": "double",
+              "shape": [
+                3
+              ]
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "double4",
+              "kind": "dimensioned",
+              "elementType": "double",
+              "shape": [
+                4
+              ]
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "float2",
+              "kind": "dimensioned",
+              "elementType": "float",
+              "shape": [
+                2
+              ]
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "float3",
+              "kind": "dimensioned",
+              "elementType": "float",
+              "shape": [
+                3
+              ]
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "float4",
+              "kind": "dimensioned",
+              "elementType": "float",
+              "shape": [
+                4
+              ]
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "half2",
+              "kind": "dimensioned",
+              "elementType": "half",
+              "shape": [
+                2
+              ]
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "half3",
+              "kind": "dimensioned",
+              "elementType": "half",
+              "shape": [
+                3
+              ]
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "half4",
+              "kind": "dimensioned",
+              "elementType": "half",
+              "shape": [
+                4
+              ]
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "int2",
+              "kind": "dimensioned",
+              "elementType": "int",
+              "shape": [
+                2
+              ]
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "int3",
+              "kind": "dimensioned",
+              "elementType": "int",
+              "shape": [
+                3
+              ]
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "int4",
+              "kind": "dimensioned",
+              "elementType": "int",
+              "shape": [
+                4
+              ]
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "matrix2d",
+              "kind": "dimensioned",
+              "elementType": "double",
+              "shape": [
+                2,
+                2
+              ],
+              "order": "row-major"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "matrix3d",
+              "kind": "dimensioned",
+              "elementType": "double",
+              "shape": [
+                3,
+                3
+              ],
+              "order": "row-major"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "matrix4d",
+              "kind": "dimensioned",
+              "elementType": "double",
+              "shape": [
+                4,
+                4
+              ],
+              "order": "row-major"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "quatd",
+              "kind": "dimensioned",
+              "elementType": "double",
+              "shape": [
+                4
+              ],
+              "componentOrder": "i,j,k,w"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "quatf",
+              "kind": "dimensioned",
+              "elementType": "float",
+              "shape": [
+                4
+              ],
+              "componentOrder": "i,j,k,w"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "quath",
+              "kind": "dimensioned",
+              "elementType": "half",
+              "shape": [
+                4
+              ],
+              "componentOrder": "i,j,k,w"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "color3d",
+              "kind": "semanticAlias",
+              "underlyingType": "double3",
+              "role": "color"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "color3f",
+              "kind": "semanticAlias",
+              "underlyingType": "float3",
+              "role": "color"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "color3h",
+              "kind": "semanticAlias",
+              "underlyingType": "half3",
+              "role": "color"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "color4d",
+              "kind": "semanticAlias",
+              "underlyingType": "double4",
+              "role": "color"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "color4f",
+              "kind": "semanticAlias",
+              "underlyingType": "float4",
+              "role": "color"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "color4h",
+              "kind": "semanticAlias",
+              "underlyingType": "half4",
+              "role": "color"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "normal3d",
+              "kind": "semanticAlias",
+              "underlyingType": "double3",
+              "role": "normal"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "normal3f",
+              "kind": "semanticAlias",
+              "underlyingType": "float3",
+              "role": "normal"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "normal3h",
+              "kind": "semanticAlias",
+              "underlyingType": "half3",
+              "role": "normal"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "point3d",
+              "kind": "semanticAlias",
+              "underlyingType": "double3",
+              "role": "point"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "point3f",
+              "kind": "semanticAlias",
+              "underlyingType": "float3",
+              "role": "point"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "point3h",
+              "kind": "semanticAlias",
+              "underlyingType": "half3",
+              "role": "point"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "vector3d",
+              "kind": "semanticAlias",
+              "underlyingType": "double3",
+              "role": "vector"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "vector3f",
+              "kind": "semanticAlias",
+              "underlyingType": "float3",
+              "role": "vector"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "vector3h",
+              "kind": "semanticAlias",
+              "underlyingType": "half3",
+              "role": "vector"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "frame4d",
+              "kind": "semanticAlias",
+              "underlyingType": "matrix4d",
+              "role": "frame"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "texCoord2d",
+              "kind": "semanticAlias",
+              "underlyingType": "double2",
+              "role": "texCoord"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "texCoord2f",
+              "kind": "semanticAlias",
+              "underlyingType": "float2",
+              "role": "texCoord"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "texCoord2h",
+              "kind": "semanticAlias",
+              "underlyingType": "half2",
+              "role": "texCoord"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "texCoord3d",
+              "kind": "semanticAlias",
+              "underlyingType": "double3",
+              "role": "texCoord"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "texCoord3f",
+              "kind": "semanticAlias",
+              "underlyingType": "float3",
+              "role": "texCoord"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "texCoord3h",
+              "kind": "semanticAlias",
+              "underlyingType": "half3",
+              "role": "texCoord"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "group",
+              "kind": "semanticAlias",
+              "underlyingType": "opaque",
+              "role": "group"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "dictionary",
+              "kind": "container"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "opaque",
+              "kind": "algebraic",
+              "serializable": false
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "array-type-catalog",
+      "input": {
+        "ops": [
+          {
+            "op": "describe_type",
+            "type": "asset[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "bool[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "double[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "float[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "half[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "int[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "int64[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "string[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "timecode[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "token[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "uchar[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "uint[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "uint64[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "double2[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "double3[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "double4[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "float2[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "float3[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "float4[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "half2[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "half3[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "half4[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "int2[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "int3[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "int4[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "matrix2d[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "matrix3d[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "matrix4d[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "quatd[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "quatf[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "quath[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "color3d[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "color3f[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "color3h[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "color4d[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "color4f[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "color4h[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "normal3d[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "normal3f[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "normal3h[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "point3d[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "point3f[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "point3h[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "vector3d[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "vector3f[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "vector3h[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "frame4d[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "texCoord2d[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "texCoord2f[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "texCoord2h[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "texCoord3d[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "texCoord3f[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "texCoord3h[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "opaque[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "group[]"
+          },
+          {
+            "op": "describe_type",
+            "type": "dictionary[]"
+          }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "asset[]",
+              "kind": "array",
+              "elementType": "asset",
+              "elementKind": "scalar"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "bool[]",
+              "kind": "array",
+              "elementType": "bool",
+              "elementKind": "scalar"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "double[]",
+              "kind": "array",
+              "elementType": "double",
+              "elementKind": "scalar"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "float[]",
+              "kind": "array",
+              "elementType": "float",
+              "elementKind": "scalar"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "half[]",
+              "kind": "array",
+              "elementType": "half",
+              "elementKind": "scalar"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "int[]",
+              "kind": "array",
+              "elementType": "int",
+              "elementKind": "scalar"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "int64[]",
+              "kind": "array",
+              "elementType": "int64",
+              "elementKind": "scalar"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "string[]",
+              "kind": "array",
+              "elementType": "string",
+              "elementKind": "scalar"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "timecode[]",
+              "kind": "array",
+              "elementType": "timecode",
+              "elementKind": "scalar"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "token[]",
+              "kind": "array",
+              "elementType": "token",
+              "elementKind": "scalar"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "uchar[]",
+              "kind": "array",
+              "elementType": "uchar",
+              "elementKind": "scalar"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "uint[]",
+              "kind": "array",
+              "elementType": "uint",
+              "elementKind": "scalar"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "uint64[]",
+              "kind": "array",
+              "elementType": "uint64",
+              "elementKind": "scalar"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "double2[]",
+              "kind": "array",
+              "elementType": "double2",
+              "elementKind": "dimensioned"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "double3[]",
+              "kind": "array",
+              "elementType": "double3",
+              "elementKind": "dimensioned"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "double4[]",
+              "kind": "array",
+              "elementType": "double4",
+              "elementKind": "dimensioned"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "float2[]",
+              "kind": "array",
+              "elementType": "float2",
+              "elementKind": "dimensioned"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "float3[]",
+              "kind": "array",
+              "elementType": "float3",
+              "elementKind": "dimensioned"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "float4[]",
+              "kind": "array",
+              "elementType": "float4",
+              "elementKind": "dimensioned"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "half2[]",
+              "kind": "array",
+              "elementType": "half2",
+              "elementKind": "dimensioned"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "half3[]",
+              "kind": "array",
+              "elementType": "half3",
+              "elementKind": "dimensioned"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "half4[]",
+              "kind": "array",
+              "elementType": "half4",
+              "elementKind": "dimensioned"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "int2[]",
+              "kind": "array",
+              "elementType": "int2",
+              "elementKind": "dimensioned"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "int3[]",
+              "kind": "array",
+              "elementType": "int3",
+              "elementKind": "dimensioned"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "int4[]",
+              "kind": "array",
+              "elementType": "int4",
+              "elementKind": "dimensioned"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "matrix2d[]",
+              "kind": "array",
+              "elementType": "matrix2d",
+              "elementKind": "dimensioned"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "matrix3d[]",
+              "kind": "array",
+              "elementType": "matrix3d",
+              "elementKind": "dimensioned"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "matrix4d[]",
+              "kind": "array",
+              "elementType": "matrix4d",
+              "elementKind": "dimensioned"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "quatd[]",
+              "kind": "array",
+              "elementType": "quatd",
+              "elementKind": "dimensioned"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "quatf[]",
+              "kind": "array",
+              "elementType": "quatf",
+              "elementKind": "dimensioned"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "quath[]",
+              "kind": "array",
+              "elementType": "quath",
+              "elementKind": "dimensioned"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "color3d[]",
+              "kind": "array",
+              "elementType": "color3d",
+              "elementKind": "semanticAlias",
+              "underlyingElementType": "double3",
+              "role": "color"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "color3f[]",
+              "kind": "array",
+              "elementType": "color3f",
+              "elementKind": "semanticAlias",
+              "underlyingElementType": "float3",
+              "role": "color"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "color3h[]",
+              "kind": "array",
+              "elementType": "color3h",
+              "elementKind": "semanticAlias",
+              "underlyingElementType": "half3",
+              "role": "color"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "color4d[]",
+              "kind": "array",
+              "elementType": "color4d",
+              "elementKind": "semanticAlias",
+              "underlyingElementType": "double4",
+              "role": "color"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "color4f[]",
+              "kind": "array",
+              "elementType": "color4f",
+              "elementKind": "semanticAlias",
+              "underlyingElementType": "float4",
+              "role": "color"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "color4h[]",
+              "kind": "array",
+              "elementType": "color4h",
+              "elementKind": "semanticAlias",
+              "underlyingElementType": "half4",
+              "role": "color"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "normal3d[]",
+              "kind": "array",
+              "elementType": "normal3d",
+              "elementKind": "semanticAlias",
+              "underlyingElementType": "double3",
+              "role": "normal"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "normal3f[]",
+              "kind": "array",
+              "elementType": "normal3f",
+              "elementKind": "semanticAlias",
+              "underlyingElementType": "float3",
+              "role": "normal"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "normal3h[]",
+              "kind": "array",
+              "elementType": "normal3h",
+              "elementKind": "semanticAlias",
+              "underlyingElementType": "half3",
+              "role": "normal"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "point3d[]",
+              "kind": "array",
+              "elementType": "point3d",
+              "elementKind": "semanticAlias",
+              "underlyingElementType": "double3",
+              "role": "point"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "point3f[]",
+              "kind": "array",
+              "elementType": "point3f",
+              "elementKind": "semanticAlias",
+              "underlyingElementType": "float3",
+              "role": "point"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "point3h[]",
+              "kind": "array",
+              "elementType": "point3h",
+              "elementKind": "semanticAlias",
+              "underlyingElementType": "half3",
+              "role": "point"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "vector3d[]",
+              "kind": "array",
+              "elementType": "vector3d",
+              "elementKind": "semanticAlias",
+              "underlyingElementType": "double3",
+              "role": "vector"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "vector3f[]",
+              "kind": "array",
+              "elementType": "vector3f",
+              "elementKind": "semanticAlias",
+              "underlyingElementType": "float3",
+              "role": "vector"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "vector3h[]",
+              "kind": "array",
+              "elementType": "vector3h",
+              "elementKind": "semanticAlias",
+              "underlyingElementType": "half3",
+              "role": "vector"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "frame4d[]",
+              "kind": "array",
+              "elementType": "frame4d",
+              "elementKind": "semanticAlias",
+              "underlyingElementType": "matrix4d",
+              "role": "frame"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "texCoord2d[]",
+              "kind": "array",
+              "elementType": "texCoord2d",
+              "elementKind": "semanticAlias",
+              "underlyingElementType": "double2",
+              "role": "texCoord"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "texCoord2f[]",
+              "kind": "array",
+              "elementType": "texCoord2f",
+              "elementKind": "semanticAlias",
+              "underlyingElementType": "float2",
+              "role": "texCoord"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "texCoord2h[]",
+              "kind": "array",
+              "elementType": "texCoord2h",
+              "elementKind": "semanticAlias",
+              "underlyingElementType": "half2",
+              "role": "texCoord"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "texCoord3d[]",
+              "kind": "array",
+              "elementType": "texCoord3d",
+              "elementKind": "semanticAlias",
+              "underlyingElementType": "double3",
+              "role": "texCoord"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "texCoord3f[]",
+              "kind": "array",
+              "elementType": "texCoord3f",
+              "elementKind": "semanticAlias",
+              "underlyingElementType": "float3",
+              "role": "texCoord"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": true,
+            "description": {
+              "type": "texCoord3h[]",
+              "kind": "array",
+              "elementType": "texCoord3h",
+              "elementKind": "semanticAlias",
+              "underlyingElementType": "half3",
+              "role": "texCoord"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": false,
+            "diagnostic": {
+              "code": "InvalidType",
+              "message": "arrays of opaque are not permitted"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": false,
+            "diagnostic": {
+              "code": "InvalidType",
+              "message": "arrays of opaque are not permitted"
+            }
+          },
+          {
+            "op": "describe_type",
+            "ok": false,
+            "diagnostic": {
+              "code": "InvalidType",
+              "message": "arrays are only permitted for scalar, dimensioned, or semantic alias types"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "semantic-role-catalog",
+      "input": {
+        "ops": [
+          {
+            "op": "describe_semantic_role",
+            "role": "color"
+          },
+          {
+            "op": "describe_semantic_role",
+            "role": "normal"
+          },
+          {
+            "op": "describe_semantic_role",
+            "role": "point"
+          },
+          {
+            "op": "describe_semantic_role",
+            "role": "vector"
+          },
+          {
+            "op": "describe_semantic_role",
+            "role": "frame"
+          },
+          {
+            "op": "describe_semantic_role",
+            "role": "texCoord"
+          },
+          {
+            "op": "describe_semantic_role",
+            "role": "group"
+          },
+          {
+            "op": "describe_semantic_role",
+            "role": "unknown"
+          }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "describe_semantic_role",
+            "ok": true,
+            "description": {
+              "role": "color",
+              "aliases": [
+                "color3d",
+                "color3f",
+                "color3h",
+                "color4d",
+                "color4f",
+                "color4h"
+              ],
+              "underlyingTypes": [
+                "double3",
+                "float3",
+                "half3",
+                "double4",
+                "float4",
+                "half4"
+              ],
+              "note": "RGB or RGBA color"
+            }
+          },
+          {
+            "op": "describe_semantic_role",
+            "ok": true,
+            "description": {
+              "role": "normal",
+              "aliases": [
+                "normal3d",
+                "normal3f",
+                "normal3h"
+              ],
+              "underlyingTypes": [
+                "double3",
+                "float3",
+                "half3"
+              ],
+              "note": "normal direction; unit length is advisory"
+            }
+          },
+          {
+            "op": "describe_semantic_role",
+            "ok": true,
+            "description": {
+              "role": "point",
+              "aliases": [
+                "point3d",
+                "point3f",
+                "point3h"
+              ],
+              "underlyingTypes": [
+                "double3",
+                "float3",
+                "half3"
+              ],
+              "note": "position"
+            }
+          },
+          {
+            "op": "describe_semantic_role",
+            "ok": true,
+            "description": {
+              "role": "vector",
+              "aliases": [
+                "vector3d",
+                "vector3f",
+                "vector3h"
+              ],
+              "underlyingTypes": [
+                "double3",
+                "float3",
+                "half3"
+              ],
+              "note": "direction and length"
+            }
+          },
+          {
+            "op": "describe_semantic_role",
+            "ok": true,
+            "description": {
+              "role": "frame",
+              "aliases": [
+                "frame4d"
+              ],
+              "underlyingTypes": [
+                "matrix4d"
+              ],
+              "note": "3-D coordinate transformation matrix"
+            }
+          },
+          {
+            "op": "describe_semantic_role",
+            "ok": true,
+            "description": {
+              "role": "texCoord",
+              "aliases": [
+                "texCoord2d",
+                "texCoord2f",
+                "texCoord2h",
+                "texCoord3d",
+                "texCoord3f",
+                "texCoord3h"
+              ],
+              "underlyingTypes": [
+                "double2",
+                "float2",
+                "half2",
+                "double3",
+                "float3",
+                "half3"
+              ],
+              "note": "2-D or 3-D texture coordinate"
+            }
+          },
+          {
+            "op": "describe_semantic_role",
+            "ok": true,
+            "description": {
+              "role": "group",
+              "aliases": [
+                "group"
+              ],
+              "underlyingTypes": [
+                "opaque"
+              ],
+              "note": "proxy for multiple values"
+            }
+          },
+          {
+            "op": "describe_semantic_role",
+            "ok": false,
+            "diagnostic": {
+              "code": "InvalidRole",
+              "message": "unknown semantic role"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "semantic-alias-agreement-exhaustive",
+      "input": {
+        "ops": [
+          {
+            "op": "type_agreement",
+            "lhs": "color3d",
+            "rhs": "double3"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "double3",
+            "rhs": "color3d"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "color3d",
+            "rhs": "color3d"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "color3d[]",
+            "rhs": "double3[]"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "color3f",
+            "rhs": "float3"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "float3",
+            "rhs": "color3f"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "color3f",
+            "rhs": "color3f"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "color3f[]",
+            "rhs": "float3[]"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "color3h",
+            "rhs": "half3"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "half3",
+            "rhs": "color3h"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "color3h",
+            "rhs": "color3h"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "color3h[]",
+            "rhs": "half3[]"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "color4d",
+            "rhs": "double4"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "double4",
+            "rhs": "color4d"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "color4d",
+            "rhs": "color4d"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "color4d[]",
+            "rhs": "double4[]"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "color4f",
+            "rhs": "float4"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "float4",
+            "rhs": "color4f"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "color4f",
+            "rhs": "color4f"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "color4f[]",
+            "rhs": "float4[]"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "color4h",
+            "rhs": "half4"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "half4",
+            "rhs": "color4h"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "color4h",
+            "rhs": "color4h"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "color4h[]",
+            "rhs": "half4[]"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "normal3d",
+            "rhs": "double3"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "double3",
+            "rhs": "normal3d"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "normal3d",
+            "rhs": "normal3d"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "normal3d[]",
+            "rhs": "double3[]"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "normal3f",
+            "rhs": "float3"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "float3",
+            "rhs": "normal3f"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "normal3f",
+            "rhs": "normal3f"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "normal3f[]",
+            "rhs": "float3[]"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "normal3h",
+            "rhs": "half3"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "half3",
+            "rhs": "normal3h"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "normal3h",
+            "rhs": "normal3h"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "normal3h[]",
+            "rhs": "half3[]"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "point3d",
+            "rhs": "double3"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "double3",
+            "rhs": "point3d"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "point3d",
+            "rhs": "point3d"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "point3d[]",
+            "rhs": "double3[]"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "point3f",
+            "rhs": "float3"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "float3",
+            "rhs": "point3f"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "point3f",
+            "rhs": "point3f"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "point3f[]",
+            "rhs": "float3[]"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "point3h",
+            "rhs": "half3"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "half3",
+            "rhs": "point3h"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "point3h",
+            "rhs": "point3h"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "point3h[]",
+            "rhs": "half3[]"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "vector3d",
+            "rhs": "double3"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "double3",
+            "rhs": "vector3d"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "vector3d",
+            "rhs": "vector3d"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "vector3d[]",
+            "rhs": "double3[]"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "vector3f",
+            "rhs": "float3"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "float3",
+            "rhs": "vector3f"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "vector3f",
+            "rhs": "vector3f"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "vector3f[]",
+            "rhs": "float3[]"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "vector3h",
+            "rhs": "half3"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "half3",
+            "rhs": "vector3h"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "vector3h",
+            "rhs": "vector3h"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "vector3h[]",
+            "rhs": "half3[]"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "frame4d",
+            "rhs": "matrix4d"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "matrix4d",
+            "rhs": "frame4d"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "frame4d",
+            "rhs": "frame4d"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "frame4d[]",
+            "rhs": "matrix4d[]"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "texCoord2d",
+            "rhs": "double2"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "double2",
+            "rhs": "texCoord2d"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "texCoord2d",
+            "rhs": "texCoord2d"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "texCoord2d[]",
+            "rhs": "double2[]"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "texCoord2f",
+            "rhs": "float2"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "float2",
+            "rhs": "texCoord2f"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "texCoord2f",
+            "rhs": "texCoord2f"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "texCoord2f[]",
+            "rhs": "float2[]"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "texCoord2h",
+            "rhs": "half2"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "half2",
+            "rhs": "texCoord2h"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "texCoord2h",
+            "rhs": "texCoord2h"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "texCoord2h[]",
+            "rhs": "half2[]"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "texCoord3d",
+            "rhs": "double3"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "double3",
+            "rhs": "texCoord3d"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "texCoord3d",
+            "rhs": "texCoord3d"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "texCoord3d[]",
+            "rhs": "double3[]"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "texCoord3f",
+            "rhs": "float3"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "float3",
+            "rhs": "texCoord3f"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "texCoord3f",
+            "rhs": "texCoord3f"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "texCoord3f[]",
+            "rhs": "float3[]"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "texCoord3h",
+            "rhs": "half3"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "half3",
+            "rhs": "texCoord3h"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "texCoord3h",
+            "rhs": "texCoord3h"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "texCoord3h[]",
+            "rhs": "half3[]"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "group",
+            "rhs": "opaque"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "opaque",
+            "rhs": "group"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "group",
+            "rhs": "group"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "color3f",
+            "rhs": "double3"
+          },
+          {
+            "op": "type_agreement",
+            "lhs": "float3",
+            "rhs": "double3"
+          }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": false,
+            "diagnostic": {
+              "code": "AgreementUndefined",
+              "message": "agreement is not defined for two semantic aliases"
+            }
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": false,
+            "diagnostic": {
+              "code": "AgreementUndefined",
+              "message": "agreement is not defined for two semantic aliases"
+            }
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": false,
+            "diagnostic": {
+              "code": "AgreementUndefined",
+              "message": "agreement is not defined for two semantic aliases"
+            }
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": false,
+            "diagnostic": {
+              "code": "AgreementUndefined",
+              "message": "agreement is not defined for two semantic aliases"
+            }
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": false,
+            "diagnostic": {
+              "code": "AgreementUndefined",
+              "message": "agreement is not defined for two semantic aliases"
+            }
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": false,
+            "diagnostic": {
+              "code": "AgreementUndefined",
+              "message": "agreement is not defined for two semantic aliases"
+            }
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": false,
+            "diagnostic": {
+              "code": "AgreementUndefined",
+              "message": "agreement is not defined for two semantic aliases"
+            }
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": false,
+            "diagnostic": {
+              "code": "AgreementUndefined",
+              "message": "agreement is not defined for two semantic aliases"
+            }
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": false,
+            "diagnostic": {
+              "code": "AgreementUndefined",
+              "message": "agreement is not defined for two semantic aliases"
+            }
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": false,
+            "diagnostic": {
+              "code": "AgreementUndefined",
+              "message": "agreement is not defined for two semantic aliases"
+            }
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": false,
+            "diagnostic": {
+              "code": "AgreementUndefined",
+              "message": "agreement is not defined for two semantic aliases"
+            }
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": false,
+            "diagnostic": {
+              "code": "AgreementUndefined",
+              "message": "agreement is not defined for two semantic aliases"
+            }
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": false,
+            "diagnostic": {
+              "code": "AgreementUndefined",
+              "message": "agreement is not defined for two semantic aliases"
+            }
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": false,
+            "diagnostic": {
+              "code": "AgreementUndefined",
+              "message": "agreement is not defined for two semantic aliases"
+            }
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": false,
+            "diagnostic": {
+              "code": "AgreementUndefined",
+              "message": "agreement is not defined for two semantic aliases"
+            }
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": false,
+            "diagnostic": {
+              "code": "AgreementUndefined",
+              "message": "agreement is not defined for two semantic aliases"
+            }
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": false,
+            "diagnostic": {
+              "code": "AgreementUndefined",
+              "message": "agreement is not defined for two semantic aliases"
+            }
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": false,
+            "diagnostic": {
+              "code": "AgreementUndefined",
+              "message": "agreement is not defined for two semantic aliases"
+            }
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": false,
+            "diagnostic": {
+              "code": "AgreementUndefined",
+              "message": "agreement is not defined for two semantic aliases"
+            }
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": false,
+            "diagnostic": {
+              "code": "AgreementUndefined",
+              "message": "agreement is not defined for two semantic aliases"
+            }
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": false,
+            "diagnostic": {
+              "code": "AgreementUndefined",
+              "message": "agreement is not defined for two semantic aliases"
+            }
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": false,
+            "diagnostic": {
+              "code": "AgreementUndefined",
+              "message": "agreement is not defined for two semantic aliases"
+            }
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": true
+          },
+          {
+            "op": "type_agreement",
+            "ok": false,
+            "diagnostic": {
+              "code": "AgreementUndefined",
+              "message": "agreement is not defined for two semantic aliases"
+            }
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": false
+          },
+          {
+            "op": "type_agreement",
+            "ok": true,
+            "agrees": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "scalar-values-and-ranges-exhaustive",
+      "input": {
+        "ops": [
+          {
+            "op": "make_value",
+            "type": "asset",
+            "value": "textures/diffuse.png"
+          },
+          {
+            "op": "make_value",
+            "type": "bool",
+            "value": true
+          },
+          {
+            "op": "make_value",
+            "type": "double",
+            "value": 3.5
+          },
+          {
+            "op": "make_value",
+            "type": "float",
+            "value": 2.25
+          },
+          {
+            "op": "make_value",
+            "type": "half",
+            "value": 1.5
+          },
+          {
+            "op": "make_value",
+            "type": "int",
+            "value": -17
+          },
+          {
+            "op": "make_value",
+            "type": "int64",
+            "value": -9223372036854775808
+          },
+          {
+            "op": "make_value",
+            "type": "string",
+            "value": "hello"
+          },
+          {
+            "op": "make_value",
+            "type": "timecode",
+            "value": 24.0
+          },
+          {
+            "op": "make_value",
+            "type": "token",
+            "value": "tokenValue"
+          },
+          {
+            "op": "make_value",
+            "type": "uchar",
+            "value": 255
+          },
+          {
+            "op": "make_value",
+            "type": "uint",
+            "value": 4294967295
+          },
+          {
+            "op": "make_value",
+            "type": "uint64",
+            "value": 18446744073709551615
+          },
+          {
+            "op": "make_value",
+            "type": "bool",
+            "value": false
+          },
+          {
+            "op": "make_value",
+            "type": "string",
+            "value": ""
+          },
+          {
+            "op": "make_value",
+            "type": "token",
+            "value": ""
+          },
+          {
+            "op": "make_value",
+            "type": "asset",
+            "value": "relative/asset.usd"
+          },
+          {
+            "op": "make_value",
+            "type": "uchar",
+            "value": 0
+          },
+          {
+            "op": "make_value",
+            "type": "int",
+            "value": 2147483647
+          },
+          {
+            "op": "make_value",
+            "type": "int64",
+            "value": 9223372036854775807
+          },
+          {
+            "op": "make_value",
+            "type": "uint",
+            "value": 0
+          },
+          {
+            "op": "make_value",
+            "type": "uint64",
+            "value": 0
+          },
+          {
+            "op": "make_value",
+            "type": "uchar",
+            "value": -1
+          },
+          {
+            "op": "make_value",
+            "type": "uchar",
+            "value": 256
+          },
+          {
+            "op": "make_value",
+            "type": "int",
+            "value": -2147483649
+          },
+          {
+            "op": "make_value",
+            "type": "int",
+            "value": 2147483648
+          },
+          {
+            "op": "make_value",
+            "type": "uint",
+            "value": -1
+          },
+          {
+            "op": "make_value",
+            "type": "uint",
+            "value": 4294967296
+          },
+          {
+            "op": "make_value",
+            "type": "int64",
+            "value": -9223372036854775809
+          },
+          {
+            "op": "make_value",
+            "type": "int64",
+            "value": 9223372036854775808
+          },
+          {
+            "op": "make_value",
+            "type": "uint64",
+            "value": -1
+          },
+          {
+            "op": "make_value",
+            "type": "uint64",
+            "value": 18446744073709551616
+          },
+          {
+            "op": "make_value",
+            "type": "asset",
+            "value": "bad\nasset"
+          },
+          {
+            "op": "make_value",
+            "type": "asset",
+            "value": "badasset"
+          },
+          {
+            "op": "make_value",
+            "type": "bool",
+            "value": 1
+          }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "asset",
+              "value": "textures/diffuse.png"
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "bool",
+              "value": true
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "double",
+              "value": 3.5
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "float",
+              "value": 2.25
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "half",
+              "value": 1.5
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "int",
+              "value": -17
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "int64",
+              "value": -9223372036854775808
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "string",
+              "value": "hello"
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "timecode",
+              "value": 24.0
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "token",
+              "value": "tokenValue"
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "uchar",
+              "value": 255
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "uint",
+              "value": 4294967295
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "uint64",
+              "value": 18446744073709551615
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "bool",
+              "value": false
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "string",
+              "value": ""
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "token",
+              "value": ""
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "asset",
+              "value": "relative/asset.usd"
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "uchar",
+              "value": 0
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "int",
+              "value": 2147483647
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "int64",
+              "value": 9223372036854775807
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "uint",
+              "value": 0
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "uint64",
+              "value": 0
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": false,
+            "diagnostic": {
+              "code": "InvalidValue",
+              "message": "value out of range for uchar"
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": false,
+            "diagnostic": {
+              "code": "InvalidValue",
+              "message": "value out of range for uchar"
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": false,
+            "diagnostic": {
+              "code": "InvalidValue",
+              "message": "value out of range for int"
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": false,
+            "diagnostic": {
+              "code": "InvalidValue",
+              "message": "value out of range for int"
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": false,
+            "diagnostic": {
+              "code": "InvalidValue",
+              "message": "value out of range for uint"
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": false,
+            "diagnostic": {
+              "code": "InvalidValue",
+              "message": "value out of range for uint"
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": false,
+            "diagnostic": {
+              "code": "InvalidValue",
+              "message": "value out of range for int64"
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": false,
+            "diagnostic": {
+              "code": "InvalidValue",
+              "message": "value out of range for int64"
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": false,
+            "diagnostic": {
+              "code": "InvalidValue",
+              "message": "value out of range for uint64"
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": false,
+            "diagnostic": {
+              "code": "InvalidValue",
+              "message": "value out of range for uint64"
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": false,
+            "diagnostic": {
+              "code": "InvalidValue",
+              "message": "asset contains control code"
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": false,
+            "diagnostic": {
+              "code": "InvalidValue",
+              "message": "asset contains control code"
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": false,
+            "diagnostic": {
+              "code": "InvalidValue",
+              "message": "expected bool value"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "dimensioned-and-alias-values-exhaustive",
+      "input": {
+        "ops": [
+          {
+            "op": "make_value",
+            "type": "double2",
+            "value": [
+              1.0,
+              2.0
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "double3",
+            "value": [
+              1.0,
+              2.0,
+              3.0
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "double4",
+            "value": [
+              1.0,
+              2.0,
+              3.0,
+              4.0
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "float2",
+            "value": [
+              1.0,
+              2.0
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "float3",
+            "value": [
+              1.0,
+              2.0,
+              3.0
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "float4",
+            "value": [
+              1.0,
+              2.0,
+              3.0,
+              4.0
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "half2",
+            "value": [
+              1.0,
+              2.0
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "half3",
+            "value": [
+              1.0,
+              2.0,
+              3.0
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "half4",
+            "value": [
+              1.0,
+              2.0,
+              3.0,
+              4.0
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "int2",
+            "value": [
+              1,
+              2
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "int3",
+            "value": [
+              1,
+              2,
+              3
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "int4",
+            "value": [
+              1,
+              2,
+              3,
+              4
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "matrix2d",
+            "value": [
+              1.0,
+              2.0,
+              3.0,
+              4.0
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "matrix3d",
+            "value": [
+              1.0,
+              2.0,
+              3.0,
+              4.0,
+              5.0,
+              6.0,
+              7.0,
+              8.0,
+              9.0
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "matrix4d",
+            "value": [
+              1.0,
+              2.0,
+              3.0,
+              4.0,
+              5.0,
+              6.0,
+              7.0,
+              8.0,
+              9.0,
+              10.0,
+              11.0,
+              12.0,
+              13.0,
+              14.0,
+              15.0,
+              16.0
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "quatd",
+            "value": [
+              1.0,
+              2.0,
+              3.0,
+              4.0
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "quatf",
+            "value": [
+              1.0,
+              2.0,
+              3.0,
+              4.0
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "quath",
+            "value": [
+              1.0,
+              2.0,
+              3.0,
+              4.0
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "color3d",
+            "value": [
+              1.0,
+              2.0,
+              3.0
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "color3f",
+            "value": [
+              1.0,
+              2.0,
+              3.0
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "color3h",
+            "value": [
+              1.0,
+              2.0,
+              3.0
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "color4d",
+            "value": [
+              1.0,
+              2.0,
+              3.0,
+              4.0
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "color4f",
+            "value": [
+              1.0,
+              2.0,
+              3.0,
+              4.0
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "color4h",
+            "value": [
+              1.0,
+              2.0,
+              3.0,
+              4.0
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "normal3d",
+            "value": [
+              1.0,
+              2.0,
+              3.0
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "normal3f",
+            "value": [
+              1.0,
+              2.0,
+              3.0
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "normal3h",
+            "value": [
+              1.0,
+              2.0,
+              3.0
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "point3d",
+            "value": [
+              1.0,
+              2.0,
+              3.0
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "point3f",
+            "value": [
+              1.0,
+              2.0,
+              3.0
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "point3h",
+            "value": [
+              1.0,
+              2.0,
+              3.0
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "vector3d",
+            "value": [
+              1.0,
+              2.0,
+              3.0
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "vector3f",
+            "value": [
+              1.0,
+              2.0,
+              3.0
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "vector3h",
+            "value": [
+              1.0,
+              2.0,
+              3.0
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "frame4d",
+            "value": [
+              1.0,
+              2.0,
+              3.0,
+              4.0,
+              5.0,
+              6.0,
+              7.0,
+              8.0,
+              9.0,
+              10.0,
+              11.0,
+              12.0,
+              13.0,
+              14.0,
+              15.0,
+              16.0
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "texCoord2d",
+            "value": [
+              1.0,
+              2.0
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "texCoord2f",
+            "value": [
+              1.0,
+              2.0
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "texCoord2h",
+            "value": [
+              1.0,
+              2.0
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "texCoord3d",
+            "value": [
+              1.0,
+              2.0,
+              3.0
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "texCoord3f",
+            "value": [
+              1.0,
+              2.0,
+              3.0
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "texCoord3h",
+            "value": [
+              1.0,
+              2.0,
+              3.0
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "group",
+            "value": null
+          },
+          {
+            "op": "make_value",
+            "type": "double3",
+            "value": [
+              1,
+              2
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "double2",
+              "value": [
+                1.0,
+                2.0
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "double3",
+              "value": [
+                1.0,
+                2.0,
+                3.0
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "double4",
+              "value": [
+                1.0,
+                2.0,
+                3.0,
+                4.0
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "float2",
+              "value": [
+                1.0,
+                2.0
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "float3",
+              "value": [
+                1.0,
+                2.0,
+                3.0
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "float4",
+              "value": [
+                1.0,
+                2.0,
+                3.0,
+                4.0
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "half2",
+              "value": [
+                1.0,
+                2.0
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "half3",
+              "value": [
+                1.0,
+                2.0,
+                3.0
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "half4",
+              "value": [
+                1.0,
+                2.0,
+                3.0,
+                4.0
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "int2",
+              "value": [
+                1,
+                2
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "int3",
+              "value": [
+                1,
+                2,
+                3
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "int4",
+              "value": [
+                1,
+                2,
+                3,
+                4
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "matrix2d",
+              "value": [
+                1.0,
+                2.0,
+                3.0,
+                4.0
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "matrix3d",
+              "value": [
+                1.0,
+                2.0,
+                3.0,
+                4.0,
+                5.0,
+                6.0,
+                7.0,
+                8.0,
+                9.0
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "matrix4d",
+              "value": [
+                1.0,
+                2.0,
+                3.0,
+                4.0,
+                5.0,
+                6.0,
+                7.0,
+                8.0,
+                9.0,
+                10.0,
+                11.0,
+                12.0,
+                13.0,
+                14.0,
+                15.0,
+                16.0
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "quatd",
+              "value": [
+                1.0,
+                2.0,
+                3.0,
+                4.0
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "quatf",
+              "value": [
+                1.0,
+                2.0,
+                3.0,
+                4.0
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "quath",
+              "value": [
+                1.0,
+                2.0,
+                3.0,
+                4.0
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "color3d",
+              "value": [
+                1.0,
+                2.0,
+                3.0
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "color3f",
+              "value": [
+                1.0,
+                2.0,
+                3.0
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "color3h",
+              "value": [
+                1.0,
+                2.0,
+                3.0
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "color4d",
+              "value": [
+                1.0,
+                2.0,
+                3.0,
+                4.0
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "color4f",
+              "value": [
+                1.0,
+                2.0,
+                3.0,
+                4.0
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "color4h",
+              "value": [
+                1.0,
+                2.0,
+                3.0,
+                4.0
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "normal3d",
+              "value": [
+                1.0,
+                2.0,
+                3.0
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "normal3f",
+              "value": [
+                1.0,
+                2.0,
+                3.0
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "normal3h",
+              "value": [
+                1.0,
+                2.0,
+                3.0
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "point3d",
+              "value": [
+                1.0,
+                2.0,
+                3.0
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "point3f",
+              "value": [
+                1.0,
+                2.0,
+                3.0
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "point3h",
+              "value": [
+                1.0,
+                2.0,
+                3.0
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "vector3d",
+              "value": [
+                1.0,
+                2.0,
+                3.0
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "vector3f",
+              "value": [
+                1.0,
+                2.0,
+                3.0
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "vector3h",
+              "value": [
+                1.0,
+                2.0,
+                3.0
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "frame4d",
+              "value": [
+                1.0,
+                2.0,
+                3.0,
+                4.0,
+                5.0,
+                6.0,
+                7.0,
+                8.0,
+                9.0,
+                10.0,
+                11.0,
+                12.0,
+                13.0,
+                14.0,
+                15.0,
+                16.0
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "texCoord2d",
+              "value": [
+                1.0,
+                2.0
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "texCoord2f",
+              "value": [
+                1.0,
+                2.0
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "texCoord2h",
+              "value": [
+                1.0,
+                2.0
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "texCoord3d",
+              "value": [
+                1.0,
+                2.0,
+                3.0
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "texCoord3f",
+              "value": [
+                1.0,
+                2.0,
+                3.0
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "texCoord3h",
+              "value": [
+                1.0,
+                2.0,
+                3.0
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": false,
+            "diagnostic": {
+              "code": "InvalidType",
+              "message": "unknown foundational type"
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": false,
+            "diagnostic": {
+              "code": "InvalidValue",
+              "message": "dimensioned value has wrong arity"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "array-values-exhaustive",
+      "input": {
+        "ops": [
+          {
+            "op": "make_value",
+            "type": "asset[]",
+            "value": [
+              "textures/diffuse.png"
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "bool[]",
+            "value": [
+              true
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "double[]",
+            "value": [
+              3.5
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "float[]",
+            "value": [
+              2.25
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "half[]",
+            "value": [
+              1.5
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "int[]",
+            "value": [
+              -17
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "int64[]",
+            "value": [
+              -9223372036854775808
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "string[]",
+            "value": [
+              "hello"
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "timecode[]",
+            "value": [
+              24.0
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "token[]",
+            "value": [
+              "tokenValue"
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "uchar[]",
+            "value": [
+              255
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "uint[]",
+            "value": [
+              4294967295
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "uint64[]",
+            "value": [
+              18446744073709551615
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "double2[]",
+            "value": [
+              [
+                1.0,
+                2.0
+              ]
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "double3[]",
+            "value": [
+              [
+                1.0,
+                2.0,
+                3.0
+              ]
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "double4[]",
+            "value": [
+              [
+                1.0,
+                2.0,
+                3.0,
+                4.0
+              ]
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "float2[]",
+            "value": [
+              [
+                1.0,
+                2.0
+              ]
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "float3[]",
+            "value": [
+              [
+                1.0,
+                2.0,
+                3.0
+              ]
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "float4[]",
+            "value": [
+              [
+                1.0,
+                2.0,
+                3.0,
+                4.0
+              ]
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "half2[]",
+            "value": [
+              [
+                1.0,
+                2.0
+              ]
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "half3[]",
+            "value": [
+              [
+                1.0,
+                2.0,
+                3.0
+              ]
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "half4[]",
+            "value": [
+              [
+                1.0,
+                2.0,
+                3.0,
+                4.0
+              ]
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "int2[]",
+            "value": [
+              [
+                1,
+                2
+              ]
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "int3[]",
+            "value": [
+              [
+                1,
+                2,
+                3
+              ]
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "int4[]",
+            "value": [
+              [
+                1,
+                2,
+                3,
+                4
+              ]
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "matrix2d[]",
+            "value": [
+              [
+                1.0,
+                2.0,
+                3.0,
+                4.0
+              ]
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "matrix3d[]",
+            "value": [
+              [
+                1.0,
+                2.0,
+                3.0,
+                4.0,
+                5.0,
+                6.0,
+                7.0,
+                8.0,
+                9.0
+              ]
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "matrix4d[]",
+            "value": [
+              [
+                1.0,
+                2.0,
+                3.0,
+                4.0,
+                5.0,
+                6.0,
+                7.0,
+                8.0,
+                9.0,
+                10.0,
+                11.0,
+                12.0,
+                13.0,
+                14.0,
+                15.0,
+                16.0
+              ]
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "quatd[]",
+            "value": [
+              [
+                1.0,
+                2.0,
+                3.0,
+                4.0
+              ]
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "quatf[]",
+            "value": [
+              [
+                1.0,
+                2.0,
+                3.0,
+                4.0
+              ]
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "quath[]",
+            "value": [
+              [
+                1.0,
+                2.0,
+                3.0,
+                4.0
+              ]
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "color3d[]",
+            "value": [
+              [
+                1.0,
+                2.0,
+                3.0
+              ]
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "color3f[]",
+            "value": [
+              [
+                1.0,
+                2.0,
+                3.0
+              ]
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "color3h[]",
+            "value": [
+              [
+                1.0,
+                2.0,
+                3.0
+              ]
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "color4d[]",
+            "value": [
+              [
+                1.0,
+                2.0,
+                3.0,
+                4.0
+              ]
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "color4f[]",
+            "value": [
+              [
+                1.0,
+                2.0,
+                3.0,
+                4.0
+              ]
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "color4h[]",
+            "value": [
+              [
+                1.0,
+                2.0,
+                3.0,
+                4.0
+              ]
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "normal3d[]",
+            "value": [
+              [
+                1.0,
+                2.0,
+                3.0
+              ]
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "normal3f[]",
+            "value": [
+              [
+                1.0,
+                2.0,
+                3.0
+              ]
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "normal3h[]",
+            "value": [
+              [
+                1.0,
+                2.0,
+                3.0
+              ]
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "point3d[]",
+            "value": [
+              [
+                1.0,
+                2.0,
+                3.0
+              ]
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "point3f[]",
+            "value": [
+              [
+                1.0,
+                2.0,
+                3.0
+              ]
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "point3h[]",
+            "value": [
+              [
+                1.0,
+                2.0,
+                3.0
+              ]
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "vector3d[]",
+            "value": [
+              [
+                1.0,
+                2.0,
+                3.0
+              ]
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "vector3f[]",
+            "value": [
+              [
+                1.0,
+                2.0,
+                3.0
+              ]
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "vector3h[]",
+            "value": [
+              [
+                1.0,
+                2.0,
+                3.0
+              ]
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "frame4d[]",
+            "value": [
+              [
+                1.0,
+                2.0,
+                3.0,
+                4.0,
+                5.0,
+                6.0,
+                7.0,
+                8.0,
+                9.0,
+                10.0,
+                11.0,
+                12.0,
+                13.0,
+                14.0,
+                15.0,
+                16.0
+              ]
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "texCoord2d[]",
+            "value": [
+              [
+                1.0,
+                2.0
+              ]
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "texCoord2f[]",
+            "value": [
+              [
+                1.0,
+                2.0
+              ]
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "texCoord2h[]",
+            "value": [
+              [
+                1.0,
+                2.0
+              ]
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "texCoord3d[]",
+            "value": [
+              [
+                1.0,
+                2.0,
+                3.0
+              ]
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "texCoord3f[]",
+            "value": [
+              [
+                1.0,
+                2.0,
+                3.0
+              ]
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "texCoord3h[]",
+            "value": [
+              [
+                1.0,
+                2.0,
+                3.0
+              ]
+            ]
+          },
+          {
+            "op": "make_value",
+            "type": "int[]",
+            "value": 1
+          },
+          {
+            "op": "make_value",
+            "type": "opaque[]",
+            "value": []
+          },
+          {
+            "op": "make_value",
+            "type": "group[]",
+            "value": []
+          },
+          {
+            "op": "make_value",
+            "type": "dictionary[]",
+            "value": []
+          }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "asset[]",
+              "value": [
+                "textures/diffuse.png"
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "bool[]",
+              "value": [
+                true
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "double[]",
+              "value": [
+                3.5
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "float[]",
+              "value": [
+                2.25
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "half[]",
+              "value": [
+                1.5
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "int[]",
+              "value": [
+                -17
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "int64[]",
+              "value": [
+                -9223372036854775808
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "string[]",
+              "value": [
+                "hello"
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "timecode[]",
+              "value": [
+                24.0
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "token[]",
+              "value": [
+                "tokenValue"
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "uchar[]",
+              "value": [
+                255
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "uint[]",
+              "value": [
+                4294967295
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "uint64[]",
+              "value": [
+                18446744073709551615
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "double2[]",
+              "value": [
+                [
+                  1.0,
+                  2.0
+                ]
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "double3[]",
+              "value": [
+                [
+                  1.0,
+                  2.0,
+                  3.0
+                ]
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "double4[]",
+              "value": [
+                [
+                  1.0,
+                  2.0,
+                  3.0,
+                  4.0
+                ]
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "float2[]",
+              "value": [
+                [
+                  1.0,
+                  2.0
+                ]
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "float3[]",
+              "value": [
+                [
+                  1.0,
+                  2.0,
+                  3.0
+                ]
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "float4[]",
+              "value": [
+                [
+                  1.0,
+                  2.0,
+                  3.0,
+                  4.0
+                ]
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "half2[]",
+              "value": [
+                [
+                  1.0,
+                  2.0
+                ]
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "half3[]",
+              "value": [
+                [
+                  1.0,
+                  2.0,
+                  3.0
+                ]
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "half4[]",
+              "value": [
+                [
+                  1.0,
+                  2.0,
+                  3.0,
+                  4.0
+                ]
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "int2[]",
+              "value": [
+                [
+                  1,
+                  2
+                ]
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "int3[]",
+              "value": [
+                [
+                  1,
+                  2,
+                  3
+                ]
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "int4[]",
+              "value": [
+                [
+                  1,
+                  2,
+                  3,
+                  4
+                ]
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "matrix2d[]",
+              "value": [
+                [
+                  1.0,
+                  2.0,
+                  3.0,
+                  4.0
+                ]
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "matrix3d[]",
+              "value": [
+                [
+                  1.0,
+                  2.0,
+                  3.0,
+                  4.0,
+                  5.0,
+                  6.0,
+                  7.0,
+                  8.0,
+                  9.0
+                ]
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "matrix4d[]",
+              "value": [
+                [
+                  1.0,
+                  2.0,
+                  3.0,
+                  4.0,
+                  5.0,
+                  6.0,
+                  7.0,
+                  8.0,
+                  9.0,
+                  10.0,
+                  11.0,
+                  12.0,
+                  13.0,
+                  14.0,
+                  15.0,
+                  16.0
+                ]
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "quatd[]",
+              "value": [
+                [
+                  1.0,
+                  2.0,
+                  3.0,
+                  4.0
+                ]
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "quatf[]",
+              "value": [
+                [
+                  1.0,
+                  2.0,
+                  3.0,
+                  4.0
+                ]
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "quath[]",
+              "value": [
+                [
+                  1.0,
+                  2.0,
+                  3.0,
+                  4.0
+                ]
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "color3d[]",
+              "value": [
+                [
+                  1.0,
+                  2.0,
+                  3.0
+                ]
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "color3f[]",
+              "value": [
+                [
+                  1.0,
+                  2.0,
+                  3.0
+                ]
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "color3h[]",
+              "value": [
+                [
+                  1.0,
+                  2.0,
+                  3.0
+                ]
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "color4d[]",
+              "value": [
+                [
+                  1.0,
+                  2.0,
+                  3.0,
+                  4.0
+                ]
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "color4f[]",
+              "value": [
+                [
+                  1.0,
+                  2.0,
+                  3.0,
+                  4.0
+                ]
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "color4h[]",
+              "value": [
+                [
+                  1.0,
+                  2.0,
+                  3.0,
+                  4.0
+                ]
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "normal3d[]",
+              "value": [
+                [
+                  1.0,
+                  2.0,
+                  3.0
+                ]
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "normal3f[]",
+              "value": [
+                [
+                  1.0,
+                  2.0,
+                  3.0
+                ]
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "normal3h[]",
+              "value": [
+                [
+                  1.0,
+                  2.0,
+                  3.0
+                ]
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "point3d[]",
+              "value": [
+                [
+                  1.0,
+                  2.0,
+                  3.0
+                ]
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "point3f[]",
+              "value": [
+                [
+                  1.0,
+                  2.0,
+                  3.0
+                ]
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "point3h[]",
+              "value": [
+                [
+                  1.0,
+                  2.0,
+                  3.0
+                ]
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "vector3d[]",
+              "value": [
+                [
+                  1.0,
+                  2.0,
+                  3.0
+                ]
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "vector3f[]",
+              "value": [
+                [
+                  1.0,
+                  2.0,
+                  3.0
+                ]
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "vector3h[]",
+              "value": [
+                [
+                  1.0,
+                  2.0,
+                  3.0
+                ]
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "frame4d[]",
+              "value": [
+                [
+                  1.0,
+                  2.0,
+                  3.0,
+                  4.0,
+                  5.0,
+                  6.0,
+                  7.0,
+                  8.0,
+                  9.0,
+                  10.0,
+                  11.0,
+                  12.0,
+                  13.0,
+                  14.0,
+                  15.0,
+                  16.0
+                ]
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "texCoord2d[]",
+              "value": [
+                [
+                  1.0,
+                  2.0
+                ]
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "texCoord2f[]",
+              "value": [
+                [
+                  1.0,
+                  2.0
+                ]
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "texCoord2h[]",
+              "value": [
+                [
+                  1.0,
+                  2.0
+                ]
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "texCoord3d[]",
+              "value": [
+                [
+                  1.0,
+                  2.0,
+                  3.0
+                ]
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "texCoord3f[]",
+              "value": [
+                [
+                  1.0,
+                  2.0,
+                  3.0
+                ]
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": true,
+            "value": {
+              "type": "texCoord3h[]",
+              "value": [
+                [
+                  1.0,
+                  2.0,
+                  3.0
+                ]
+              ]
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": false,
+            "diagnostic": {
+              "code": "InvalidValue",
+              "message": "array value must be an array"
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": false,
+            "diagnostic": {
+              "code": "InvalidType",
+              "message": "arrays of opaque are not permitted"
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": false,
+            "diagnostic": {
+              "code": "InvalidType",
+              "message": "arrays of opaque are not permitted"
+            }
+          },
+          {
+            "op": "make_value",
+            "ok": false,
+            "diagnostic": {
+              "code": "InvalidType",
+              "message": "arrays are only permitted for scalar, dimensioned, or semantic alias types"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "value-block-and-recursive-dictionary-combine",
+      "input": {
+        "ops": [
+          {
+            "op": "make_value_block"
+          },
+          {
+            "op": "combine_dictionaries",
+            "stronger": {
+              "keepStrong": {
+                "type": "string",
+                "value": "S"
+              },
+              "shared": {
+                "type": "int",
+                "value": 7
+              },
+              "nested": {
+                "type": "dictionary",
+                "value": {
+                  "innerStrong": {
+                    "type": "token",
+                    "value": "strong"
+                  },
+                  "innerShared": {
+                    "type": "string",
+                    "value": "strongValue"
+                  }
+                }
+              }
+            },
+            "weaker": {
+              "keepWeak": {
+                "type": "string",
+                "value": "W"
+              },
+              "shared": {
+                "type": "int",
+                "value": 3
+              },
+              "nested": {
+                "type": "dictionary",
+                "value": {
+                  "innerWeak": {
+                    "type": "token",
+                    "value": "weak"
+                  },
+                  "innerShared": {
+                    "type": "string",
+                    "value": "weakValue"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "make_value_block",
+            "ok": true,
+            "value": {
+              "type": "valueBlock",
+              "value": null
+            }
+          },
+          {
+            "op": "combine_dictionaries",
+            "ok": true,
+            "value": {
+              "type": "dictionary",
+              "value": {
+                "keepStrong": {
+                  "type": "string",
+                  "value": "S"
+                },
+                "keepWeak": {
+                  "type": "string",
+                  "value": "W"
+                },
+                "shared": {
+                  "type": "int",
+                  "value": 7
+                },
+                "nested": {
+                  "type": "dictionary",
+                  "value": {
+                    "innerStrong": {
+                      "type": "token",
+                      "value": "strong"
+                    },
+                    "innerWeak": {
+                      "type": "token",
+                      "value": "weak"
+                    },
+                    "innerShared": {
+                      "type": "string",
+                      "value": "strongValue"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "typed-value-inspection-and-checked-reads",
+      "input": {
+        "ops": [
+          {
+            "op": "inspect_storage"
+          },
+          {
+            "op": "inspect_value",
+            "value": {
+              "type": "token",
+              "value": "Mesh"
+            }
+          },
+          {
+            "op": "read_value_as",
+            "value": {
+              "type": "token",
+              "value": "Mesh"
+            },
+            "as": "token"
+          },
+          {
+            "op": "read_value_as",
+            "value": {
+              "type": "token",
+              "value": "Mesh"
+            },
+            "as": "string"
+          },
+          {
+            "op": "inspect_value",
+            "value": {
+              "type": "point3f[]",
+              "value": [
+                [
+                  0.0,
+                  1.0,
+                  2.0
+                ]
+              ]
+            }
+          },
+          {
+            "op": "read_value_as",
+            "value": {
+              "type": "point3f[]",
+              "value": [
+                [
+                  0.0,
+                  1.0,
+                  2.0
+                ]
+              ]
+            },
+            "as": "point3f[]"
+          },
+          {
+            "op": "read_value_as",
+            "value": {
+              "type": "point3f[]",
+              "value": [
+                [
+                  0.0,
+                  1.0,
+                  2.0
+                ]
+              ]
+            },
+            "as": "float3[]"
+          },
+          {
+            "op": "read_value_as",
+            "value": {
+              "type": "point3f[]",
+              "value": [
+                [
+                  0.0,
+                  1.0,
+                  2.0
+                ]
+              ]
+            },
+            "as": "double3[]"
+          },
+          {
+            "op": "inspect_value",
+            "value": {
+              "type": "half",
+              "value": 0.5
+            }
+          },
+          {
+            "op": "read_value_as",
+            "value": {
+              "type": "half",
+              "value": 0.5
+            },
+            "as": "half"
+          },
+          {
+            "op": "inspect_value",
+            "value": {
+              "type": "timecode",
+              "value": 24.0
+            }
+          },
+          {
+            "op": "inspect_value",
+            "value": {
+              "type": "quatf",
+              "value": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "op": "inspect_value",
+            "value": {
+              "type": "matrix4d",
+              "value": [
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "op": "inspect_value",
+            "value": {
+              "type": "valueBlock",
+              "value": null
+            }
+          },
+          {
+            "op": "read_value_as",
+            "value": {
+              "type": "valueBlock",
+              "value": null
+            },
+            "as": "valueBlock"
+          }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "inspect_storage",
+            "ok": true,
+            "jsonStorageModel": "on_demand_only",
+            "dictionaryStorageModel": "typed_raw_entries",
+            "rawValueStorageModel": "typed_value_container",
+            "storageShapePolicy": "implementation_defined",
+            "typedReadModel": "inspect_then_checked_read",
+            "numericStorageModel": "native_numeric_payloads",
+            "typedPayloadCatalogModel": "complete_foundational_catalog",
+            "scalarPayloadModel": "typed_scalar_domains",
+            "shapePayloadModel": "typed_dimensioned_quat_matrix_shapes",
+            "semanticAliasPayloadModel": "alias_role_plus_underlying_type",
+            "dimensionedStorageModel": "native_numeric_element_payloads",
+            "arrayStorageModel": "typed_element_sequences",
+            "adapterNumberModel": "json_number_text_on_output",
+            "adapterJsonAsBackingStorage": false,
+            "numericStringStorage": false
+          },
+          {
+            "op": "inspect_value",
+            "ok": true,
+            "type": "token",
+            "payloadKind": "scalar",
+            "storageType": "token",
+            "scalarDomain": "token",
+            "isArray": false,
+            "isValueBlock": false
+          },
+          {
+            "op": "read_value_as",
+            "ok": true,
+            "type": "token",
+            "value": "Mesh"
+          },
+          {
+            "op": "read_value_as",
+            "ok": false,
+            "diagnostic": {
+              "code": "TypeMismatch",
+              "message": "stored value type does not agree with requested type",
+              "storedType": "token",
+              "requestedType": "string"
+            }
+          },
+          {
+            "op": "inspect_value",
+            "ok": true,
+            "type": "point3f[]",
+            "payloadKind": "array",
+            "storageType": "float3[]",
+            "arrayElementType": "point3f",
+            "arrayElementKind": "semanticAlias",
+            "underlyingType": "float3",
+            "semanticRole": "point",
+            "elementType": "float",
+            "shape": [
+              3
+            ],
+            "isArray": true,
+            "isValueBlock": false
+          },
+          {
+            "op": "read_value_as",
+            "ok": true,
+            "type": "point3f[]",
+            "value": [
+              [
+                0.0,
+                1.0,
+                2.0
+              ]
+            ]
+          },
+          {
+            "op": "read_value_as",
+            "ok": true,
+            "type": "float3[]",
+            "value": [
+              [
+                0.0,
+                1.0,
+                2.0
+              ]
+            ]
+          },
+          {
+            "op": "read_value_as",
+            "ok": false,
+            "diagnostic": {
+              "code": "TypeMismatch",
+              "message": "stored value type does not agree with requested type",
+              "storedType": "point3f[]",
+              "requestedType": "double3[]"
+            }
+          },
+          {
+            "op": "inspect_value",
+            "ok": true,
+            "type": "half",
+            "payloadKind": "scalar",
+            "storageType": "half",
+            "scalarDomain": "floating",
+            "numericPrecision": "f16",
+            "isArray": false,
+            "isValueBlock": false
+          },
+          {
+            "op": "read_value_as",
+            "ok": true,
+            "type": "half",
+            "value": 0.5
+          },
+          {
+            "op": "inspect_value",
+            "ok": true,
+            "type": "timecode",
+            "payloadKind": "scalar",
+            "storageType": "timecode",
+            "scalarDomain": "floating",
+            "numericPrecision": "f64",
+            "isArray": false,
+            "isValueBlock": false
+          },
+          {
+            "op": "inspect_value",
+            "ok": true,
+            "type": "quatf",
+            "payloadKind": "quaternion",
+            "storageType": "quatf",
+            "elementType": "float",
+            "shape": [
+              4
+            ],
+            "componentOrder": "i,j,k,w",
+            "isArray": false,
+            "isValueBlock": false
+          },
+          {
+            "op": "inspect_value",
+            "ok": true,
+            "type": "matrix4d",
+            "payloadKind": "matrix",
+            "storageType": "matrix4d",
+            "elementType": "double",
+            "shape": [
+              4,
+              4
+            ],
+            "order": "row-major",
+            "isArray": false,
+            "isValueBlock": false
+          },
+          {
+            "op": "inspect_value",
+            "ok": true,
+            "type": "valueBlock",
+            "payloadKind": "valueBlock",
+            "storageType": "valueBlock",
+            "isArray": false,
+            "isValueBlock": true
+          },
+          {
+            "op": "read_value_as",
+            "ok": true,
+            "type": "valueBlock",
+            "value": null
+          }
+        ]
+      }
+    }
+  ]
+}

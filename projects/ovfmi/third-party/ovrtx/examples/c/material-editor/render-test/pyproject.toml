@@ -1,0 +1,12 @@
+[project]
+name = "render-test"
+version = "0.2.0"
+description = "Sanity check: render the material-editor ball scene via ovrtx Python API"
+requires-python = ">=3.10,<3.14"
+dependencies = [
+    "numpy==2.2.6; python_version < '3.14'",
+    "numpy==2.4.2; python_version >= '3.14'",
+    "ovrtx==0.2.0.280040",
+    "pillow==12.1.1",
+]
+

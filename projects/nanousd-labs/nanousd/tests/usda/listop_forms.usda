@@ -1,0 +1,153 @@
+#usda 1.0
+
+# All ListOp forms for composition arcs
+
+def Scope "ExplicitReferences" (
+    references = @./source.usda@</Prim>
+)
+{
+}
+
+def Scope "ExplicitRefList" (
+    references = [
+        @./a.usda@</A>,
+        @./b.usda@</B>
+    ]
+)
+{
+}
+
+def Scope "PrependReferences" (
+    prepend references = [@./prepended.usda@</P>]
+)
+{
+}
+
+def Scope "AppendReferences" (
+    append references = [@./appended.usda@</A>]
+)
+{
+}
+
+def Scope "DeleteReferences" (
+    delete references = [@./removed.usda@</R>]
+)
+{
+}
+
+def Scope "CombinedRefOps" (
+    prepend references = [@./first.usda@</F>]
+    append references = [@./last.usda@</L>]
+    delete references = [@./gone.usda@</G>]
+)
+{
+}
+
+def Scope "RefWithOffset" (
+    prepend references = @./timed.usda@</Source> (
+        offset = 10.0
+        scale = 2.0
+    )
+)
+{
+}
+
+def Scope "ReferencesNone" (
+    references = None
+)
+{
+}
+
+# Payload forms
+def Scope "ExplicitPayload" (
+    payload = @./payload.usda@</PayloadPrim>
+)
+{
+}
+
+def Scope "PrependPayload" (
+    prepend payload = [@./p1.usda@</P1>]
+)
+{
+}
+
+def Scope "AppendPayload" (
+    append payload = [@./p2.usda@</P2>]
+)
+{
+}
+
+def Scope "DeletePayload" (
+    delete payload = [@./p3.usda@</P3>]
+)
+{
+}
+
+def Scope "PayloadNone" (
+    payload = None
+)
+{
+}
+
+# Inherits forms
+def Scope "ExplicitInherits" (
+    inherits = </Base>
+)
+{
+}
+
+def Scope "PrependInherits" (
+    prepend inherits = [</Base1>, </Base2>]
+)
+{
+}
+
+def Scope "AppendInherits" (
+    append inherits = [</AppendedBase>]
+)
+{
+}
+
+def Scope "DeleteInherits" (
+    delete inherits = [</RemovedBase>]
+)
+{
+}
+
+def Scope "InheritsNone" (
+    inherits = None
+)
+{
+}
+
+# Specializes forms
+def Scope "ExplicitSpecializes" (
+    specializes = </Specialized>
+)
+{
+}
+
+def Scope "PrependSpecializes" (
+    prepend specializes = [</S1>]
+)
+{
+}
+
+def Scope "SpecializesNone" (
+    specializes = None
+)
+{
+}
+
+# Internal references (no asset path)
+def Scope "InternalRef" (
+    prepend references = </OtherPrim>
+)
+{
+}
+
+def Scope "InternalRefList" (
+    prepend references = [</A>, </B>, </C>]
+)
+{
+}

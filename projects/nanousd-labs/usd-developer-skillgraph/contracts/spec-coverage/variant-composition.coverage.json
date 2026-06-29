@@ -1,0 +1,189 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/spec-coverage/variant-composition.coverage.json",
+  "title": "USD Variant Composition Spec Coverage Ledger",
+  "version": "0.1",
+  "spec_tag": "v1.0.1",
+  "spec_commit": "v1.0.1",
+  "normative_source": {
+    "repo": "aousd/specifications-public",
+    "tag": "v1.0.1",
+    "commit": "v1.0.1",
+    "rule": "Only the AOUSD core specification at aousd/specifications-public v1.0.1 is normative for this ledger. This ledger covers only direct selected variant namespace composition."
+  },
+  "status_values": {
+    "implemented": "In scope for the variant-namespace-source contract and covered by goldens.",
+    "partial": "A bounded subset is included and later contracts must extend it.",
+    "deferred": "Specified behavior intentionally not included in this first variant contract.",
+    "out_of_scope": "Belongs to another subsystem or future skill."
+  },
+  "coverage_rules": [
+    "The provider composes direct and recursive selected variants and delegates stage traversal to usd-stage-population.",
+    "The first provider consumes a base namespace source, not parser-local USDA syntax.",
+    "A generated target must not claim external variant fallback maps, references or payloads authored inside selected variants, or full value resolution from this provider."
+  ],
+  "items": [
+    {
+      "id": "variants.direct-selection",
+      "owner": "usd-variant-namespace-source",
+      "status": "partial",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:580 Variants",
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:601 Computing Variant Selection",
+        "aousd/specifications-public@v1.0.1:specification/document_data_model/README.md:744 variantSetNames",
+        "aousd/specifications-public@v1.0.1:specification/document_data_model/README.md:757 variantSelection",
+        "aousd/specifications-public@v1.0.1:specification/file_formats/README.md:1269 VariantSetStatement"
+      ],
+      "obligations": [
+        "Read direct selected variant names from the base source-visible variantSelection field.",
+        "Use variantSetNames or variantSetChildren to discover declared variant sets.",
+        "Map the selected variant root and descendants onto the owning prim path.",
+        "Treat the variantSelection fallback value as an empty map when no selection has been authored."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-variant-namespace-source/variant-namespace-source.json#selects-single-variant",
+        "goldens/unit/usd-variant-namespace-source/variant-namespace-source.json#no-selection-remains-inert"
+      ]
+    },
+    {
+      "id": "variants.local-and-inherits-stronger-than-variant",
+      "owner": "usd-variant-namespace-source",
+      "status": "implemented",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:802 Strength Ordering",
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:820 composition arc order",
+        "aousd/specifications-public@v1.0.1:specification/glossary/README.md:85 LIVERPS"
+      ],
+      "obligations": [
+        "Local and inherits fields are stronger than selected variant fields.",
+        "A base def remains the effective population specifier when the selected variant contributes an over.",
+        "Specializes child and property opinions are composed weaker than selected variant opinions, while local and inherits child and property opinions are composed stronger than selected variant opinions."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-variant-namespace-source/variant-namespace-source.json#selects-single-variant"
+      ]
+    },
+    {
+      "id": "variants.weaker-than-inherits-stronger-than-relocates-reference-payload-and-specializes",
+      "owner": "usd-variant-namespace-source",
+      "status": "implemented",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:820 composition arc order",
+        "aousd/specifications-public@v1.0.1:specification/glossary/README.md:85 LIVERPS"
+      ],
+      "obligations": [
+        "Place usd-variant-namespace-source after the terminal non-variant namespace-source provider in graph evaluation order.",
+        "Require variant composition to compute selections from non-variant opinions before inserting selected variant opinions.",
+        "Require selected variant opinions to be inserted at their LIVERPS strength, weaker than inherits and stronger than relocates, references, payloads, and specializes even though evaluated after them."
+      ],
+      "positive_goldens": [
+        "graph/skillgraph.json#usd-variant-namespace-source",
+        "graph/skillgraph.json#usd-specializes-namespace-source",
+        "graph/skillgraph.json#usd-reference-namespace-source"
+      ]
+    },
+    {
+      "id": "variants.no-selection-inert",
+      "owner": "usd-variant-namespace-source",
+      "status": "implemented",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:specification/document_data_model/README.md:757 variantSelection"
+      ],
+      "obligations": [
+        "Do not compose a variant when no selection is authored.",
+        "Do not compose a variant when the selected value is an empty string."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-variant-namespace-source/variant-namespace-source.json#no-selection-remains-inert"
+      ]
+    },
+    {
+      "id": "variants.missing-selected-variant",
+      "owner": "usd-variant-namespace-source",
+      "status": "implemented",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:specification/document_data_model/README.md:100 prim children and variant set specs",
+        "aousd/specifications-public@v1.0.1:specification/file_formats/README.md:1264 VariantStatement",
+        "aousd/specifications-public@v1.0.1:specification/file_formats/README.md:1269 VariantSetStatement"
+      ],
+      "obligations": [
+        "Diagnose a selected variant whose variant set exists but whose selected variant spec is absent.",
+        "Include the owning prim path, variant set, selected variant, and expected variant path in diagnostics.",
+        "Do not construct a successful namespace source when a direct selected variant cannot be found."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-variant-namespace-source/variant-namespace-source.json#missing-selected-variant"
+      ]
+    },
+    {
+      "id": "variants.stage-population-consumption",
+      "owner": "usd-variant-namespace-source",
+      "status": "implemented",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:specification/stage_population/README.md:17 stage population",
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:580 Variants"
+      ],
+      "obligations": [
+        "Expose the composed selected variant tree through the namespace-source boundary.",
+        "Allow usd-stage-population to populate selected variant prims and properties without evaluating variant selections itself.",
+        "Preserve composed child and property ordering when consumed by stage population."
+      ],
+      "positive_goldens": [
+        "goldens/integration/usd-variant-stage-population/variant-stage-population.json#selected-variant-tree-populates-stage"
+      ]
+    },
+    {
+      "id": "variants.recursive-expansion",
+      "owner": "usd-variant-namespace-source",
+      "status": "implemented",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:580 Variants",
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:839 same arc type strength ordering"
+      ],
+      "obligations": [
+        "Discover variant sets and variantSelection fields contributed by selected variant specs.",
+        "Select nested variants and project their prim/property opinions into composed scene paths.",
+        "Order deeper selected variant contributors stronger than shallower selected variant contributors."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-variant-namespace-source/variant-namespace-source.json#recursive-selected-variant-authored-selection"
+      ]
+    },
+    {
+      "id": "variants.fallback-selection",
+      "owner": "usd-variant-namespace-source",
+      "status": "partial",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:601 Computing Variant Selection",
+        "aousd/specifications-public@v1.0.1:specification/document_data_model/README.md:799 variantSelection fallback"
+      ],
+      "obligations": [
+        "Use the variantSelection field fallback value of an empty map to leave unselected sets inert.",
+        "Reuse a previously decided selection for a later matching variant set in the current selected-variant branch.",
+        "Do not introduce external variant fallback maps or stage/session fallback policies because they are not defined by the AOUSD v1.0.1 core composition text."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-variant-namespace-source/variant-namespace-source.json#no-selection-remains-inert",
+        "goldens/unit/usd-variant-namespace-source/variant-namespace-source.json#previous-selection-reused-for-recursive-set"
+      ],
+      "deferred_reason": "Only spec-backed empty-map fallback and previous-selection reuse are covered; external fallback maps remain out of scope."
+    },
+    {
+      "id": "variants.multiple-set-conflicts",
+      "owner": "usd-variant-namespace-source",
+      "status": "implemented",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:specification/document_data_model/README.md:744 variantSetNames",
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:839 same arc type strength ordering"
+      ],
+      "obligations": [
+        "Use the final source-visible variantSetNames order, or variantSetChildren when variantSetNames is absent, as selected variant set strength order.",
+        "Treat the first selected variant set in that order as stronger than later selected variant sets when their opinions overlap.",
+        "Compose child names from weaker selected variant set contributors before stronger selected variant set contributors."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-variant-namespace-source/variant-namespace-source.json#multiple-variant-sets-use-authored-order"
+      ]
+    }
+  ]
+}

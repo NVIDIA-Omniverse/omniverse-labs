@@ -1,0 +1,118 @@
+{
+  "suite": "usda-metadata-grammar-contexts",
+  "contract": "contracts/spec-coverage/usda-single-layer.coverage.json",
+  "spec_commit": "v1.0.1",
+  "cases": [
+    {
+      "id": "prim-payload-list-forms",
+      "spec_refs": [
+        "file_formats/README.md:1241 PayloadList",
+        "file_formats/README.md:1249 PayloadMetadata",
+        "file_formats/README.md:1265 PrimMetadataItem"
+      ],
+      "input": {
+        "usda": "#usda 1.0\n\ndef \"NonePayload\" (\n    payload = None\n)\n{\n}\n\ndef \"EmptyPayload\" (\n    payload = []\n)\n{\n}\n\ndef \"SinglePathPayload\" (\n    payload = </PayloadRoot>\n)\n{\n}\n\ndef \"AssetPayload\" (\n    payload = @payload.usda@\n)\n{\n}\n\ndef \"ListPayload\" (\n    prepend payload = [@asset.usda@</A>, </Local>]\n)\n{\n}\n"
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "layer": {
+          "fields": {
+            "primChildren": {"type": "token[]", "value": ["NonePayload", "EmptyPayload", "SinglePathPayload", "AssetPayload", "ListPayload"]}
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "primChildren": {"type": "token[]", "value": ["NonePayload", "EmptyPayload", "SinglePathPayload", "AssetPayload", "ListPayload"]}
+              }
+            },
+            "/NonePayload": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "payload": {
+                  "type": "listop<Payload>",
+                  "value": {"explicit": [], "prepend": [], "append": [], "delete": []}
+                },
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/EmptyPayload": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "payload": {
+                  "type": "listop<Payload>",
+                  "value": {"explicit": [], "prepend": [], "append": [], "delete": []}
+                },
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/SinglePathPayload": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "payload": {
+                  "type": "listop<Payload>",
+                  "value": {
+                    "explicit": [{"path": "/PayloadRoot", "offset": 0.0, "scale": 1.0}],
+                    "prepend": [],
+                    "append": [],
+                    "delete": []
+                  }
+                },
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/AssetPayload": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "payload": {
+                  "type": "listop<Payload>",
+                  "value": {
+                    "explicit": [{"asset": "payload.usda", "offset": 0.0, "scale": 1.0}],
+                    "prepend": [],
+                    "append": [],
+                    "delete": []
+                  }
+                },
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/ListPayload": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "payload": {
+                  "type": "listop<Payload>",
+                  "value": {
+                    "explicit": [],
+                    "prepend": [
+                      {"asset": "asset.usda", "path": "/A", "offset": 0.0, "scale": 1.0},
+                      {"path": "/Local", "offset": 0.0, "scale": 1.0}
+                    ],
+                    "append": [],
+                    "delete": []
+                  }
+                },
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

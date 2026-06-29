@@ -1,0 +1,9 @@
+#usda 1.0
+
+over "World"
+{
+    float strongDefault.timeSamples = {
+        0: 100,
+        10: 200,
+    }
+}

@@ -1,0 +1,17 @@
+#usda 1.0
+(
+    defaultPrim = "Geo"
+)
+
+# Weaker layer — authors timeSamples on /Geo.radius. The root layer
+# (stage_ordering_root.usda) overrides with a `default` value; per
+# spec §12.3 the stronger opinion's `default` wins over this weaker
+# timeSamples in the per-opinion walk, regardless of query time.
+
+def Scope "Geo"
+{
+    float radius.timeSamples = {
+        0: 100.0,
+        10: 200.0,
+    }
+}

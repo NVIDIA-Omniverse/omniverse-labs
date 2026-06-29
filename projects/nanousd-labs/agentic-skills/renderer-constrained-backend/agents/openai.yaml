@@ -1,0 +1,4 @@
+interface:
+  display_name: "Renderer Constrained Backend"
+  short_description: "Build to a hard memory/capability budget"
+  default_prompt: "Use $renderer-constrained-backend to build a low-VRAM / raster-only / portable renderer backend to a hard budget — texture-resolution clamp as a code invariant, MaterialX baking instead of codegen, and a no-RT fallback that matches the reference's degradation policy."

@@ -1,0 +1,151 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/resource.handle.json",
+  "title": "USD Resource Protocol Unit Contract",
+  "version": "0.1",
+  "spec_commit": "v1.0.1",
+  "scope": {
+    "included": [
+      "typed resolved resource locations",
+      "local filesystem resource reads",
+      "local filesystem resource writes",
+      "local file URI conversion for the supported RFC 8089 subset",
+      "unsupported URI/protocol diagnostics",
+      "package resource spelling split into outer resource and inner entry",
+      "Windows path-like spelling is not treated as URI protocol syntax"
+    ],
+    "deferred": [
+      "network protocol reads or writes",
+      "TLS, credential, or remote cache handling",
+      "full RFC 3986 conformance matrix",
+      "complete RFC 8089 platform-specific behavior",
+      "package mutation",
+      "format parsing after resource bytes are opened"
+    ]
+  },
+  "model": {
+    "ResolvedLocation": "Typed resolved resource location produced after asset resolution and before resource I/O. It is distinct from an authored asset identifier string.",
+    "ResolvedLocation.Type": [
+      "LocalFile",
+      "Uri",
+      "Package"
+    ],
+    "LocalFile": "Decoded local filesystem destination, including supported local file URI spellings.",
+    "Uri": "Typed URI/protocol destination retained as unsupported by the default resource layer unless a future skill adds that protocol.",
+    "Package": "Outer resolved location plus package-entry path. Package syntax is not treated as an ordinary filesystem path or URI path. Package locations expose only outer plus entry; package entry bytes are produced by usdz-package-format after the outer resource has been opened.",
+    "ResourceReadResult": "Result of opening a resource. It reports success, diagnostic text, resolved display location, optional bytes, and whether a local file-backed fast path is available. On success for LocalFile locations, file_backed_path must be populated so downstream format handlers can use file-backed fast paths (e.g. memory-mapped Crate decoding). bytes is a non-owning view; the underlying owner is the resource layer's responsibility.",
+    "ResourceWriteResult": "Result of saving a whole resource. It reports success, diagnostic text, resolved display location, and whether a local file-backed destination was used.",
+    "ResolvedLocationConstruction": "ResolvedLocation values are produced by classify_resolved (and classify_file_uri / split_package for the URI and package cases). The production read API (read_resource) accepts a ResolvedLocation; it must not accept raw identifier strings after resolution. Public convenience APIs that accept raw strings must convert at the Stage/Compose boundary before calling read_resource."
+  },
+  "operations": {
+    "classify_resolved": {
+      "input": {
+        "location": "resolved location text"
+      },
+      "output": {
+        "type": "ResolvedLocation.Type",
+        "display": "stable display spelling",
+        "path": "local filesystem path for LocalFile results",
+        "scheme": "URI scheme for Uri results",
+        "outer": "outer resolved location summary for Package results",
+        "entry": "package-entry path for Package results"
+      }
+    },
+    "classify_file_uri": {
+      "input": {
+        "uri": "candidate file URI"
+      },
+      "output": {
+        "type": "LocalFile or Uri",
+        "path": "decoded local filesystem path on success",
+        "diagnostic": "unsupported file URI reason when not local"
+      }
+    },
+    "split_package": {
+      "input": {
+        "location": "candidate package resource spelling"
+      },
+      "output": {
+        "outer": "outer resource spelling",
+        "entry": "package-entry path"
+      }
+    },
+    "read_resource": {
+      "input": {
+        "location": "ResolvedLocation produced by classify_resolved (LocalFile, Uri, or Package)"
+      },
+      "output": {
+        "ok": "boolean",
+        "diagnostics": "array of canonical diagnostics; populated when ok is false",
+        "bytes": "non-owning byte view into the opened resource bytes; absent on failure",
+        "file_backed_path": "filesystem path the bytes were read from for LocalFile reads; absent for Uri and Package and for failure"
+      }
+    },
+    "read_fixture": {
+      "input": {
+        "path": "repo-relative local fixture path"
+      },
+      "output": {
+        "bytes": "byte length",
+        "file_backed": "boolean",
+        "prefix": "initial decoded bytes for text fixtures"
+      }
+    },
+    "read_fixture_as_file_uri": {
+      "input": {
+        "path": "repo-relative local fixture path"
+      },
+      "output": {
+        "bytes": "byte length",
+        "file_backed": "boolean",
+        "prefix": "initial decoded bytes for text fixtures"
+      }
+    },
+    "unsupported_read": {
+      "input": {
+        "location": "resolved unsupported URI or resource location"
+      },
+      "output": {
+        "diagnostic": "clear unsupported-resource diagnostic"
+      }
+    },
+    "write_temp_and_readback": {
+      "input": {
+        "text": "UTF-8 text to write through the resource layer"
+      },
+      "output": {
+        "bytes": "written byte length",
+        "file_backed": "boolean",
+        "text": "read-back text"
+      }
+    },
+    "unsupported_write": {
+      "input": {
+        "location": "resolved unsupported URI or package destination"
+      },
+      "output": {
+        "diagnostic": "clear unsupported-resource diagnostic"
+      }
+    }
+  },
+  "laws": [
+    "ResolvedLocation.Type, not Kind, names the resolved-location discriminator",
+    "local path reads and local file URI reads of the same fixture must produce the same bytes",
+    "file URI conversion percent-decodes only at the local filesystem boundary",
+    "file URIs with query or fragment components must not silently become local paths",
+    "file URIs with non-local authorities must not silently become local paths",
+    "single-letter drive prefixes such as C: are not URI schemes",
+    "unsupported URI reads and writes fail clearly rather than falling back to filesystem strings",
+    "package resource spelling splits into an outer resolved location and package-entry path before resource I/O",
+    "usd-resource-protocol must not parse ZIP central directories or produce package entry bytes; usdz-package-format owns entry indexing and byte views",
+    "the production read API (read_resource) must accept a ResolvedLocation, not a raw identifier string",
+    "LocalFile reads must populate file_backed_path on the ResourceReadResult so format handlers can elect a file-backed fast path",
+    "production reads must distinguish empty-resource success from open-failure; an empty resource is ok=true with zero-length bytes, not an error diagnostic",
+    "Uri-typed locations must not be read through the LocalFile path; reads of unsupported Uri schemes must produce UnsupportedScheme diagnostics",
+    "Package-typed locations must be split through split_package before the outer resource is read; reading a Package-typed location directly is a contract violation"
+  ],
+  "adapter_protocol": {
+    "input": "A JSON file containing one case with an ops array.",
+    "output": "A JSON object with ok, diagnostics, and results. This uses the same adapter shape as handle tests but does not require persistent handles."
+  }
+}

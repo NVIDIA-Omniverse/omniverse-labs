@@ -1,0 +1,187 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/spec-coverage/payload-composition.coverage.json",
+  "title": "USD Payload Composition Spec Coverage Ledger",
+  "version": "0.1",
+  "spec_commit": "v1.0.1",
+  "normative_source": {
+    "repo": "aousd/specifications-public",
+    "commit": "v1.0.1",
+    "rule": "The pinned composition, document_data_model, file_formats, and stage_population specifications are normative. This ledger covers only direct in-memory loaded external payload composition. AOUSD Core 1.0.1 treats payload inclusion as an input to composition that may be provided by stage population; bounded payload inclusion support is optional rather than a baseline compliance requirement."
+  },
+  "status_values": {
+    "implemented": "In scope for the payload-namespace-source contract and covered by goldens.",
+    "optional_supported": "Supported for the optional payload inclusion path described by the spec, but not required for baseline compliance.",
+    "partial": "A bounded subset is included and later contracts must extend it.",
+    "deferred": "Specified behavior intentionally not included in this first payload contract.",
+    "out_of_scope": "Belongs to another subsystem or future skill."
+  },
+  "coverage_rules": [
+    "The provider produces mapped direct loaded payload opinions and may expose them through a namespace-source-shaped conformance surface.",
+    "The payload opinion source consumes already-opened payload layers, not asset identifiers or resources.",
+    "Runtime payload asset opening for the optional bounded adapter payload inclusion scenario is owned by usd-composed-stage-open.",
+    "A generated target must not claim local/reference/payload LIVERPS arbitration, recursive payloads, payload load masks and mutation, or full value resolution from the payload opinion source."
+  ],
+  "items": [
+    {
+      "id": "payloads.direct-external-target-path",
+      "owner": "usd-payload-namespace-source",
+      "status": "partial",
+      "spec_refs": [
+        "file_formats/README.md:1241 PayloadList",
+        "file_formats/README.md:1249 PayloadMetadata",
+        "document_data_model/README.md:741 payload"
+      ],
+      "obligations": [
+        "Read direct external payload arcs from supplied payload arc-site records.",
+        "Use supplied already-opened payload layers keyed by authored asset identifier.",
+        "Map the target prim path and descendants under the payload-bearing prim path."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-payload-namespace-source/payload-namespace-source.json#composes-external-payload-tree"
+      ],
+      "deferred_reason": "This first provider does not resolve or open payload assets and treats direct supplied payloads as loaded."
+    },
+    {
+      "id": "payloads.default-prim-target",
+      "owner": "usd-payload-namespace-source",
+      "status": "implemented",
+      "spec_refs": [
+        "document_data_model/README.md:521 defaultPrim",
+        "file_formats/README.md:1241 PayloadList"
+      ],
+      "obligations": [
+        "Use the payload layer defaultPrim when an external payload has an asset but no target path.",
+        "Diagnose asset-only payloads when the payload layer has no defaultPrim."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-payload-namespace-source/payload-namespace-source.json#asset-payload-uses-default-prim"
+      ]
+    },
+    {
+      "id": "payloads.base-stronger-than-payload",
+      "owner": "usd-composition-arbitrator",
+      "status": "deferred",
+      "spec_refs": [
+        "composition/README.md payloads"
+      ],
+      "obligations": [
+        "Merge local, reference, payload, and other arc-family opinions according to LIVERPS.",
+        "Keep base/local/reference fields stronger than weaker payload target fields.",
+        "Ensure a stronger over does not erase a weaker payload def for population-facing specifier output."
+      ],
+      "deferred_reason": "A payload opinion source must not require or merge a base/reference namespace source. Strength arbitration belongs to usd-composition-arbitrator."
+    },
+    {
+      "id": "payloads.stage-population-consumption",
+      "owner": "usd-payload-namespace-source",
+      "status": "partial",
+      "spec_refs": [
+        "stage_population/README.md",
+        "composition/README.md payloads"
+      ],
+      "obligations": [
+        "Expose payload-only mapped opinions through the namespace-source boundary for conformance tests.",
+        "Allow usd-stage-population to consume that payload-only source when it is explicitly provided as the stage input.",
+        "Do not claim this source is the final composed local/reference/payload namespace source."
+      ],
+      "positive_goldens": [
+        "goldens/integration/usd-payload-stage-population/payload-stage-population.json#payload-tree-populates-stage"
+      ],
+      "deferred_reason": "Final stage population over local, reference, payload, and later arc opinions requires usd-composition-arbitrator."
+    },
+    {
+      "id": "payloads.loaded-layer-nested-references",
+      "owner": "usd-payload-namespace-source",
+      "status": "implemented",
+      "spec_refs": [
+        "composition/README.md payloads",
+        "composition/README.md references",
+        "composition/README.md:713 Namespace Mapping"
+      ],
+      "obligations": [
+        "Expand references authored inside loaded payload target subtrees while the referenced layers are already supplied.",
+        "Treat those nested opinions as payload-family contributions because the payload arc introduced the loaded layer stack.",
+        "Carry arc-local layerRelocates from the loaded payload layer stack onto nested reference records.",
+        "Remap child names, property names, targetPaths, and connectionPaths through the accumulated payload/reference mapping and arc-local relocate mapping."
+      ],
+      "positive_goldens": [
+        "nanousd compliance tests/composition/relocates_nested_root.usda#RootPayload"
+      ]
+    },
+    {
+      "id": "payloads.missing-layer",
+      "owner": "usd-payload-namespace-source",
+      "status": "implemented",
+      "spec_refs": [
+        "resource interface diagnostics"
+      ],
+      "obligations": [
+        "Report missing supplied payload layers clearly.",
+        "Include the authored asset identifier in diagnostics.",
+        "Do not construct a successful namespace source when a direct required payload layer is absent."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-payload-namespace-source/payload-namespace-source.json#missing-payload-layer"
+      ]
+    },
+    {
+      "id": "payloads.unload-policy",
+      "owner": "usd-composed-stage-open",
+      "status": "optional_supported",
+      "spec_refs": [
+        "aousd/specifications-public@2f9e746c4fbd7f48d6d2c9ac568133fe398bbfc0:core/1.0.1/core_spec.md:3935 composition input whether payload arcs are considered",
+        "aousd/specifications-public@2f9e746c4fbd7f48d6d2c9ac568133fe398bbfc0:core/1.0.1/core_spec.md:4261 payloads loaded or ignored by composition input",
+        "aousd/specifications-public@2f9e746c4fbd7f48d6d2c9ac568133fe398bbfc0:core/1.0.1/core_spec.md:5208 population mask may provide payload flag"
+      ],
+      "obligations": [
+        "Honor payloadInclusion=include by opening direct external payload assets and supplying a loaded-payload opinion source.",
+        "Honor payloadInclusion=omit by omitting payload asset opening and omitting the payload opinion source.",
+        "Report payload_loading=absent when payload opinions are intentionally omitted by the adapter payload inclusion scenario.",
+        "Do not diagnose authored payload arcs as missing dependencies when payloadInclusion=omit."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-composed-stage-open/composed-stage-open.json#opens-payload-assets-when-inclusion-requested",
+        "goldens/unit/usd-composed-stage-open/composed-stage-open.json#omits-payload-assets-when-inclusion-omitted"
+      ],
+      "deferred_reason": "Fine-grained payload load masks, unloaded-payload prim state, and load/unload mutation remain future optional payload-loading work."
+    },
+    {
+      "id": "payloads.asset-loading",
+      "owner": "usd-composed-stage-open",
+      "status": "optional_supported",
+      "spec_refs": [
+        "aousd/specifications-public@2f9e746c4fbd7f48d6d2c9ac568133fe398bbfc0:core/1.0.1/core_spec.md:4268 loaded payload arcs are processed when payload inclusion is requested",
+        "aousd/specifications-public@2f9e746c4fbd7f48d6d2c9ac568133fe398bbfc0:core/1.0.1/core_spec.md:2472 payload listOp field",
+        "resource interface resolved resource interaction"
+      ],
+      "obligations": [
+        "Discover direct external payload asset identifiers from opened layer specs.",
+        "Resolve payload assets with the same bounded authoring-layer-relative local policy used for other opened composition dependencies.",
+        "Open payload assets through usd-layer-stack-open so payload layers may carry local sublayers.",
+        "Supply opened payload root layers to usd-payload-namespace-source keyed by authored asset identifier."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-composed-stage-open/composed-stage-open.json#opens-payload-assets-when-inclusion-requested"
+      ]
+    },
+    {
+      "id": "payloads.recursive-expansion",
+      "owner": "future-recursive-payload-composition-skill",
+      "status": "deferred",
+      "spec_refs": [
+        "composition/README.md payloads"
+      ],
+      "deferred_reason": "Nested and chained payloads are not expanded by this first provider. Payload-layer payloads remain inert field data."
+    },
+    {
+      "id": "payloads.internal-path-only",
+      "owner": "future-internal-payload-composition-skill",
+      "status": "deferred",
+      "spec_refs": [
+        "file_formats/README.md:1241 PayloadList"
+      ],
+      "deferred_reason": "Path-only internal payload arcs are intentionally separate from direct external loaded payload composition."
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+---
+IndentWidth: 4
+AccessModifierOffset: -4
+AlignArrayOfStructures: Left
+AlignAfterOpenBracket: Align
+AlignConsecutiveAssignments:
+  Enabled: false
+AllowShortIfStatementsOnASingleLine: Never
+BraceWrapping:
+  AfterControlStatement: Always
+InsertBraces: true
+ReflowComments: true
+ReferenceAlignment: Pointer
+PointerAlignment: Left
+BinPackParameters: false
+BinPackArguments: false

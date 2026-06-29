@@ -1,0 +1,17 @@
+#usda 1.0
+(
+    relocates = {
+        </OldPath/Prim>: </NewPath/Prim>,
+        </Another/Old>: </Another/New>
+    }
+)
+
+def Scope "NewPath"
+{
+    def Scope "Prim" {}
+}
+
+def Scope "Another"
+{
+    def Scope "New" {}
+}

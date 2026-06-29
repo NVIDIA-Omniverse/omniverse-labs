@@ -1,0 +1,17 @@
+#usda 1.0
+(
+    customLayerData = {
+        string author = "skillgraph"
+        int rev = 7
+    }
+    defaultPrim = "World"
+    subLayers = [
+        @./over.usda@,
+        @./under.usda@ (offset = 10; scale = 2)
+    ]
+)
+
+def Xform "World"
+{
+}
+

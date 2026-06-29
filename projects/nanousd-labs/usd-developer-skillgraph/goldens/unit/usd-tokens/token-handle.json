@@ -1,0 +1,125 @@
+{
+  "suite": "usd-token-handle-basic",
+  "contract": "contracts/handles/token.handle.json",
+  "spec_commit": "v1.0.1",
+  "cases": [
+    {
+      "id": "intern-and-stringify",
+      "input": {
+        "ops": [
+          {"op": "intern", "as": "empty", "text": ""},
+          {"op": "intern", "as": "world", "text": "World"},
+          {"op": "intern", "as": "keyword", "text": "def"},
+          {"op": "intern", "as": "with_space", "text": "has whitespace"},
+          {"op": "intern", "as": "unicode", "text": "café"},
+          {"op": "to_string", "token": "empty"},
+          {"op": "is_empty", "token": "empty"},
+          {"op": "to_string", "token": "with_space"},
+          {"op": "to_string", "token": "unicode"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "intern", "ok": true, "handle": "empty", "text": ""},
+          {"op": "intern", "ok": true, "handle": "world", "text": "World"},
+          {"op": "intern", "ok": true, "handle": "keyword", "text": "def"},
+          {"op": "intern", "ok": true, "handle": "with_space", "text": "has whitespace"},
+          {"op": "intern", "ok": true, "handle": "unicode", "text": "café"},
+          {"op": "to_string", "ok": true, "text": ""},
+          {"op": "is_empty", "ok": true, "empty": true},
+          {"op": "to_string", "ok": true, "text": "has whitespace"},
+          {"op": "to_string", "ok": true, "text": "café"}
+        ]
+      }
+    },
+    {
+      "id": "equality-and-hash",
+      "input": {
+        "ops": [
+          {"op": "intern", "as": "a", "text": "typeName"},
+          {"op": "intern", "as": "b", "text": "typeName"},
+          {"op": "intern", "as": "c", "text": "kind"},
+          {"op": "equal", "lhs": "a", "rhs": "b"},
+          {"op": "hash_equal", "lhs": "a", "rhs": "b"},
+          {"op": "equal", "lhs": "a", "rhs": "c"},
+          {"op": "hash_equal", "lhs": "a", "rhs": "c"},
+          {"op": "release", "token": "b"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "intern", "ok": true, "handle": "a", "text": "typeName"},
+          {"op": "intern", "ok": true, "handle": "b", "text": "typeName"},
+          {"op": "intern", "ok": true, "handle": "c", "text": "kind"},
+          {"op": "equal", "ok": true, "equal": true},
+          {"op": "hash_equal", "ok": true, "hash_equal": true},
+          {"op": "equal", "ok": true, "equal": false},
+          {"op": "hash_equal", "ok": true, "hash_equal": false},
+          {"op": "release", "ok": true, "released": true}
+        ]
+      }
+    },
+    {
+      "id": "case-sensitive-and-no-identifier-restriction",
+      "input": {
+        "ops": [
+          {"op": "intern", "as": "lower", "text": "token"},
+          {"op": "intern", "as": "upper", "text": "Token"},
+          {"op": "intern", "as": "punct", "text": "not-valid-as-identifier"},
+          {"op": "equal", "lhs": "lower", "rhs": "upper"},
+          {"op": "to_string", "token": "punct"},
+          {"op": "is_empty", "token": "punct"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "intern", "ok": true, "handle": "lower", "text": "token"},
+          {"op": "intern", "ok": true, "handle": "upper", "text": "Token"},
+          {"op": "intern", "ok": true, "handle": "punct", "text": "not-valid-as-identifier"},
+          {"op": "equal", "ok": true, "equal": false},
+          {"op": "to_string", "ok": true, "text": "not-valid-as-identifier"},
+          {"op": "is_empty", "ok": true, "empty": false}
+        ]
+      }
+    },
+    {
+      "id": "identity-across-independent-contexts",
+      "input": {
+        "ops": [
+          {"op": "intern", "as": "prelude", "text": "prelude"},
+          {"op": "intern", "as": "same_main", "text": "shared"},
+          {"op": "intern_in_fresh_context", "as": "same_fresh", "text": "shared"},
+          {"op": "equal", "lhs": "same_main", "rhs": "same_fresh"},
+          {"op": "hash_equal", "lhs": "same_main", "rhs": "same_fresh"},
+          {"op": "intern_in_fresh_context", "as": "upper_fresh", "text": "Token"},
+          {"op": "intern_in_fresh_context", "as": "lower_fresh", "text": "token"},
+          {"op": "equal", "lhs": "upper_fresh", "rhs": "lower_fresh"},
+          {"op": "hash_equal", "lhs": "upper_fresh", "rhs": "lower_fresh"},
+          {"op": "to_string", "token": "same_fresh"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "intern", "ok": true, "handle": "prelude", "text": "prelude"},
+          {"op": "intern", "ok": true, "handle": "same_main", "text": "shared"},
+          {"op": "intern_in_fresh_context", "ok": true, "handle": "same_fresh", "text": "shared"},
+          {"op": "equal", "ok": true, "equal": true},
+          {"op": "hash_equal", "ok": true, "hash_equal": true},
+          {"op": "intern_in_fresh_context", "ok": true, "handle": "upper_fresh", "text": "Token"},
+          {"op": "intern_in_fresh_context", "ok": true, "handle": "lower_fresh", "text": "token"},
+          {"op": "equal", "ok": true, "equal": false},
+          {"op": "hash_equal", "ok": true, "hash_equal": false},
+          {"op": "to_string", "ok": true, "text": "shared"}
+        ]
+      }
+    }
+  ]
+}

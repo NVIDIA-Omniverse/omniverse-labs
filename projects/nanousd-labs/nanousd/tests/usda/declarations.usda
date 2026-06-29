@@ -1,0 +1,38 @@
+#usda 1.0
+
+def Scope "Declarations"
+{
+    # Attribute declarations without values (type + name only)
+    float declaredFloat
+    int declaredInt
+    string declaredString
+    double3 declaredVec
+    matrix4d declaredMatrix
+    token declaredToken
+    asset declaredAsset
+    bool declaredBool
+    half declaredHalf
+    quatf declaredQuat
+
+    # Array declarations without values
+    float[] declaredFloatArray
+    int[] declaredIntArray
+    point3f[] declaredPointArray
+
+    # Custom declarations
+    custom float customDeclared
+    custom double3 customVecDeclared
+    custom token customTokenDeclared
+
+    # Uniform declarations
+    uniform string uniformDeclared
+    uniform token uniformTokenDeclared
+
+    # Custom uniform declarations
+    custom uniform float customUniformDeclared
+    custom uniform int customUniformInt
+
+    # Relationship declarations
+    rel declaredRel
+    custom rel customRel
+}

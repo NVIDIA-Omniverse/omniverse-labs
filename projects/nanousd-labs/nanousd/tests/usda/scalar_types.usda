@@ -1,0 +1,48 @@
+#usda 1.0
+
+def Scope "ScalarTypes"
+{
+    bool boolTrue = true
+    bool boolFalse = false
+    bool boolTrueAlt = True
+    bool boolFalseAlt = False
+    bool boolOne = 1
+    bool boolZero = 0
+
+    int intPositive = 42
+    int intNegative = -100
+    int intZero = 0
+    int intMax = 2147483647
+    int intMin = -2147483648
+
+    uint uintVal = 12345
+    uint uintMax = 4294967295
+    uint uintZero = 0
+
+    int64 int64Val = 9999999999
+    int64 int64Max = 9223372036854775807
+    int64 int64Min = -9223372036854775808
+
+    uint64 uint64Val = 999999999999
+    uint64 uint64Max = 18446744073709551615
+    uint64 uint64Zero = 0
+
+    half halfVal = 1.5
+
+    float floatVal = 3.14
+    float floatNeg = -2.718
+    float floatSci = 1.23e10
+    float floatSciNeg = -4.56e-3
+
+    double doubleVal = 2.718281828459045
+    double doubleSci = 6.022e23
+
+    string stringVal = "hello world"
+    string stringEmpty = ""
+
+    token tokenVal = "myToken"
+    token tokenEmpty = ""
+
+    asset assetVal = @./path/to/asset.usd@
+    asset assetEmpty = @@
+}

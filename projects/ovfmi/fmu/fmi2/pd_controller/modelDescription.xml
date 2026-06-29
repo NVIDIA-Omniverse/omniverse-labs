@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<fmiModelDescription
+    fmiVersion="2.0"
+    modelName="PDController"
+    guid="b2c3d4e5-f6a7-8901-bcde-f12345678901"
+    generationTool="NVIDIA ovx-USD-FMI"
+    description="PD controller with gravity compensation (FMI 2.0)">
+
+  <CoSimulation modelIdentifier="PDController" canHandleVariableCommunicationStepSize="true"/>
+
+  <ModelVariables>
+    <ScalarVariable name="pos_x" valueReference="0" causality="input" variability="continuous">
+      <Real start="0.0"/>
+    </ScalarVariable>
+    <ScalarVariable name="pos_y" valueReference="1" causality="input" variability="continuous">
+      <Real start="0.0"/>
+    </ScalarVariable>
+    <ScalarVariable name="pos_z" valueReference="2" causality="input" variability="continuous">
+      <Real start="0.0"/>
+    </ScalarVariable>
+    <ScalarVariable name="vel_x" valueReference="3" causality="input" variability="continuous">
+      <Real start="0.0"/>
+    </ScalarVariable>
+    <ScalarVariable name="vel_y" valueReference="4" causality="input" variability="continuous">
+      <Real start="0.0"/>
+    </ScalarVariable>
+    <ScalarVariable name="vel_z" valueReference="5" causality="input" variability="continuous">
+      <Real start="0.0"/>
+    </ScalarVariable>
+    <ScalarVariable name="force_x" valueReference="6" causality="output" variability="continuous" initial="calculated">
+      <Real/>
+    </ScalarVariable>
+    <ScalarVariable name="force_y" valueReference="7" causality="output" variability="continuous" initial="calculated">
+      <Real/>
+    </ScalarVariable>
+    <ScalarVariable name="force_z" valueReference="8" causality="output" variability="continuous" initial="calculated">
+      <Real/>
+    </ScalarVariable>
+    <ScalarVariable name="target_x" valueReference="9" causality="input" variability="continuous">
+      <Real start="0.0"/>
+    </ScalarVariable>
+    <ScalarVariable name="target_y" valueReference="10" causality="input" variability="continuous">
+      <Real start="2.0"/>
+    </ScalarVariable>
+    <ScalarVariable name="target_z" valueReference="11" causality="input" variability="continuous">
+      <Real start="0.0"/>
+    </ScalarVariable>
+    <ScalarVariable name="kp" valueReference="12" causality="parameter" variability="fixed">
+      <Real start="50.0"/>
+    </ScalarVariable>
+    <ScalarVariable name="kd" valueReference="13" causality="parameter" variability="fixed">
+      <Real start="10.0"/>
+    </ScalarVariable>
+    <ScalarVariable name="mass" valueReference="14" causality="parameter" variability="fixed">
+      <Real start="1.0"/>
+    </ScalarVariable>
+    <ScalarVariable name="gravity" valueReference="15" causality="parameter" variability="fixed">
+      <Real start="-9.81"/>
+    </ScalarVariable>
+    <ScalarVariable name="time" valueReference="16" causality="independent" variability="continuous">
+      <Real/>
+    </ScalarVariable>
+  </ModelVariables>
+
+  <ModelStructure>
+    <Outputs>
+      <Unknown index="7"/>
+      <Unknown index="8"/>
+      <Unknown index="9"/>
+    </Outputs>
+  </ModelStructure>
+
+</fmiModelDescription>

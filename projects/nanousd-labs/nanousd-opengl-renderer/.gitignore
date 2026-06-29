@@ -1,0 +1,8 @@
+build/
+*.o
+*.ppm
+core.*
+imgui.ini
+__pycache__/
+tests/curves/output/
+*.nzgeo.gl

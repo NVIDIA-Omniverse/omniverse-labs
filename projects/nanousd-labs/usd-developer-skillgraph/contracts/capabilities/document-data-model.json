@@ -1,0 +1,215 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/document-data-model.json",
+  "title": "USD Document Data Model Capability",
+  "version": "0.1",
+  "spec_commit": "v1.0.1",
+  "purpose": "Define layer/spec/field storage behavior for the bounded document-model subset used by single-layer USDA parsing.",
+  "scope": {
+    "included": [
+      "one layer spec addressed by /",
+      "prim specs addressed by absolute prim paths",
+      "attribute and relationship specs addressed by property paths",
+      "spec field maps with typed field values exposed as canonical tagged values only at adapter boundaries",
+      "field existence, stored type inspection, and checked typed reads",
+      "native numeric payload storage for numeric field values",
+      "complete foundational typed payload catalog preservation inside field values",
+      "root and nested prim child-list maintenance",
+      "prim property child-list maintenance",
+      "duplicate spec path rejection",
+      "missing or invalid parent rejection",
+      "active field preservation without layer-level filtering"
+    ],
+    "deferred": [
+      "variant set and variant spec storage",
+      "complete core metadata field validation table",
+      "typed validation for every specialized core field",
+      "composition, value resolution, asset resolution, and stage population",
+      "schema fallback evaluation and schema-domain field semantics"
+    ]
+  },
+  "dependencies": {
+    "required": [
+      {
+        "provider": "usd-tokens",
+        "capability": "token_identity",
+        "reason": "Field names and repeated child/property names should use token identity rather than raw string identity."
+      },
+      {
+        "provider": "usd-identifiers-and-names",
+        "capability": "names",
+        "reason": "Spec names and field names are document-model identifiers."
+      },
+      {
+        "provider": "usd-foundational-values",
+        "capability": "foundational_value_model",
+        "reason": "Field storage consumes the foundational typed value model and exposes canonical tagged values only at adapter boundaries."
+      },
+      {
+        "provider": "usd-paths",
+        "capability": "parent/name path construction",
+        "reason": "Spec identity and child insertion are addressed through canonical prim and property paths."
+      },
+      {
+        "provider": "usd-listops-authored",
+        "capability": "authored_listops",
+        "reason": "Document-model fields may store list operations, including specialized ObjectPath list operations."
+      }
+    ]
+  },
+  "spec_forms": {
+    "layer": {
+      "path": "/",
+      "children": ["prim"],
+      "required_fields": {
+        "primChildren": "token[]"
+      }
+    },
+    "prim": {
+      "path_kind": "absolute prim path",
+      "children": ["prim", "attribute", "relationship"],
+      "required_fields": {
+        "specifier": "EnumSpecifier",
+        "primChildren": "token[]",
+        "propertyChildren": "token[]",
+        "variantSetChildren": "token[]"
+      }
+    },
+    "attribute": {
+      "path_kind": "property path",
+      "children": [],
+      "required_fields_by_parser": {
+        "typeName": "token",
+        "variability": "EnumVariability",
+        "custom": "bool"
+      }
+    },
+    "relationship": {
+      "path_kind": "property path",
+      "children": [],
+      "required_fields_by_parser": {
+        "custom": "bool"
+      }
+    }
+  },
+  "field_value_model": {
+    "representation": "durable storage uses a target-native FieldValue or equivalent typed value container, not JSON as the primary representation",
+    "adapter_representation": "canonical tagged JSON values matching contracts/value.schema.json are used at conformance and serialization boundaries",
+    "json_materialization_rule": "Tagged JSON objects must be generated on demand for adapters or serialization and must not be retained as durable field payloads.",
+    "typed_read_rule": "Document-model field lookup exposes field existence, stored type identity, and checked typed reads without materializing or reparsing adapter JSON. A read succeeds only when the requested type agrees with the stored field value type; otherwise it reports a type mismatch.",
+    "storage_shape_rule": "The physical field value storage shape is implementation-defined and may be std::variant, tagged union, enum-plus-payload storage, arena-owned values, or a backend-native value object.",
+    "numeric_storage_rule": "Numeric field values use native numeric payloads inherited from the foundational value model. Decimal strings are permitted only at text/JSON serialization boundaries and must not be parsed back for typed field reads or composition helper queries.",
+    "foundational_payload_catalog_rule": "Field values that carry foundational data preserve the complete foundational payload catalog: scalar domain and width/precision, dimensioned element type and shape, matrix order and shape, quaternion component order, semantic alias role and underlying type, homogeneous array element metadata, dictionary typed entries, and valueBlock sentinel identity. A document-model backend may use a common storage container, but typed field reads and composition helpers must observe those distinctions without reparsing serialized JSON.",
+    "metadata_alias_rule": "Metadata fields must store underlying foundational types, not semantic aliases. Attribute typeName may name semantic aliases separately from stored values.",
+    "listops": "List operations are stored as field values supplied by usd-listops-authored. Specialized listOp<Reference> and listOp<Payload> fields retain native arc records internally and materialize asset/path strings only when serialized.",
+    "specialized_field_values": {
+      "specifier": "native enum/domain value for def, over, or class; not a durable string payload",
+      "variability": "native enum/domain value for varying or uniform; not a durable string payload",
+      "Retiming": "native layer-offset record with offset and scale numeric members",
+      "Retiming[]": "array of native Retiming records",
+      "Relocates": "native map from source PathRef to target PathRef, where an empty target remains an empty path reference",
+      "TimeSamples": "native map keyed by numeric time ordinates whose values are FieldValue/value-block entries, not string-keyed JSON",
+      "Spline": "native spline record retaining curve type, extrapolation, loop, knot, tangent, interpolation, and custom-data authoring"
+    },
+    "token_storage_rule": "Tagged token and token[] values must be represented internally by the target's token identity capability or an equivalent atomized identity mechanism. String spellings may appear at parser and JSON adapter boundaries."
+  },
+  "field_identity_model": {
+    "representation": "metadata field names are field-name tokens, not durable raw string keys",
+    "extension_fields": "Unknown extension metadata fields are validated as field names and interned into the same field-name token identity domain.",
+    "known_core_field_tokens": [
+      "active",
+      "allowedTokens",
+      "arraySizeConstraint",
+      "assetInfo",
+      "colorConfiguration",
+      "colorManagementSystem",
+      "colorSpace",
+      "comment",
+      "connectionChildren",
+      "connectionPaths",
+      "custom",
+      "customData",
+      "customLayerData",
+      "default",
+      "defaultPrim",
+      "displayGroup",
+      "displayGroupOrder",
+      "displayName",
+      "documentation",
+      "endFrame",
+      "endTimeCode",
+      "expressionVariables",
+      "framePrecision",
+      "framesPerSecond",
+      "hasOwnedSublayers",
+      "hidden",
+      "inheritPaths",
+      "instanceable",
+      "kind",
+      "layerRelocates",
+      "limits",
+      "noLoadHint",
+      "owner",
+      "payload",
+      "permission",
+      "prefix",
+      "prefixSubstitutions",
+      "primChildren",
+      "primOrder",
+      "propertyChildren",
+      "propertyOrder",
+      "references",
+      "relationshipTargetChildren",
+      "relocates",
+      "sessionOwner",
+      "specializes",
+      "specifier",
+      "spline",
+      "startFrame",
+      "startTimeCode",
+      "subLayerOffsets",
+      "subLayers",
+      "suffix",
+      "suffixSubstitutions",
+      "symmetricPeer",
+      "symmetryArguments",
+      "symmetryFunction",
+      "targetPaths",
+      "timeCodesPerSecond",
+      "timeSamples",
+      "typeName",
+      "variability",
+      "variantChildren",
+      "variantSelection",
+      "variantSetChildren",
+      "variantSetNames"
+    ]
+  },
+  "laws": [
+    "each spec path is unique within a layer",
+    "the layer spec always exists at /",
+    "field map keys use token identity internally while preserving canonical field-name spellings at serialization boundaries",
+    "domain-facing document-model operations use token values for token-typed fields such as prim typeName and for reusable spec/property names; parser and JSON adapters may intern from strings before calling the domain API",
+    "domain-facing document-model operations use path handles for spec identity; parser and JSON adapters may parse path strings before calling the domain API",
+    "path parsing, stringification, and parent/name path construction are owned by usd-paths; document-model Layer APIs consume and return path handles and must not expose Layer-owned parse/stringify operations",
+    "the known core field vocabulary is pre-interned as field tokens; textual spellings are seed data and serialization output, not the durable field identity",
+    "generated parsers should use pre-interned known core field tokens for known fields such as primOrder, propertyOrder, payload, references, typeName, defaultPrim, documentation, and targetPaths rather than resolving those names through extension-field string lookup",
+    "generated parsers should classify authored metadata spellings and aliases such as doc->documentation before storage, so known fields never enter the extension field-token path",
+    "durable field storage uses a FieldValue-like model capable of representing foundational values and specialized field values; JSON is an interchange format, not the primary storage abstraction",
+    "field lookup exposes existence and stored type identity without requiring canonical JSON materialization",
+    "typed field reads return the requested payload only when the requested type agrees with the stored field value type; otherwise they report a type mismatch",
+    "numeric field payloads are native numeric values rather than stringified numbers",
+    "foundational field payloads preserve the complete foundational typed payload catalog, including half, timecode, vector, quaternion, matrix, semantic alias, homogeneous array, dictionary, and valueBlock categories",
+    "document-model fields must not collapse dimensioned, matrix, quaternion, or semantic alias values into untyped arrays for durable storage or typed reads",
+    "the document-model contract does not prescribe the physical field value storage layout",
+    "specifier, variability, Retiming, Relocates, TimeSamples, and Spline field values must be target-native domain values or equivalent compact variants, not plain strings, Python dict/list payloads, std::map<string, Json>, or adapter JSON trees",
+    "durable field storage must not retain adapter JSON payloads for unmodeled values; use a native payload/value tree and materialize JSON only on output",
+    "token-valued metadata and token[] child/name-list metadata use token identity internally while preserving authored spellings at serialization boundaries",
+    "adding a root prim appends its name to layer primChildren",
+    "adding a nested prim appends its name to the parent primChildren",
+    "adding an attribute or relationship appends its name to the parent prim propertyChildren",
+    "attribute and relationship specs with the same parent and name collide because they share the same property path",
+    "property specs are leaf specs",
+    "active=false must not remove a spec at the layer-storage level"
+  ]
+}

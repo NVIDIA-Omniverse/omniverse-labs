@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/document-model-productions/attribute-spec.contract.json",
+  "title": "Document-Model Attribute Spec Production Contract",
+  "version": "0.1",
+  "spec_commit": "6b4f01f2d6d46b01507481524eb516b4ef358c31",
+  "derives_from": "contracts/capabilities/document-data-model.json#spec_forms.attribute",
+  "spec_refs": [
+    "specification/document_data_model/README.md#attribute-spec",
+    "specification/file_formats/README.md#attribute-values",
+    "specification/file_formats/README.md#time-samples",
+    "specification/file_formats/README.md#connections",
+    "specification/file_formats/README.md#splines-1"
+  ],
+  "summary": "Format-neutral rules an attribute spec must satisfy after parsing. Both USDA and USDC mapping productions cite this contract.",
+  "fields": {
+    "custom": {
+      "type": "bool",
+      "required": "always emitted; true only when the source authored a custom declaration",
+      "default_when_unauthored": "false"
+    },
+    "variability": {
+      "type": "EnumVariability",
+      "allowed_values": ["varying", "uniform"],
+      "required": "always emitted; defaults to varying when the source omits an explicit variability declaration. Storage is a native enum/domain value."
+    },
+    "typeName": {
+      "type": "token",
+      "required": "always emitted on a declared attribute; the value includes any array-suffix encoding for typed arrays (e.g. 'float[]')"
+    },
+    "default": {
+      "type": "FieldValue",
+      "required": "only when authored; value type must agree with typeName when typeName names a known foundational type. None authored value stores a value-block sentinel.",
+      "value_shape": "scalar, vector, matrix, dictionary, semantic-alias-tagged, or value-block. Native FieldValue payload, not raw JSON."
+    },
+    "connectionPaths": {
+      "type": "listOp<ObjectPath>",
+      "required": "only when authored; connections are stored as authored target listOps and are not resolved by the parser"
+    },
+    "timeSamples": {
+      "type": "TimeSamples",
+      "required": "only when authored",
+      "value_shape": "native map keyed by numeric time ordinates; each value is a FieldValue or value-block sentinel. Storage must not be a string-keyed JSON dictionary; string keys are canonical dump output only. Sample values must agree with the attribute typeName when the type is known. Samples are stored as authored layer data; the parser does not interpolate."
+    },
+    "spline": {
+      "type": "Spline",
+      "required": "only when authored",
+      "value_shape": "native Spline record retaining curve type, extrapolation, loop, knots, tangents, interpolation mode, and custom-data authoring. Storage must not be a Python dict/list payload, std::map<string, Json>, or canonical dump object tree. Spline value type must agree with typeName when known."
+    },
+    "allowedTokens": {
+      "type": "token[]",
+      "required": "only when authored"
+    },
+    "displayName": {
+      "type": "string",
+      "required": "only when authored"
+    },
+    "displayGroup": {
+      "type": "string",
+      "required": "only when authored"
+    },
+    "documentation": {
+      "type": "string",
+      "required": "only when authored"
+    },
+    "comment": {
+      "type": "string",
+      "required": "only when authored"
+    },
+    "customData": {
+      "type": "dictionary",
+      "required": "only when authored"
+    },
+    "hidden": {
+      "type": "bool",
+      "required": "only when authored"
+    }
+  },
+  "excluded_fields": {
+    "policy": "Strict AOUSD §7.6 conformance. The §7.6.4.4 Deprecated and §7.6.4.3 Out of Scope attribute fields are NOT in the live field set: they are recognized as reserved spec tokens and rejected (ForbiddenFieldOnSpecKind). arraySizeConstraint and limits are removed outright — they have no AOUSD basis and are not OpenUSD field keys either.",
+    "deprecated": {
+      "spec_ref": "specification/document_data_model/README.md#deprecated-fields (§7.6.4.4 attribute, §7.6.3.4 property)",
+      "fields": ["connectionChildren", "permission", "prefix", "suffix", "symmetricPeer", "symmetryArguments", "symmetryFunction"]
+    },
+    "out_of_scope": {
+      "spec_ref": "specification/document_data_model/README.md#out-of-scope-fields (§7.6.4.3)",
+      "fields": ["colorSpace"]
+    },
+    "removed_no_spec_basis": {
+      "note": "Not present in the AOUSD spec and not an OpenUSD field key; removed outright.",
+      "fields": ["arraySizeConstraint", "limits"]
+    }
+  },
+  "listop_subfield_rules": {
+    "subfields": ["explicit", "prepend", "append", "delete", "reorder"],
+    "single_item_is_explicit": "A single connection path authored without an explicit listOp prefix produces an explicit listOp containing that one path.",
+    "none_is_empty_explicit": "A None authored connection produces an empty listOp on the named subfield.",
+    "applies_to_fields": ["connectionPaths"]
+  },
+  "laws": [
+    "attribute specs must carry custom, variability, and typeName as the format-neutral required field set (defaults: custom=false, variability=varying)",
+    "variability is a native EnumVariability value (varying/uniform), never a durable string",
+    "default value type must be coercible to typeName when typeName names a known foundational type; mismatch is a diagnostic",
+    "None authored default stores a value-block sentinel",
+    "timeSamples is a native time→FieldValue map; string-keyed storage is forbidden",
+    "spline data is parsed and stored but never evaluated by this layer",
+    "connectionPaths are authored target listOps; resolution is composition behavior and not evaluated by the parser",
+    "an attribute spec admits only its admitted field set (common-metadata#spec_kind_field_admission: shared + attribute_only + custom); a field belonging to another spec kind is rejected and must not be interned as an extension field (common-metadata#extension_field_rule)"
+  ],
+  "golden_groups": [
+    "custom and uniform declarations",
+    "scalar, tuple, array, matrix, dictionary, and semantic alias defaults",
+    "None default value blocks",
+    "type mismatch diagnostics on default",
+    "timeSamples with numeric keys and value-block sentinels",
+    "connectionPaths explicit/prepend/append/delete forms",
+    "spline storage with duplicate item last-one-wins",
+    "allowedTokens authored"
+  ]
+}

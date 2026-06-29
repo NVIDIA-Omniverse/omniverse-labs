@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/stage-population.performance.json",
+  "title": "USD Stage Population Performance Contract",
+  "version": "0.1",
+  "spec_commit": "v1.0.1",
+  "scope": {
+    "included": [
+      "stage construction from an already-created NamespaceSource",
+      "prim path lookup on populated stages",
+      "parent and child traversal queries",
+      "property enumeration queries",
+      "population-mask filtering shape",
+      "active-descendant pruning shape"
+    ],
+    "excluded": [
+      "resource opening and file I/O",
+      "USDA lexical parsing",
+      "USDC decoding",
+      "composition arc evaluation",
+      "attribute value interpolation",
+      "canonical JSON dump serialization",
+      "nanousd C API dispatch overhead"
+    ]
+  },
+  "model": {
+    "construction_budget": "Stage construction should scale with the number of source scene objects and properties that are reachable after mask and active filtering, not with the number of unrelated masked-out specs.",
+    "lookup_budget": "Prim lookup by path should use a populated index or equivalent structure, not a full traversal scan per query.",
+    "ordering_budget": "Child/property ordering should be computed once per population or cached lazily per prim, not resorted from raw strings on every query.",
+    "memory_budget": "The populated stage should retain path/token/field identity handles from provider capabilities where possible and avoid duplicating full path strings or adapter JSON field maps for every query."
+  },
+  "operations": {
+    "populate": {
+      "expected_complexity": "O(P + E) where P is populated prim count and E is exposed property count for populated prims, after source construction and excluding parser I/O."
+    },
+    "prim_lookup": {
+      "expected_complexity": "Amortized O(1) or O(log P) by path identity, not O(P) traversal scan."
+    },
+    "children": {
+      "expected_complexity": "O(C) to return C children, with ordering already cached or computed from source child order plus sparse primOrder."
+    },
+    "properties": {
+      "expected_complexity": "O(R) to return R properties, with path-element sorting/propertyOrder application cached or bounded to property count."
+    },
+    "mask_filtering": {
+      "expected_complexity": "Population mask checks should be based on path identity/prefix structure and should not repeatedly rescan complete path strings for every source spec."
+    }
+  },
+  "measurement": {
+    "primary_signals": [
+      "populate_ms_per_1k_prims",
+      "lookup_ns_per_op",
+      "traverse_ns_per_prim",
+      "properties_ns_per_property",
+      "retained_bytes_per_populated_prim"
+    ],
+    "shape_gates": [
+      "masked population cost should track populated ancestors and requested subtrees, not total source specs",
+      "inactive-pruned population should not allocate stage nodes for descendants of inactive prims",
+      "lookup timing should stay substantially flatter than full traversal timing as prim count grows"
+    ],
+    "note": "Concrete machine-specific thresholds should live in benchmark target files once adapters exist. This contract defines the measurement model and optimization direction."
+  }
+}

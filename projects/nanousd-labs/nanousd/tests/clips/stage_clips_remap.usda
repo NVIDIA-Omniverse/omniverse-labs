@@ -1,0 +1,22 @@
+#usda 1.0
+(
+    defaultPrim = "Stage"
+)
+
+# Stage prim is /Stage, but the clip layer authors values under
+# /GeoClip. The `primPath` field rewrites lookups: stage attribute
+# /Stage.radius resolves to /GeoClip.radius inside the clip layer.
+
+def Scope "Stage" (
+    clips = {
+        dictionary default = {
+            string primPath = "/GeoClip"
+            asset[] assetPaths = [@./clip_remap.usda@]
+            double2[] active = [(0, 0)]
+            double2[] times  = [(0, 0)]
+        }
+    }
+)
+{
+    float radius
+}

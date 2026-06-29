@@ -1,0 +1,23 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+)
+
+def Xform "World"
+{
+    def Scope "Keep"
+    {
+        def Scope "Leaf"
+        {
+            def Mesh "Grandchild" {}
+        }
+        def Mesh "Sibling" {}
+    }
+
+    def Scope "Drop"
+    {
+        def Mesh "Leaf" {}
+    }
+}
+
+def Scope "Other" {}

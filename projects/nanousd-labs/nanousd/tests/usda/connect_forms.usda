@@ -1,0 +1,22 @@
+#usda 1.0
+
+def Scope "ConnectForms"
+{
+    # Single connection
+    float singleConnect.connect = </Source.output>
+
+    # Connection list
+    float multiConnect.connect = [
+        </Source1.output>,
+        </Source2.output>
+    ]
+
+    # Connection cleared
+    float clearedConnect.connect = None
+
+    # Custom uniform with connection
+    custom uniform float3 customConnect.connect = </Shader.result>
+
+    # Namespaced attribute with connection
+    color3f inputs:diffuseColor.connect = </Material/Shader.outputs:color>
+}

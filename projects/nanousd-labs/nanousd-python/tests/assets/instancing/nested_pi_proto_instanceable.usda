@@ -1,0 +1,43 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    upAxis = "Y"
+)
+
+def Xform "World"
+{
+    def Xform "PawnSource"
+    {
+        def Mesh "Geom_Body"
+        {
+            point3f[] points = [(0, 0, 0), (1, 0, 0), (1, 1, 0), (0, 1, 0)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+        }
+        def Mesh "Geom_Top"
+        {
+            point3f[] points = [(0, 1, 0), (1, 1, 0), (0.5, 2, 0)]
+            int[] faceVertexCounts = [3]
+            int[] faceVertexIndices = [0, 1, 2]
+        }
+    }
+
+    def PointInstancer "PI"
+    {
+        point3f[] positions = [(0, 0, 0), (3, 0, 0), (6, 0, 0)]
+        int[] protoIndices = [0, 0, 0]
+        rel prototypes = [
+            </World/PI/Prototypes/Pawn>,
+        ]
+
+        def Scope "Prototypes"
+        {
+            def Xform "Pawn" (
+                instanceable = true
+                prepend references = </World/PawnSource>
+            )
+            {
+            }
+        }
+    }
+}

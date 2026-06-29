@@ -1,0 +1,18 @@
+#usda 1.0
+
+def Xform "WithDefault" {
+    float height = 5.0
+}
+
+def Xform "WithTimeSamples" {
+    float anim = 0.0
+    float anim.timeSamples = {
+        1: 10.0,
+        24: 20.0,
+    }
+}
+
+def Xform "WithBlock" {
+    float blocked = None
+    float readable = 42.0
+}

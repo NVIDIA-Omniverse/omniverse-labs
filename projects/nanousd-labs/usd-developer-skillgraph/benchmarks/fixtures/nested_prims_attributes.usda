@@ -1,0 +1,12 @@
+#usda 1.0
+
+def Xform "World"
+{
+    def Scope "Geom"
+    {
+        int count = 3
+        float size = 1.5
+        double3 translate = (1, 2, 3)
+    }
+}
+

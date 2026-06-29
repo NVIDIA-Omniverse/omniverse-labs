@@ -1,0 +1,198 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/usda-productions/prim-specs.contract.json",
+  "title": "USDA Prim Specs Production Contract",
+  "version": "0.1",
+  "spec_commit": "v1.0.1",
+  "owned_by": "usda-spec-parser",
+  "derives_from": "contracts/document-model-productions/prim-spec.contract.json",
+  "format_neutral_rules": "contracts/document-model-productions/prim-spec.contract.json#laws — field set, child-list invariants, listOp subfield rules, and value-shape rules are pinned in the format-neutral production. This contract adds USDA-specific grammar dispatch and storage mapping.",
+  "spec_refs": [
+    "specification/file_formats/README.md#prim-specs",
+    "specification/file_formats/README.md#prim-declaration-components",
+    "specification/file_formats/README.md#prim-spec-children",
+    "specification/file_formats/README.md#prim-metadata",
+    "specification/document_data_model/README.md#prim-spec",
+    "specification/schemas/README.md#schemas"
+  ],
+  "scope": {
+    "included": [
+      "def, over, and class prim specifiers",
+      "optional ASCII prim type names",
+      "quoted prim names and parent/name path construction",
+      "nested prim specs",
+      "property specs inside prims",
+      "variantSet specs inside prims",
+      "prim child list fields",
+      "property child list fields",
+      "variant set child list fields",
+      "child and property reorder statements",
+      "prim metadata fields including composition-arc fields as stored authored data"
+    ],
+    "deferred": [
+      "composition semantics for references, payloads, inherits, specializes, variants, and relocates",
+      "schema interpretation of kind, active, instanceable, or typeName",
+      "value resolution"
+    ]
+  },
+  "storage_mapping": {
+    "PrimSpecifier": "specifier field as a native specifier enum/domain value",
+    "PrimTypeName": "typeName field",
+    "PrimName": "path component and parent primChildren entry",
+    "PropertySpec": "child property spec and parent propertyChildren entry",
+    "VariantSetStatement": "variant set spec and parent variantSetChildren entry",
+    "reorder nameChildren": "primOrder field",
+    "reorder properties": "propertyOrder field",
+    "payload": "payload field as authored listOp<Payload> containing native Payload arc records",
+    "references": "references field as authored listOp<Reference> containing native Reference arc records",
+    "inherits": "inheritPaths field as authored listOp<ObjectPath>",
+    "specializes": "specializes field as authored listOp<ObjectPath>",
+    "variantSets": "variantSetNames field as authored listOp<string>",
+    "variants": "variantSelection field",
+    "apiSchemas": "apiSchemas field as authored listOp<token>",
+    "kind": "kind field"
+  },
+  "metadata_productions": {
+    "inherits": {
+      "production": "InheritsMetadata <- (ListOp)? 'inherits' '=' InheritsOrSpecializesList",
+      "value_forms": [
+        "None",
+        "PathRef",
+        "PathRef[]"
+      ],
+      "storage": "inheritPaths as listOp<ObjectPath>",
+      "requirements": [
+        "a missing ListOp token authors the explicit subfield",
+        "prepend, append, and delete author only their named subfield",
+        "None authors an empty listOp value for the selected subfield"
+      ]
+    },
+    "specializes": {
+      "production": "SpecializesMetadata <- (ListOp)? 'specializes' '=' InheritsOrSpecializesList",
+      "value_forms": [
+        "None",
+        "PathRef",
+        "PathRef[]"
+      ],
+      "storage": "specializes as listOp<ObjectPath>",
+      "requirements": [
+        "a missing ListOp token authors the explicit subfield",
+        "prepend, append, and delete author only their named subfield",
+        "None authors an empty listOp value for the selected subfield"
+      ]
+    },
+    "references": {
+      "production": "ReferencesMetadata <- (ListOp)? 'references' '=' ReferenceList",
+      "item_forms": [
+        "AssetRef",
+        "PathRef",
+        "AssetRef PathRef",
+        "AssetRef ReferenceParameters",
+        "PathRef ReferenceParameters",
+        "AssetRef PathRef ReferenceParameters"
+      ],
+      "parameter_forms": [
+        "LayerOffset",
+        "customData = DictionaryValue"
+      ],
+      "storage": "references as listOp<Reference> with native Reference items containing optional asset reference, optional target prim path handle, offset, and scale",
+      "requirements": [
+        "a missing ListOp token authors the explicit subfield",
+        "ReferenceList may be None, a single item, or a bracketed list of items",
+        "offset defaults to 0.0 and scale defaults to 1.0 when omitted",
+        "repeated offset or scale parameters use last-one-wins",
+        "customData must be parsed if present, but document-model storage may discard it because it is vestigial",
+        "reference target must contain at least one of asset or path",
+        "domain storage must not represent a Reference item as a JSON object, dictionary, bare asset string, or bare path string; those spellings are parser input or dump output only"
+      ]
+    },
+    "payload": {
+      "production": "PayloadMetadata <- (ListOp)? 'payload' '=' PayloadList",
+      "item_forms": [
+        "AssetRef",
+        "PathRef",
+        "AssetRef PathRef",
+        "AssetRef PayloadParameters",
+        "PathRef PayloadParameters",
+        "AssetRef PathRef PayloadParameters"
+      ],
+      "parameter_forms": [
+        "LayerOffset"
+      ],
+      "storage": "payload as listOp<Payload> with native Payload items containing optional asset reference, optional target prim path handle, offset, and scale",
+      "requirements": [
+        "a missing ListOp token authors the explicit subfield",
+        "PayloadList may be None, an empty bracketed list, a single item, or a bracketed list of items",
+        "offset defaults to 0.0 and scale defaults to 1.0 when omitted",
+        "repeated offset or scale parameters use last-one-wins",
+        "payload target must contain at least one of asset or path",
+        "domain storage must not represent a Payload item as a JSON object, dictionary, bare asset string, or bare path string; those spellings are parser input or dump output only"
+      ]
+    },
+    "variantSets": {
+      "production": "VariantSetsMetadata <- (ListOp)? 'variantSets' '=' NameList",
+      "value_forms": [
+        "String",
+        "String[]"
+      ],
+      "storage": "variantSetNames as listOp<string>",
+      "requirements": [
+        "a missing ListOp token authors the explicit subfield",
+        "variantSetNames storage is independent from variantSetChildren storage"
+      ]
+    },
+    "apiSchemas": {
+      "production": "ListOpMetadata spelling 'apiSchemas' on prim specs",
+      "value_forms": [
+        "String",
+        "String[]"
+      ],
+      "storage": "apiSchemas as listOp<token>",
+      "requirements": [
+        "a missing ListOp token authors the explicit subfield",
+        "prepend, append, and delete author only their named subfield",
+        "schema fallback properties and applied-schema semantics are not interpreted by the parser"
+      ]
+    },
+    "variants": {
+      "production": "VariantsMetadata <- 'variants' '=' DictionaryValue",
+      "storage": "variantSelection as VariantSetMap",
+      "requirements": [
+        "dictionary keys are variant set names",
+        "dictionary values are selected variant names or empty strings",
+        "variantSelection is authored layer data and must not select or populate variants during parsing"
+      ]
+    },
+    "kind": {
+      "production": "KindMetadata <- 'kind' '=' String",
+      "storage": "kind field",
+      "requirements": [
+        "kind is stored as authored metadata and is not schema-interpreted by this parser"
+      ]
+    }
+  },
+  "laws": [
+    "spec paths must be built through usd-paths parent/name construction",
+    "payload, references, inherits, specializes, variants, variantSets, apiSchemas, and kind are prim metadata keyword or schema metadata productions and must not be parsed through generic untyped KeyValueMetadata"
+  ],
+  "format_neutral_laws_hoisted": [
+    "prim specifier is a native EnumSpecifier value, not a durable string or JSON payload (document-model-productions/prim-spec.contract.json#laws)",
+    "primChildren, propertyChildren, and variantSetChildren are maintained by usd-document-model in agreement with stored child specs (document-model-productions/prim-spec.contract.json#laws)",
+    "authored composition arc fields are stored without evaluating composition (document-model-productions/prim-spec.contract.json#laws)",
+    "a single item authored where a listOp is allowed becomes an explicit listOp (document-model-productions/common-metadata.contract.json#listop_subfields)",
+    "repeated listOp metadata subfields use last-one-wins per subfield within a single layer (document-model-productions/common-metadata.contract.json#repeated_field_semantics)"
+  ],
+  "golden_groups": [
+    "all prim specifiers with and without typeName",
+    "nested prim and property children",
+    "child and property ordering",
+    "references, payloads, inherits, specializes, variantSets, apiSchemas, variants, and kind as stored fields",
+    "duplicate metadata and duplicate spec diagnostics"
+  ],
+  "golden_files": [
+    "goldens/integration/usda-single-layer/basic.json",
+    "goldens/integration/usda-single-layer/metadata-grammar-contexts.json",
+    "goldens/integration/usda-single-layer/prim-metadata-composition.json",
+    "goldens/integration/usda-single-layer/variant-specs.json"
+  ]
+}

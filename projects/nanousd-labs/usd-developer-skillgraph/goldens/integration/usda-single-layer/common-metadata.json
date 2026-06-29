@@ -1,0 +1,104 @@
+{
+  "suite": "usda-common-metadata",
+  "contract": "contracts/usda-productions/common-metadata.contract.json",
+  "spec_commit": "v1.0.1",
+  "cases": [
+    {
+      "id": "doc-metadata-and-last-one-wins",
+      "spec_refs": [
+        "file_formats/README.md:835 DocMetadata",
+        "file_formats/README.md:852 SharedMetadata",
+        "document_data_model/README.md:616 documentation"
+      ],
+      "input": {
+        "usda": "#usda 1.0\n(\n    defaultPrim = \"World\"\n    doc = \"first layer doc\"\n    doc = \"final layer doc\"\n)\n\ndef \"World\" (\n    doc = \"world doc\"\n)\n{\n    string label (\n        doc = \"attribute doc\"\n    )\n    rel target (\n        doc = \"relationship doc\"\n    )\n}\n"
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "layer": {
+          "fields": {
+            "documentation": {"type": "string", "value": "final layer doc"},
+            "defaultPrim": {"type": "token", "value": "World"},
+            "primChildren": {"type": "token[]", "value": ["World"]}
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "documentation": {"type": "string", "value": "final layer doc"},
+                "defaultPrim": {"type": "token", "value": "World"},
+                "primChildren": {"type": "token[]", "value": ["World"]}
+              }
+            },
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "documentation": {"type": "string", "value": "world doc"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": ["label", "target"]},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World.label": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "variability": {"type": "variability", "value": "varying"},
+                "typeName": {"type": "token", "value": "string"},
+                "documentation": {"type": "string", "value": "attribute doc"}
+              }
+            },
+            "/World.target": {
+              "kind": "relationship",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "documentation": {"type": "string", "value": "relationship doc"}
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "standalone-layer-doc-string",
+      "spec_refs": [
+        "file_formats/README.md:835 DocMetadata",
+        "file_formats/README.md:1528 LayerMetadataItem",
+        "document_data_model/README.md:616 documentation"
+      ],
+      "input": {
+        "usda": "#usda 1.0\n(\n    '''layer doc string'''\n)\n\ndef \"World\"\n{\n}\n"
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "layer": {
+          "fields": {
+            "documentation": {"type": "string", "value": "layer doc string"},
+            "primChildren": {"type": "token[]", "value": ["World"]}
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "documentation": {"type": "string", "value": "layer doc string"},
+                "primChildren": {"type": "token[]", "value": ["World"]}
+              }
+            },
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

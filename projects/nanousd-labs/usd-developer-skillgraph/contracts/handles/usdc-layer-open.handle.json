@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/usdc-layer-open.handle.json",
+  "title": "USDC Layer Format Open Contract",
+  "version": "0.1",
+  "spec_commit": "6b4f01f2d6d46b01507481524eb516b4ef358c31",
+  "dependency_contracts": [
+    "contracts/handles/usdc-spec-parser.handle.json",
+    "contracts/handles/document-model.handle.json",
+    "contracts/handles/usdc-binary-format.handle.json"
+  ],
+  "adapter_contracts": [
+    "contracts/layer-dump.schema.json"
+  ],
+  "performance_contracts": [
+    "contracts/performance/usdc.performance.json"
+  ],
+  "scope": {
+    "included": [
+      "USDC layer-format candidate recognition",
+      ".usdc resolved-extension fast-path participation for usd-layer-open dispatch",
+      "opened resource byte handoff to usdc-spec-parser",
+      "target-native layer result pass-through",
+      "canonical layer dump adapter pass-through only at validation boundaries",
+      "invalid USDC header diagnostics",
+      "parser diagnostic pass-through"
+    ],
+    "deferred": [
+      "resource path classification and file reads, owned by usd-resource-protocol and usd-layer-open",
+      ".usd forwarding dispatch",
+      "USDZ package extraction",
+      "USDC writing",
+      "composition and value resolution"
+    ]
+  },
+  "model": {
+    "LayerFormatHandler": "Concrete handler registered with usd-layer-open for .usdc resources.",
+    "OpenedResourceBytes": "Bytes or a file-backed byte view supplied by usd-layer-open after resource opening. This is not a USD payload composition arc.",
+    "LayerOpenResult": "A target-native result containing either a document-model Layer or diagnostics. It is not a JSON object.",
+    "CanonicalDump": "The layer-dump JSON shape used only by adapters and integration goldens."
+  },
+  "operations": {
+    "is_usdc_layer_location": {
+      "input": {
+        "display": "resolved resource display spelling"
+      },
+      "output": {
+        "matches": "boolean candidate decision for .usdc layer resources"
+      }
+    },
+    "open_usdc_layer": {
+      "input": {
+        "display": "resolved resource display spelling",
+        "ok": "precondition: ResourceReadResult.ok is true; failed reads are diagnosed by usd-layer-open before handler invocation",
+        "bytes": "opened resource bytes supplied by usd-layer-open",
+        "file_backed_path": "optional filesystem path from usd-resource-protocol when the resource is LocalFile-backed"
+      },
+      "output": {
+        "result": "target-native LayerOpenResult containing a document-model Layer or diagnostics"
+      }
+    }
+  },
+  "laws": [
+    ".usdc resources are USDC layer candidates and may be selected by usd-layer-open before content is read for PXR-USDC magic inspection",
+    ".usdz resources are not accepted by this handler",
+    "resource I/O and unsupported resource diagnostics are not owned by this handler",
+    "open-failure is reported by usd-layer-open before bytes reach this handler; the handler's ResourceReadResult input is successful by contract",
+    "when selected by resolved extension, the handler validates opened bytes through usdc-binary-format and must not redispatch based on opened byte content",
+    "non-PXR-USDC opened bytes fail with diagnostics before partial layer output",
+    "non-PXR-USDC and unsupported-version diagnostics must be produced from usdc-binary-format outputs, not from local string scans of the opened resource bytes",
+    "valid USDC bytes are parsed through usdc-spec-parser",
+    "open_usdc_layer must not return Json, dict, tagged JSON, or canonical dump trees as its domain result",
+    "opened resource bytes must not be described as payloads in this contract; payload is reserved for USD payload composition arcs and Crate value-representation payload fields",
+    "implementations should avoid copying the entire opened resource when a safe byte span, string view, memory map, or equivalent view can be handed to the parser",
+    "JSON materialization is allowed only in explicit adapters, diagnostics serialization, and dump commands",
+    "canonical dump output must be obtained through an explicit adapter; returning canned dump JSON selected by file content or section names is a contract violation",
+    "the handler must accept opened resource bytes from usd-layer-open; invoking usd-resource-protocol reads (read_resource, read_binary_file, or equivalent) directly with a raw identifier string is a contract violation",
+    "when file_backed_path is present on the opened resource, the handler must forward it to usdc-binary-format so the Crate decoder can elect a memory-mapped fast path; copying the opened bytes into an owned vector before decoding is a contract violation when a file-backed path is available",
+    "this contract must not call USDA lexer, USDA value parser, or USDA spec parser"
+  ],
+  "adapter_protocol": {
+    "input": "Unit adapters may accept a JSON case with opened resource bytes supplied as fixture paths or hex strings.",
+    "output": "Adapters convert LayerOpenResult to the ok, diagnostics, and layer JSON shape in contracts/layer-dump.schema.json."
+  }
+}

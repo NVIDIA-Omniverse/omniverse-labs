@@ -1,0 +1,11 @@
+#usda 1.0
+# Clip layer A — value clips Phase 4 fixture. `radius` samples at
+# clip-times 0 and 10, interpolated linearly by value resolution.
+
+def Scope "Geo"
+{
+    float radius.timeSamples = {
+        0: 1.0,
+        10: 2.0,
+    }
+}

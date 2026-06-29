@@ -1,0 +1,21 @@
+{
+  "defaultPrim":"World",
+  "prims":[
+    {
+      "path":"/World",
+      "type":"Scope",
+      "defined":true,
+      "abstract":false,
+      "instanceable":false,
+      "children":[],
+      "properties":[
+        {"kind":"attribute","name":"anim","type":"double","timeSamples":[[0,1],[10,3],[20,3]]},
+        {"kind":"attribute","name":"clipRadius","type":"float","timeSamples":[[0,1],[10,20],[20,20]]},
+        {"kind":"attribute","name":"clipWithLocalDefault","type":"float","default":9,"timeSamples":[[0,9],[10,9],[20,9]]},
+        {"kind":"attribute","name":"splineOnly","type":"double","timeSamples":[[0,2],[10,6],[20,6]]},
+        {"kind":"attribute","name":"splineWithDefault","type":"double","default":4,"timeSamples":[[0,2],[10,6],[20,6]]},
+        {"kind":"attribute","name":"strongDefault","type":"float","default":7,"timeSamples":[[0,7],[10,7],[20,7]]}
+      ]
+    }
+  ]
+}

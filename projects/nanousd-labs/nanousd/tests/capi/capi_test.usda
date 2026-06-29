@@ -1,0 +1,47 @@
+#usda 1.0
+(
+    defaultPrim = "Root"
+    startTimeCode = 1
+    endTimeCode = 24
+    framesPerSecond = 30
+    timeCodesPerSecond = 48
+)
+
+def Xform "Root" {
+    float scalarF = 3.14
+    double scalarD = 2.718
+    int scalarI = 42
+    string scalarS = "hello"
+
+    float2 vec2f = (1.0, 2.0)
+    float3 vec3f = (1.0, 2.0, 3.0)
+    float4 vec4f = (1.0, 2.0, 3.0, 4.0)
+    double2 vec2d = (10.0, 20.0)
+    double3 vec3d = (10.0, 20.0, 30.0)
+    double4 vec4d = (10.0, 20.0, 30.0, 40.0)
+    int2 vec2i = (1, 2)
+    int3 vec3i = (1, 2, 3)
+    int4 vec4i = (1, 2, 3, 4)
+
+    matrix4d mat4 = ((1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1))
+
+    float[] arrayF = [1.0, 2.0, 3.0]
+    int[] arrayI = [10, 20, 30]
+    double[] arrayD = [1.1, 2.2, 3.3]
+    point3f[] points = [(1, 2, 3), (4, 5, 6), (7, 8, 9)]
+    point3d[] pointsD = [(10, 20, 30), (40, 50, 60)]
+
+    float anim.timeSamples = { 1: 0.0, 12: 0.5, 24: 1.0 }
+    double3 pos.timeSamples = { 1: (0, 0, 0), 12: (5, 5, 5), 24: (10, 10, 10) }
+    float3 dir.timeSamples = { 1: (1, 0, 0), 24: (0, 1, 0) }
+
+    rel myRel = </Root/Child>
+
+    def Mesh "Child" {
+        int faceCount = 6
+        bool active = true
+    }
+
+    def Scope "Empty" {
+    }
+}

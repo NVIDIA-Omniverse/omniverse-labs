@@ -1,0 +1,1119 @@
+{
+  "suite": "usd-value-resolution",
+  "contract": "contracts/handles/value-resolution.handle.json",
+  "spec_tag": "v1.0.1",
+  "spec_commit": "v1.0.1",
+  "cases": [
+    {
+      "id": "default-resolution-walks-opinion-stack",
+      "input": {
+        "opinionStack": [
+          {
+            "family": "local",
+            "sourceIdentifier": "strong.usda",
+            "specPath": "/World.size",
+            "fields": {
+              "typeName": {"type": "token", "value": "float"}
+            }
+          },
+          {
+            "family": "references",
+            "sourceIdentifier": "weak.usda",
+            "specPath": "/Asset.size",
+            "fields": {
+              "default": {"type": "float", "value": 2.0}
+            }
+          },
+          {
+            "family": "payloads",
+            "sourceIdentifier": "weaker.usda",
+            "specPath": "/Payload.size",
+            "fields": {
+              "default": {"type": "float", "value": 1.0}
+            }
+          }
+        ],
+        "ops": [
+          {"op": "inspect_resolver"},
+          {
+            "op": "resolve_attribute",
+            "path": "/World.size",
+            "time": "default",
+            "fallback": {"type": "float", "value": 0.0}
+          },
+          {
+            "op": "resolve_attribute",
+            "path": "/World.size",
+            "time": 24.0,
+            "fallback": {"type": "float", "value": 0.0}
+          }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "inspect_resolver",
+            "ok": true,
+            "mode": "opinion_stack_value_resolver",
+            "attributeDefaultResolution": "implemented",
+            "timeSampleResolution": "implemented",
+            "metadataResolution": "implemented",
+            "dictionaryResolution": "implemented",
+            "listOpResolution": "implemented",
+            "splineEvaluation": "implemented",
+            "valueClipResolution": "implemented",
+            "schemaFallbackSource": "implemented",
+            "relationshipForwarding": "implemented",
+            "retiming": "implemented"
+          },
+          {
+            "op": "resolve_attribute",
+            "ok": true,
+            "path": "/World.size",
+            "time": "default",
+            "interpolation": "linear",
+            "hasValue": true,
+            "resolution": "authoredDefault",
+            "sourceIdentifier": "weak.usda",
+            "specPath": "/Asset.size",
+            "value": {"type": "float", "value": 2.0},
+            "diagnostics": []
+          },
+          {
+            "op": "resolve_attribute",
+            "ok": true,
+            "path": "/World.size",
+            "time": 24.0,
+            "interpolation": "linear",
+            "hasValue": true,
+            "resolution": "authoredDefault",
+            "sourceIdentifier": "weak.usda",
+            "specPath": "/Asset.size",
+            "value": {"type": "float", "value": 2.0},
+            "diagnostics": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "value-blocks-and-blocked-time-samples",
+      "input": {
+        "opinionStack": [
+          {
+            "family": "local",
+            "sourceIdentifier": "strong.usda",
+            "specPath": "/World.size",
+            "fields": {
+              "default": {"type": "valueBlock", "value": null},
+              "timeSamples": {
+                "type": "TimeSamples",
+                "value": {
+                  "1": {"type": "valueBlock", "value": null},
+                  "2": {"type": "float", "value": 8.0}
+                }
+              }
+            }
+          },
+          {
+            "family": "references",
+            "sourceIdentifier": "weak.usda",
+            "specPath": "/Asset.size",
+            "fields": {
+              "default": {"type": "float", "value": 9.0}
+            }
+          }
+        ],
+        "ops": [
+          {
+            "op": "resolve_attribute",
+            "path": "/World.size",
+            "time": "default",
+            "fallback": {"type": "float", "value": 3.0}
+          },
+          {
+            "op": "resolve_attribute",
+            "path": "/World.size",
+            "time": 1.5,
+            "fallback": {"type": "float", "value": 5.0}
+          }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "resolve_attribute",
+            "ok": true,
+            "path": "/World.size",
+            "time": "default",
+            "interpolation": "linear",
+            "hasValue": true,
+            "resolution": "blockedFallback",
+            "sourceIdentifier": "strong.usda",
+            "specPath": "/World.size",
+            "value": {"type": "float", "value": 3.0},
+            "diagnostics": []
+          },
+          {
+            "op": "resolve_attribute",
+            "ok": true,
+            "path": "/World.size",
+            "time": 1.5,
+            "interpolation": "linear",
+            "hasValue": true,
+            "resolution": "blockedFallback",
+            "sourceIdentifier": "strong.usda",
+            "specPath": "/World.size",
+            "value": {"type": "float", "value": 5.0},
+            "diagnostics": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "time-samples-held-linear-vector-and-retiming",
+      "input": {
+        "opinionStack": [
+          {
+            "family": "sublayers",
+            "sourceIdentifier": "anim.usda",
+            "specPath": "/World.size",
+            "retiming": {"offset": 10.0, "scale": 1.0},
+            "fields": {
+              "timeSamples": {
+                "type": "TimeSamples",
+                "value": {
+                  "10": {"type": "float", "value": 1.0},
+                  "12": {"type": "float", "value": 5.0},
+                  "16": {"type": "float", "value": 13.0}
+                }
+              },
+              "default": {"type": "float", "value": 9.0}
+            }
+          }
+        ],
+        "ops": [
+          {"op": "resolve_attribute", "path": "/World.size", "time": 0.0},
+          {"op": "resolve_attribute", "path": "/World.size", "time": 1.0, "interpolation": "linear"},
+          {"op": "resolve_attribute", "path": "/World.size", "time": 1.0, "interpolation": "held"},
+          {"op": "resolve_attribute", "path": "/World.size", "time": 6.0}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "resolve_attribute",
+            "ok": true,
+            "path": "/World.size",
+            "time": 0.0,
+            "interpolation": "linear",
+            "hasValue": true,
+            "resolution": "timeSampleExact",
+            "sourceIdentifier": "anim.usda",
+            "specPath": "/World.size",
+            "value": {"type": "float", "value": 1.0},
+            "diagnostics": []
+          },
+          {
+            "op": "resolve_attribute",
+            "ok": true,
+            "path": "/World.size",
+            "time": 1.0,
+            "interpolation": "linear",
+            "hasValue": true,
+            "resolution": "timeSampleLinear",
+            "sourceIdentifier": "anim.usda",
+            "specPath": "/World.size",
+            "value": {"type": "float", "value": 3.0},
+            "diagnostics": []
+          },
+          {
+            "op": "resolve_attribute",
+            "ok": true,
+            "path": "/World.size",
+            "time": 1.0,
+            "interpolation": "held",
+            "hasValue": true,
+            "resolution": "timeSampleHeld",
+            "sourceIdentifier": "anim.usda",
+            "specPath": "/World.size",
+            "value": {"type": "float", "value": 1.0},
+            "diagnostics": []
+          },
+          {
+            "op": "resolve_attribute",
+            "ok": true,
+            "path": "/World.size",
+            "time": 6.0,
+            "interpolation": "linear",
+            "hasValue": true,
+            "resolution": "timeSampleExact",
+            "sourceIdentifier": "anim.usda",
+            "specPath": "/World.size",
+            "value": {"type": "float", "value": 13.0},
+            "diagnostics": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "time-samples-linear-vector-values",
+      "input": {
+        "opinionStack": [
+          {
+            "family": "local",
+            "sourceIdentifier": "vectors.usda",
+            "specPath": "/World.velocity",
+            "fields": {
+              "timeSamples": {
+                "type": "TimeSamples",
+                "value": {
+                  "0": {"type": "float3", "value": [0.0, 0.0, 0.0]},
+                  "2": {"type": "float3", "value": [2.0, 4.0, 6.0]}
+                }
+              }
+            }
+          }
+        ],
+        "ops": [
+          {"op": "resolve_attribute", "path": "/World.velocity", "time": 1.0}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "resolve_attribute",
+            "ok": true,
+            "path": "/World.velocity",
+            "time": 1.0,
+            "interpolation": "linear",
+            "hasValue": true,
+            "resolution": "timeSampleLinear",
+            "sourceIdentifier": "vectors.usda",
+            "specPath": "/World.velocity",
+            "value": {"type": "float3", "value": [1.0, 2.0, 3.0]},
+            "diagnostics": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "metadata-custom-dictionary-and-ordinary-fields",
+      "input": {
+        "opinionStack": [
+          {
+            "family": "local",
+            "sourceIdentifier": "strong.usda",
+            "specPath": "/World.size",
+            "fields": {
+              "custom": {"type": "bool", "value": false},
+              "comment": {"type": "string", "value": "strong-comment"},
+              "customData": {
+                "type": "dictionary",
+                "value": {
+                  "shared": {"type": "string", "value": "strong"},
+                  "nested": {
+                    "type": "dictionary",
+                    "value": {
+                      "innerStrong": {"type": "token", "value": "strong"},
+                      "innerShared": {"type": "string", "value": "strongInner"}
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "family": "references",
+            "sourceIdentifier": "weak.usda",
+            "specPath": "/Asset.size",
+            "fields": {
+              "custom": {"type": "bool", "value": true},
+              "comment": {"type": "string", "value": "weak-comment"},
+              "customData": {
+                "type": "dictionary",
+                "value": {
+                  "keepWeak": {"type": "string", "value": "weak"},
+                  "shared": {"type": "string", "value": "weak"},
+                  "nested": {
+                    "type": "dictionary",
+                    "value": {
+                      "innerWeak": {"type": "token", "value": "weak"},
+                      "innerShared": {"type": "string", "value": "weakInner"}
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "ops": [
+          {"op": "resolve_metadata", "field": "custom"},
+          {"op": "resolve_metadata", "field": "customData"},
+          {"op": "resolve_metadata", "field": "comment"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "resolve_metadata",
+            "ok": true,
+            "field": "custom",
+            "hasValue": true,
+            "resolution": "customAnyTrue",
+            "sourceIdentifier": "weak.usda",
+            "specPath": "/Asset.size",
+            "value": {"type": "bool", "value": true},
+            "diagnostics": []
+          },
+          {
+            "op": "resolve_metadata",
+            "ok": true,
+            "field": "customData",
+            "hasValue": true,
+            "resolution": "dictionaryCombine",
+            "sourceIdentifier": "",
+            "specPath": "",
+            "value": {
+              "type": "dictionary",
+              "value": {
+                "keepWeak": {"type": "string", "value": "weak"},
+                "shared": {"type": "string", "value": "strong"},
+                "nested": {
+                  "type": "dictionary",
+                  "value": {
+                    "innerWeak": {"type": "token", "value": "weak"},
+                    "innerStrong": {"type": "token", "value": "strong"},
+                    "innerShared": {"type": "string", "value": "strongInner"}
+                  }
+                }
+              }
+            },
+            "diagnostics": []
+          },
+          {
+            "op": "resolve_metadata",
+            "ok": true,
+            "field": "comment",
+            "hasValue": true,
+            "resolution": "strongestAuthoredMetadata",
+            "sourceIdentifier": "strong.usda",
+            "specPath": "/World.size",
+            "value": {"type": "string", "value": "strong-comment"},
+            "diagnostics": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "metadata-special-fields-and-layer-metadata",
+      "input": {
+        "opinionStack": [
+          {
+            "family": "local",
+            "sourceIdentifier": "local.usda",
+            "specPath": "/World",
+            "fields": {
+              "specifier": {"type": "specifier", "value": "over"},
+              "typeName": {"type": "token", "value": "Cube"},
+              "variability": {"type": "variability", "value": "varying"},
+              "custom": {"type": "bool", "value": true}
+            }
+          },
+          {
+            "family": "inherits",
+            "sourceIdentifier": "class.usda",
+            "specPath": "/_class_Model",
+            "directInherit": true,
+            "fields": {
+              "specifier": {"type": "specifier", "value": "class"},
+              "variability": {"type": "variability", "value": "varying"}
+            }
+          },
+          {
+            "family": "references",
+            "sourceIdentifier": "weak.usda",
+            "specPath": "/Asset",
+            "fields": {
+              "specifier": {"type": "specifier", "value": "def"},
+              "typeName": {"type": "token", "value": "Mesh"},
+              "variability": {"type": "variability", "value": "uniform"},
+              "custom": {"type": "bool", "value": false}
+            }
+          }
+        ],
+        "primDefinition": {
+          "typeName": {"type": "token", "value": "Sphere"},
+          "variability": {"type": "variability", "value": "uniform"},
+          "schemaDefinedCustom": true
+        },
+        "rootLayerFields": {
+          "comment": {"type": "string", "value": "root-comment"}
+        },
+        "subLayerFields": [
+          {
+            "comment": {"type": "string", "value": "ignored-sublayer-comment"}
+          }
+        ],
+        "ops": [
+          {"op": "resolve_metadata", "field": "specifier"},
+          {"op": "resolve_metadata", "field": "typeName"},
+          {"op": "resolve_metadata", "field": "variability"},
+          {"op": "resolve_metadata", "field": "custom"},
+          {"op": "resolve_layer_metadata", "field": "comment"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "resolve_metadata",
+            "ok": true,
+            "field": "specifier",
+            "hasValue": true,
+            "resolution": "specifierDef",
+            "sourceIdentifier": "weak.usda",
+            "specPath": "/Asset",
+            "value": {"type": "specifier", "value": "def"},
+            "diagnostics": []
+          },
+          {
+            "op": "resolve_metadata",
+            "ok": true,
+            "field": "typeName",
+            "hasValue": true,
+            "resolution": "primDefinitionTypeName",
+            "sourceIdentifier": "",
+            "specPath": "",
+            "value": {"type": "token", "value": "Sphere"},
+            "diagnostics": []
+          },
+          {
+            "op": "resolve_metadata",
+            "ok": true,
+            "field": "variability",
+            "hasValue": true,
+            "resolution": "primDefinitionVariability",
+            "sourceIdentifier": "",
+            "specPath": "",
+            "value": {"type": "variability", "value": "uniform"},
+            "diagnostics": []
+          },
+          {
+            "op": "resolve_metadata",
+            "ok": true,
+            "field": "custom",
+            "hasValue": true,
+            "resolution": "customSchemaDefinedFalse",
+            "sourceIdentifier": "",
+            "specPath": "",
+            "value": {"type": "bool", "value": false},
+            "diagnostics": []
+          },
+          {
+            "op": "resolve_layer_metadata",
+            "ok": true,
+            "field": "comment",
+            "hasValue": true,
+            "resolution": "rootLayerMetadata",
+            "value": {"type": "string", "value": "root-comment"},
+            "diagnostics": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "listop-relationship-targets-and-connections",
+      "input": {
+        "opinionStack": [
+          {
+            "family": "local",
+            "sourceIdentifier": "strong.usda",
+            "specPath": "/World.rel",
+            "fields": {
+              "targetPaths": {
+                "type": "listop<ObjectPath>",
+                "value": {
+                  "explicit": [],
+                  "prepend": ["/World/A"],
+                  "append": [],
+                  "delete": ["/World/C"]
+                }
+              },
+              "connectionPaths": {
+                "type": "listop<ObjectPath>",
+                "value": {
+                  "explicit": [],
+                  "prepend": [],
+                  "append": ["/World/inputB"],
+                  "delete": []
+                }
+              }
+            }
+          },
+          {
+            "family": "references",
+            "sourceIdentifier": "weak.usda",
+            "specPath": "/Asset.rel",
+            "fields": {
+              "targetPaths": {
+                "type": "listop<ObjectPath>",
+                "value": {
+                  "explicit": ["/World/B", "/World/C", "/World/Relay.targets"],
+                  "prepend": [],
+                  "append": ["/World/D"],
+                  "delete": []
+                }
+              },
+              "connectionPaths": {
+                "type": "listop<ObjectPath>",
+                "value": {
+                  "explicit": ["/World/inputA"],
+                  "prepend": [],
+                  "append": [],
+                  "delete": []
+                }
+              }
+            }
+          }
+        ],
+        "relationshipNetwork": {
+          "/World/Relay.targets": ["/World/Material", "/World/Shader.outputs:surface"],
+          "/World/Shader.outputs:surface": ["/World/Surface"]
+        },
+        "ops": [
+          {"op": "resolve_metadata", "field": "targetPaths"},
+          {"op": "resolve_relationship_targets", "field": "targetPaths", "forwarded": false},
+          {"op": "resolve_relationship_targets", "field": "targetPaths", "forwarded": true},
+          {"op": "resolve_connections", "field": "connectionPaths"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "resolve_metadata",
+            "ok": true,
+            "field": "targetPaths",
+            "hasValue": true,
+            "resolution": "listOpCombine",
+            "sourceIdentifier": "",
+            "specPath": "",
+            "value": {
+              "type": "listop<ObjectPath>",
+              "value": {
+                "explicit": ["/World/A", "/World/B", "/World/Relay.targets", "/World/D"],
+                "prepend": [],
+                "append": [],
+                "delete": []
+              }
+            },
+            "diagnostics": []
+          },
+          {
+            "op": "resolve_relationship_targets",
+            "ok": true,
+            "field": "targetPaths",
+            "forwarded": false,
+            "targets": ["/World/A", "/World/B", "/World/Relay.targets", "/World/D"],
+            "resolution": "rawRelationshipTargets",
+            "diagnostics": []
+          },
+          {
+            "op": "resolve_relationship_targets",
+            "ok": true,
+            "field": "targetPaths",
+            "forwarded": true,
+            "targets": ["/World/A", "/World/B", "/World/Material", "/World/Surface", "/World/D"],
+            "resolution": "forwardedRelationshipTargets",
+            "diagnostics": []
+          },
+          {
+            "op": "resolve_connections",
+            "ok": true,
+            "field": "connectionPaths",
+            "targets": ["/World/inputA", "/World/inputB"],
+            "resolution": "rawConnectionTargets",
+            "diagnostics": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "schema-fallback-acquisition-order",
+      "input": {
+        "opinionStack": [],
+        "ops": [
+          {
+            "op": "resolve_attribute",
+            "path": "/World.schemaValue",
+            "time": "default",
+            "primDefinition": {
+              "typedSchemaFallback": {"type": "float", "value": 2.0},
+              "appliedSchemaFallbacks": [
+                {"schema": "GeomModelAPI", "value": {"type": "float", "value": 3.0}}
+              ],
+              "defaultMetadataFallback": {"type": "float", "value": 4.0}
+            }
+          },
+          {
+            "op": "resolve_attribute",
+            "path": "/World.appliedValue",
+            "time": "default",
+            "primDefinition": {
+              "appliedSchemaFallbacks": [
+                {"schema": "CollectionAPI", "value": {"type": "float", "value": 6.0}}
+              ],
+              "defaultMetadataFallback": {"type": "float", "value": 7.0}
+            }
+          },
+          {
+            "op": "resolve_attribute",
+            "path": "/World.emptyValue",
+            "time": "default",
+            "primDefinition": {}
+          }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "resolve_attribute",
+            "ok": true,
+            "path": "/World.schemaValue",
+            "time": "default",
+            "interpolation": "linear",
+            "hasValue": true,
+            "resolution": "schemaFallbackTyped",
+            "sourceIdentifier": "",
+            "specPath": "",
+            "value": {"type": "float", "value": 2.0},
+            "diagnostics": []
+          },
+          {
+            "op": "resolve_attribute",
+            "ok": true,
+            "path": "/World.appliedValue",
+            "time": "default",
+            "interpolation": "linear",
+            "hasValue": true,
+            "resolution": "schemaFallbackApplied",
+            "sourceIdentifier": "CollectionAPI",
+            "specPath": "",
+            "value": {"type": "float", "value": 6.0},
+            "diagnostics": []
+          },
+          {
+            "op": "resolve_attribute",
+            "ok": true,
+            "path": "/World.emptyValue",
+            "time": "default",
+            "interpolation": "linear",
+            "hasValue": true,
+            "resolution": "schemaFallbackEmptySentinel",
+            "sourceIdentifier": "",
+            "specPath": "",
+            "value": {"type": "emptySentinel", "value": null},
+            "diagnostics": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "spline-held-linear-curve-and-block-segments",
+      "input": {
+        "opinionStack": [
+          {
+            "family": "local",
+            "sourceIdentifier": "spline.usda",
+            "specPath": "/World.weight",
+            "fields": {
+              "spline": {
+                "type": "Spline",
+                "value": {
+                  "curveType": "Hermite",
+                  "preExtrapolation": {"mode": "held"},
+                  "postExtrapolation": {"mode": "linear", "slope": 2.0},
+                  "knots": [
+                    {
+                      "time": 0.0,
+                      "value": {"type": "float", "value": 0.0},
+                      "nextInterpolation": "curve",
+                      "postTangent": {"slope": 1.0}
+                    },
+                    {
+                      "time": 1.0,
+                      "value": {"type": "float", "value": 1.0},
+                      "preTangent": {"slope": 1.0},
+                      "nextInterpolation": "held"
+                    },
+                    {
+                      "time": 2.0,
+                      "value": {"type": "float", "value": 4.0},
+                      "nextInterpolation": "linear"
+                    },
+                    {
+                      "time": 3.0,
+                      "value": {"type": "float", "value": 6.0},
+                      "nextInterpolation": "valueBlock"
+                    },
+                    {
+                      "time": 4.0,
+                      "value": {"type": "float", "value": 8.0}
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ],
+        "ops": [
+          {"op": "resolve_attribute", "path": "/World.weight", "time": 0.5},
+          {"op": "resolve_attribute", "path": "/World.weight", "time": 1.5},
+          {"op": "resolve_attribute", "path": "/World.weight", "time": 2.5},
+          {"op": "resolve_attribute", "path": "/World.weight", "time": 3.5, "fallback": {"type": "float", "value": 9.0}},
+          {"op": "resolve_attribute", "path": "/World.weight", "time": -1.0},
+          {"op": "resolve_attribute", "path": "/World.weight", "time": 5.0}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "resolve_attribute",
+            "ok": true,
+            "path": "/World.weight",
+            "time": 0.5,
+            "interpolation": "linear",
+            "hasValue": true,
+            "resolution": "splineCurve",
+            "sourceIdentifier": "spline.usda",
+            "specPath": "/World.weight",
+            "value": {"type": "float", "value": 0.5},
+            "diagnostics": []
+          },
+          {
+            "op": "resolve_attribute",
+            "ok": true,
+            "path": "/World.weight",
+            "time": 1.5,
+            "interpolation": "linear",
+            "hasValue": true,
+            "resolution": "splineHeld",
+            "sourceIdentifier": "spline.usda",
+            "specPath": "/World.weight",
+            "value": {"type": "float", "value": 1.0},
+            "diagnostics": []
+          },
+          {
+            "op": "resolve_attribute",
+            "ok": true,
+            "path": "/World.weight",
+            "time": 2.5,
+            "interpolation": "linear",
+            "hasValue": true,
+            "resolution": "splineLinear",
+            "sourceIdentifier": "spline.usda",
+            "specPath": "/World.weight",
+            "value": {"type": "float", "value": 5.0},
+            "diagnostics": []
+          },
+          {
+            "op": "resolve_attribute",
+            "ok": true,
+            "path": "/World.weight",
+            "time": 3.5,
+            "interpolation": "linear",
+            "hasValue": true,
+            "resolution": "blockedFallback",
+            "sourceIdentifier": "spline.usda",
+            "specPath": "/World.weight",
+            "value": {"type": "float", "value": 9.0},
+            "diagnostics": []
+          },
+          {
+            "op": "resolve_attribute",
+            "ok": true,
+            "path": "/World.weight",
+            "time": -1.0,
+            "interpolation": "linear",
+            "hasValue": true,
+            "resolution": "splineHeld",
+            "sourceIdentifier": "spline.usda",
+            "specPath": "/World.weight",
+            "value": {"type": "float", "value": 0.0},
+            "diagnostics": []
+          },
+          {
+            "op": "resolve_attribute",
+            "ok": true,
+            "path": "/World.weight",
+            "time": 5.0,
+            "interpolation": "linear",
+            "hasValue": true,
+            "resolution": "splineExtrapolated",
+            "sourceIdentifier": "spline.usda",
+            "specPath": "/World.weight",
+            "value": {"type": "float", "value": 10.0},
+            "diagnostics": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "value-clips-strength-time-mapping-and-manifest-defaults",
+      "input": {
+        "opinionStack": [
+          {
+            "family": "local",
+            "sourceIdentifier": "local.usda",
+            "specPath": "/Model.size",
+            "fields": {}
+          },
+          {
+            "family": "references",
+            "sourceIdentifier": "reference.usda",
+            "specPath": "/Asset.size",
+            "fields": {
+              "default": {"type": "float", "value": 99.0}
+            }
+          }
+        ],
+        "clipSets": [
+          {
+            "name": "default",
+            "manifest": {
+              "/Model.size": {"default": {"type": "float", "value": 4.0}},
+              "/Model.missing": {"default": {"type": "float", "value": 4.0}}
+            },
+            "active": [[0.0, "clipA.usda"], [10.0, "clipB.usda"]],
+            "times": [[0.0, 0.0], [10.0, 20.0]],
+            "clipLayers": {
+              "clipA.usda": {
+                "/Model.size": {
+                  "timeSamples": {
+                    "type": "TimeSamples",
+                    "value": {
+                      "0": {"type": "float", "value": 1.0},
+                      "10": {"type": "float", "value": 11.0}
+                    }
+                  }
+                }
+              },
+              "clipB.usda": {
+                "/Model.size": {
+                  "timeSamples": {
+                    "type": "TimeSamples",
+                    "value": {
+                      "20": {"type": "float", "value": 22.0}
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "ops": [
+          {"op": "resolve_attribute", "path": "/Model.size", "time": 10.0},
+          {"op": "resolve_attribute", "path": "/Model.size", "time": 5.0},
+          {"op": "resolve_attribute", "path": "/Model.missing", "time": 10.0}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "resolve_attribute",
+            "ok": true,
+            "path": "/Model.size",
+            "time": 10.0,
+            "interpolation": "linear",
+            "hasValue": true,
+            "resolution": "valueClipSample",
+            "sourceIdentifier": "clipB.usda",
+            "specPath": "/Model.size",
+            "value": {"type": "float", "value": 22.0},
+            "diagnostics": []
+          },
+          {
+            "op": "resolve_attribute",
+            "ok": true,
+            "path": "/Model.size",
+            "time": 5.0,
+            "interpolation": "linear",
+            "hasValue": true,
+            "resolution": "valueClipSample",
+            "sourceIdentifier": "clipA.usda",
+            "specPath": "/Model.size",
+            "value": {"type": "float", "value": 11.0},
+            "diagnostics": []
+          },
+          {
+            "op": "resolve_attribute",
+            "ok": true,
+            "path": "/Model.missing",
+            "time": 10.0,
+            "interpolation": "linear",
+            "hasValue": true,
+            "resolution": "valueClipManifestDefault",
+            "sourceIdentifier": "clipB.usda",
+            "specPath": "/Model.missing",
+            "value": {"type": "float", "value": 4.0},
+            "diagnostics": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "value-clips-are-weaker-than-local-data",
+      "input": {
+        "opinionStack": [
+          {
+            "family": "local",
+            "sourceIdentifier": "local.usda",
+            "specPath": "/Model.size",
+            "fields": {
+              "default": {"type": "float", "value": 7.0}
+            }
+          },
+          {
+            "family": "references",
+            "sourceIdentifier": "reference.usda",
+            "specPath": "/Asset.size",
+            "fields": {
+              "default": {"type": "float", "value": 99.0}
+            }
+          }
+        ],
+        "clipSets": [
+          {
+            "name": "default",
+            "manifest": {
+              "/Model.size": {"default": {"type": "float", "value": 4.0}}
+            },
+            "active": [[0.0, "clip.usda"]],
+            "times": [[0.0, 0.0]],
+            "clipLayers": {
+              "clip.usda": {
+                "/Model.size": {
+                  "timeSamples": {
+                    "type": "TimeSamples",
+                    "value": {
+                      "0": {"type": "float", "value": 22.0}
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "ops": [
+          {"op": "resolve_attribute", "path": "/Model.size", "time": 10.0}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "resolve_attribute",
+            "ok": true,
+            "path": "/Model.size",
+            "time": 10.0,
+            "interpolation": "linear",
+            "hasValue": true,
+            "resolution": "authoredDefault",
+            "sourceIdentifier": "local.usda",
+            "specPath": "/Model.size",
+            "value": {"type": "float", "value": 7.0},
+            "diagnostics": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "value-clips-interpolate-missing-clip-values",
+      "input": {
+        "opinionStack": [
+          {
+            "family": "local",
+            "sourceIdentifier": "local.usda",
+            "specPath": "/Model.size",
+            "fields": {}
+          }
+        ],
+        "clipSets": [
+          {
+            "name": "default",
+            "interpolateMissingClipValues": true,
+            "manifest": {
+              "/Model.size": {}
+            },
+            "active": [[0.0, "clipA.usda"], [10.0, "clipMissing.usda"], [20.0, "clipC.usda"]],
+            "times": [[0.0, 0.0], [20.0, 20.0]],
+            "clipLayers": {
+              "clipA.usda": {
+                "/Model.size": {
+                  "timeSamples": {
+                    "type": "TimeSamples",
+                    "value": {
+                      "0": {"type": "float", "value": 0.0}
+                    }
+                  }
+                }
+              },
+              "clipMissing.usda": {},
+              "clipC.usda": {
+                "/Model.size": {
+                  "timeSamples": {
+                    "type": "TimeSamples",
+                    "value": {
+                      "20": {"type": "float", "value": 20.0}
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "ops": [
+          {"op": "resolve_attribute", "path": "/Model.size", "time": 10.0}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "resolve_attribute",
+            "ok": true,
+            "path": "/Model.size",
+            "time": 10.0,
+            "interpolation": "linear",
+            "hasValue": true,
+            "resolution": "valueClipInterpolatedMissing",
+            "sourceIdentifier": "",
+            "specPath": "/Model.size",
+            "value": {"type": "float", "value": 10.0},
+            "diagnostics": []
+          }
+        ]
+      }
+    }
+  ]
+}

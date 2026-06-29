@@ -1,0 +1,78 @@
+/* SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. */
+/* SPDX-License-Identifier: LicenseRef-NvidiaProprietary */
+/*
+ * NVIDIA CORPORATION, its affiliates and licensors retain all intellectual
+ * property and proprietary rights in and to this material, related
+ * documentation and any modifications thereto. Any use, reproduction,
+ * disclosure or distribution of this material and related documentation
+ * without an express license agreement from NVIDIA CORPORATION or
+ * its affiliates is strictly prohibited.
+ */
+
+.cpp.struct .cpp.var .sig.sig-object.cpp {
+    border: none;
+}
+
+.cpp.enum .cpp.enumerator .sig.sig-object.cpp {
+    border: none;
+}
+
+/* Compact reference tables */
+.compact-table {
+    font-size: 0.85rem;
+}
+.compact-table td, .compact-table th {
+    padding: 0.3rem 0.5rem;
+}
+
+/* Setting comparison image grids */
+.setting-comparison .sd-card-title {
+    font-size: 0.75rem;
+    font-weight: normal !important;
+    text-align: center;
+}
+.setting-comparison .sd-card-body {
+    padding: 0.25rem;
+}
+.setting-comparison .sd-card-img-top {
+    cursor: pointer;
+}
+
+/* Prompt panels in example cards */
+.example-prompt {
+    margin: 0.15rem 0 0.35rem;
+    padding: 0.85rem 1rem 0.9rem 1.15rem;
+    text-align: left;
+    background: rgba(0, 0, 0, 0.035);
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-left: 3px solid rgba(125, 132, 142, 0.9);
+    border-radius: 0.375rem;
+}
+
+.example-prompt p {
+    margin: 0;
+    padding-left: 0.45rem;
+    padding-right: 0.2rem;
+    color: var(--pst-color-text-base, inherit);
+    font-size: 0.88rem;
+    line-height: 1.45;
+}
+
+.example-prompt em {
+    font-style: italic;
+}
+
+html[data-theme="dark"] .example-prompt {
+    background: rgba(255, 255, 255, 0.055);
+    border-color: rgba(255, 255, 255, 0.16);
+    border-left-color: rgba(145, 153, 164, 0.95);
+}
+
+/* GitHub logo next to "GitHub Repository" sidebar link */
+.bd-sidebar-primary a.reference.external[href*="github.com"]::before {
+    font-family: "Font Awesome 6 Brands";
+    content: "\f09b"; /* fa-github */
+    margin-right: 0.4em;
+    font-style: normal;
+    font-weight: 400;
+}

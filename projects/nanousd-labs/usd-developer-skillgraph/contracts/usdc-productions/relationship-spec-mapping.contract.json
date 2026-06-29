@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/usdc-productions/relationship-spec-mapping.contract.json",
+  "title": "USDC Relationship Spec Mapping Production Contract",
+  "version": "0.1",
+  "spec_commit": "6b4f01f2d6d46b01507481524eb516b4ef358c31",
+  "owned_by": "usdc-spec-parser",
+  "derives_from": "contracts/document-model-productions/relationship-spec.contract.json",
+  "format_neutral_rules": "contracts/document-model-productions/relationship-spec.contract.json — the relationship spec field set and per-kind admission (which excludes attribute-only fields such as variability), listOp subfield rules, and authored target storage are pinned in the format-neutral production. This contract adds the USDC-specific mapping: Crate spec form 8 -> relationship spec, per-field name resolution, and per-field Crate value-representation type bindings.",
+  "spec_refs": [
+    "specification/file_formats/README.md#specs-section",
+    "specification/file_formats/README.md#type-table",
+    "specification/document_data_model/README.md#relationship-spec"
+  ],
+  "dependency_contracts": [
+    "contracts/usdc-productions/crate-section-layouts.contract.json",
+    "contracts/usdc-productions/crate-value-representations.contract.json"
+  ],
+  "spec_form": {
+    "id": 8,
+    "name": "Relationship",
+    "section_layout_ref": "contracts/usdc-productions/crate-section-layouts.contract.json#section_layouts.SPECS.spec_form_table"
+  },
+  "storage_mapping": {
+    "rule": "A SPECS entry with form=8 produces a relationship spec at the property path resolved through PATHS. Authored fields come from the FIELDSETS group whose start is given by the SPECS entry's field_set_index.",
+    "field_resolution": {
+      "custom": "FIELDS token name 'custom'; value type 1 (bool) inlined. Defaults to false when absent.",
+      "targetPaths": "FIELDS token name 'targetPaths'; value type 34 (PathListOp). Subfields (explicit/prepend/append/delete/reorder) decoded per crate-value-representations.contract.json#list_ops. Items are uint32 path indices into PATHS.",
+      "displayName": "FIELDS token name 'displayName'; value type 10 (string)",
+      "displayGroup": "FIELDS token name 'displayGroup'; value type 10 (string)",
+      "documentation": "FIELDS token name 'documentation'; value type 10 (string)",
+      "comment": "FIELDS token name 'comment'; value type 10 (string)",
+      "customData": "FIELDS token name 'customData'; value type 31 (dictionary) offset-backed",
+      "hidden": "FIELDS token name 'hidden'; value type 1 (bool) inlined"
+    }
+  },
+  "forbidden_field_enforcement": {
+    "rule": "Per document-model-productions/common-metadata.contract.json#spec_kind_field_admission, a relationship spec admits only shared + relationship_only + custom; any other field-name token (including variability) is rejected. In the USDC encoding this is enforced by the field-name token: a FIELDS entry whose token name is one of {variability, typeName, default, connectionPaths, timeSamples, spline, allowedTokens, colorSpace, payload, references, inheritPaths, specializes, variantSetNames, variantSelection, subLayers, relocates, layerRelocates, defaultPrim, framesPerSecond, timeCodesPerSecond, startTimeCode, endTimeCode, customLayerData, noLoadHint, permission, prefix, suffix, symmetricPeer, symmetryArguments, symmetryFunction} attached to a form-8 spec is a contract violation (the final group are AOUSD §7.6.5.2 / §7.6.3.4 deprecated tokens, now rejected under strict spec conformance). The parser must emit a MalformedUsdcSection diagnostic.",
+    "variability_specifically": "Variability is forbidden on relationship specs even though Crate could encode it (the type 44 Variability value rep is well-defined). The current usdc_parser.cpp already has a 'kind == relationship' guard that skips variability writes; this contract pins that guard as a law."
+  },
+  "laws": [
+    "a Crate SPECS entry with form=8 produces exactly one relationship spec at the property path resolved through PATHS",
+    "targetPaths is decoded from PathListOp (type 34) with subfields per crate-value-representations.contract.json#list_ops",
+    "a single-item explicit listOp for targetPaths is preserved as such in document-model storage; the parser does not collapse a single-item explicit into a bare path",
+    "None target authoring (an empty listOp) is preserved as an empty explicit listOp",
+    "relationship specs reject the variability field even when a FIELDS entry binds the 'variability' token to a form-8 spec; emitting variability on a relationship is a contract violation",
+    "field-name tokens outside the relationship admitted set (document-model-productions/common-metadata.contract.json#spec_kind_field_admission) are rejected at FIELDS token binding time on form-8 specs"
+  ],
+  "golden_groups": [
+    "Crate form 8 specs decode to relationship specs at the expected property paths",
+    "custom rel declaration",
+    "targetPaths explicit / prepend / append / delete subfield decoding",
+    "single-item explicit listOp preserved",
+    "None target as empty explicit listOp",
+    "rejection of variability and other forbidden fields (including deprecated noLoadHint / permission) on form-8 spec emits MalformedUsdcSection"
+  ],
+  "golden_files": [
+    "goldens/integration/usdc-single-layer/basic.json",
+    "goldens/integration/usdc-single-layer/relationship-listops.json"
+  ]
+}

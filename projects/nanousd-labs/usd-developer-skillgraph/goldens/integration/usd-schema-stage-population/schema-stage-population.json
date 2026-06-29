@@ -1,0 +1,223 @@
+{
+  "suite": "usd-schema-stage-population",
+  "contract": "contracts/handles/stage-population.handle.json",
+  "cases": [
+    {
+      "id": "schema-properties-populate-stage",
+      "input": {
+        "rootLayer": {
+          "identifier": "root.usda",
+          "fields": {"primChildren": {"type": "token[]", "value": ["World"]}},
+          "specs": {
+            "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["World"]}}},
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "typeName": {"type": "token", "value": "Sphere"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        },
+        "schemaRegistry": {
+          "Sphere": {
+            "kind": "typed",
+            "properties": {
+              "radius": {
+                "kind": "attribute",
+                "fields": {
+                  "typeName": {"type": "token", "value": "double"},
+                  "custom": {"type": "bool", "value": false},
+                  "variability": {"type": "variability", "value": "varying"},
+                  "default": {"type": "double", "value": 1.0}
+                }
+              }
+            }
+          }
+        },
+        "ops": [
+          {"op": "populate_stage"},
+          {"op": "stage_summary"},
+          {"op": "traverse_prims"},
+          {"op": "prim_summary", "path": "/World"},
+          {"op": "property_summary", "path": "/World.radius"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "populate_stage", "ok": true},
+          {
+            "op": "stage_summary",
+            "ok": true,
+            "sourceMode": "composed_namespace",
+            "primCount": 1,
+            "defaultPrim": "",
+            "diagnostics": []
+          },
+          {
+            "op": "traverse_prims",
+            "ok": true,
+            "paths": ["/World"]
+          },
+          {
+            "op": "prim_summary",
+            "ok": true,
+            "exists": true,
+            "path": "/World",
+            "name": "World",
+            "parent": "/",
+            "children": [],
+            "properties": ["radius"],
+            "typeName": "Sphere",
+            "specifier": "def",
+            "active": true,
+            "loaded": true,
+            "defined": true,
+            "abstract": false,
+            "instanceable": false
+          },
+          {
+            "op": "property_summary",
+            "ok": true,
+            "exists": true,
+            "path": "/World.radius",
+            "kind": "attribute",
+            "owner": "/World",
+            "name": "radius",
+            "fields": {
+              "typeName": {"type": "token", "value": "double"},
+              "custom": {"type": "bool", "value": false},
+              "variability": {"type": "variability", "value": "varying"},
+              "default": {"type": "double", "value": 1.0}
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "schema-inclusions-and-overrides-populate-stage",
+      "input": {
+        "rootLayer": {
+          "identifier": "root.usda",
+          "fields": {"primChildren": {"type": "token[]", "value": ["World"]}},
+          "specs": {
+            "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["World"]}}},
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "typeName": {"type": "token", "value": "Renderable"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        },
+        "schemaRegistry": {
+          "MaterialAPI": {
+            "kind": "applied",
+            "properties": {
+              "material:bindingStrength": {
+                "kind": "attribute",
+                "fields": {
+                  "typeName": {"type": "token", "value": "token"},
+                  "custom": {"type": "bool", "value": false},
+                  "variability": {"type": "variability", "value": "varying"},
+                  "default": {"type": "token", "value": "weakerThanDescendants"}
+                }
+              }
+            }
+          },
+          "Renderable": {
+            "kind": "typed",
+            "builtins": ["MaterialAPI"],
+            "properties": {
+              "renderable:name": {
+                "kind": "attribute",
+                "fields": {
+                  "typeName": {"type": "token", "value": "string"},
+                  "custom": {"type": "bool", "value": false},
+                  "default": {"type": "string", "value": ""}
+                }
+              }
+            },
+            "overrideProperties": {
+              "material:bindingStrength": {
+                "kind": "attribute",
+                "fields": {
+                  "typeName": {"type": "token", "value": "token"},
+                  "default": {"type": "token", "value": "strongerThanDescendants"}
+                }
+              }
+            }
+          }
+        },
+        "ops": [
+          {"op": "populate_stage"},
+          {"op": "prim_summary", "path": "/World"},
+          {"op": "property_summary", "path": "/World.material:bindingStrength"},
+          {"op": "property_summary", "path": "/World.renderable:name"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "populate_stage", "ok": true},
+          {
+            "op": "prim_summary",
+            "ok": true,
+            "exists": true,
+            "path": "/World",
+            "name": "World",
+            "parent": "/",
+            "children": [],
+            "properties": ["material:bindingStrength", "renderable:name"],
+            "typeName": "Renderable",
+            "specifier": "def",
+            "active": true,
+            "loaded": true,
+            "defined": true,
+            "abstract": false,
+            "instanceable": false
+          },
+          {
+            "op": "property_summary",
+            "ok": true,
+            "exists": true,
+            "path": "/World.material:bindingStrength",
+            "kind": "attribute",
+            "owner": "/World",
+            "name": "material:bindingStrength",
+            "fields": {
+              "typeName": {"type": "token", "value": "token"},
+              "custom": {"type": "bool", "value": false},
+              "variability": {"type": "variability", "value": "varying"},
+              "default": {"type": "token", "value": "strongerThanDescendants"}
+            }
+          },
+          {
+            "op": "property_summary",
+            "ok": true,
+            "exists": true,
+            "path": "/World.renderable:name",
+            "kind": "attribute",
+            "owner": "/World",
+            "name": "renderable:name",
+            "fields": {
+              "typeName": {"type": "token", "value": "string"},
+              "custom": {"type": "bool", "value": false},
+              "default": {"type": "string", "value": ""}
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

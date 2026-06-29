@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/usda-layer-open.handle.json",
+  "title": "USDA Layer Format Open Contract",
+  "version": "0.1",
+  "spec_commit": "v1.0.1",
+  "dependency_contracts": [
+    "contracts/handles/usda-spec-parser.handle.json",
+    "contracts/handles/document-model.handle.json"
+  ],
+  "adapter_contracts": [
+    "contracts/layer-dump.schema.json"
+  ],
+  "scope": {
+    "included": [
+      "USDA text layer format recognition for generic layer-open dispatch",
+      ".usda resolved-extension fast-path participation for layer-open dispatch",
+      "UTF-8 decoding of opened resource bytes",
+      "handoff to usda-spec-parser",
+      "target-native layer result pass-through",
+      "canonical layer dump adapter pass-through only at validation boundaries",
+      "format-handler diagnostics before parser state is emitted"
+    ],
+    "deferred": [
+      "resource opening and URI handling",
+      "generic format dispatch",
+      "USDC binary decoding",
+      "USDZ package root-layer extraction",
+      "composition and stage population"
+    ]
+  },
+  "model": {
+    "OpenedResourceBytes": "Bytes or a file-backed byte view supplied by usd-layer-open after resource opening. This is not a USD payload composition arc.",
+    "FormatHandler": "A USDA-only handler that either decodes and delegates to usda-spec-parser or reports a handler diagnostic.",
+    "LayerOpenResult": "A target-native result containing either a document-model Layer or diagnostics. It is not a JSON object.",
+    "CanonicalDump": "The layer-dump JSON shape used only by adapters and integration goldens."
+  },
+  "operations": {
+    "can_open": {
+      "input": {
+        "displayName": "resolved resource display spelling or extension metadata"
+      },
+      "output": {
+        "accepted": "true for USDA text layer candidates"
+      }
+    },
+    "open_usda_bytes": {
+      "input": {
+        "bytes": "opened resource bytes or an equivalent non-owning byte view"
+      },
+      "output": {
+        "result": "target-native LayerOpenResult containing a document-model Layer or diagnostics"
+      }
+    }
+  },
+  "laws": [
+    ".usda resources are USDA layer candidates and may be selected by layer-open before content is read for USDA text-header inspection",
+    ".usdc and .usdz resources are not accepted by this handler",
+    "resource I/O and unsupported resource diagnostics are not owned by this handler",
+    "when selected by resolved extension, the handler validates opened bytes as USDA text and must not redispatch based on opened byte content",
+    "opened resource bytes must be decoded as UTF-8 before parser handoff",
+    "USDA grammar parsing must be delegated to usda-spec-parser",
+    "open_usda_bytes and open_usda_text must not return Json, dict, tagged JSON, or canonical dump trees as their domain result",
+    "opened resource bytes must not be described as payloads in this contract; payload is reserved for USD payload composition arcs",
+    "implementations should avoid copying the entire opened resource when a safe byte span, string view, memory map, or equivalent view can be handed to the parser",
+    "JSON materialization is allowed only in explicit adapters, diagnostics serialization, and dump commands",
+    "the handler must not perform resource protocol classification or file URI conversion",
+    "the handler must not mutate document-model storage directly",
+    "the handler must accept opened resource bytes from layer-open; invoking usd-resource-protocol reads (read_resource, read_binary_file, read_text_file_or_empty, or equivalent) directly with a raw identifier string is a contract violation",
+    "non-UTF-8 opened bytes fail with diagnostics before partial layer output",
+    "empty opened resources produce a successful empty Layer result, not a ResourceOpenFailed diagnostic; open-failure is reported by layer-open before bytes ever reach the handler",
+    "when file_backed_path is present on the opened resource, the handler must forward it to usda-spec-parser so future file-backed strategies can compose; copying provenance into an unstructured string parameter is not sufficient",
+    "valid USDA bytes are parsed through usda-spec-parser",
+    "canonical dump output must be obtained through an explicit adapter; returning canned dump JSON selected by file content or display spelling is a contract violation",
+    "this contract must not call USDC parsers or USDZ package readers"
+  ],
+  "adapter_protocol": {
+    "input": "Future unit adapters may accept a JSON case with opened resource bytes or text.",
+    "output": "Adapters convert LayerOpenResult to the ok, diagnostics, and layer JSON shape in contracts/layer-dump.schema.json."
+  }
+}

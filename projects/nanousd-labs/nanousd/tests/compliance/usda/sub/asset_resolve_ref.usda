@@ -1,0 +1,16 @@
+#usda 1.0
+(
+    defaultPrim = "Model"
+)
+
+def Xform "Model"
+{
+    asset inputs:texture = @./tex/diffuse.png@
+    asset inputs:absolute = @/absolute/texture.png@
+    asset inputs:empty = @@
+    asset inputs:animated.timeSamples = {
+        1: @./tex/frame001.exr@,
+        2: @./tex/frame002.exr@,
+    }
+    asset[] inputs:texarray = [@./tex/a.png@, @./tex/b.png@]
+}

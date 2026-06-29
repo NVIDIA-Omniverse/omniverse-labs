@@ -1,0 +1,33 @@
+{
+  "mode": "newton_16env",
+  "n_envs": 16,
+  "tile_w": 64,
+  "tile_h": 64,
+  "seed": 42,
+  "preset": "newton_renderer",
+  "interop_class": null,
+  "envs": {
+    "NU_DEFERRED_SHADE": null,
+    "NU_DEFERRED_DEBUG_MODE": null,
+    "NUSD_INVERTED_INTEROP": "1",
+    "NU_TILE_RES": null,
+    "NU_FRAME_SKIP": null
+  },
+  "stats": {
+    "rgb": {
+      "shape": [
+        16,
+        64,
+        64,
+        3
+      ],
+      "dtype": "uint8",
+      "mean": 143.1609903971354,
+      "max": 238.0,
+      "min": 0.0
+    }
+  },
+  "saved": [
+    "capture_newton_16env_rgb.npy"
+  ]
+}

@@ -1,0 +1,351 @@
+{
+  "suite": "usd-listops-authored-basic",
+  "contract": "contracts/handles/listops-authored.handle.json",
+  "spec_commit": "v1.0.1",
+  "cases": [
+    {
+      "id": "storage-and-empty-object-path-listops",
+      "input": {
+        "ops": [
+          {
+            "op": "inspect_storage"
+          },
+          {
+            "op": "make_empty",
+            "elementType": "ObjectPath"
+          },
+          {
+            "op": "make_none",
+            "elementType": "ObjectPath"
+          }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "inspect_storage",
+            "ok": true,
+            "jsonStorageModel": "on_demand_only",
+            "listOpStorageModel": "native_authored_lists",
+            "itemStorageModel": "typed_native_items",
+            "jsonCoercionModel": "adapter_boundary_only",
+            "usdaParsingModel": "external_to_capability",
+            "lastOneWinsModel": "per_subfield"
+          },
+          {
+            "op": "make_empty",
+            "ok": true,
+            "value": {
+              "type": "listop<ObjectPath>",
+              "value": {
+                "explicit": [],
+                "prepend": [],
+                "append": [],
+                "delete": []
+              }
+            }
+          },
+          {
+            "op": "make_none",
+            "ok": true,
+            "value": {
+              "type": "listop<ObjectPath>",
+              "value": {
+                "explicit": [],
+                "prepend": [],
+                "append": [],
+                "delete": []
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "object-path-subfields-and-last-one-wins",
+      "input": {
+        "ops": [
+          {
+            "op": "make_explicit",
+            "elementType": "ObjectPath",
+            "items": ["/World/Geom", "/Materials/Default"]
+          },
+          {
+            "op": "make_authored",
+            "elementType": "ObjectPath",
+            "edits": [
+              {"field": "prepend", "items": ["/Old"]},
+              {"field": "prepend", "items": ["/NewA", "/NewB"]},
+              {"field": "append", "items": ["/Tail"]},
+              {"field": "delete", "items": ["/Dead"]}
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "make_explicit",
+            "ok": true,
+            "value": {
+              "type": "listop<ObjectPath>",
+              "value": {
+                "explicit": ["/World/Geom", "/Materials/Default"],
+                "prepend": [],
+                "append": [],
+                "delete": []
+              }
+            }
+          },
+          {
+            "op": "make_authored",
+            "ok": true,
+            "value": {
+              "type": "listop<ObjectPath>",
+              "value": {
+                "explicit": [],
+                "prepend": ["/NewA", "/NewB"],
+                "append": ["/Tail"],
+                "delete": ["/Dead"]
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "reference-and-payload-native-arc-items",
+      "input": {
+        "ops": [
+          {
+            "op": "make_explicit",
+            "elementType": "Reference",
+            "items": [
+              {"asset": "./asset.usda", "path": "/Root/Model", "offset": 2.5, "scale": 0.5},
+              {"path": "/Root/Material"}
+            ]
+          },
+          {
+            "op": "make_authored",
+            "elementType": "Payload",
+            "edits": [
+              {"field": "prepend", "items": [{"asset": "payload.usda"}]},
+              {"field": "append", "items": [{"asset": "nested.usda", "path": "/PayloadRoot", "offset": 1.0, "scale": 2.0}]}
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "make_explicit",
+            "ok": true,
+            "value": {
+              "type": "listop<Reference>",
+              "value": {
+                "explicit": [
+                  {"offset": 2.5, "scale": 0.5, "asset": "./asset.usda", "path": "/Root/Model"},
+                  {"offset": 0.0, "scale": 1.0, "path": "/Root/Material"}
+                ],
+                "prepend": [],
+                "append": [],
+                "delete": []
+              }
+            }
+          },
+          {
+            "op": "make_authored",
+            "ok": true,
+            "value": {
+              "type": "listop<Payload>",
+              "value": {
+                "explicit": [],
+                "prepend": [
+                  {"offset": 0.0, "scale": 1.0, "asset": "payload.usda"}
+                ],
+                "append": [
+                  {"offset": 1.0, "scale": 2.0, "asset": "nested.usda", "path": "/PayloadRoot"}
+                ],
+                "delete": []
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "foundational-element-types",
+      "input": {
+        "ops": [
+          {
+            "op": "make_explicit",
+            "elementType": "token",
+            "items": ["render", "proxy"]
+          },
+          {
+            "op": "make_authored",
+            "elementType": "string",
+            "edits": [
+              {"field": "append", "items": ["beta"]},
+              {"field": "delete", "items": ["old"]}
+            ]
+          },
+          {
+            "op": "make_explicit",
+            "elementType": "int",
+            "items": [-2147483648, 2147483647]
+          },
+          {
+            "op": "make_explicit",
+            "elementType": "uint64",
+            "items": [0, 18446744073709551615]
+          }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "make_explicit",
+            "ok": true,
+            "value": {
+              "type": "listop<token>",
+              "value": {
+                "explicit": ["render", "proxy"],
+                "prepend": [],
+                "append": [],
+                "delete": []
+              }
+            }
+          },
+          {
+            "op": "make_authored",
+            "ok": true,
+            "value": {
+              "type": "listop<string>",
+              "value": {
+                "explicit": [],
+                "prepend": [],
+                "append": ["beta"],
+                "delete": ["old"]
+              }
+            }
+          },
+          {
+            "op": "make_explicit",
+            "ok": true,
+            "value": {
+              "type": "listop<int>",
+              "value": {
+                "explicit": [-2147483648, 2147483647],
+                "prepend": [],
+                "append": [],
+                "delete": []
+              }
+            }
+          },
+          {
+            "op": "make_explicit",
+            "ok": true,
+            "value": {
+              "type": "listop<uint64>",
+              "value": {
+                "explicit": [0, 18446744073709551615],
+                "prepend": [],
+                "append": [],
+                "delete": []
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "validation-failures",
+      "input": {
+        "ops": [
+          {
+            "op": "make_explicit",
+            "elementType": "ObjectPath",
+            "items": ["relative/path"]
+          },
+          {
+            "op": "make_explicit",
+            "elementType": "opaque",
+            "items": []
+          },
+          {
+            "op": "make_explicit",
+            "elementType": "uint",
+            "items": [-1]
+          },
+          {
+            "op": "make_explicit",
+            "elementType": "Payload",
+            "items": ["payload.usda"]
+          },
+          {
+            "op": "make_authored",
+            "elementType": "token",
+            "edits": [
+              {"field": "add", "items": ["bad"]}
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "make_explicit",
+            "ok": false,
+            "diagnostic": {
+              "code": "InvalidValue",
+              "message": "invalid ObjectPath listOp item"
+            }
+          },
+          {
+            "op": "make_explicit",
+            "ok": false,
+            "diagnostic": {
+              "code": "InvalidType",
+              "message": "unsupported listOp element type"
+            }
+          },
+          {
+            "op": "make_explicit",
+            "ok": false,
+            "diagnostic": {
+              "code": "InvalidValue",
+              "message": "value out of range for uint"
+            }
+          },
+          {
+            "op": "make_explicit",
+            "ok": false,
+            "diagnostic": {
+              "code": "InvalidValue",
+              "message": "expected native Payload listOp item"
+            }
+          },
+          {
+            "op": "make_authored",
+            "ok": false,
+            "diagnostic": {
+              "code": "InvalidListOpField",
+              "message": "unsupported listOp field"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

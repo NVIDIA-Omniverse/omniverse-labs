@@ -1,0 +1,7 @@
+#usda 1.0
+
+def Xform "Root" {
+    float overridden = 1.0
+    string source = "weak"
+    float weakOnly = 42.0
+}

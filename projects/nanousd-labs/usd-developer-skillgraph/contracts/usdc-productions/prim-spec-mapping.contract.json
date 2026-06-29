@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/usdc-productions/prim-spec-mapping.contract.json",
+  "title": "USDC Prim Spec Mapping Production Contract",
+  "version": "0.1",
+  "spec_commit": "6b4f01f2d6d46b01507481524eb516b4ef358c31",
+  "owned_by": "usdc-spec-parser",
+  "derives_from": "contracts/document-model-productions/prim-spec.contract.json",
+  "format_neutral_rules": "contracts/document-model-productions/prim-spec.contract.json — the prim spec field set, child-list invariants, listOp subfield rules, and value-shape rules are pinned in the format-neutral production. This contract adds the USDC-specific mapping: Crate spec form 6 -> prim spec, per-field name resolution via TOKENS/FIELDS/FIELDSETS, and per-field Crate value-representation type bindings.",
+  "spec_refs": [
+    "specification/file_formats/README.md#specs-section",
+    "specification/file_formats/README.md#type-table",
+    "specification/document_data_model/README.md#prim-spec"
+  ],
+  "dependency_contracts": [
+    "contracts/usdc-productions/crate-section-layouts.contract.json",
+    "contracts/usdc-productions/crate-value-representations.contract.json"
+  ],
+  "spec_form": {
+    "id": 6,
+    "name": "Prim",
+    "section_layout_ref": "contracts/usdc-productions/crate-section-layouts.contract.json#section_layouts.SPECS.spec_form_table"
+  },
+  "storage_mapping": {
+    "rule": "A SPECS entry with form=6 produces a prim spec at the path resolved through PATHS. Authored fields come from the FIELDSETS group whose start is given by the SPECS entry's field_set_index. Each field-id in the group resolves through FIELDS to a (token-name, value-representation-word) pair; the token name is the document-model field name, and the value-representation word is decoded by usdc-value-decoder. Child specs (other SPECS entries whose paths are descendants of this prim) are stored through usd-document-model, and the parser maintains primChildren / propertyChildren / variantSetChildren.",
+    "field_resolution": {
+      "specifier": "FIELDS token name 'specifier'; value type 42 (Specifier) inlined with payload encoding 0=def, 1=over, 2=class",
+      "typeName": "FIELDS token name 'typeName'; value type 11 (token) inlined as a uint32 token index resolved through the TOKENS table",
+      "kind": "FIELDS token name 'kind'; value type 11 (token) inlined",
+      "active": "FIELDS token name 'active'; value type 1 (bool) inlined",
+      "hidden": "FIELDS token name 'hidden'; value type 1 (bool) inlined",
+      "instanceable": "FIELDS token name 'instanceable'; value type 1 (bool) inlined",
+      "primChildren": "FIELDS token name 'primChildren'; value type 41 (TokenVector) offset-backed (uint64 count followed by uint32 token indices). When the field is absent, the parser materializes an empty token[] from child spec storage.",
+      "propertyChildren": "FIELDS token name 'properties' (the on-disk Crate token); maps to the document-model propertyChildren field (AOUSD §7.6.2.2.2); value type 41 (TokenVector) offset-backed",
+      "variantSetChildren": "FIELDS token name 'variantSetChildren'; value type 41 (TokenVector) offset-backed; distinct from variantSetNames",
+      "primOrder": "FIELDS token name 'primOrder'; value type 41 (TokenVector)",
+      "propertyOrder": "FIELDS token name 'propertyOrder'; value type 41 (TokenVector)",
+      "references": "FIELDS token name 'references'; value type 35 (ReferenceListOp); each item is a native Reference record (asset path index into STRINGS, prim path index into PATHS, 16-byte LayerOffset, optional Dictionary customData)",
+      "payload": "FIELDS token name 'payload'; value type 55 (PayloadListOp) at minor>=8 (the AOUSD 1.0.1 baseline); each item is a native Payload record (asset path index, prim path index, 16-byte LayerOffset)",
+      "inheritPaths": "FIELDS token name 'inheritPaths'; value type 34 (PathListOp); items are uint32 path indices into PATHS",
+      "specializes": "FIELDS token name 'specializes'; value type 34 (PathListOp)",
+      "variantSetNames": "FIELDS token name 'variantSetNames'; value type 32 (TokenListOp); distinct from variantSetChildren",
+      "variantSelection": "FIELDS token name 'variantSelection'; value type 45 (VariantSelectionMap); uint64 count followed by alternating string-index key + string-index value entries (4-byte indices into STRINGS)",
+      "documentation": "FIELDS token name 'documentation'; value type 10 (string) inlined as a uint32 string index into STRINGS. The 'doc' alias is a USDA grammar spelling and is not encoded in Crate; Crate stores the canonical 'documentation' token name.",
+      "comment": "FIELDS token name 'comment'; value type 10 (string)",
+      "displayName": "FIELDS token name 'displayName'; value type 10 (string)",
+      "displayGroup": "FIELDS token name 'displayGroup'; value type 10 (string)",
+      "customData": "FIELDS token name 'customData'; value type 31 (dictionary) offset-backed",
+      "assetInfo": "FIELDS token name 'assetInfo'; value type 31 (dictionary) offset-backed"
+    },
+    "child_list_materialization": "primChildren / propertyChildren / variantSetChildren may be authored explicitly in the Crate FIELDS table OR omitted; when omitted, the parser materializes them from the set of child specs whose paths descend from this prim. When authored, the stored value wins (the on-disk authoring is the source of truth) and child-spec storage must agree."
+  },
+  "laws": [
+    "a Crate SPECS entry with form=6 produces exactly one prim spec at the path resolved through PATHS",
+    "field names on a prim spec must come from the TOKENS table via the FIELDS table; the parser must not synthesize prim field names from substring or fixture-name patterns",
+    "alias spellings (doc, inherits, variantSets, variants) are USDA grammar concerns and do not appear in Crate FIELDS; the Crate parser binds canonical token names (documentation, inheritPaths, variantSetNames, variantSelection) directly",
+    "Reference and Payload items are stored as native arc records (asset path, prim path, LayerOffset, optional customData) consistent with document-model-productions/prim-spec.contract.json#fields.references; raw JSON dictionaries, bare strings, or string-keyed maps are forbidden in durable storage",
+    "VariantSelectionMap (value type 45) decodes to a native variantSelection map; storage must not be string-keyed JSON",
+    "the 'relocates' token is an AOUSD §7.6.2.7 deprecated prim field and, under strict spec conformance, is rejected with MalformedUsdcSection on a form-6 spec; layer relocates are decoded only as the canonical layerRelocates field on the form-7 layer spec (value type 58), never on prims"
+  ],
+  "golden_groups": [
+    "Crate form 6 specs decode to prim specs at the expected paths",
+    "specifier / typeName / kind / active / hidden / instanceable round-trip on prim specs",
+    "primChildren materialized from child spec storage when absent",
+    "primChildren preserved exactly when authored explicitly in Crate",
+    "references / payload with asset, prim path, and LayerOffset",
+    "inheritPaths / specializes single-item and multi-item listOps with prepend/append/delete subfields",
+    "variantSetNames (listOp<token>) vs variantSetChildren (spec storage) maintained independently",
+    "variantSelection (VariantSelectionMap value type 45) decoded as native map"
+  ],
+  "golden_files": [
+    "goldens/integration/usdc-single-layer/basic.json",
+    "goldens/integration/usdc-single-layer/prim-metadata-composition.json",
+    "goldens/integration/usdc-single-layer/variant-specs.json"
+  ]
+}

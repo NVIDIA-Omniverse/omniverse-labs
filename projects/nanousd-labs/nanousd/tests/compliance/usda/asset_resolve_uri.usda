@@ -1,0 +1,8 @@
+#usda 1.0
+
+def Material "Mat"
+{
+    asset inputs:remote = @https://example.com/assets/diffuse.png?color=red#preview@
+    asset inputs:localFile = @file:///tmp/nanousd/local-texture.png@
+    asset inputs:remoteFile = @file://files.example.com/share/remote-texture.png@
+}

@@ -1,0 +1,11 @@
+#usda 1.0
+
+def Xform "Prim" (
+    prepend references = [
+        @./multi_ref_a.usda@</RefA>,
+        @./multi_ref_b.usda@</RefB>
+    ]
+)
+{
+    string label = "local"
+}

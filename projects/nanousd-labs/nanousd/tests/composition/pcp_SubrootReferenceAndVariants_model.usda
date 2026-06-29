@@ -1,0 +1,28 @@
+#usda 1.0
+
+# Ported from OpenUSD PCP fixture
+# testPcpMuseum_SubrootReferenceAndVariants.testenv/SubrootReferenceAndVariants/model.usda.
+#
+# /Model is a peer asset with its own variant set "v", selected to "x".
+# When /RootRef references @this@</Model> and /RootRef/Child references
+# @target.usda@</Group/Model>, the two variant selections must remain
+# independent — /RootRef composes with v=x (from here), and /RootRef/Child
+# composes with v=y (from target.usda's /Group ancestral selection). The
+# reference arcs do NOT blend variant selections across chains.
+
+def "Model" (
+    variantSets = "v"
+    variants = {
+        string v = "x"
+    }
+)
+{
+    variantSet "v" = {
+        "x" {
+            custom string modelAttr = "v=x"
+        }
+        "y" {
+            custom string modelAttr = "v=y"
+        }
+    }
+}

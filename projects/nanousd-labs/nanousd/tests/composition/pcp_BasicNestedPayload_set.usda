@@ -1,0 +1,13 @@
+#usda 1.0
+
+def Scope "Set" (
+    payload = @./pcp_BasicNestedPayload_set_payload.usda@</Set>
+)
+{
+    over "Prop"
+    {
+        over "PropScope"
+        {
+        }
+    }
+}

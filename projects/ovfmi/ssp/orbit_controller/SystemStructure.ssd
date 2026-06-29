@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ssd:SystemStructureDescription
+    xmlns:ssc="http://ssp-standard.org/SSP1/SystemStructureCommon"
+    xmlns:ssd="http://ssp-standard.org/SSP1/SystemStructureDescription"
+    xmlns:ssv="http://ssp-standard.org/SSP1/SystemStructureParameterValues"
+    xmlns:ssm="http://ssp-standard.org/SSP1/SystemStructureParameterMapping"
+    xmlns:ssb="http://ssp-standard.org/SSP1/SystemStructureSignalDictionary"
+    version="1.0"
+    name="OrbitController"
+    description="SSP packaging of trajectory generator + PD controller for orbit tracking">
+
+  <ssd:System name="OrbitController">
+
+    <!-- System-level connectors (exposed to outside / USD) -->
+    <ssd:Connectors>
+      <!-- Inputs: body state from physics -->
+      <ssd:Connector name="pos_x" kind="input">
+        <ssc:Real/>
+      </ssd:Connector>
+      <ssd:Connector name="pos_y" kind="input">
+        <ssc:Real/>
+      </ssd:Connector>
+      <ssd:Connector name="pos_z" kind="input">
+        <ssc:Real/>
+      </ssd:Connector>
+      <ssd:Connector name="vel_x" kind="input">
+        <ssc:Real/>
+      </ssd:Connector>
+      <ssd:Connector name="vel_y" kind="input">
+        <ssc:Real/>
+      </ssd:Connector>
+      <ssd:Connector name="vel_z" kind="input">
+        <ssc:Real/>
+      </ssd:Connector>
+      <!-- Outputs: force to physics -->
+      <ssd:Connector name="force_x" kind="output">
+        <ssc:Real/>
+      </ssd:Connector>
+      <ssd:Connector name="force_y" kind="output">
+        <ssc:Real/>
+      </ssd:Connector>
+      <ssd:Connector name="force_z" kind="output">
+        <ssc:Real/>
+      </ssd:Connector>
+    </ssd:Connectors>
+
+    <!-- Internal components -->
+    <ssd:Elements>
+      <ssd:Component name="TrajectoryGenerator" type="application/x-fmu-sharedlibrary"
+                     source="resources/TrajectoryGenerator.fmu">
+        <ssd:Connectors>
+          <ssd:Connector name="target_x" kind="output">
+            <ssc:Real/>
+          </ssd:Connector>
+          <ssd:Connector name="target_y" kind="output">
+            <ssc:Real/>
+          </ssd:Connector>
+          <ssd:Connector name="target_z" kind="output">
+            <ssc:Real/>
+          </ssd:Connector>
+        </ssd:Connectors>
+      </ssd:Component>
+
+      <ssd:Component name="PDController" type="application/x-fmu-sharedlibrary"
+                     source="resources/PDController.fmu">
+        <ssd:Connectors>
+          <ssd:Connector name="pos_x" kind="input">
+            <ssc:Real/>
+          </ssd:Connector>
+          <ssd:Connector name="pos_y" kind="input">
+            <ssc:Real/>
+          </ssd:Connector>
+          <ssd:Connector name="pos_z" kind="input">
+            <ssc:Real/>
+          </ssd:Connector>
+          <ssd:Connector name="vel_x" kind="input">
+            <ssc:Real/>
+          </ssd:Connector>
+          <ssd:Connector name="vel_y" kind="input">
+            <ssc:Real/>
+          </ssd:Connector>
+          <ssd:Connector name="vel_z" kind="input">
+            <ssc:Real/>
+          </ssd:Connector>
+          <ssd:Connector name="target_x" kind="input">
+            <ssc:Real/>
+          </ssd:Connector>
+          <ssd:Connector name="target_y" kind="input">
+            <ssc:Real/>
+          </ssd:Connector>
+          <ssd:Connector name="target_z" kind="input">
+            <ssc:Real/>
+          </ssd:Connector>
+          <ssd:Connector name="force_x" kind="output">
+            <ssc:Real/>
+          </ssd:Connector>
+          <ssd:Connector name="force_y" kind="output">
+            <ssc:Real/>
+          </ssd:Connector>
+          <ssd:Connector name="force_z" kind="output">
+            <ssc:Real/>
+          </ssd:Connector>
+        </ssd:Connectors>
+      </ssd:Component>
+    </ssd:Elements>
+
+    <!-- Connections -->
+    <ssd:Connections>
+      <!-- Internal: trajectory generator outputs → PD controller target inputs -->
+      <ssd:Connection startElement="TrajectoryGenerator" startConnector="target_x"
+                      endElement="PDController" endConnector="target_x"/>
+      <ssd:Connection startElement="TrajectoryGenerator" startConnector="target_y"
+                      endElement="PDController" endConnector="target_y"/>
+      <ssd:Connection startElement="TrajectoryGenerator" startConnector="target_z"
+                      endElement="PDController" endConnector="target_z"/>
+
+      <!-- System inputs → PD controller body state -->
+      <ssd:Connection startConnector="pos_x"
+                      endElement="PDController" endConnector="pos_x"/>
+      <ssd:Connection startConnector="pos_y"
+                      endElement="PDController" endConnector="pos_y"/>
+      <ssd:Connection startConnector="pos_z"
+                      endElement="PDController" endConnector="pos_z"/>
+      <ssd:Connection startConnector="vel_x"
+                      endElement="PDController" endConnector="vel_x"/>
+      <ssd:Connection startConnector="vel_y"
+                      endElement="PDController" endConnector="vel_y"/>
+      <ssd:Connection startConnector="vel_z"
+                      endElement="PDController" endConnector="vel_z"/>
+
+      <!-- PD controller force outputs → System outputs -->
+      <ssd:Connection startElement="PDController" startConnector="force_x"
+                      endConnector="force_x"/>
+      <ssd:Connection startElement="PDController" startConnector="force_y"
+                      endConnector="force_y"/>
+      <ssd:Connection startElement="PDController" startConnector="force_z"
+                      endConnector="force_z"/>
+    </ssd:Connections>
+
+  </ssd:System>
+
+  <ssd:DefaultExperiment startTime="0.0" stopTime="30.0"/>
+
+</ssd:SystemStructureDescription>

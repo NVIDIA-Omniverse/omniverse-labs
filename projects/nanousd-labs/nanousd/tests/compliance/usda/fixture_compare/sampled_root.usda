@@ -1,0 +1,36 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    subLayers = [
+        @./sampled_weak.usda@
+    ]
+)
+
+def Scope "World" (
+    clips = {
+        dictionary default = {
+            string primPath = "/World"
+            asset[] assetPaths = [@./sampled_clip_a.usda@, @./sampled_clip_b.usda@]
+            double2[] active = [(0, 0), (10, 1)]
+            double2[] times = [(0, 0), (10, 10), (20, 10)]
+        }
+    }
+)
+{
+    float strongDefault = 7
+    double anim.timeSamples = {
+        0: 1,
+        10: 3,
+    }
+    double splineOnly.spline = {
+        0: 2,
+        10: 6,
+    }
+    double splineWithDefault = 4
+    double splineWithDefault.spline = {
+        0: 2,
+        10: 6,
+    }
+    float clipRadius
+    float clipWithLocalDefault = 9
+}

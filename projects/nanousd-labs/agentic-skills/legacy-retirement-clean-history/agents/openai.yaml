@@ -1,0 +1,4 @@
+interface:
+  display_name: "Legacy Retirement Clean History"
+  short_description: "Retire legacy paths for clean history"
+  default_prompt: "Identify and remove obsolete fallback, compatibility, duplicate, and staging code before creating a clean initial history."

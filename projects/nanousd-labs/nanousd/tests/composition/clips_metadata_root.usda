@@ -1,0 +1,28 @@
+#usda 1.0
+(
+    defaultPrim = "Geo"
+    subLayers = [
+        @./clips_metadata_base.usda@
+    ]
+)
+
+# Stronger layer — adds a second clip set ("tight") and prepends it
+# into the clipSets search order.  After composition the prim's
+# `clips` metadata must contain BOTH clip sets (per §12.2.5 dict
+# combining) and `clipSets` must be ["tight", "wide"] (per §12.2.6
+# listop combining where root's prepends precede base's prepends).
+
+over "Geo" (
+    clips = {
+        dictionary tight = {
+            string primPath = "/GeoTight"
+            asset manifestAssetPath = @./manifest_tight.usda@
+            asset[] assetPaths = [@./tight_01.usda@]
+            double2[] active = [(0, 0)]
+            double2[] times  = [(0, 0)]
+        }
+    }
+    prepend clipSets = ["tight"]
+)
+{
+}

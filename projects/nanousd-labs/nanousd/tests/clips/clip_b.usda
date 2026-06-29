@@ -1,0 +1,10 @@
+#usda 1.0
+# Clip layer B — paired with clip_a.usda; active at a later stage time.
+
+def Scope "Geo"
+{
+    float radius.timeSamples = {
+        0: 10.0,
+        10: 20.0,
+    }
+}

@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/non-variant-namespace-source-input.json",
+  "title": "USD Non-Variant Namespace Source Input Capability",
+  "version": "0.1",
+  "spec_tag": "v1.0.1",
+  "spec_commit": "v1.0.1",
+  "spec_source": "aousd/specifications-public@v1.0.1",
+  "dependency_contracts": [
+    "contracts/capabilities/namespace-source.json",
+    "contracts/capabilities/semantic-runtime-types.json",
+    "contracts/capabilities/composition-provenance.json"
+  ],
+  "purpose": "Define the abstract input boundary consumed by variant composition. A variant namespace source needs a non-variant NamespaceSource with enough strength-ordered source-visible opinion data to compute variant selections and insert selected variant opinions at LIVERPS strength. This capability is intentionally not tied to payloads, references, or any specific composition arc provider.",
+  "scope": {
+    "included": [
+      "target-native NamespaceSource input",
+      "no selected variant opinions already applied to the source-visible scene inputs",
+      "strength-ordered prim opinions for computing variant selections",
+      "source-visible variantSelection, variantSetNames, and variantSetChildren fields",
+      "path-addressed lookup for variant-selection paths",
+      "capability declaration for which non-variant composition arcs are already represented"
+    ],
+    "deferred": [
+      "requiring any particular concrete provider such as payload, reference, or layer-stack namespace source",
+      "requiring full USD composition",
+      "evaluating variants, recursive variants, fallback selections, or variants inside selected variants",
+      "asset resolution, file opening, and layer-stack construction"
+    ]
+  },
+  "model": {
+    "NonVariantNamespaceSourceInput": "A NamespaceSource value that may include layer-stack, reference, payload, inherits, specializes, relocates, or future non-variant opinions, but has not yet applied selected variant opinions.",
+    "TerminalNonVariantProvider": "The concrete graph node currently wired to satisfy this input. In this bounded graph it is usd-specializes-namespace-source, but the variant contract must not depend on that handle.",
+    "OpinionStack": "A target-native strong-to-weak list of source-visible prim opinions sufficient for reading variantSelection and variantSetNames in strength order.",
+    "VariantSelectionPathLookup": "The ability to inspect selected variant specs through paths validated by usd-paths without exposing selected variant paths to stage population."
+  },
+  "laws": [
+    "a variant namespace source consumes this abstract non-variant input rather than a payload-specific handle contract",
+    "the concrete graph may choose any terminal non-variant NamespaceSource provider that satisfies this capability",
+    "the input must expose source-visible prim opinions in strength order, or an equivalent target-native opinion stack, for the prims where variant selections are computed",
+    "strength-ordered opinion provenance must use typed composition provenance records and must not be stored as composite source:path strings",
+    "the input must preserve source-visible variantSelection, variantSetNames, and variantSetChildren fields with typed field-read semantics",
+    "the input must not have already applied selected variant opinions to the same exposed scene paths; variants are owned by the consuming variant provider",
+    "the input may include references and payloads, but neither references nor payloads are semantically required by this capability",
+    "when a bounded graph wires this input to a concrete provider such as usd-specializes-namespace-source, that wiring is an evaluation dependency and must not be read as LIVERPS strength order",
+    "stage population must consume the output variant NamespaceSource, not this non-variant input, when variants are in scope",
+    "adapter JSON may construct a concrete non-variant provider chain for tests, but domain APIs exchange NamespaceSource, path, token/name, and field value objects"
+  ]
+}

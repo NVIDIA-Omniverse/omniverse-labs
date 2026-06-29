@@ -1,0 +1,68 @@
+#usda 1.0
+
+def "World"
+{
+    def "Set"
+    {
+        uniform token keep = "yes"
+        uniform token drop = "no"
+
+        def "Child"
+        {
+            uniform token childAttr = "child"
+        }
+    }
+
+    def "Other" (
+        prepend apiSchemas = ["CollectionAPI:leafs"]
+    )
+    {
+        rel collection:leafs:includes = [
+            </World/Other/Leaf>
+        ]
+
+        def "Leaf"
+        {
+        }
+    }
+
+    def "Collections" (
+        prepend apiSchemas = [
+            "CollectionAPI:all",
+            "CollectionAPI:exact",
+            "CollectionAPI:prims",
+            "CollectionAPI:rootOnly"
+        ]
+    )
+    {
+        uniform token collection:all:expansionRule = "expandPrimsAndProperties"
+        rel collection:all:includes = [
+            </World/Set>,
+            </World/Other.collection:leafs>,
+            </World/Missing>
+        ]
+        rel collection:all:excludes = [
+            </World/Set.drop>,
+            </World/Orphan>
+        ]
+
+        uniform token collection:exact:expansionRule = "explicitOnly"
+        rel collection:exact:includes = [
+            </World/Set.keep>,
+            </World/Set/Child>
+        ]
+        rel collection:exact:excludes = [
+            </World/Set/Child>
+        ]
+
+        rel collection:prims:includes = [
+            </World/Set>
+        ]
+        rel collection:prims:excludes = [
+            </World/Set/Child>
+        ]
+
+        uniform token collection:rootOnly:expansionRule = "explicitOnly"
+        uniform bool collection:rootOnly:includeRoot = true
+    }
+}

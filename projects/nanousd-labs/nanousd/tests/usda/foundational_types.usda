@@ -1,0 +1,23 @@
+#usda 1.0
+
+def Scope "FoundationalTypes"
+{
+    uchar ucharZero = 0
+    uchar ucharMax = 255
+    timecode timecodeVal = 101.5
+
+    uchar[] uchars = [0, 1, 255]
+    timecode[] timecodes = [1, 12.5, 24]
+
+    half2[] h2s = [(0.5, 1.0)]
+    quath[] qaths = [(1, 0, 0, 0)]
+
+    matrix2d[] matrices2 = [((1, 0), (0, 1))]
+    matrix3d[] matrices3 = [((1, 0, 0), (0, 1, 0), (0, 0, 1))]
+
+    point3f[] points = [(0, 0, 0), (1, 2, 3)]
+
+    color3h c3h = (1.0, 0.5, 0.0)
+    color4h c4h = (1.0, 0.5, 0.0, 1.0)
+    frame4d frame = ((1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1))
+}

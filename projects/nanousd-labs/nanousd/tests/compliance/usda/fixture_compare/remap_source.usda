@@ -1,0 +1,46 @@
+#usda 1.0
+
+def Scope "Model"
+{
+    float inputs:color.connect = </Model/Shader.outputs:color>
+    float externalInput.connect = </Library.outputs:value>
+    rel material:binding = </Model/Materials/Preview>
+    rel externalTarget = </Library>
+
+    def Scope "Shader"
+    {
+        float outputs:color = 0.25
+    }
+
+    def Scope "Materials"
+    {
+        def Scope "Preview"
+        {
+        }
+    }
+}
+
+def Scope "PayloadModel"
+{
+    float payloadInput.connect = </PayloadModel/Shader.outputs:value>
+    float payloadExternalInput.connect = </Library.outputs:value>
+    rel payloadTarget = </PayloadModel/Materials/Preview>
+    rel payloadExternalTarget = </Library>
+
+    def Scope "Shader"
+    {
+        float outputs:value = 0.5
+    }
+
+    def Scope "Materials"
+    {
+        def Scope "Preview"
+        {
+        }
+    }
+}
+
+def Scope "Library"
+{
+    float outputs:value = 9
+}

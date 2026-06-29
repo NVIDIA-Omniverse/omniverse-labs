@@ -1,0 +1,10 @@
+#usda 1.0
+(
+    defaultPrim = "Template"
+)
+
+def Xform "Template" {
+    float height = 5.0
+    float base_val = 10.0
+    string label = "from_template"
+}

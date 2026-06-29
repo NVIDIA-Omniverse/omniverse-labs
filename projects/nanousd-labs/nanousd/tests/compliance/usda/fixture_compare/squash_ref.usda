@@ -1,0 +1,11 @@
+#usda 1.0
+
+def Xform "Asset"
+{
+    double refOnly = 30
+
+    def Scope "RefChild"
+    {
+        string label = "ref"
+    }
+}

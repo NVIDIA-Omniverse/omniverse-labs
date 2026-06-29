@@ -1,0 +1,150 @@
+#usda 1.0
+
+def Scope "NumberFormats"
+{
+    # ==========================================
+    # Sign permutations (float, through ParseNumber)
+    # ==========================================
+    float signImplicit = 3.14
+    float signExplicitPos = 3.14
+    float signNeg = -3.14
+
+    # ==========================================
+    # Integer part present/absent
+    # ==========================================
+    # Integer part present, no decimal
+    float intOnly = 42
+    # Integer part present, with decimal and fraction
+    float intAndFrac = 42.5
+    # Integer part present, decimal but no fraction (trailing dot)
+    float intTrailingDot = 42.
+    # No integer part (leading dot)
+    float leadingDot = .5
+    # Signed leading dot
+    float leadingDotPos = .5
+    float leadingDotNeg = -.5
+
+    # ==========================================
+    # Exponent permutations (lowercase e)
+    # ==========================================
+    # Integer with exponent, no decimal
+    float intExp = 1e5
+    # Decimal with exponent
+    float decExp = 1.5e5
+    # Leading dot with exponent
+    float dotExp = .5e3
+    # Trailing dot with exponent
+    float trailDotExp = 1.e3
+
+    # Exponent sign: implicit positive
+    float expNoSign = 2e10
+    # Exponent sign: explicit positive
+    float expPosSign = 2e+10
+    # Exponent sign: negative
+    float expNegSign = 2e-10
+
+    # ==========================================
+    # Exponent permutations (uppercase E)
+    # ==========================================
+    float expUpperNoSign = 2E10
+    float expUpperPosSign = 2E+10
+    float expUpperNegSign = 2E-10
+    float decExpUpper = 1.5E5
+    float dotExpUpper = .5E3
+
+    # ==========================================
+    # Sign + exponent combinations
+    # ==========================================
+    float negIntExp = -1e5
+    float negDecExp = -1.5e5
+    float posIntExp = 1e5
+    float posDecExp = 1.5e5
+    float negDotExp = -.5e3
+    float posDotExp = .5e3
+    float negExpNeg = -1.5e-3
+    float posExpNeg = 1.5e-3
+    float negExpPos = -1.5e+3
+    float posExpPos = 1.5e+3
+
+    # ==========================================
+    # Double type (same format, wider range)
+    # ==========================================
+    double dSignImplicit = 3.14
+    double dSignPos = 3.14
+    double dSignNeg = -3.14
+    double dIntOnly = 42
+    double dLeadingDot = .5
+    double dTrailingDot = 42.
+    double dExp = 1.5e100
+    double dExpUpper = 1.5E100
+    double dExpNeg = 1.5e-100
+    double dNegExp = -1.5e+100
+
+    # ==========================================
+    # Int type (through ParseInt: optional '-' plus digits)
+    # ==========================================
+    int iPlain = 42
+    int iPos = 42
+    int iNeg = -42
+    int iZero = 0
+    int iPosZero = 0
+    int iNegZero = -0
+
+    # ==========================================
+    # Uint type (through ParseUInt64: digits)
+    # ==========================================
+    uint uPlain = 42
+    uint uPos = 42
+    uint uZero = 0
+
+    # ==========================================
+    # Int64 type (through ParseInt64: optional '-' plus digits)
+    # ==========================================
+    int64 i64Plain = 42
+    int64 i64Pos = 42
+    int64 i64Neg = -42
+    int64 i64Zero = 0
+
+    # ==========================================
+    # Uint64 type (through ParseUInt64: digits)
+    # ==========================================
+    uint64 u64Plain = 42
+    uint64 u64Pos = 42
+    uint64 u64Zero = 0
+
+    # ==========================================
+    # Half type (through ParseNumber, cast to Half)
+    # ==========================================
+    half hPlain = 1.5
+    half hPos = 1.5
+    half hNeg = -1.5
+    half hInt = 42
+    half hDot = .5
+    half hExp = 1.5e2
+
+    # ==========================================
+    # Special float values
+    # ==========================================
+    float fInf = inf
+    float fPosInf = inf
+    float fNegInf = -inf
+    float fNan = nan
+    double dInf = inf
+    double dPosInf = inf
+    double dNegInf = -inf
+    double dNan = nan
+
+    # ==========================================
+    # Numbers inside tuples (vec types go through ParseNumber)
+    # ==========================================
+    float3 vecMixed = (-.5, 1.5e2, 42.)
+    double3 vecExpForms = (1e5, .5E-3, -1.5e+10)
+    int3 vecIntSigns = (1, -2, 0)
+
+    # ==========================================
+    # Numbers inside arrays
+    # ==========================================
+    float[] arrayMixed = [-.5, 1.5e2, 42., .5, 1e5, -1.5E-3]
+    int[] arrayIntSigns = [1, -2, 0, 0, -0]
+    double[] arrayExpForms = [1e5, .5E-3, -1.5e+10, .5e3]
+}

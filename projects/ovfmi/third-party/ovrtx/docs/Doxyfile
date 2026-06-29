@@ -1,0 +1,44 @@
+# Doxyfile for ovrtx C API documentation
+# Used by Breathe to generate Sphinx documentation
+
+PROJECT_NAME           = "ovrtx"
+PROJECT_BRIEF          = "NVIDIA RTX Rendering C API"
+
+# Input settings
+INPUT                  = ../include/ovrtx ../include/ovx
+RECURSIVE              = YES
+FILE_PATTERNS          = *.h
+
+# Output settings - XML for Breathe
+GENERATE_XML           = YES
+XML_OUTPUT             = _doxygen/xml
+GENERATE_HTML          = NO
+GENERATE_LATEX         = NO
+
+# Parsing settings
+EXTRACT_ALL            = YES
+EXTRACT_STATIC         = YES
+EXTRACT_LOCAL_CLASSES  = YES
+
+# Enable preprocessing
+ENABLE_PREPROCESSING   = YES
+MACRO_EXPANSION        = YES
+EXPAND_ONLY_PREDEF     = NO
+PREDEFINED             = OVRTX_STATIC_ASSERT(cond,msg)=
+
+# Documentation settings
+JAVADOC_AUTOBRIEF      = YES
+QT_AUTOBRIEF           = YES
+MULTILINE_CPP_IS_BRIEF = YES
+
+# Optimize for C
+OPTIMIZE_OUTPUT_FOR_C  = YES
+
+# Sort settings
+SORT_MEMBER_DOCS       = NO
+SORT_BRIEF_DOCS        = NO
+
+# Warning settings
+QUIET                  = YES
+WARNINGS               = YES
+WARN_IF_UNDOCUMENTED   = NO

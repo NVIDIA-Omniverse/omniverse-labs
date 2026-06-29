@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/document-model-productions/layer-spec.contract.json",
+  "title": "Document-Model Layer Spec Production Contract",
+  "version": "0.1",
+  "spec_commit": "6b4f01f2d6d46b01507481524eb516b4ef358c31",
+  "derives_from": "contracts/capabilities/document-data-model.json#spec_forms.layer",
+  "spec_refs": [
+    "specification/document_data_model/README.md#layer-spec",
+    "specification/file_formats/README.md#sublayer-metadata",
+    "specification/file_formats/README.md#layer-relocates-metadata",
+    "specification/file_formats/README.md#root-prim-reordering"
+  ],
+  "summary": "Format-neutral rules the root layer spec must satisfy after parsing. Both USDA and USDC mapping productions cite this contract.",
+  "fields": {
+    "primChildren": {
+      "type": "token[]",
+      "required": "always emitted on the layer spec; the value is the ordered list of root prim spec names. Maintained by usd-document-model.",
+      "default_when_unauthored": "[]"
+    },
+    "primOrder": {
+      "type": "token[]",
+      "required": "only when authored via a root prim reordering; storage holds the last authored ordering when the source format permits multiple authored orderings"
+    },
+    "defaultPrim": {
+      "type": "token",
+      "required": "only when authored"
+    },
+    "subLayers": {
+      "type": "asset[]",
+      "required": "only when authored; storage holds authored asset references on the layer spec",
+      "value_shape": "asset reference values; parsing does not imply loading the referenced layers"
+    },
+    "subLayerOffsets": {
+      "type": "Retiming[]",
+      "required": "only when subLayers is authored; storage holds one native Retiming record per subLayer item, using offset=0.0 / scale=1.0 defaults where omitted",
+      "value_shape": "native Retiming records (offset:double, scale:double). Storage must not be raw dictionaries or JSON objects. subLayers and subLayerOffsets must have matching lengths."
+    },
+    "layerRelocates": {
+      "type": "Relocates",
+      "required": "only when authored; this is the canonical AOUSD §7.6.1.2.4 layer field.",
+      "value_shape": "native source-PathRef→target-PathRef map. Storage must not be a string-keyed dictionary or JSON object. An empty target remains an empty path reference."
+    },
+    "documentation": {
+      "type": "string",
+      "required": "only when authored"
+    },
+    "comment": {
+      "type": "string",
+      "required": "only when authored"
+    },
+    "customLayerData": {
+      "type": "dictionary",
+      "required": "only when authored"
+    },
+    "framesPerSecond": {
+      "type": "double",
+      "required": "only when authored"
+    },
+    "timeCodesPerSecond": {
+      "type": "double",
+      "required": "only when authored"
+    },
+    "startTimeCode": {
+      "type": "double",
+      "required": "only when authored"
+    },
+    "endTimeCode": {
+      "type": "double",
+      "required": "only when authored"
+    }
+  },
+  "excluded_fields": {
+    "policy": "Strict AOUSD §7.6 conformance. The §7.6.1.8 Deprecated and §7.6.1.7 Out of Scope layer fields are NOT in the live field set: they are recognized as reserved spec tokens and rejected (ForbiddenFieldOnSpecKind), never admitted as live fields and never reinterpreted as generic customLayerData. They were carried only to match OpenUSD's SdfLayer field set.",
+    "deprecated": {
+      "spec_ref": "specification/document_data_model/README.md#deprecated-fields (§7.6.1.8)",
+      "fields": ["framePrecision", "hasOwnedSublayers", "owner", "sessionOwner", "startFrame", "endFrame"]
+    },
+    "out_of_scope": {
+      "spec_ref": "specification/document_data_model/README.md#out-of-scope-fields (§7.6.1.7)",
+      "fields": ["expressionVariables", "colorManagementSystem", "colorConfiguration"]
+    }
+  },
+  "child_list_invariants": {
+    "primChildren": "the ordered list of root prim spec names materialized under the layer spec. Adding a root prim appends to this list; child-list and child-spec storage must agree."
+  },
+  "laws": [
+    "the layer spec exists at /",
+    "the layer spec must carry primChildren as the format-neutral required field set",
+    "subLayers and subLayerOffsets must have matching lengths in storage when both are authored",
+    "subLayerOffsets must contain native Retiming records; raw dictionaries or JSON objects are forbidden",
+    "layerRelocates must contain path references internally; string-keyed dictionaries or JSON objects are forbidden",
+    "layer metadata fields are stored as authored data; downstream composition semantics are not evaluated by the parser",
+    "multiple authored root-prim reorderings leave the last authored list in primOrder"
+  ],
+  "golden_groups": [
+    "empty layer with only primChildren",
+    "subLayers with and without offsets",
+    "repeated offset/scale parameters last-one-wins within a single offset record",
+    "layerRelocates source→target path map",
+    "root prim reorder sparse and repeated lists",
+    "defaultPrim authored",
+    "customLayerData dictionary",
+    "framesPerSecond / timeCodesPerSecond / startTimeCode / endTimeCode authored"
+  ]
+}

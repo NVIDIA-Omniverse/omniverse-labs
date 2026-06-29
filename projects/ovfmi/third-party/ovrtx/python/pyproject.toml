@@ -1,0 +1,64 @@
+[project]
+name = "ovrtx"
+version = "0.3.0"
+description = "NVIDIA RTX Rendering Python API"
+requires-python = ">=3.10,<3.14"
+dependencies = []
+authors = [{name = "NVIDIA Corporation"}]
+license = "LicenseRef-NvidiaProprietary"
+license-files = ["LICENSE"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Manufacturing",
+    "Natural Language :: English",
+    "Programming Language :: C",
+    "Programming Language :: C++",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3 :: Only",
+    "Environment :: GPU :: NVIDIA CUDA",
+    "Environment :: GPU :: NVIDIA CUDA :: 12",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Software Development :: Libraries",
+]
+
+[project.urls]
+Repository = "https://github.com/NVIDIA-Omniverse/ovrtx"
+Changelog = "https://github.com/NVIDIA-Omniverse/ovrtx/blob/main/CHANGELOG.md"
+
+[project.optional-dependencies]
+docs = [
+    "sphinx>=7.0",
+    "nvidia-sphinx-theme",
+    "sphinx-autodoc-typehints",
+    "sphinx-copybutton",
+    "sphinx-design",
+    "sphinx-mdinclude",
+    "breathe",
+]
+test = [
+    "pytest==9.0.2",
+    "Pillow==12.1.1",
+    "numpy>=2.2,<2.3",
+    "warp-lang>=1.11.1",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["ovrtx"]
+
+[tool.uv]
+managed = true
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+]

@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/usdc-productions/variant-spec-mapping.contract.json",
+  "title": "USDC Variant and VariantSet Spec Mapping Production Contract",
+  "version": "0.1",
+  "spec_commit": "6b4f01f2d6d46b01507481524eb516b4ef358c31",
+  "owned_by": "usdc-spec-parser",
+  "derives_from": "contracts/document-model-productions/variant-spec.contract.json",
+  "format_neutral_rules": "contracts/document-model-productions/variant-spec.contract.json — the variant / variantSet spec kinds, parent-child rules, variant specifier=over invariant, variantSetChildren-vs-variantSetNames separation, and nested-variantSet rules are pinned in the format-neutral production. This contract adds the USDC-specific mapping: Crate spec forms 10/11 -> variant/variantSet specs, VariantSelectionMap (type 45) decoding, and variantChildren materialization.",
+  "spec_refs": [
+    "specification/file_formats/README.md#specs-section",
+    "specification/file_formats/README.md#variant-selection-map",
+    "specification/document_data_model/README.md#variant-and-variant-set-specs"
+  ],
+  "dependency_contracts": [
+    "contracts/usdc-productions/crate-section-layouts.contract.json",
+    "contracts/usdc-productions/crate-value-representations.contract.json"
+  ],
+  "spec_forms": {
+    "variantSet": {
+      "id": 11,
+      "name": "VariantSet"
+    },
+    "variant": {
+      "id": 10,
+      "name": "Variant"
+    },
+    "section_layout_ref": "contracts/usdc-productions/crate-section-layouts.contract.json#section_layouts.SPECS.spec_form_table"
+  },
+  "storage_mapping": {
+    "variantSet_rule": "A SPECS entry with form=11 produces a variantSet spec under the parent prim (or parent variant for nested cases). The PATHS algorithm uses the '{name}' path component grammar to encode the variant set name; the resulting path is the variantSet spec's path. The parent's variantSetChildren list must include this variantSet's name.",
+    "variant_rule": "A SPECS entry with form=10 produces a variant spec under the parent variantSet. The PATHS algorithm uses the '{name=variant}' or similar variant-name grammar. The parent variantSet's variantChildren list must include this variant's name.",
+    "field_resolution": {
+      "variantSet.variantChildren": "FIELDS token name 'variantChildren'; value type 41 (TokenVector) offset-backed; ordered list of authored variant names",
+      "variant.specifier": "FIELDS token name 'specifier'; value type 42 (Specifier) inlined; per document-model-productions/variant-spec.contract.json the value must be over (payload=1)",
+      "variant.primChildren": "FIELDS token name 'primChildren'; value type 41 (TokenVector) offset-backed",
+      "variant.propertyChildren": "FIELDS token name 'properties' (the on-disk Crate token); maps to the document-model propertyChildren field; value type 41 (TokenVector) offset-backed",
+      "variant.variantSetChildren": "FIELDS token name 'variantSetChildren'; value type 41 (TokenVector) offset-backed; supports nested variantSets",
+      "variant.documentation": "FIELDS token name 'documentation'; value type 10 (string)",
+      "variant.customData": "FIELDS token name 'customData'; value type 31 (dictionary)"
+    },
+    "variantSelection_decoding": "The variantSelection FIELD on a prim spec (covered in prim-spec-mapping.contract.json#storage_mapping.field_resolution.variantSelection) uses Crate value type 45 (VariantSelectionMap). The wire format is uint64 element count followed by alternating uint32 string-index key + uint32 string-index value entries; both indices resolve through STRINGS to token strings. Empty-string values are preserved as empty strings, not dropped."
+  },
+  "nesting_enforcement": {
+    "rule": "Per document-model-productions/variant-spec.contract.json#nesting_rules, variant set specs must be children of prim or variant specs; variant specs must be children of variantSet specs. In the USDC encoding the parent kind is determined by walking the path back through PATHS; the parser must validate the parent's spec kind matches the expected nesting and emit MalformedUsdcSection on violation.",
+    "rationale": "The Crate PATHS+SPECS encoding does not natively enforce parent-kind constraints. A handwritten Crate could place a variant under a layer or under an attribute; the parser must reject such layouts."
+  },
+  "laws": [
+    "a Crate SPECS entry with form=11 produces a variantSet spec; the parent prim's variantSetChildren list includes the variantSet's name",
+    "a Crate SPECS entry with form=10 produces a variant spec; the parent variantSet's variantChildren list includes the variant's name",
+    "variant specs report specifier=over (Specifier value 1 inlined) per document-model-productions/variant-spec.contract.json#laws",
+    "variant specs do not author typeName; if a 'typeName' FIELDS token binds to a form-10 spec the parser must either ignore it (matching USDA storage) or emit a diagnostic per document-model-productions/variant-spec.contract.json#laws",
+    "variantSelection (type 45) decodes to a native VariantSelectionMap with empty-string values preserved; string-keyed JSON storage is forbidden",
+    "variantChildren on a variantSet spec is maintained by usd-document-model in agreement with stored variant specs; mismatch is a contract violation",
+    "variantSetChildren on a containing prim or variant spec includes every variantSet spec name materialized as a child; this is distinct from the authored variantSetNames listOp on the prim",
+    "nested variantSets inside variants follow the same parent-child invariants; a form-11 spec whose path descends through a variant is valid",
+    "parent-kind validation: the parser walks the path back through PATHS and confirms the parent spec kind matches the expected nesting (variantSet under prim/variant; variant under variantSet); mismatch emits MalformedUsdcSection"
+  ],
+  "golden_groups": [
+    "Crate form 11 spec decodes to a variantSet spec under the parent prim",
+    "Crate form 10 spec decodes to a variant spec under the parent variantSet",
+    "variant specs report specifier=over with unauthored typeName",
+    "multiple variants under one variantSet produce a populated variantChildren list",
+    "nested variantSet inside a variant decoded correctly",
+    "variantSelection (type 45) round-trip with empty-string variant selections preserved",
+    "variantSetChildren on prim maintained in agreement with stored variantSet specs",
+    "variantSetNames (prim-only listOp<token>) distinct from variantSetChildren (spec storage)",
+    "parent-kind validation: form-11 spec parented to an attribute emits MalformedUsdcSection"
+  ],
+  "golden_files": [
+    "goldens/integration/usdc-single-layer/variant-specs.json",
+    "goldens/integration/usdc-single-layer/prim-metadata-composition.json"
+  ]
+}

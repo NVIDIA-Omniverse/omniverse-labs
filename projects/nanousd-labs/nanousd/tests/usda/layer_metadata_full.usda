@@ -1,0 +1,20 @@
+#usda 1.0
+(
+    defaultPrim = "Root"
+    timeCodesPerSecond = 24
+    framesPerSecond = 24
+    startTimeCode = 1
+    endTimeCode = 240
+    doc = "Full layer metadata test"
+    customLayerData = {
+        string creator = "aitinyusd_test"
+        int version = 1
+        dictionary nested = {
+            bool flag = true
+        }
+    }
+)
+
+def Xform "Root"
+{
+}

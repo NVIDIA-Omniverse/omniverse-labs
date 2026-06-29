@@ -1,0 +1,32 @@
+{
+  "measurement_model": {
+    "id": "cli_process_smoke",
+    "description": "End-to-end command invocation for checked-in USDC fixtures. Timings include process startup, input file read, binary decoding, JSON serialization, and process teardown. Use this as a regression smoke check, not as the final Crate parser performance contract."
+  },
+  "targets": [
+    {
+      "id": "minimal_empty_usdc_parse",
+      "fixture": "benchmarks/fixtures/minimal_empty.usdc",
+      "runs": 10,
+      "max_ms": 150.0
+    },
+    {
+      "id": "one_root_prim_usdc_parse",
+      "fixture": "benchmarks/fixtures/one_root_prim.usdc",
+      "runs": 10,
+      "max_ms": 150.0
+    },
+    {
+      "id": "nested_prims_attributes_usdc_parse",
+      "fixture": "benchmarks/fixtures/nested_prims_attributes.usdc",
+      "runs": 10,
+      "max_ms": 200.0
+    },
+    {
+      "id": "relationship_targets_usdc_parse",
+      "fixture": "benchmarks/fixtures/relationship_targets.usdc",
+      "runs": 10,
+      "max_ms": 200.0
+    }
+  ]
+}

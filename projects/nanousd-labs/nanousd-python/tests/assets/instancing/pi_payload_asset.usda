@@ -1,0 +1,10 @@
+#usda 1.0
+(
+    defaultPrim = "Pawn"
+)
+
+def Xform "Pawn" (
+    prepend payload = @./pi_payload_geom.usda@
+)
+{
+}

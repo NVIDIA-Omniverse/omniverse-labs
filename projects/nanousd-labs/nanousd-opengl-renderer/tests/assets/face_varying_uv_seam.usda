@@ -1,0 +1,20 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+)
+
+def Xform "World"
+{
+    def Mesh "SeamedQuad"
+    {
+        int[] faceVertexCounts = [3, 3]
+        int[] faceVertexIndices = [0, 1, 2, 0, 2, 3]
+        point3f[] points = [(0, 0, 0), (1, 0, 0), (1, 1, 0), (0, 1, 0)]
+        texCoord2f[] primvars:st = [
+            (0, 0), (1, 0), (1, 1),
+            (0.25, 0.25), (0, 1), (0.5, 0.5)
+        ]
+        int[] primvars:st:indices = [0, 1, 2, 3, 4, 5]
+        token primvars:st:interpolation = "faceVarying"
+    }
+}

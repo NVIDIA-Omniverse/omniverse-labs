@@ -1,0 +1,21 @@
+#usda 1.0
+
+# [snippet:doc-multi-render-product-shared-vars]
+def "Render" {
+    def RenderProduct "FrontCamera" {
+        rel camera = </World/FrontCamera>
+        rel orderedVars = [<../Vars/LdrColor>]
+    }
+
+    def RenderProduct "RearCamera" {
+        rel camera = </World/RearCamera>
+        rel orderedVars = [<../Vars/LdrColor>]
+    }
+
+    def "Vars" {
+        def RenderVar "LdrColor" {
+            string sourceName = "LdrColor"
+        }
+    }
+}
+# [/snippet:doc-multi-render-product-shared-vars]

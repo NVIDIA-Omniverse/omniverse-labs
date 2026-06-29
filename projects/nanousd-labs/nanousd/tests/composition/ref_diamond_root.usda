@@ -1,0 +1,10 @@
+#usda 1.0
+
+def Xform "Prim" (
+    prepend references = [
+        @./ref_diamond_a.usda@</A>,
+        @./ref_diamond_b.usda@</B>
+    ]
+)
+{
+}

@@ -1,0 +1,125 @@
+#usda 1.0
+(
+    "Specializes-arc test fixture (composition arc resolution)."
+    "Mirrors the spec-audited cases from"
+    " proof/sandboxes/specializes/goldens/specializes-basic.json"
+    " on branch eslavin/specializes-regen-prep, scoped to the eight"
+    " non-cycle cases this v1 port covers."
+    "Cycle cases (direct_cycle, transitive_cycle) use a different"
+    " convention here than the sandbox impl: nanousd's resolve loop"
+    " converges via ConsumedArcs + depth-limit rather than emitting"
+    " an explicit 'cycle detected' error. Both are spec-permissible"
+    " (the spec is silent on cycle handling for specializes per"
+    " composition.md lines 88-89 being sublayer-only)."
+)
+
+# case: single_specialize — /A specializes /B; /A merges B's opinions.
+def "Single_A" (
+    specializes = </Single_B>
+)
+{
+    int aVal = 1
+}
+def "Single_B"
+{
+    int bVal = 2
+    int shared = 10
+}
+
+# case: multi_target_specialize — list-op order preserved (first strongest).
+def "Multi_A" (
+    specializes = [</Multi_B>, </Multi_C>]
+)
+{
+}
+def "Multi_B"
+{
+    int bVal = 1
+    int conflict = 100
+}
+def "Multi_C"
+{
+    int cVal = 2
+    int conflict = 200
+}
+
+# case: dangling_target — composition error per spec §10.5.1 lines 459-461
+# (carried via spec line 535: "exactly the same as inherits").
+def "Dangling_A" (
+    specializes = </Missing_For_Specialize_Dangling>
+)
+{
+}
+
+# case: specialize_deeper_namespace — target lives under /SpecLib.
+def "Deeper_A" (
+    specializes = </SpecLib/Base>
+)
+{
+}
+def "SpecLib"
+{
+    def "Base"
+    {
+        int baseVal = 42
+    }
+}
+
+# case: specialize_from_prim_with_no_specializes — terminal target, no chain.
+def "NoChain_A" (
+    specializes = </NoChain_B>
+)
+{
+}
+def "NoChain_B"
+{
+    int val = 1
+}
+
+# case: specialize_namespace_mapping — /B's children become /A's children
+# (spec line 540: namespace mapping for specializes is identical to inherits).
+def "Mapping_A" (
+    specializes = </Mapping_B>
+)
+{
+}
+def "Mapping_B"
+{
+    int parentVal = 1
+    def "Child"
+    {
+        int childVal = 2
+    }
+}
+
+# case: specialize_opinions_weaker_than_direct — direct authoring wins
+# (LIVRPS: Local strength 0 outranks Specialize strength 6).
+def "Strength_A" (
+    specializes = </Strength_B>
+)
+{
+    int val = 1
+}
+def "Strength_B"
+{
+    int val = 999
+}
+
+# case: chained_specialize — /A specializes /B; /B specializes /C.
+# Each level walks the next, so /A's resolved opinions include both /B's
+# and /C's contributions, all under /A's namespace via composed mappings.
+def "Chained_A" (
+    specializes = </Chained_B>
+)
+{
+}
+def "Chained_B" (
+    specializes = </Chained_C>
+)
+{
+    int bVal = 2
+}
+def "Chained_C"
+{
+    int cVal = 3
+}

@@ -1,0 +1,524 @@
+{
+  "suite": "usd-document-model-basic",
+  "contract": "contracts/handles/document-model.handle.json",
+  "spec_commit": "v1.0.1",
+  "cases": [
+    {
+      "id": "empty-layer-has-layer-spec",
+      "input": {
+        "ops": [
+          {"op": "dump_layer"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "dump_layer",
+            "ok": true,
+            "layer": {
+              "fields": {
+                "primChildren": {"type": "token[]", "value": []}
+              },
+              "specs": {
+                "/": {
+                  "kind": "layer",
+                  "fields": {
+                    "primChildren": {"type": "token[]", "value": []}
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "core-field-token-vocabulary",
+      "input": {
+        "ops": [
+          {"op": "inspect_token_storage"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "inspect_token_storage",
+            "ok": true,
+            "fieldKeyModel": "token",
+            "tokenValueModel": "token",
+            "typeNameParameterModel": "token",
+            "fieldValueModel": "typed_field_value_container",
+            "specializedFieldValueModel": "typed_domain_payloads",
+            "typedFieldReadModel": "inspect_then_checked_read",
+            "numericFieldPayloadModel": "native_numeric_payloads",
+            "foundationalPayloadCatalogModel": "complete_foundational_catalog",
+            "semanticAliasPayloadModel": "alias_role_plus_underlying_type",
+            "shapePayloadModel": "typed_dimensioned_quat_matrix_shapes",
+            "adapterNumberModel": "json_number_text_on_output",
+            "jsonStorageModel": "on_demand_only",
+            "pathKeyModel": "path_ref",
+            "pathParameterModel": "path_ref",
+            "pathTextApiOwner": "usd-paths",
+            "knownFieldCount": 66,
+            "requiredFieldTokens": [
+              "primChildren",
+              "propertyChildren",
+              "variantSetChildren",
+              "specifier",
+              "typeName",
+              "custom",
+              "variability",
+              "targetPaths"
+            ],
+            "fieldTokenIdentityStable": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "prim-hierarchy-and-child-lists",
+      "input": {
+        "ops": [
+          {"op": "add_prim", "parent": "/", "specifier": "def", "name": "World", "typeName": "Xform"},
+          {"op": "add_prim", "parent": "/World", "specifier": "over", "name": "Geom"},
+          {"op": "add_prim", "parent": "/World", "specifier": "class", "name": "Rig"},
+          {"op": "add_prim", "parent": "/World/Geom", "specifier": "def", "name": "Mesh", "typeName": "Mesh"},
+          {"op": "dump_layer"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "add_prim", "ok": true, "path": "/World"},
+          {"op": "add_prim", "ok": true, "path": "/World/Geom"},
+          {"op": "add_prim", "ok": true, "path": "/World/Rig"},
+          {"op": "add_prim", "ok": true, "path": "/World/Geom/Mesh"},
+          {
+            "op": "dump_layer",
+            "ok": true,
+            "layer": {
+              "fields": {
+                "primChildren": {"type": "token[]", "value": ["World"]}
+              },
+              "specs": {
+                "/": {
+                  "kind": "layer",
+                  "fields": {
+                    "primChildren": {"type": "token[]", "value": ["World"]}
+                  }
+                },
+                "/World": {
+                  "kind": "prim",
+                  "fields": {
+                    "specifier": {"type": "specifier", "value": "def"},
+                    "typeName": {"type": "token", "value": "Xform"},
+                    "primChildren": {"type": "token[]", "value": ["Geom", "Rig"]},
+                    "propertyChildren": {"type": "token[]", "value": []},
+                    "variantSetChildren": {"type": "token[]", "value": []}
+                  }
+                },
+                "/World/Geom": {
+                  "kind": "prim",
+                  "fields": {
+                    "specifier": {"type": "specifier", "value": "over"},
+                    "primChildren": {"type": "token[]", "value": ["Mesh"]},
+                    "propertyChildren": {"type": "token[]", "value": []},
+                    "variantSetChildren": {"type": "token[]", "value": []}
+                  }
+                },
+                "/World/Geom/Mesh": {
+                  "kind": "prim",
+                  "fields": {
+                    "specifier": {"type": "specifier", "value": "def"},
+                    "typeName": {"type": "token", "value": "Mesh"},
+                    "primChildren": {"type": "token[]", "value": []},
+                    "propertyChildren": {"type": "token[]", "value": []},
+                    "variantSetChildren": {"type": "token[]", "value": []}
+                  }
+                },
+                "/World/Rig": {
+                  "kind": "prim",
+                  "fields": {
+                    "specifier": {"type": "specifier", "value": "class"},
+                    "primChildren": {"type": "token[]", "value": []},
+                    "propertyChildren": {"type": "token[]", "value": []},
+                    "variantSetChildren": {"type": "token[]", "value": []}
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "properties-and-field-storage",
+      "input": {
+        "ops": [
+          {"op": "add_prim", "parent": "/", "specifier": "def", "name": "World", "typeName": "Xform"},
+          {"op": "add_prim", "parent": "/World", "specifier": "def", "name": "Materials"},
+          {"op": "add_prim", "parent": "/World/Materials", "specifier": "def", "name": "Preview", "typeName": "Material"},
+          {
+            "op": "add_attribute",
+            "parent": "/World",
+            "name": "points",
+            "fields": {
+              "custom": {"type": "bool", "value": false},
+              "variability": {"type": "variability", "value": "varying"},
+              "typeName": {"type": "token", "value": "point3f[]"},
+              "default": {"type": "point3f[]", "value": [[0.0, 1.0, 2.0]]}
+            }
+          },
+          {
+            "op": "add_relationship",
+            "parent": "/World",
+            "name": "material:binding",
+            "fields": {
+              "custom": {"type": "bool", "value": false},
+              "documentation": {"type": "string", "value": "binding target"},
+              "targetPaths": {
+                "type": "listop<ObjectPath>",
+                "value": {
+                  "explicit": ["/World/Materials/Preview"],
+                  "prepend": [],
+                  "append": [],
+                  "delete": []
+                }
+              }
+            }
+          },
+          {"op": "dump_layer"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "add_prim", "ok": true, "path": "/World"},
+          {"op": "add_prim", "ok": true, "path": "/World/Materials"},
+          {"op": "add_prim", "ok": true, "path": "/World/Materials/Preview"},
+          {"op": "add_attribute", "ok": true, "path": "/World.points"},
+          {"op": "add_relationship", "ok": true, "path": "/World.material:binding"},
+          {
+            "op": "dump_layer",
+            "ok": true,
+            "layer": {
+              "fields": {
+                "primChildren": {"type": "token[]", "value": ["World"]}
+              },
+              "specs": {
+                "/": {
+                  "kind": "layer",
+                  "fields": {
+                    "primChildren": {"type": "token[]", "value": ["World"]}
+                  }
+                },
+                "/World": {
+                  "kind": "prim",
+                  "fields": {
+                    "specifier": {"type": "specifier", "value": "def"},
+                    "typeName": {"type": "token", "value": "Xform"},
+                    "primChildren": {"type": "token[]", "value": ["Materials"]},
+                    "propertyChildren": {"type": "token[]", "value": ["points", "material:binding"]},
+                    "variantSetChildren": {"type": "token[]", "value": []}
+                  }
+                },
+                "/World/Materials": {
+                  "kind": "prim",
+                  "fields": {
+                    "specifier": {"type": "specifier", "value": "def"},
+                    "primChildren": {"type": "token[]", "value": ["Preview"]},
+                    "propertyChildren": {"type": "token[]", "value": []},
+                    "variantSetChildren": {"type": "token[]", "value": []}
+                  }
+                },
+                "/World/Materials/Preview": {
+                  "kind": "prim",
+                  "fields": {
+                    "specifier": {"type": "specifier", "value": "def"},
+                    "typeName": {"type": "token", "value": "Material"},
+                    "primChildren": {"type": "token[]", "value": []},
+                    "propertyChildren": {"type": "token[]", "value": []},
+                    "variantSetChildren": {"type": "token[]", "value": []}
+                  }
+                },
+                "/World.points": {
+                  "kind": "attribute",
+                  "fields": {
+                    "custom": {"type": "bool", "value": false},
+                    "variability": {"type": "variability", "value": "varying"},
+                    "typeName": {"type": "token", "value": "point3f[]"},
+                    "default": {"type": "point3f[]", "value": [[0.0, 1.0, 2.0]]}
+                  }
+                },
+                "/World.material:binding": {
+                  "kind": "relationship",
+                  "fields": {
+                    "custom": {"type": "bool", "value": false},
+                    "documentation": {"type": "string", "value": "binding target"},
+                    "targetPaths": {
+                      "type": "listop<ObjectPath>",
+                      "value": {
+                        "explicit": ["/World/Materials/Preview"],
+                        "prepend": [],
+                        "append": [],
+                        "delete": []
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "field-setting-and-active-preservation",
+      "input": {
+        "ops": [
+          {"op": "add_prim", "parent": "/", "specifier": "def", "name": "World", "typeName": "Xform"},
+          {"op": "set_field", "path": "/", "field": "defaultPrim", "value": {"type": "token", "value": "World"}},
+          {"op": "set_field", "path": "/", "field": "customLayerData", "value": {"type": "dictionary", "value": {"owner": {"type": "string", "value": "layout"}}}},
+          {"op": "set_field", "path": "/World", "field": "active", "value": {"type": "bool", "value": false}},
+          {"op": "set_field", "path": "/World", "field": "primOrder", "value": {"type": "token[]", "value": ["Ghost", "Child"]}},
+          {"op": "dump_layer"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "add_prim", "ok": true, "path": "/World"},
+          {"op": "set_field", "ok": true, "path": "/", "field": "defaultPrim"},
+          {"op": "set_field", "ok": true, "path": "/", "field": "customLayerData"},
+          {"op": "set_field", "ok": true, "path": "/World", "field": "active"},
+          {"op": "set_field", "ok": true, "path": "/World", "field": "primOrder"},
+          {
+            "op": "dump_layer",
+            "ok": true,
+            "layer": {
+              "fields": {
+                "primChildren": {"type": "token[]", "value": ["World"]},
+                "defaultPrim": {"type": "token", "value": "World"},
+                "customLayerData": {"type": "dictionary", "value": {"owner": {"type": "string", "value": "layout"}}}
+              },
+              "specs": {
+                "/": {
+                  "kind": "layer",
+                  "fields": {
+                    "primChildren": {"type": "token[]", "value": ["World"]},
+                    "defaultPrim": {"type": "token", "value": "World"},
+                    "customLayerData": {"type": "dictionary", "value": {"owner": {"type": "string", "value": "layout"}}}
+                  }
+                },
+                "/World": {
+                  "kind": "prim",
+                  "fields": {
+                    "specifier": {"type": "specifier", "value": "def"},
+                    "typeName": {"type": "token", "value": "Xform"},
+                    "primChildren": {"type": "token[]", "value": []},
+                    "propertyChildren": {"type": "token[]", "value": []},
+                    "variantSetChildren": {"type": "token[]", "value": []},
+                    "active": {"type": "bool", "value": false},
+                    "primOrder": {"type": "token[]", "value": ["Ghost", "Child"]}
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "typed-field-inspection-and-checked-reads",
+      "input": {
+        "ops": [
+          {"op": "add_prim", "parent": "/", "specifier": "def", "name": "World", "typeName": "Xform"},
+          {"op": "set_field", "path": "/", "field": "defaultPrim", "value": {"type": "token", "value": "World"}},
+          {"op": "set_field", "path": "/World", "field": "active", "value": {"type": "bool", "value": false}},
+          {
+            "op": "add_attribute",
+            "parent": "/World",
+            "name": "points",
+            "fields": {
+              "custom": {"type": "bool", "value": false},
+              "variability": {"type": "variability", "value": "varying"},
+              "typeName": {"type": "token", "value": "point3f[]"},
+              "default": {"type": "point3f[]", "value": [[0.0, 1.0, 2.0]]}
+            }
+          },
+          {
+            "op": "add_attribute",
+            "parent": "/World",
+            "name": "orientation",
+            "fields": {
+              "custom": {"type": "bool", "value": false},
+              "variability": {"type": "variability", "value": "uniform"},
+              "typeName": {"type": "token", "value": "quatf"},
+              "default": {"type": "quatf", "value": [0.0, 0.0, 0.0, 1.0]}
+            }
+          },
+          {
+            "op": "add_attribute",
+            "parent": "/World",
+            "name": "transform",
+            "fields": {
+              "custom": {"type": "bool", "value": false},
+              "variability": {"type": "variability", "value": "uniform"},
+              "typeName": {"type": "token", "value": "matrix4d"},
+              "default": {"type": "matrix4d", "value": [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0]}
+            }
+          },
+          {
+            "op": "add_attribute",
+            "parent": "/World",
+            "name": "roughness",
+            "fields": {
+              "custom": {"type": "bool", "value": false},
+              "variability": {"type": "variability", "value": "uniform"},
+              "typeName": {"type": "token", "value": "half"},
+              "default": {"type": "half", "value": 0.5}
+            }
+          },
+          {"op": "get_field_type", "path": "/", "field": "defaultPrim"},
+          {"op": "read_field_as", "path": "/", "field": "defaultPrim", "as": "token"},
+          {"op": "read_field_as", "path": "/", "field": "defaultPrim", "as": "string"},
+          {"op": "get_field_type", "path": "/World", "field": "active"},
+          {"op": "read_field_as", "path": "/World", "field": "active", "as": "bool"},
+          {"op": "get_field_type", "path": "/World.points", "field": "typeName"},
+          {"op": "read_field_as", "path": "/World.points", "field": "typeName", "as": "token"},
+          {"op": "get_field_type", "path": "/World.points", "field": "default"},
+          {"op": "inspect_field_value", "path": "/World.points", "field": "default"},
+          {"op": "read_field_as", "path": "/World.points", "field": "default", "as": "point3f[]"},
+          {"op": "read_field_as", "path": "/World.points", "field": "default", "as": "float3[]"},
+          {"op": "read_field_as", "path": "/World.points", "field": "default", "as": "double3[]"},
+          {"op": "inspect_field_value", "path": "/World.orientation", "field": "default"},
+          {"op": "inspect_field_value", "path": "/World.transform", "field": "default"},
+          {"op": "inspect_field_value", "path": "/World.roughness", "field": "default"},
+          {"op": "get_field_type", "path": "/World", "field": "missingField"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "add_prim", "ok": true, "path": "/World"},
+          {"op": "set_field", "ok": true, "path": "/", "field": "defaultPrim"},
+          {"op": "set_field", "ok": true, "path": "/World", "field": "active"},
+          {"op": "add_attribute", "ok": true, "path": "/World.points"},
+          {"op": "add_attribute", "ok": true, "path": "/World.orientation"},
+          {"op": "add_attribute", "ok": true, "path": "/World.transform"},
+          {"op": "add_attribute", "ok": true, "path": "/World.roughness"},
+          {"op": "get_field_type", "ok": true, "exists": true, "type": "token"},
+          {"op": "read_field_as", "ok": true, "type": "token", "value": "World"},
+          {
+            "op": "read_field_as",
+            "ok": false,
+            "diagnostic": {
+              "code": "TypeMismatch",
+              "message": "stored field value type does not agree with requested type",
+              "path": "/",
+              "field": "defaultPrim",
+              "storedType": "token",
+              "requestedType": "string"
+            }
+          },
+          {"op": "get_field_type", "ok": true, "exists": true, "type": "bool"},
+          {"op": "read_field_as", "ok": true, "type": "bool", "value": false},
+          {"op": "get_field_type", "ok": true, "exists": true, "type": "token"},
+          {"op": "read_field_as", "ok": true, "type": "token", "value": "point3f[]"},
+          {"op": "get_field_type", "ok": true, "exists": true, "type": "point3f[]"},
+          {"op": "inspect_field_value", "ok": true, "exists": true, "type": "point3f[]", "payloadKind": "array", "storageType": "float3[]", "arrayElementType": "point3f", "arrayElementKind": "semanticAlias", "underlyingType": "float3", "semanticRole": "point", "elementType": "float", "shape": [3], "isArray": true, "isValueBlock": false},
+          {"op": "read_field_as", "ok": true, "type": "point3f[]", "value": [[0.0, 1.0, 2.0]]},
+          {"op": "read_field_as", "ok": true, "type": "float3[]", "value": [[0.0, 1.0, 2.0]]},
+          {
+            "op": "read_field_as",
+            "ok": false,
+            "diagnostic": {
+              "code": "TypeMismatch",
+              "message": "stored field value type does not agree with requested type",
+              "path": "/World.points",
+              "field": "default",
+              "storedType": "point3f[]",
+              "requestedType": "double3[]"
+            }
+          },
+          {"op": "inspect_field_value", "ok": true, "exists": true, "type": "quatf", "payloadKind": "quaternion", "storageType": "quatf", "elementType": "float", "shape": [4], "componentOrder": "i,j,k,w", "isArray": false, "isValueBlock": false},
+          {"op": "inspect_field_value", "ok": true, "exists": true, "type": "matrix4d", "payloadKind": "matrix", "storageType": "matrix4d", "elementType": "double", "shape": [4, 4], "order": "row-major", "isArray": false, "isValueBlock": false},
+          {"op": "inspect_field_value", "ok": true, "exists": true, "type": "half", "payloadKind": "scalar", "storageType": "half", "scalarDomain": "floating", "numericPrecision": "f16", "isArray": false, "isValueBlock": false},
+          {"op": "get_field_type", "ok": true, "exists": false}
+        ]
+      }
+    },
+    {
+      "id": "duplicate-and-parent-validation",
+      "input": {
+        "ops": [
+          {"op": "add_prim", "parent": "/", "specifier": "def", "name": "World"},
+          {"op": "add_prim", "parent": "/", "specifier": "over", "name": "World"},
+          {"op": "add_attribute", "parent": "/World", "name": "size", "fields": {"custom": {"type": "bool", "value": false}, "typeName": {"type": "token", "value": "float"}, "variability": {"type": "variability", "value": "uniform"}}},
+          {"op": "add_relationship", "parent": "/World", "name": "size", "fields": {"custom": {"type": "bool", "value": false}}},
+          {"op": "add_attribute", "parent": "/", "name": "rootProp", "fields": {"custom": {"type": "bool", "value": false}}},
+          {"op": "add_prim", "parent": "/Missing", "specifier": "def", "name": "Child"},
+          {"op": "add_prim", "parent": "/", "specifier": "def", "name": "bad:name"},
+          {"op": "set_field", "path": "/Missing", "field": "active", "value": {"type": "bool", "value": true}},
+          {"op": "dump_layer"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "add_prim", "ok": true, "path": "/World"},
+          {"op": "add_prim", "ok": false, "diagnostic": {"code": "DuplicateSpecPath", "message": "duplicate spec path", "path": "/World"}},
+          {"op": "add_attribute", "ok": true, "path": "/World.size"},
+          {"op": "add_relationship", "ok": false, "diagnostic": {"code": "DuplicateSpecPath", "message": "duplicate spec path", "path": "/World.size"}},
+          {"op": "add_attribute", "ok": false, "diagnostic": {"code": "InvalidParentSpec", "message": "invalid parent spec kind", "path": "/"}},
+          {"op": "add_prim", "ok": false, "diagnostic": {"code": "MissingParentSpec", "message": "missing parent spec", "path": "/Missing"}},
+          {"op": "add_prim", "ok": false, "diagnostic": {"code": "InvalidName", "message": "invalid identifier"}},
+          {"op": "set_field", "ok": false, "diagnostic": {"code": "MissingSpecPath", "message": "missing spec path", "path": "/Missing"}},
+          {
+            "op": "dump_layer",
+            "ok": true,
+            "layer": {
+              "fields": {
+                "primChildren": {"type": "token[]", "value": ["World"]}
+              },
+              "specs": {
+                "/": {
+                  "kind": "layer",
+                  "fields": {
+                    "primChildren": {"type": "token[]", "value": ["World"]}
+                  }
+                },
+                "/World": {
+                  "kind": "prim",
+                  "fields": {
+                    "specifier": {"type": "specifier", "value": "def"},
+                    "primChildren": {"type": "token[]", "value": []},
+                    "propertyChildren": {"type": "token[]", "value": ["size"]},
+                    "variantSetChildren": {"type": "token[]", "value": []}
+                  }
+                },
+                "/World.size": {
+                  "kind": "attribute",
+                  "fields": {
+                    "custom": {"type": "bool", "value": false},
+                    "typeName": {"type": "token", "value": "float"},
+                    "variability": {"type": "variability", "value": "uniform"}
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

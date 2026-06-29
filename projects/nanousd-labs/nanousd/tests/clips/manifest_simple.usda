@@ -1,0 +1,15 @@
+#usda 1.0
+(
+    doc = "Manifest for value clips Phase 3 tests per §12.3.4.3. The manifest declares which attributes a clip set provides values for; only attribute paths are observed by GetManifestAttributePaths."
+)
+
+def Scope "Geo"
+{
+    float radius
+    color3f color
+
+    def Scope "Child"
+    {
+        double opacity
+    }
+}

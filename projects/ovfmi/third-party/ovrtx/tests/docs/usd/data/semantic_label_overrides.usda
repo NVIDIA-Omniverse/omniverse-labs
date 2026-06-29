@@ -1,0 +1,31 @@
+#usda 1.0
+# [snippet:doc-semantic-label-overrides]
+(
+    subLayers = [
+        @semantic_label_base.usda@
+    ]
+)
+
+over "World"
+{
+    over "robot_alpha" (
+        prepend apiSchemas = ["SemanticsAPI:label", "SemanticsAPI:class"]
+    )
+    {
+        string semantic:class:params:semanticData = "robot"
+        string semantic:class:params:semanticType = "class"
+        string semantic:label:params:semanticData = "robot_alpha"
+        string semantic:label:params:semanticType = "label"
+    }
+
+    over "robot_beta" (
+        prepend apiSchemas = ["SemanticsAPI:label", "SemanticsAPI:class"]
+    )
+    {
+        string semantic:class:params:semanticData = "robot"
+        string semantic:class:params:semanticType = "class"
+        string semantic:label:params:semanticData = "robot_beta"
+        string semantic:label:params:semanticType = "label"
+    }
+}
+# [/snippet:doc-semantic-label-overrides]

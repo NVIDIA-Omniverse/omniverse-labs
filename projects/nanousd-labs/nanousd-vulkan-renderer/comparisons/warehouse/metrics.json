@@ -1,0 +1,225 @@
+{
+  "generated_at": "2026-06-08T11:36:24.936134+00:00",
+  "set": "warehouse",
+  "reference": "OVRTX 0.3 (nanousdview _backend, path-traced)",
+  "resolution": [
+    768,
+    768
+  ],
+  "lighting": "shared authored rig: constant-color DomeLight + bbox-positioned Key/Fill SphereLights (NUVIEW_OVRTX_DEFAULT_LIGHTING=0 so OVRTX uses it too)",
+  "assets": [
+    {
+      "label": "warehouse",
+      "note": "Isaac Sim Simple_Warehouse/full_warehouse.usd (interior, local PBR materials)",
+      "wrapper": "wrappers/warehouse.usda",
+      "up_axis": "Z",
+      "cams": [
+        {
+          "cam": "camA",
+          "ovrtx_png": "frames/warehouse_camA_ovrtx.png",
+          "rt_png": "frames/warehouse_camA_vk_rt.png",
+          "raster_png": "frames/warehouse_camA_vk_raster.png",
+          "compare_png": "warehouse_camA_compare.png",
+          "camera": {
+            "eye": [
+              -2.0,
+              -16.0,
+              1.9
+            ],
+            "target": [
+              -6.0,
+              22.0,
+              1.4
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 50.0,
+            "near_clip": 0.05,
+            "far_clip": 400.0,
+            "horizontal_aperture": 46.630765815499856,
+            "vertical_aperture": 46.630765815499856,
+            "focal_length": 50.0,
+            "bounds_min": [
+              -28.000015495005876,
+              -41.399999167125486,
+              -0.009031959357294762
+            ],
+            "bounds_max": [
+              24.999999441206455,
+              33.41809409823629,
+              9.300001081840897
+            ]
+          },
+          "metrics_rt": {
+            "rms": 48.86909866333008,
+            "mae": 37.255645751953125,
+            "silhouette_iou": 0.955653932820498,
+            "mean_ref_rgb": [
+              85.11026000976562,
+              88.95675659179688,
+              89.66946411132812
+            ],
+            "mean_test_rgb": [
+              82.0447006225586,
+              86.36566925048828,
+              91.21495056152344
+            ]
+          },
+          "metrics_raster": {
+            "rms": 46.21360397338867,
+            "mae": 34.940765380859375,
+            "silhouette_iou": 0.8615282278696913,
+            "mean_ref_rgb": [
+              85.11026000976562,
+              88.95675659179688,
+              89.66946411132812
+            ],
+            "mean_test_rgb": [
+              86.22349548339844,
+              88.54971313476562,
+              90.2537841796875
+            ]
+          },
+          "mean_rgb": {
+            "ovrtx": [
+              85.11026000976562,
+              88.95675659179688,
+              89.66946411132812
+            ],
+            "vk_rt": [
+              82.0447006225586,
+              86.36566925048828,
+              91.21495056152344
+            ],
+            "vk_raster": [
+              86.22349548339844,
+              88.54971313476562,
+              90.2537841796875
+            ]
+          },
+          "timings": {
+            "ovrtx_seconds": 30.923825052101165,
+            "rt": {
+              "meshes": 1787,
+              "load_seconds": 31.72551738587208,
+              "render_seconds": 3.050955902086571,
+              "gpu_memory_gib": 0.05103197693824768
+            },
+            "raster": {
+              "meshes": 1787,
+              "load_seconds": 30.32893201103434,
+              "render_seconds": 0.011204424081370234,
+              "gpu_memory_gib": 0.006376028060913086
+            }
+          }
+        },
+        {
+          "cam": "camB",
+          "ovrtx_png": "frames/warehouse_camB_ovrtx.png",
+          "rt_png": "frames/warehouse_camB_vk_rt.png",
+          "raster_png": "frames/warehouse_camB_vk_raster.png",
+          "compare_png": "warehouse_camB_compare.png",
+          "camera": {
+            "eye": [
+              3.5,
+              -6.0,
+              2.6
+            ],
+            "target": [
+              -14.0,
+              20.0,
+              1.0
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 50.0,
+            "near_clip": 0.05,
+            "far_clip": 400.0,
+            "horizontal_aperture": 46.630765815499856,
+            "vertical_aperture": 46.630765815499856,
+            "focal_length": 50.0,
+            "bounds_min": [
+              -28.000015495005876,
+              -41.399999167125486,
+              -0.009031959357294762
+            ],
+            "bounds_max": [
+              24.999999441206455,
+              33.41809409823629,
+              9.300001081840897
+            ]
+          },
+          "metrics_rt": {
+            "rms": 55.64301300048828,
+            "mae": 42.52516174316406,
+            "silhouette_iou": 0.9362573714177199,
+            "mean_ref_rgb": [
+              73.37189483642578,
+              72.93492126464844,
+              70.20892333984375
+            ],
+            "mean_test_rgb": [
+              77.35979461669922,
+              79.73824310302734,
+              83.4576187133789
+            ]
+          },
+          "metrics_raster": {
+            "rms": 48.653587341308594,
+            "mae": 35.55391311645508,
+            "silhouette_iou": 0.8764091808481959,
+            "mean_ref_rgb": [
+              73.37189483642578,
+              72.93492126464844,
+              70.20892333984375
+            ],
+            "mean_test_rgb": [
+              85.33448028564453,
+              86.17298889160156,
+              86.20763397216797
+            ]
+          },
+          "mean_rgb": {
+            "ovrtx": [
+              73.37189483642578,
+              72.93492126464844,
+              70.20892333984375
+            ],
+            "vk_rt": [
+              77.35979461669922,
+              79.73824310302734,
+              83.4576187133789
+            ],
+            "vk_raster": [
+              85.33448028564453,
+              86.17298889160156,
+              86.20763397216797
+            ]
+          },
+          "timings": {
+            "ovrtx_seconds": 25.7536955261603,
+            "rt": {
+              "meshes": 1787,
+              "load_seconds": 30.24909307784401,
+              "render_seconds": 0.6966366509441286,
+              "gpu_memory_gib": 0.05103197693824768
+            },
+            "raster": {
+              "meshes": 1787,
+              "load_seconds": 30.50897316308692,
+              "render_seconds": 0.009704060852527618,
+              "gpu_memory_gib": 0.006376028060913086
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "contact_sheet": "contact_sheet.png"
+}

@@ -1,0 +1,7 @@
+#usda 1.0
+
+over "Prim"
+{
+    string opinion = "sublayer_over"
+    float subOnly = 10.0
+}

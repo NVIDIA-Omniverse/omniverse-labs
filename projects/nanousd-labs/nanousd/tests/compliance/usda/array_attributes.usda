@@ -1,0 +1,8 @@
+#usda 1.0
+
+def Xform "Root" {
+    float[] arrayF = [1.0, 2.0, 3.0]
+    half[] arrayH = [0.000000059604644775390625, 1.5, -2.0]
+    int[] arrayI = [10, 20, 30]
+    double[] arrayD = [1.5, 2.5, 3.5]
+}

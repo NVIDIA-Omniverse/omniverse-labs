@@ -1,0 +1,74 @@
+{
+  "suite": "usda-relationship-listops",
+  "contract": "contracts/usda-productions/relationship-specs.contract.json",
+  "spec_commit": "v1.0.1",
+  "cases": [
+    {
+      "id": "relationship-target-forms-and-listops",
+      "spec_refs": [
+        "file_formats/README.md:1120 Relationship Specs",
+        "file_formats/README.md:1147 ListOpRelationship",
+        "file_formats/README.md:1171 Relationship Values"
+      ],
+      "input": {
+        "usda": "#usda 1.0\n\ndef \"World\"\n{\n    rel explicitTarget = </A>\n    append rel appendedTargets = [</B>, </C>]\n    rel emptyTargets = None\n}\n"
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "layer": {
+          "fields": {
+            "primChildren": {"type": "token[]", "value": ["World"]}
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "primChildren": {"type": "token[]", "value": ["World"]}
+              }
+            },
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": ["explicitTarget", "appendedTargets", "emptyTargets"]},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World.explicitTarget": {
+              "kind": "relationship",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "targetPaths": {
+                  "type": "listop<ObjectPath>",
+                  "value": {"explicit": ["/A"], "prepend": [], "append": [], "delete": []}
+                }
+              }
+            },
+            "/World.appendedTargets": {
+              "kind": "relationship",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "targetPaths": {
+                  "type": "listop<ObjectPath>",
+                  "value": {"explicit": [], "prepend": [], "append": ["/B", "/C"], "delete": []}
+                }
+              }
+            },
+            "/World.emptyTargets": {
+              "kind": "relationship",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "targetPaths": {
+                  "type": "listop<ObjectPath>",
+                  "value": {"explicit": [], "prepend": [], "append": [], "delete": []}
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

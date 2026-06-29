@@ -1,0 +1,52 @@
+mdl 1.8;
+import ::df::*;
+import ::tex::*;
+
+export material mask_selection_pbr(
+    float4 ColorAlbedo = float4(0.25, 0.50, 0.75, 1.0),
+    uniform texture_2d AlbedoTexture = texture_2d("./albedo_D.png", ::tex::gamma_srgb),
+    uniform texture_2d MaskSelection = texture_2d("./mask_M.png", ::tex::gamma_linear),
+    uniform texture_2d MergeMapInput = texture_2d("./merge_ORM.png", ::tex::gamma_linear)
+) = material(
+    surface: material_surface(
+        scattering: df::diffuse_reflection_bsdf(
+            tint: color(1.0, 1.0, 1.0),
+            roughness: 0.5)
+    )
+);
+
+export material body_mask_pbr(
+    float4 Body = float4(0.15, 0.25, 0.35, 1.0),
+    float4 Handle = float4(0.45, 0.55, 0.65, 1.0),
+    float4 Cap = float4(0.75, 0.85, 0.95, 1.0),
+    uniform texture_2d AlbedoTexture = texture_2d("./albedo_D.png", ::tex::gamma_srgb),
+    uniform texture_2d MaskSelection = texture_2d("./mask_M.png", ::tex::gamma_linear)
+) = material(
+    surface: material_surface(
+        scattering: df::diffuse_reflection_bsdf(
+            tint: color(1.0, 1.0, 1.0),
+            roughness: 0.5)
+    )
+);
+
+export material emissive_product_pbr(
+    float Param = 3.0,
+    uniform texture_2d AlbedoTexture = texture_2d("./albedo_D.png", ::tex::gamma_srgb),
+    uniform texture_2d EmissiveMask = texture_2d("./mask_M.png", ::tex::gamma_linear)
+) =
+    let {
+        float4 Local0 = tex::lookup_float4(
+            AlbedoTexture, float2(0.0, 0.0), tex::wrap_repeat, tex::wrap_repeat);
+        float4 Local1 = tex::lookup_float4(
+            EmissiveMask, float2(0.0, 0.0), tex::wrap_repeat, tex::wrap_repeat);
+        float3 Local2 = float3(Local0.x, Local0.y, Local0.z) *
+                        float3(Local1.x, Local1.y, Local1.z) * Param;
+        float3 EmissiveColor_mdl = Local2;
+    } in
+    material(
+        surface: material_surface(
+            scattering: df::diffuse_reflection_bsdf(
+                tint: color(1.0, 1.0, 1.0),
+                roughness: 0.5)
+        )
+    );

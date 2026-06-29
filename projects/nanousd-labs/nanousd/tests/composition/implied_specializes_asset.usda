@@ -1,0 +1,48 @@
+#usda 1.0
+(
+    defaultPrim = "Asset"
+)
+
+class "class_Base"
+{
+    int assetBaseVal = 130
+    int baseConflictVal = 130
+
+    def "BaseChild"
+    {
+        int assetBaseChildVal = 131
+    }
+}
+
+class "class_Asset" (
+    specializes = </class_Base>
+)
+{
+    int assetClassVal = 30
+    int classConflictVal = 30
+    int localBeatsSpecializesVal = 30
+
+    def "SharedChild"
+    {
+        int assetChildVal = 31
+    }
+}
+
+class "assetOnlyClass"
+{
+    int assetOnlyClassVal = 50
+}
+
+def "Asset" (
+    specializes = </class_Asset>
+)
+{
+    int assetLocalVal = 40
+    int localBeatsSpecializesVal = 40
+}
+
+def "NoUpstream" (
+    specializes = </assetOnlyClass>
+)
+{
+}

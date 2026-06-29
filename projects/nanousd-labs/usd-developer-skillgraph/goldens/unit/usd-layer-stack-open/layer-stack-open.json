@@ -1,0 +1,296 @@
+{
+  "suite": "usd-layer-stack-open",
+  "contract": "contracts/handles/layer-stack-open.handle.json",
+  "spec_commit": "v1.0.1",
+  "cases": [
+    {
+      "id": "loads-direct-sublayers",
+      "input": {
+        "rootLocation": "root.usda",
+        "resources": {
+          "root.usda": "#usda 1.0\n(\n    subLayers = [\n        @asset.usda@,\n        @anim.usda@ (offset = 24; scale = 0.5)\n    ]\n    defaultPrim = \"World\"\n)\n\nover \"World\" (\n    kind = \"assembly\"\n)\n{\n    token visibility = \"inherited\"\n}\n",
+          "asset.usda": "#usda 1.0\n\ndef Xform \"World\"\n{\n    def Mesh \"Geom\"\n    {\n    }\n    float size = 2\n}\n",
+          "anim.usda": "#usda 1.0\n\nover \"World\"\n{\n    def Scope \"Rig\"\n    {\n    }\n}\n"
+        },
+        "ops": [
+          {"op": "open_layer_stack"},
+          {"op": "inspect_source"},
+          {"op": "layer_stack_summary"},
+          {"op": "prim_input", "path": "/World"},
+          {"op": "prim_input", "path": "/World/Geom"},
+          {"op": "prim_input", "path": "/World/Rig"},
+          {"op": "property_input", "path": "/World.size"},
+          {"op": "property_input", "path": "/World.visibility"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "open_layer_stack", "ok": true},
+          {
+            "op": "inspect_source",
+            "ok": true,
+            "mode": "layer_stack",
+            "composition": "partial",
+            "value_resolution": "partial",
+            "payload_loading": "absent",
+            "instancing": "absent",
+            "schema_fallbacks": "absent",
+            "child_ordering": "composed",
+            "property_ordering": "composed"
+          },
+          {
+            "op": "layer_stack_summary",
+            "ok": true,
+            "layers": [
+              {"identifier": "root.usda", "resolvedLocation": "root.usda", "strengthIndex": 0, "offset": 0.0, "scale": 1.0},
+              {"identifier": "asset.usda", "resolvedLocation": "asset.usda", "strengthIndex": 1, "offset": 0.0, "scale": 1.0},
+              {"identifier": "anim.usda", "resolvedLocation": "anim.usda", "strengthIndex": 2, "offset": 24.0, "scale": 0.5}
+            ],
+            "diagnostics": []
+          },
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/World",
+            "exists": true,
+            "kind": "prim",
+            "fields": {
+              "specifier": {"type": "specifier", "value": "def"},
+              "typeName": {"type": "token", "value": "Xform"},
+              "kind": {"type": "string", "value": "assembly"},
+              "primChildren": {"type": "token[]", "value": []},
+              "propertyChildren": {"type": "token[]", "value": ["visibility"]},
+              "variantSetChildren": {"type": "token[]", "value": []}
+            },
+            "childNames": ["Geom", "Rig"],
+            "propertyNames": ["size", "visibility"],
+            "contributingLayers": ["root.usda", "asset.usda", "anim.usda"]
+          },
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/World/Geom",
+            "exists": true,
+            "kind": "prim",
+            "fields": {
+              "specifier": {"type": "specifier", "value": "def"},
+              "typeName": {"type": "token", "value": "Mesh"},
+              "primChildren": {"type": "token[]", "value": []},
+              "propertyChildren": {"type": "token[]", "value": []},
+              "variantSetChildren": {"type": "token[]", "value": []}
+            },
+            "childNames": [],
+            "propertyNames": [],
+            "contributingLayers": ["asset.usda"]
+          },
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/World/Rig",
+            "exists": true,
+            "kind": "prim",
+            "fields": {
+              "specifier": {"type": "specifier", "value": "def"},
+              "typeName": {"type": "token", "value": "Scope"},
+              "primChildren": {"type": "token[]", "value": []},
+              "propertyChildren": {"type": "token[]", "value": []},
+              "variantSetChildren": {"type": "token[]", "value": []}
+            },
+            "childNames": [],
+            "propertyNames": [],
+            "contributingLayers": ["anim.usda"]
+          },
+          {
+            "op": "property_input",
+            "ok": true,
+            "path": "/World.size",
+            "exists": true,
+            "kind": "attribute",
+            "fields": {
+              "custom": {"type": "bool", "value": false},
+              "typeName": {"type": "token", "value": "float"},
+              "variability": {"type": "variability", "value": "varying"},
+              "default": {"type": "float", "value": 2.0}
+            },
+            "contributingLayers": ["asset.usda"]
+          },
+          {
+            "op": "property_input",
+            "ok": true,
+            "path": "/World.visibility",
+            "exists": true,
+            "kind": "attribute",
+            "fields": {
+              "custom": {"type": "bool", "value": false},
+              "typeName": {"type": "token", "value": "token"},
+              "variability": {"type": "variability", "value": "varying"},
+              "default": {"type": "token", "value": "inherited"}
+            },
+            "contributingLayers": ["root.usda"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "missing-sublayer-resource",
+      "input": {
+        "rootLocation": "root.usda",
+        "resources": {
+          "root.usda": "#usda 1.0\n(\n    subLayers = [@missing.usda@]\n)\n\ndef \"World\"\n{\n}\n"
+        },
+        "ops": [
+          {"op": "open_layer_stack"}
+        ]
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {
+            "code": "OpenSublayerFailed",
+            "message": "Failed to open sublayer missing.usda"
+          }
+        ],
+        "results": [
+          {"op": "open_layer_stack", "ok": false}
+        ]
+      }
+    },
+    {
+      "id": "unsupported-sublayer-scheme",
+      "input": {
+        "rootLocation": "root.usda",
+        "resources": {
+          "root.usda": "#usda 1.0\n(\n    subLayers = [@https://example.invalid/asset.usda@]\n)\n\ndef \"World\"\n{\n}\n"
+        },
+        "ops": [
+          {"op": "open_layer_stack"}
+        ]
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {
+            "code": "UnsupportedSublayerResource",
+            "message": "Unsupported sublayer resource scheme for https://example.invalid/asset.usda"
+          }
+        ],
+        "results": [
+          {"op": "open_layer_stack", "ok": false}
+        ]
+      }
+    },
+    {
+      "id": "loads-recursive-sublayers",
+      "input": {
+        "rootLocation": "root.usda",
+        "resources": {
+          "root.usda": "#usda 1.0\n(\n    subLayers = [\n        @asset.usda@,\n        @anim.usda@\n    ]\n)\n",
+          "asset.usda": "#usda 1.0\n(\n    subLayers = [@nested.usda@ (offset = 48; scale = 2)]\n)\n\ndef \"World\"\n{\n}\n",
+          "nested.usda": "#usda 1.0\n\ndef \"NestedOnly\"\n{\n}\n",
+          "anim.usda": "#usda 1.0\n\ndef \"AnimOnly\"\n{\n}\n"
+        },
+        "ops": [
+          {"op": "open_layer_stack"},
+          {"op": "layer_stack_summary"},
+          {"op": "prim_input", "path": "/World"},
+          {"op": "prim_input", "path": "/NestedOnly"},
+          {"op": "prim_input", "path": "/AnimOnly"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "open_layer_stack", "ok": true},
+          {
+            "op": "layer_stack_summary",
+            "ok": true,
+            "layers": [
+              {"identifier": "root.usda", "resolvedLocation": "root.usda", "strengthIndex": 0, "offset": 0.0, "scale": 1.0},
+              {"identifier": "asset.usda", "resolvedLocation": "asset.usda", "strengthIndex": 1, "offset": 0.0, "scale": 1.0},
+              {"identifier": "nested.usda", "resolvedLocation": "nested.usda", "strengthIndex": 2, "offset": 48.0, "scale": 2.0},
+              {"identifier": "anim.usda", "resolvedLocation": "anim.usda", "strengthIndex": 3, "offset": 0.0, "scale": 1.0}
+            ],
+            "diagnostics": []
+          },
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/World",
+            "exists": true,
+            "kind": "prim",
+            "fields": {
+              "specifier": {"type": "specifier", "value": "def"},
+              "primChildren": {"type": "token[]", "value": []},
+              "propertyChildren": {"type": "token[]", "value": []},
+              "variantSetChildren": {"type": "token[]", "value": []}
+            },
+            "childNames": [],
+            "propertyNames": [],
+            "contributingLayers": ["asset.usda"]
+          },
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/NestedOnly",
+            "exists": true,
+            "kind": "prim",
+            "fields": {
+              "specifier": {"type": "specifier", "value": "def"},
+              "primChildren": {"type": "token[]", "value": []},
+              "propertyChildren": {"type": "token[]", "value": []},
+              "variantSetChildren": {"type": "token[]", "value": []}
+            },
+            "childNames": [],
+            "propertyNames": [],
+            "contributingLayers": ["nested.usda"]
+          },
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/AnimOnly",
+            "exists": true,
+            "kind": "prim",
+            "fields": {
+              "specifier": {"type": "specifier", "value": "def"},
+              "primChildren": {"type": "token[]", "value": []},
+              "propertyChildren": {"type": "token[]", "value": []},
+              "variantSetChildren": {"type": "token[]", "value": []}
+            },
+            "childNames": [],
+            "propertyNames": [],
+            "contributingLayers": ["anim.usda"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "recursive-sublayer-cycle-diagnostic",
+      "input": {
+        "rootLocation": "root.usda",
+        "resources": {
+          "root.usda": "#usda 1.0\n(\n    subLayers = [@a.usda@]\n)\n",
+          "a.usda": "#usda 1.0\n(\n    subLayers = [@b.usda@]\n)\n",
+          "b.usda": "#usda 1.0\n(\n    subLayers = [@a.usda@]\n)\n"
+        },
+        "ops": [
+          {"op": "open_layer_stack"}
+        ]
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {
+            "code": "SublayerCycle",
+            "message": "Cycle detected while loading sublayer a.usda"
+          }
+        ],
+        "results": [
+          {"op": "open_layer_stack", "ok": false}
+        ]
+      }
+    }
+  ]
+}

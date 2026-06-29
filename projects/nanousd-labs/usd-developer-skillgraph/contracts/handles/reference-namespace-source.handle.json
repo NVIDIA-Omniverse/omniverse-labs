@@ -1,0 +1,162 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/reference-namespace-source.handle.json",
+  "title": "USD Reference Namespace Source Contract",
+  "version": "0.1",
+  "spec_commit": "v1.0.1",
+  "capability_contracts": [
+    "contracts/capabilities/namespace-source.json",
+    "contracts/capabilities/semantic-runtime-types.json",
+    "contracts/capabilities/composition-provenance.json"
+  ],
+  "dependency_contracts": [
+    "contracts/handles/layer-stack-namespace-source.handle.json",
+    "contracts/handles/document-model.handle.json",
+    "contracts/handles/path.handle.json",
+    "contracts/handles/token.handle.json",
+    "contracts/handles/foundational-values.handle.json"
+  ],
+  "coverage_contracts": [
+    "contracts/spec-coverage/reference-composition.coverage.json"
+  ],
+  "scope": {
+    "included": [
+      "wrapping a base NamespaceSource with bounded reference composition",
+      "reading source-visible references fields from base and referenced prim inputs",
+      "path-only internal references within the base layer-stack namespace",
+      "external reference arcs using already-opened supplied reference layers",
+      "asset-only reference target selection through referenced layer defaultPrim",
+      "mapping reference target prims and descendants under the referring prim path",
+      "bounded recursive or chained reference expansion across supplied referenced layers",
+      "composed namespace mapping through chained reference targets",
+      "remapping path-valued field contents authored under referenced specs into the referring namespace",
+      "local opinions stronger than referenced opinions",
+      "same-reference-family strength ordering by namespace depth and source-visible authored list order",
+      "reference-family-only prim/property opinion views or equivalent separable provenance for downstream composition consumers",
+      "arc-local layerRelocates authored in referenced layer stacks and applied to references introduced from those layer stacks",
+      "recoverable ancestral-relocate diagnostics for invalid nested relocate source paths in referenced layer stacks",
+      "effective population specifier selection across local and referenced specs",
+      "ordered child prim name composition across local and referenced specs",
+      "ordered property name composition across local and referenced specs",
+      "diagnostics for missing referenced layers, missing target prims, and recursive reference cycles"
+    ],
+    "deferred": [
+      "reference asset resolution and resource opening",
+      "resolver search paths, callbacks, contexts, and repository policy",
+      "payload loading and payload load policy",
+      "inherits, specializes, variants, root-layer relocates, and value clips",
+      "cross-layer reference listOp composition",
+      "dictionary merging across references",
+      "attribute value resolution, time sample interpolation, and layer offsets",
+      "schema fallback properties",
+      "stage population and instancing"
+    ]
+  },
+  "model": {
+    "ReferenceNamespaceSource": "A namespace-source provider backed by a base NamespaceSource plus already-opened referenced Layers or single-layer roots of referenced layer stacks.",
+    "BaseNamespaceSource": "The stronger local namespace input, usually produced by usd-layer-stack-namespace-source.",
+    "ReferenceArc": "A source-visible Reference item from a prim's references field, with optional asset, optional target path, offset, and scale.",
+    "ReferenceLayerSet": "Already-opened document-model Layers supplied by authored reference asset identifier. A richer implementation may supply layer stacks, but this bounded contract only requires a layer root per asset identifier.",
+    "ReferenceMapping": "The target prim path in a referenced layer mapped to the referring prim path in the base namespace.",
+    "RecursiveReferenceClosure": "The finite set of direct and nested reference arcs reachable from source-visible referenced target subtrees using supplied already-opened layers.",
+    "ContributingSources": "Adapter rendering of strong-to-weak ContributingOpinion records. Domain records store source identity separately from semantic spec paths."
+  },
+  "operations": {
+    "build_source": {
+      "input": {
+        "baseSource": "target-native NamespaceSource",
+        "referenceLayers": "already-opened document-model Layers or bounded layer-stack roots keyed by authored reference asset identifier"
+      },
+      "output": {
+        "source": "target-native ReferenceNamespaceSource or diagnostics"
+      }
+    },
+    "inspect_source": {
+      "input": {},
+      "output": {
+        "mode": "composed_namespace",
+        "composition": "partial",
+        "value_resolution": "partial",
+        "payload_loading": "absent",
+        "instancing": "absent",
+        "schema_fallbacks": "absent",
+        "child_ordering": "composed",
+        "property_ordering": "composed"
+      }
+    },
+    "reference_summary": {
+      "input": {},
+      "output": {
+        "references": "reference arcs in the bounded closure with primPath, asset, targetPath, offset, and scale",
+        "diagnostics": "source construction diagnostics"
+      }
+    },
+    "prim_input": {
+      "input": {
+        "path": "absolute prim path or /"
+      },
+      "output": {
+        "exists": "whether base or referenced specs contribute a prim-like input at the path",
+        "kind": "layer, prim, or missing",
+        "fields": "population-facing composed field map",
+        "childNames": "composed child prim names before stage mask or active filtering",
+        "propertyNames": "composed property names before schema fallback injection",
+        "contributingSources": "strong-to-weak base or reference contributors"
+      }
+    },
+    "property_input": {
+      "input": {
+        "path": "property path"
+      },
+      "output": {
+        "exists": "whether base or referenced specs contribute an attribute or relationship at the path",
+        "kind": "attribute, relationship, or missing",
+        "fields": "strongest authored field per field key",
+        "contributingSources": "strong-to-weak base or reference contributors"
+      }
+    },
+    "prim_opinions": {
+      "input": {
+        "path": "absolute prim path, variant-selection prim path, or /"
+      },
+      "output": {
+        "opinions": "strong-to-weak base and referenced scene-object opinions before variant evaluation"
+      }
+    }
+  },
+  "laws": [
+    "the reference source consumes a base NamespaceSource and must not require stage population to know whether opinions came from local layers or references",
+    "the reference source consumes supplied document-model Layers for referenced assets and must not open files or resolve assets",
+    "reference source records must retain referring prim paths, referenced target paths, and mapped contributor paths as semantic path handles/references rather than raw strings",
+    "reference contributingSources domain data must be typed ContributingOpinion records, not composite source:path strings",
+    "local base-source opinions are stronger than referenced opinions",
+    "when multiple reference arcs contribute to the same exposed scene path, reference arcs authored deeper in namespace are stronger than reference arcs authored higher in namespace",
+    "when multiple sibling reference arcs authored at the same prim contribute to the same exposed scene path, source-visible authored list order is preserved as strong-to-weak order",
+    "a referenced target prim maps to the referring prim path, and descendants are mapped by replacing the target prefix with the referring prim path",
+    "nested references authored inside supplied referenced target subtrees must be expanded transitively while referenced layers are available; each nested reference maps into the exposed namespace by composing the parent reference mapping with the nested reference target mapping",
+    "when a nested reference is authored inside a referenced layer stack that has layerRelocates, the nested reference record must carry that layer stack's relocate namespace mapping in addition to the normal reference target mapping",
+    "arc-local relocate mappings on reference records must hide source paths, map relocated target paths back to the remote source specs, suppress stale target collisions from the referenced target layer, and preserve target-local opinions from the relocating layer as stronger than relocated source opinions",
+    "childNames and propertyNames emitted by a reference source must be derived from mapped target paths, not copied directly from referenced layer tokens, so relocate targets, deletes, and nested relocate descendants are reflected in the exposed namespace",
+    "recursive reference expansion must retain each contributing opinion as a reference-family opinion with typed provenance until the composition arbitrator applies LIVERPS arbitration",
+    "the reference source must preserve enough separable reference-family opinion data for downstream providers, such as relocates, to consume referenced opinions at a path without also consuming local base-source opinions at that same path",
+    "recursive reference expansion must detect cycles by authored asset identifier, referenced target path, referring prim path, and accumulated namespace mapping context; cycles must be diagnosed and must not recurse unboundedly or crash generated implementations",
+    "path-valued field contents authored on referenced prims or properties, including listOp<ObjectPath> targetPaths and connectionPaths, must be remapped by replacing the referenced target prefix with the referring prim path before the fields are emitted",
+    "referenced targetPaths and connectionPaths elements outside the referenced target subtree are pruned in this bounded external-reference provider instead of being emitted in referenced-layer coordinates",
+    "for path-only internal references within the same layer-stack namespace, targetPaths and connectionPaths elements outside the referenced target subtree remain in the shared composed namespace rather than being pruned",
+    "for recursive external references, path-valued field remapping must use the accumulated namespace mapping; out-of-subtree elements are pruned unless the arc is same-namespace and already in composed coordinates",
+    "for recursive external references with arc-local relocates, path-valued field remapping must use the accumulated reference mapping plus the arc-local relocate mapping; paths inside deleted relocate sources are pruned",
+    "path-valued field remapping is namespace composition and does not imply full listOp composition, dictionary merging, value resolution, or layer-offset application",
+    "asset-only references use the referenced layer defaultPrim; a missing defaultPrim must be diagnosed",
+    "a missing supplied reference layer must be diagnosed with the authored asset identifier",
+    "a missing referenced target prim must be diagnosed with the authored asset and target path",
+    "reference layer offsets are reported but are not applied to time samples, splines, clips, timecode-valued fields, or attribute values",
+    "for non-special field keys in this first contract, field maps expose the strongest authored field value and do not combine dictionaries, listOps, time samples, or values",
+    "childNames returned by this source are already composition-ordered; stage population must preserve this order for sources declaring child_ordering=composed",
+    "propertyNames returned by this source are already composition-ordered; stage population must preserve this order for sources declaring property_ordering=composed",
+    "adapter JSON may seed base and referenced layers for conformance tests, but domain APIs exchange NamespaceSource, Layer, path, token, and field value objects"
+  ],
+  "adapter_protocol": {
+    "input": "A JSON file containing one case with rootLayer, optional sublayers map, optional referenceLayers map, and an ops array. The adapter constructs a base layer-stack namespace source before constructing the reference namespace source.",
+    "output": "A JSON object with ok, diagnostics, and results."
+  }
+}

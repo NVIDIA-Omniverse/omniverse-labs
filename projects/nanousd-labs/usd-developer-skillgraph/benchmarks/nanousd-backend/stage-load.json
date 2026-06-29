@@ -1,0 +1,55 @@
+{
+  "suite": "nanousd-backend-stage-load",
+  "contract": "contracts/performance/nanousd-readonly-backend.performance.json",
+  "measurement_model": {
+    "id": "nanousd_c_api_stage_load_v1",
+    "description": "Runs nanousd tests/benchmark_stage_load through nanousdapi with NANOUSD_BACKEND set per backend. Measures stage open, traversal, diagnostics, stage stats, and RSS."
+  },
+  "runs": 5,
+  "targets": [
+    {
+      "id": "tiny_layer",
+      "fixture": "benchmarks/fixtures/tiny.usda",
+      "selection_metric": "total_ms"
+    },
+    {
+      "id": "large_flat_prim",
+      "fixture": "benchmarks/fixtures/large_flat_prim.usda",
+      "selection_metric": "total_ms"
+    },
+    {
+      "id": "many_attributes",
+      "fixture": "benchmarks/fixtures/many_attributes.usda",
+      "selection_metric": "total_ms"
+    }
+  ],
+  "comparisons": [
+    {
+      "id": "generated_vs_default_open_large_flat",
+      "target": "large_flat_prim",
+      "metric": "open_ms",
+      "numerator_backend": "generated",
+      "denominator_backend": "nanousd_default",
+      "max_ratio": 2.0,
+      "required": false
+    },
+    {
+      "id": "generated_vs_default_traverse_large_flat",
+      "target": "large_flat_prim",
+      "metric": "traverse_ns_per_prim",
+      "numerator_backend": "generated",
+      "denominator_backend": "nanousd_default",
+      "max_ratio": 2.0,
+      "required": false
+    },
+    {
+      "id": "generated_vs_default_rss_large_flat",
+      "target": "large_flat_prim",
+      "metric": "rss_delta_bytes_per_prim",
+      "numerator_backend": "generated",
+      "denominator_backend": "nanousd_default",
+      "max_ratio": 2.0,
+      "required": false
+    }
+  ]
+}

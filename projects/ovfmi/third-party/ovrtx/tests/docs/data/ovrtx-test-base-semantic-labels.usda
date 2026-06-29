@@ -1,0 +1,21 @@
+#usda 1.0
+# [snippet:doc-test-base-semantic-class-layer]
+over "World"
+{
+    over "logo" (
+        prepend apiSchemas = ["SemanticsAPI:class"]
+    )
+    {
+        string semantic:class:params:semanticData = "logo"
+        string semantic:class:params:semanticType = "class"
+    }
+
+    over "Plane" (
+        prepend apiSchemas = ["SemanticsAPI:class"]
+    )
+    {
+        string semantic:class:params:semanticData = "ground"
+        string semantic:class:params:semanticType = "class"
+    }
+}
+# [/snippet:doc-test-base-semantic-class-layer]

@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/identifier-scanner.json",
+  "title": "USD Identifier Scanner Capability",
+  "version": "0.1",
+  "spec_commit": "v1.0.1",
+  "purpose": "Define the reusable semantic boundary for recognizing USD identifiers embedded inside larger grammars.",
+  "scope": {
+    "included": [
+      "UTF-8 decoding validity policy",
+      "XID_Start or underscore first-code-point policy",
+      "XID_Continue or underscore subsequent-code-point policy",
+      "single identifier span scanning from an offset",
+      "single identifier continuation code point scanning from an offset",
+      "namespaced property names as colon-separated identifier components",
+      "keywordless identifier validation where the caller requests it"
+    ],
+    "excluded": [
+      "path delimiter sequencing",
+      "variant selection punctuation",
+      "USDA string, number, asset, or comment lexing",
+      "schema-specific allowed-name policies"
+    ]
+  },
+  "model": {
+    "IdentifierScanner": "Target-native capability that consumes an identifier or identifier continuation span from caller-owned text and returns the next offset or a structured failure.",
+    "IdentifierSpan": "A non-owning or owning view of the matched source span. The contract does not require string allocation.",
+    "NameMode": "Caller-selected mode such as identifier component, namespaced property name, or keywordless identifier. The provider owns the name validity rules for each exposed mode."
+  },
+  "operations": {
+    "scan_identifier": {
+      "input": {
+        "text": "UTF-8 source text",
+        "offset": "starting offset in target-native text units at a code point boundary",
+        "mode": "identifier component or other provider-defined name mode"
+      },
+      "output": {
+        "ok": "boolean",
+        "end": "offset immediately after the matched identifier on success",
+        "span": "matched source span, view, or equivalent target-native representation"
+      }
+    },
+    "scan_identifier_continue": {
+      "input": {
+        "text": "UTF-8 source text",
+        "offset": "starting offset in target-native text units at a code point boundary"
+      },
+      "output": {
+        "ok": "boolean",
+        "end": "offset immediately after one valid identifier-continuation code point"
+      }
+    },
+    "validate_identifier": {
+      "input": {
+        "text": "candidate identifier text",
+        "mode": "identifier component, namespaced property name, or keywordless identifier"
+      },
+      "output": {
+        "canonical": "validated identifier text or provider-native validated name value"
+      }
+    }
+  },
+  "consumption_rules": {
+    "default": "A dependent skill that consumes this capability must delegate identifier recognition and UTF-8/XID validity to the provider rather than reimplementing it locally.",
+    "allowed_consumer_logic": [
+      "caller grammar delimiters and sequencing",
+      "caller-specific punctuation around identifiers",
+      "error-message mapping",
+      "zero-allocation or view-based glue around the provider capability"
+    ],
+    "forbidden_consumer_logic": [
+      "independent UTF-8 decode policy",
+      "independent XID start/continue policy",
+      "local identifier validity rules that can diverge from the provider"
+    ],
+    "performance_exception": {
+      "allowed": true,
+      "meaning": "A consumer may use a target-local fast path only when the provider interface would violate the consumer's declared performance contract.",
+      "requirements": [
+        "the exception is declared in the graph or target report",
+        "the local fast path remains semantically bound to this provider contract",
+        "the consumer passes the provider conformance tests for the consumed subset",
+        "the consumer passes its own conformance tests and performance targets",
+        "the target documents why the provider interface is insufficient before forking the local fast path"
+      ],
+      "preference_order": [
+        "improve the provider capability API so the consumer can use it directly",
+        "add a provider-owned performance-oriented entrypoint",
+        "use a declared target-local fast path as a last resort"
+      ]
+    }
+  }
+}

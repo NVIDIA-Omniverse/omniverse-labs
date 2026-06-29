@@ -1,0 +1,4 @@
+interface:
+  display_name: "Layered Boundary Refactor"
+  short_description: "Refactor toward layered contracts"
+  default_prompt: "Refactor this project toward clear layered boundaries, canonical contracts, and thin adapters while preserving behavior."

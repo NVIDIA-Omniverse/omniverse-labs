@@ -1,0 +1,14 @@
+#usda 1.0
+(
+    defaultPrim = "Template"
+)
+
+def Xform "Template"
+{
+    int fromRef = 42
+
+    def Scope "RefChild"
+    {
+        int refValue = 99
+    }
+}

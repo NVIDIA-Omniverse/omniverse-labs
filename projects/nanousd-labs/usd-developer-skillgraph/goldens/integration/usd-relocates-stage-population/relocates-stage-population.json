@@ -1,0 +1,165 @@
+{
+  "suite": "usd-relocates-stage-population",
+  "contract": "contracts/handles/stage-population.handle.json",
+  "spec_tag": "v1.0.1",
+  "spec_commit": "v1.0.1",
+  "cases": [
+    {
+      "id": "relocated-tree-populates-stage",
+      "input": {
+        "rootLayer": {
+          "identifier": "root.usda",
+          "fields": {
+            "primChildren": {"type": "token[]", "value": ["Root"]},
+            "defaultPrim": {"type": "token", "value": "Root"},
+            "layerRelocates": {
+              "type": "Relocates",
+              "value": {"/Root/Child": "/Root/Renamed"}
+            }
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "primChildren": {"type": "token[]", "value": ["Root"]},
+                "defaultPrim": {"type": "token", "value": "Root"},
+                "layerRelocates": {
+                  "type": "Relocates",
+                  "value": {"/Root/Child": "/Root/Renamed"}
+                }
+              }
+            },
+            "/Root": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "over"},
+                "references": {
+                  "type": "listop<Reference>",
+                  "value": {
+                    "explicit": [{"asset": "asset.usda", "path": "/Ref", "offset": 0.0, "scale": 1.0}],
+                    "prepend": [],
+                    "append": [],
+                    "delete": []
+                  }
+                },
+                "primChildren": {"type": "token[]", "value": ["Renamed"]},
+                "properties": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/Root/Renamed": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "over"},
+                "kind": {"type": "token", "value": "component"},
+                "primChildren": {"type": "token[]", "value": []},
+                "properties": {"type": "token[]", "value": ["localFlag"]},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/Root/Renamed.localFlag": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "typeName": {"type": "token", "value": "bool"},
+                "variability": {"type": "variability", "value": "uniform"},
+                "default": {"type": "bool", "value": true}
+              }
+            }
+          }
+        },
+        "referenceLayers": {
+          "asset.usda": {
+            "identifier": "asset.usda",
+            "fields": {"primChildren": {"type": "token[]", "value": ["Ref"]}},
+            "specs": {
+              "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["Ref"]}}},
+              "/Ref": {
+                "kind": "prim",
+                "fields": {
+                  "specifier": {"type": "specifier", "value": "def"},
+                  "primChildren": {"type": "token[]", "value": ["Child"]},
+                  "properties": {"type": "token[]", "value": []},
+                  "variantSetChildren": {"type": "token[]", "value": []}
+                }
+              },
+              "/Ref/Child": {
+                "kind": "prim",
+                "fields": {
+                  "specifier": {"type": "specifier", "value": "def"},
+                  "typeName": {"type": "token", "value": "Mesh"},
+                  "primChildren": {"type": "token[]", "value": []},
+                  "properties": {"type": "token[]", "value": ["points"]},
+                  "variantSetChildren": {"type": "token[]", "value": []}
+                }
+              },
+              "/Ref/Child.points": {
+                "kind": "attribute",
+                "fields": {
+                  "custom": {"type": "bool", "value": false},
+                  "typeName": {"type": "token", "value": "point3f[]"},
+                  "variability": {"type": "variability", "value": "varying"},
+                  "default": {"type": "array", "value": []}
+                }
+              }
+            }
+          }
+        },
+        "ops": [
+          {"op": "populate_stage"},
+          {"op": "stage_summary"},
+          {"op": "traverse_prims"},
+          {"op": "prim_summary", "path": "/Root"},
+          {"op": "prim_summary", "path": "/Root/Renamed"},
+          {"op": "prim_summary", "path": "/Root/Child"},
+          {"op": "property_summary", "path": "/Root/Renamed.points"},
+          {"op": "property_summary", "path": "/Root/Renamed.localFlag"},
+          {"op": "property_summary", "path": "/Root/Child.points"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "populate_stage", "ok": true},
+          {"op": "stage_summary", "ok": true, "sourceMode": "composed_namespace", "primCount": 2, "defaultPrim": "/Root", "diagnostics": []},
+          {"op": "traverse_prims", "ok": true, "paths": ["/Root", "/Root/Renamed"]},
+          {"op": "prim_summary", "ok": true, "exists": true, "path": "/Root", "name": "Root", "parent": "/", "children": ["/Root/Renamed"], "properties": [], "typeName": "", "specifier": "def", "active": true, "loaded": true, "defined": true, "abstract": false, "instanceable": false},
+          {"op": "prim_summary", "ok": true, "exists": true, "path": "/Root/Renamed", "name": "Renamed", "parent": "/Root", "children": [], "properties": ["localFlag", "points"], "typeName": "Mesh", "specifier": "def", "active": true, "loaded": true, "defined": true, "abstract": false, "instanceable": false},
+          {"op": "prim_summary", "ok": true, "exists": false, "path": "/Root/Child"},
+          {
+            "op": "property_summary",
+            "ok": true,
+            "exists": true,
+            "path": "/Root/Renamed.points",
+            "kind": "attribute",
+            "owner": "/Root/Renamed",
+            "name": "points",
+            "fields": {
+              "custom": {"type": "bool", "value": false},
+              "typeName": {"type": "token", "value": "point3f[]"},
+              "variability": {"type": "variability", "value": "varying"},
+              "default": {"type": "array", "value": []}
+            }
+          },
+          {
+            "op": "property_summary",
+            "ok": true,
+            "exists": true,
+            "path": "/Root/Renamed.localFlag",
+            "kind": "attribute",
+            "owner": "/Root/Renamed",
+            "name": "localFlag",
+            "fields": {
+              "custom": {"type": "bool", "value": false},
+              "typeName": {"type": "token", "value": "bool"},
+              "variability": {"type": "variability", "value": "uniform"},
+              "default": {"type": "bool", "value": true}
+            }
+          },
+          {"op": "property_summary", "ok": true, "exists": false, "path": "/Root/Child.points"}
+        ]
+      }
+    }
+  ]
+}

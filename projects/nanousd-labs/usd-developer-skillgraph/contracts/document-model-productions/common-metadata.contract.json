@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/document-model-productions/common-metadata.contract.json",
+  "title": "Document-Model Common Metadata Production Contract",
+  "version": "0.1",
+  "spec_commit": "6b4f01f2d6d46b01507481524eb516b4ef358c31",
+  "derives_from": "contracts/capabilities/document-data-model.json#field_identity_model",
+  "spec_refs": [
+    "specification/document_data_model/README.md#spec-form",
+    "specification/file_formats/README.md#common-metadata"
+  ],
+  "summary": "Format-neutral rules for common metadata storage across layer, prim, attribute, relationship, and variant specs. Both USDA and USDC mapping productions cite this contract for the field-vocabulary discipline and listOp subfield semantics shared across formats.",
+  "field_categories": {
+    "shared_across_all_spec_kinds": [
+      "comment",
+      "documentation",
+      "customData",
+      "displayName",
+      "displayGroup",
+      "hidden",
+      "assetInfo"
+    ],
+    "layer_only": [
+      "subLayers",
+      "subLayerOffsets",
+      "defaultPrim",
+      "customLayerData",
+      "framesPerSecond",
+      "timeCodesPerSecond",
+      "startTimeCode",
+      "endTimeCode",
+      "layerRelocates"
+    ],
+    "prim_only_composition_arcs": [
+      "payload",
+      "references",
+      "inheritPaths",
+      "specializes",
+      "variantSetNames",
+      "variantSelection",
+      "kind",
+      "active",
+      "instanceable"
+    ],
+    "attribute_only": [
+      "typeName",
+      "variability",
+      "default",
+      "connectionPaths",
+      "timeSamples",
+      "spline",
+      "allowedTokens"
+    ],
+    "relationship_only": [
+      "targetPaths"
+    ]
+  },
+  "excluded_fields": {
+    "policy": "Strict AOUSD §7.6 conformance (no deprecated / out-of-scope / non-spec field support). The names below are recognized as reserved spec tokens and rejected (ForbiddenFieldOnSpecKind): they are NOT admitted as live fields by spec_kind_field_admission and must NOT be reinterpreted as generic user/extension fields. Tokens with no spec basis at all are removed outright. These were previously carried to mirror OpenUSD's SdfFieldKeys/SdfChildrenKeys; the live vocabulary above is now the AOUSD §7.6 live field set only.",
+    "deprecated": {
+      "spec_ref": "specification/document_data_model/README.md §7.6.1.8 / §7.6.2.7 / §7.6.3.4 / §7.6.4.4 / §7.6.5.2",
+      "layer": ["framePrecision", "hasOwnedSublayers", "owner", "sessionOwner", "startFrame", "endFrame"],
+      "prim": ["relocates", "permission", "prefix", "prefixSubstitutions", "suffix", "suffixSubstitutions", "symmetricPeer", "symmetryArguments", "symmetryFunction"],
+      "attribute": ["connectionChildren", "permission", "prefix", "suffix", "symmetricPeer", "symmetryArguments", "symmetryFunction"],
+      "relationship": ["relationshipTargetChildren", "noLoadHint", "permission", "prefix", "suffix", "symmetricPeer", "symmetryArguments", "symmetryFunction"]
+    },
+    "out_of_scope": {
+      "spec_ref": "specification/document_data_model/README.md §7.6.1.7 / §7.6.4.3",
+      "layer": ["expressionVariables", "colorManagementSystem", "colorConfiguration"],
+      "attribute": ["colorSpace"]
+    },
+    "removed_no_spec_basis": {
+      "note": "Absent from the AOUSD spec and not OpenUSD field keys either; removed outright (were previously listed as attribute fields).",
+      "fields": ["arraySizeConstraint", "limits"]
+    }
+  },
+  "spec_kind_field_admission": {
+    "rule": "Each spec kind admits only the union of (shared_across_all_spec_kinds + that-kind's-specific-fields). A field belonging to a different spec kind's specific set must be rejected, regardless of whether the source format encodes it. Format-specific mapping contracts pin the rejection mechanism (USDA: reserved keyword in metadata context; USDC: field-name token lookup on the matching spec form).",
+    "matrix": {
+      "layer": "shared + layer_only",
+      "prim": "shared + prim_only_composition_arcs + primChildren + propertyChildren + variantSetChildren + primOrder + propertyOrder + typeName + specifier",
+      "attribute": "shared + attribute_only + custom",
+      "relationship": "shared + relationship_only + custom",
+      "variantSet": "shared + variantChildren",
+      "variant": "shared + prim_only_composition_arcs + primChildren + propertyChildren + variantSetChildren + specifier"
+    }
+  },
+  "listop_subfields": {
+    "names": ["explicit", "prepend", "append", "delete", "reorder"],
+    "authored_subfield_rule": "Each listOp field stores up to one value per subfield. When the same subfield is authored multiple times within a single layer (e.g. via repeated prepend statements), last-one-wins per subfield. Cross-layer composition is out of scope.",
+    "single_item_is_explicit": "When a source format authors a single item where a listOp is allowed without an explicit listOp prefix, the result is an explicit listOp containing that one item.",
+    "none_is_empty_subfield": "When a source format authors None where a listOp is allowed, the result is an empty listOp on the named subfield.",
+    "fields_using_listop_semantics": [
+      "references", "payload", "inheritPaths", "specializes", "variantSetNames",
+      "targetPaths", "connectionPaths",
+      "primOrder", "propertyOrder",
+      "allowedTokens (when written as a listOp)"
+    ]
+  },
+  "repeated_field_semantics": {
+    "non_listop_fields": "Within a single source layer, the last authored value wins for a non-listOp metadata field with the same name.",
+    "listop_subfields": "Within a single source layer, the last authored value wins per listOp subfield (not per listOp as a whole)."
+  },
+  "extension_field_rule": {
+    "rule": "Only spellings that are not known core or kind-specific field names may use document-model extension field-token lookup. Reserved spellings collide if used as extension fields; emitting a known field name through the extension path is a violation. Each format's mapping contract enumerates the reserved set (including any format-specific keyword aliases) for that format's parser dispatch.",
+    "interpretation": "Unknown extension metadata fields are validated as field names and interned into the same field-name token identity domain as core fields, but their spelling must not collide with the known core vocabulary."
+  },
+  "diagnostics": {
+    "rule": "All metadata-related diagnostics use stable codes that goldens can match. The canonical shape per contracts/diagnostics.schema.json is {severity, code, message, [path], [line], [column]}.",
+    "codes_format_neutral": [
+      "DuplicateSpecPath",
+      "InvalidFieldAlias",
+      "ForbiddenFieldOnSpecKind",
+      "TypeMismatch"
+    ],
+    "format_specific_codes_must_reduce": "Format-specific diagnostics (InvalidUsdcHeader, UnsupportedUsdcVersion, MalformedUsdcSpecForm, etc., and the USDA equivalents) must reduce to a format-neutral code when surfaced through layer-open dispatch, so the document-model layer can match without format detection."
+  },
+  "laws": [
+    "metadata field-name identity is via token, not raw string keys",
+    "each spec kind admits only the union of shared fields plus its kind-specific fields; emitting a non-admitted field on a spec kind is a contract violation",
+    "listOp metadata uses the {explicit, prepend, append, delete, reorder} subfield set; subfields are stored independently",
+    "a single item authored where a listOp is allowed becomes an explicit listOp",
+    "None authored where a listOp is allowed becomes an empty listOp on the named subfield",
+    "within a single source layer, repeated non-listOp metadata fields use last-one-wins; repeated listOp subfields use last-one-wins per subfield",
+    "every metadata diagnostic must use a stable code that goldens can match exactly",
+    "format-specific diagnostic codes reduce to format-neutral codes when surfaced through layer-open dispatch"
+  ],
+  "golden_groups": [
+    "generic metadata (comment, documentation, displayName, customData) on each spec kind",
+    "layer-only metadata authored on layer spec",
+    "prim-only metadata rejected on attribute, relationship, variantSet, and variant specs",
+    "attribute-only metadata rejected on prim and relationship specs",
+    "relationship-only metadata rejected on prim and attribute specs",
+    "listOp metadata subfield replacement within a single layer",
+    "None listOp metadata producing an empty subfield",
+    "single-item listOp authoring producing an explicit subfield"
+  ]
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Renderer Stalled Parity Triage"
+  short_description: "Reset stalled renderer parity work"
+  default_prompt: "Use $renderer-stalled-parity-triage to stop unbounded beauty tuning, inspect residuals/AOVs by region, record rejected experiments, and choose the next correctness, convergence, denoising, reference-metadata, or performance pivot."

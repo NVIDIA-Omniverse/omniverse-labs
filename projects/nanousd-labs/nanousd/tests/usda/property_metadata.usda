@@ -1,0 +1,50 @@
+#usda 1.0
+
+def Scope "PropertyMetadata"
+{
+    # Attribute with all metadata forms
+    float documented = 1.0 (
+        doc = "A documented float attribute"
+        displayName = "Documented Float"
+        displayGroup = "Test Group"
+        hidden = false
+        customData = {
+            string note = "extra info"
+            int weight = 5
+        }
+    )
+
+    # Custom attribute
+    custom float userDefined = 42.0
+
+    # Uniform attribute
+    uniform string constantVal = "unchanging"
+
+    # Custom uniform
+    custom uniform token renderMode = "smooth"
+
+    # Declaration only (no value)
+    float declared
+
+    # Custom declaration only
+    custom double3 customDeclared
+
+    # Attribute with both custom and uniform
+    custom uniform int flags
+
+    # Relationship with metadata
+    rel material:binding = </Materials/Default> (
+        doc = "Material binding relationship"
+    )
+
+    # Custom relationship
+    custom rel user:link
+
+    # Relationship declaration only
+    rel proxyPrim
+
+    # Attribute with namespace
+    float primvars:st = 0.5
+    color3f inputs:diffuseColor = (0.8, 0.8, 0.8)
+    token outputs:result
+}

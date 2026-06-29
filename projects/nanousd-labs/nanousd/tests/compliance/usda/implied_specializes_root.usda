@@ -1,0 +1,30 @@
+#usda 1.0
+
+over "class_Base"
+{
+    int rootBaseVal = 110
+    int baseConflictVal = 110
+
+    def "BaseChild"
+    {
+        int rootBaseChildVal = 111
+    }
+}
+
+over "class_Asset"
+{
+    int rootClassVal = 10
+    int classConflictVal = 10
+    int localBeatsSpecializesVal = 10
+
+    def "SharedChild"
+    {
+        int rootChildVal = 11
+    }
+}
+
+def "LeftGroup" (
+    references = @./implied_specializes_group.usda@
+)
+{
+}

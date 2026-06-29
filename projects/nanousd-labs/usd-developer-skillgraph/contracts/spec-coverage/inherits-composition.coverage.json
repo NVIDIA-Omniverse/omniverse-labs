@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/spec-coverage/inherits-composition.coverage.json",
+  "title": "USD Inherits Composition Spec Coverage Ledger",
+  "version": "0.1",
+  "spec_tag": "v1.0.1",
+  "spec_commit": "v1.0.1",
+  "normative_source": {
+    "repo": "aousd/specifications-public",
+    "tag": "v1.0.1",
+    "commit": "v1.0.1",
+    "rule": "Only the AOUSD core specification at aousd/specifications-public v1.0.1 is normative for this ledger. This ledger covers bounded direct, recursive, and implied inheritPaths namespace composition."
+  },
+  "status_values": {
+    "implemented": "In scope for the inherits-namespace-source contract and covered by goldens.",
+    "partial": "A bounded subset is included and later contracts must extend it.",
+    "deferred": "Specified behavior intentionally not included in this first inherits contract.",
+    "out_of_scope": "Belongs to another subsystem or future skill."
+  },
+  "coverage_rules": [
+    "The provider composes direct inheritPaths and delegates stage traversal to usd-stage-population.",
+    "The provider consumes a base namespace source, not parser-local USDA syntax.",
+    "A generated target must include bounded recursive direct inherit expansion and implied upstream inherit arcs represented by the base source before claiming this contract.",
+    "A generated target must not claim full value resolution, inherits authored inside selected variants, or unbounded recursive behavior from this provider."
+  ],
+  "items": [
+    {
+      "id": "inherits.direct-inherit-paths",
+      "owner": "usd-inherits-namespace-source",
+      "status": "partial",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:428 Inherits",
+        "aousd/specifications-public@v1.0.1:specification/document_data_model/README.md:722 inheritPaths",
+        "aousd/specifications-public@v1.0.1:specification/file_formats/README.md:1170 InheritsMetadata"
+      ],
+      "obligations": [
+        "Read direct inherit path items from the base source-visible inheritPaths field.",
+        "Map the inherited source prim and descendants onto the inherit-authoring prim path.",
+        "Preserve same-path local layer-stack target opinions as stronger than inherited source opinions.",
+        "Do not flatten weaker reference-introduced target opinions ahead of implied upstream inherited opinions.",
+        "Resolve inherited source paths through the applicable source-visible composed or layer-stack context rather than only through the layer where the inherit arc was authored."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-inherits-namespace-source/inherits-namespace-source.json#inherits-class-tree"
+      ]
+    },
+    {
+      "id": "inherits.path-validation",
+      "owner": "usd-inherits-namespace-source",
+      "status": "implemented",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:specification/document_data_model/README.md:720 ObjectPath value range",
+        "aousd/specifications-public@v1.0.1:specification/document_data_model/README.md:722 inheritPaths"
+      ],
+      "obligations": [
+        "Reject property paths in inherit path items.",
+        "Diagnose a missing inherited prim source path.",
+        "Include the inherit-authoring prim path and inherited source path in diagnostics."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-inherits-namespace-source/inherits-namespace-source.json#missing-inherited-prim"
+      ]
+    },
+    {
+      "id": "inherits.liverps-strength",
+      "owner": "usd-inherits-namespace-source",
+      "status": "partial",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:802 Strength Ordering",
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:820 composition arc order",
+        "aousd/specifications-public@v1.0.1:specification/glossary/README.md:85 LIVERPS"
+      ],
+      "obligations": [
+        "Treat same-path local layer-stack target opinions as stronger than inherited opinions in this bounded source.",
+        "Keep implied upstream inherited opinions stronger than weaker reference-introduced or payload-introduced target opinions.",
+        "Require inherited opinions to be modeled as stronger than variants, relocates, references, payloads, and specializes in LIVERPS.",
+        "Place usd-specializes-namespace-source after usd-inherits-namespace-source in graph evaluation order when specializes are in scope.",
+        "Place usd-variant-namespace-source after the terminal non-variant namespace-source provider so variant selection can observe inherited non-variant opinions.",
+        "Document that evaluation order is distinct from LIVERPS field-strength order."
+      ],
+      "positive_goldens": [
+        "graph/skillgraph.json#usd-inherits-namespace-source",
+        "graph/skillgraph.json#usd-specializes-namespace-source",
+        "graph/skillgraph.json#usd-variant-namespace-source"
+      ]
+    },
+    {
+      "id": "inherits.implied-arcs",
+      "owner": "usd-inherits-namespace-source",
+      "status": "partial",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:442 implied inherit arcs"
+      ],
+      "obligations": [
+        "When an inherit arc authored in a weaker referenced or otherwise introduced layer stack targets an absolute source path, include stronger upstream layer-stack opinions at that same source path as implied inherited contributors.",
+        "Preserve source-visible layer strength among implied inherited contributors.",
+        "Preserve enough target-opinion provenance to avoid weaker reference-introduced fields overriding stronger implied inherited fields.",
+        "Do not diagnose absence of an implied contributor when no upstream layer-stack site contributes at the inherited source path."
+      ]
+    },
+    {
+      "id": "inherits.recursive-expansion",
+      "owner": "usd-inherits-namespace-source",
+      "status": "partial",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:430 inherits composed opinions",
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:438 composition algorithm for each inherit prim path"
+      ],
+      "obligations": [
+        "Expand inherit paths authored on inherited source prims transitively.",
+        "Order a source prim's own opinions stronger than opinions introduced by that source prim's inherit arcs.",
+        "Detect recursive inherit cycles using semantic paths and mapping context; diagnose cycles without unbounded recursion or crashes."
+      ]
+    },
+    {
+      "id": "inherits.stage-population-consumption",
+      "owner": "usd-inherits-namespace-source",
+      "status": "implemented",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:specification/stage_population/README.md:17 stage population",
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:428 Inherits"
+      ],
+      "obligations": [
+        "Expose inherited composed prims and properties through the namespace-source boundary.",
+        "Allow usd-stage-population to populate inherited prims and properties without evaluating inherits itself.",
+        "Preserve composed child and property ordering when consumed by stage population."
+      ],
+      "positive_goldens": [
+        "goldens/integration/usd-inherits-stage-population/inherits-stage-population.json#inherited-tree-populates-stage"
+      ]
+    }
+  ]
+}

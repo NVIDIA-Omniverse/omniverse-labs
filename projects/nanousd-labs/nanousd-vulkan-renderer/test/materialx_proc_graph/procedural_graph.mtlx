@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<materialx version="1.39" colorspace="lin_rec709">
+  <nodegraph name="NG_ProcGraph">
+    <input name="base_tint" type="color3" value="0.25, 0.50, 0.75" />
+    <input name="roughness_amount" type="float" value="0.42" />
+    <input name="uvtiling" type="vector2" value="2.0, 3.0" />
+    <image name="node_image_base" type="color3">
+      <input name="file" type="filename" value="base_color.png" />
+      <input name="uvtiling" type="vector2" interfacename="uvtiling" />
+    </image>
+    <image name="node_image_roughness" type="float">
+      <input name="file" type="filename" value="roughness.png" />
+      <input name="uvtiling" type="vector2" interfacename="uvtiling" />
+    </image>
+    <image name="node_image_normal" type="vector3">
+      <input name="file" type="filename" value="normal.png" />
+      <input name="uvtiling" type="vector2" interfacename="uvtiling" />
+    </image>
+    <multiply name="node_base_multiply" type="color3">
+      <input name="in1" type="color3" nodename="node_image_base" />
+      <input name="in2" type="color3" interfacename="base_tint" />
+    </multiply>
+    <multiply name="node_roughness_multiply" type="float">
+      <input name="in1" type="float" nodename="node_image_roughness" />
+      <input name="in2" type="float" interfacename="roughness_amount" />
+    </multiply>
+    <normalmap name="node_normalmap" type="vector3">
+      <input name="in" type="vector3" nodename="node_image_normal" />
+    </normalmap>
+    <output name="base_color_output" type="color3" nodename="node_base_multiply" />
+    <output name="roughness_output" type="float" nodename="node_roughness_multiply" />
+    <output name="normal_output" type="vector3" nodename="node_normalmap" />
+  </nodegraph>
+  <standard_surface name="N_StandardSurface" type="surfaceshader">
+    <input name="base_color" type="color3" nodegraph="NG_ProcGraph" output="base_color_output" />
+    <input name="specular_roughness" type="float" nodegraph="NG_ProcGraph" output="roughness_output" />
+    <input name="normal" type="vector3" nodegraph="NG_ProcGraph" output="normal_output" />
+  </standard_surface>
+  <surfacematerial name="M_ProcGraph" type="material">
+    <input name="surfaceshader" type="surfaceshader" nodename="N_StandardSurface" />
+  </surfacematerial>
+</materialx>

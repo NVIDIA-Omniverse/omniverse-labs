@@ -1,0 +1,4 @@
+interface:
+  display_name: "Graphics Debugging Lab"
+  short_description: "Debug renderer and visual bugs"
+  default_prompt: "Investigate this rendering or visual bug with reproducible captures, shader/material tracing, and targeted visual verification."

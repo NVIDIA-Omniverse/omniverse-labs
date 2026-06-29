@@ -1,0 +1,4 @@
+interface:
+  display_name: "Ai Agent Orchestration"
+  short_description: "Coordinate AI agents on code work"
+  default_prompt: "Coordinate AI agents across exploration, implementation, review, and verification while preserving ownership boundaries and integration quality."

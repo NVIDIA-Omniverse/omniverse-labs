@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/composition-opinion-stack.json",
+  "title": "USD Composition Opinion Stack Capability",
+  "version": "0.1",
+  "spec_tag": "v1.0.1",
+  "spec_commit": "v1.0.1",
+  "spec_source": "aousd/specifications-public@v1.0.1",
+  "dependency_contracts": [
+    "contracts/capabilities/namespace-source.json",
+    "contracts/capabilities/composition-provenance.json",
+    "contracts/capabilities/semantic-runtime-types.json",
+    "contracts/handles/path.handle.json",
+    "contracts/handles/token.handle.json",
+    "contracts/handles/foundational-values.handle.json"
+  ],
+  "purpose": "Define the target-native opinion-stack and prim-index boundary that central composition providers expose after collecting local layer-stack opinions and composition-arc opinions. This capability is the contract that prevents stage population, nanousd backends, or individual arc providers from owning final LIVERPS arbitration.",
+  "scope": {
+    "included": [
+      "strong-to-weak prim and property opinion stacks",
+      "target-native prim and property indexes for composed scene paths",
+      "composition arc kind, layer-stack identity, source spec path, exposed scene path, and namespace mapping provenance",
+      "LIVERPS family ordering across local, inherits, variants, relocates, references, payloads, and specializes opinions",
+      "same-layer-stack strength ordering by layer strength",
+      "same-arc-family ordering by namespace depth, authored versus implied arcs, and authored list order when represented by the source",
+      "namespace-remapped path-valued field contents in composition opinions before those opinions feed stage population or generated C API backends",
+      "bounded recursive reference opinion closure when supplied by bounded reference sources",
+      "recursive and implied inherit or specialize opinion closure when supplied by bounded inherits and specializes sources",
+      "selected variant opinions, including recursively selected variant opinions when supplied by the variant source, inserted at variant strength after selection is computed",
+      "specializes opinions represented as globally weakest opinions",
+      "namespace-source facade produced from composed opinion stacks for stage population"
+    ],
+    "deferred": [
+      "requiring a particular C++ class, ABI layout, allocator, cache, or OpenUSD PCP data structure",
+      "recursive arc discovery beyond the arc opinions supplied by the graph",
+      "payload asset resolution, layer opening, and load policy",
+      "external variant fallback maps or stage/session policies not defined by the AOUSD v1.0.1 core composition text",
+      "implied inherits and specializes that require layer-stack context not represented by consumed bounded sources",
+      "dictionary, listOp, time-sample, spline, clip, and value-resolution semantics beyond exposing strongest authored field opinions",
+      "schema fallback properties, complete instancing/prototypes, model hierarchy policy, and value clips"
+    ]
+  },
+  "model": {
+    "CompositionArbitrator": "The target-native provider that consumes local and composition-arc opinion sources, builds prim/property opinion indexes, and exposes a final NamespaceSource facade.",
+    "ComposedPrimIndex": "A target-native index for one composed prim path. It contains a strong-to-weak list of contributing prim opinions plus composed child names, property names, diagnostics, and source capability declarations.",
+    "ComposedPropertyIndex": "A target-native index for one composed property path. It contains a strong-to-weak list of contributing attribute or relationship opinions.",
+    "CompositionOpinion": "A target-native record for one contributing prim or property spec after namespace mapping. It stores arc family, source identifier, layer-stack identity when available, source spec path, exposed scene path, field map, child/property names when applicable, and strength keys.",
+    "CompositionArcFamily": "A token or enum identity for local, inherits, variants, relocates, references, payloads, specializes, or an extension arc family. This is not a raw string in domain storage.",
+    "StrengthKey": "A comparable target-native key derived from AOUSD v1.0.1 strength rules. It may be explicit comparator logic rather than a materialized integer, but it must preserve the specified ordering.",
+    "NamespaceMapping": "A typed mapping from source namespace paths to composed target namespace paths. Source and target entries are semantic path values."
+  },
+  "strength_order": {
+    "arc_family_order_strong_to_weak": [
+      "local",
+      "inherits",
+      "variants",
+      "relocates",
+      "references",
+      "payloads",
+      "specializes"
+    ],
+    "same_layer_stack_rule": "Opinions in the same layer stack are ordered by layer-stack strength, with the stronger layer contributing the stronger opinion.",
+    "same_arc_family_rules": [
+      "An opinion introduced by an arc authored deeper in namespace is stronger than one introduced higher in namespace.",
+      "An authored arc is stronger than an implied arc when both are represented by the source.",
+      "Otherwise, sibling arc ordering follows the source-visible composed list order for that arc family."
+    ],
+    "variant_rule": "Variant selections are computed only after other composition arcs have supplied the opinions needed to choose the selection; selected variant opinions are then inserted at variant strength.",
+    "specializes_rule": "Specializes arc opinions are globally weaker than the opinions on the specializing prim and weaker than opinions introduced by composition arcs on the specialized prim."
+  },
+  "operations": {
+    "compose_prim_index": {
+      "input": {
+        "path": "absolute composed prim path"
+      },
+      "output": {
+        "index": "target-native ComposedPrimIndex or missing",
+        "diagnostics": "composition diagnostics relevant to this path"
+      }
+    },
+    "compose_property_index": {
+      "input": {
+        "path": "absolute composed property path"
+      },
+      "output": {
+        "index": "target-native ComposedPropertyIndex or missing",
+        "diagnostics": "composition diagnostics relevant to this path"
+      }
+    },
+    "prim_opinions": {
+      "input": {
+        "path": "absolute composed prim path"
+      },
+      "output": {
+        "opinions": "strong-to-weak CompositionOpinion records"
+      }
+    },
+    "property_opinions": {
+      "input": {
+        "path": "absolute composed property path"
+      },
+      "output": {
+        "opinions": "strong-to-weak CompositionOpinion records"
+      }
+    }
+  },
+  "laws": [
+    "the composition arbitrator owns final LIVERPS arbitration; individual arc providers must not be treated as the final authority for field strength against other arc families",
+    "stage population must consume the namespace-source facade produced from composed opinion stacks and must not evaluate composition arcs itself",
+    "a generated backend such as nanousd must not bypass the composition arbitrator to form its own final prim/property opinions when more than one composition source is in scope",
+    "generated domain logic must preserve enough typed opinion provenance to compare arc family, layer strength, source spec path, exposed scene path, namespace mapping, and source-visible list order before producing population-facing fields",
+    "generated domain logic must not collapse local, inherits, variants, relocates, references, payloads, and specializes outputs into one field map before applying LIVERPS strength ordering",
+    "composition arc family identities, field keys, child names, property names, variant set names, selected variant names, and type names used for composition decisions must be tokens or semantic name handles, not raw strings",
+    "source spec paths, exposed scene paths, namespace mapping paths, arc authoring paths, target paths, and property paths must be semantic path values or equivalent target-native path references",
+    "path-valued field contents in composed opinions, including listOp<ObjectPath> targetPaths and connectionPaths, must be expressed in composed scene coordinates before the namespace-source facade is exposed; out-of-subtree elements may be preserved only for same-namespace arcs and must be pruned for external or variant-selection source namespaces with no composed identity mapping",
+    "namespace remapping of path-valued field contents is required even in the first bounded composition arbitrator; it is not full listOp algebra, dictionary merging, or attribute value resolution",
+    "adapter JSON, diagnostics, reports, and C ABI strings may render composition opinions as text, but those strings are boundary representations and must not be parsed back for composition decisions",
+    "payload opinions may participate in the stack only when supplied by a loaded payload opinion source; absence of a payload source must produce a partial-composition capability declaration rather than silently claiming loaded payload composition",
+    "variants must be selected from source-visible strength-ordered opinions before selected variant opinions are inserted at variant strength",
+    "when bounded reference, inherit, or specialize sources supply recursive or implied opinions, the composition arbitrator must compare those opinions by their provenance, namespace depth, source-visible order, and LIVERPS family strength instead of treating them as a flattened field map",
+    "specializes opinions must remain globally weakest even when a bounded graph evaluates specializes before variants so variant selection can observe non-variant opinions",
+    "composed child and property ordering must be derived from the ordered opinion stack; stage population may only preserve composed ordering and apply population-mask or active pruning",
+    "for the first bounded composition arbitrator, non-special field maps may expose the strongest authored field value per field token; dictionary merging, listOp value composition, and value resolution require later contracts before a provider may claim them"
+  ]
+}

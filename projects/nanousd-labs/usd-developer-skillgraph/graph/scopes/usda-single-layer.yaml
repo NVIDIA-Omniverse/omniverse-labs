@@ -1,0 +1,114 @@
+name: usda-single-layer
+version: 0.1
+
+goal: >
+  Generate a target implementation that opens one resolved USDA text layer
+  resource, returns a target-native document-model Layer, and emits canonical
+  layer dump JSON only through the validation adapter. The target proves that
+  base skills for resource opening, identifiers, paths, values, listOps,
+  document model, and USDA syntax can compose without regenerating incompatible
+  infrastructure.
+
+required_nodes:
+  - usd-identifiers-and-names
+  - usd-foundational-values
+  - usd-paths
+  - usd-listops-authored
+  - usd-document-model
+  - usda-lexical-format
+  - usda-value-parser
+  - usda-spec-parser
+  - usd-resource-protocol
+  - usda-layer-open
+  - usd-layer-open
+
+input_formats:
+  - usda
+  - local filesystem resource
+
+outputs:
+  - contracts/handles/layer-open.handle.json
+  - contracts/handles/usda-layer-open.handle.json
+  - contracts/handles/usda-spec-parser.handle.json
+  - contracts/spec-coverage/usda-single-layer.coverage.json
+  - contracts/layer-dump.schema.json
+  - contracts/usda-productions/value-syntax.contract.json
+  - contracts/usda-productions/common-metadata.contract.json
+  - contracts/usda-productions/layer-structure.contract.json
+  - contracts/usda-productions/layer-metadata.contract.json
+  - contracts/usda-productions/prim-specs.contract.json
+  - contracts/usda-productions/attribute-specs.contract.json
+  - contracts/usda-productions/relationship-specs.contract.json
+  - contracts/usda-productions/variant-specs.contract.json
+  - contracts/usda-productions/parser-diagnostics.contract.json
+  - harness/dump_contract.md
+
+goldens:
+  - goldens/integration/usda-single-layer/basic.json
+  - goldens/integration/usda-single-layer/common-metadata.json
+  - goldens/integration/usda-single-layer/value-syntax.json
+  - goldens/integration/usda-single-layer/attribute-time-samples.json
+  - goldens/integration/usda-single-layer/relationship-listops.json
+  - goldens/integration/usda-single-layer/property-listop-dispatch.json
+  - goldens/integration/usda-single-layer/metadata-grammar-contexts.json
+  - goldens/integration/usda-single-layer/prim-metadata-composition.json
+  - goldens/integration/usda-single-layer/variant-specs.json
+  - goldens/integration/usda-single-layer/layer-metadata.json
+  - goldens/integration/usda-single-layer/parser-diagnostics.json
+
+benchmark_targets:
+  - benchmarks/targets.json
+
+included:
+  - resolved local filesystem resource opening
+  - generic layer-open dispatch to the USDA text format handler
+  - USDA layer header
+  - layer metadata blocks for generic metadata, sublayers, relocates, and root prim order as stored fields
+  - prim specs with def/over/class
+  - authored prim metadata including references, payloads, inherits, specializes, variants, and variantSets as stored fields
+  - variant set and variant specs as stored specs
+  - nested prim hierarchy
+  - attribute specs with scalar, tuple, array, dictionary, None, timeSamples, connect, and spline values
+  - relationship specs with path targets and target listOps
+  - authored listOp fields as data
+  - child list fields and order fields
+  - duplicate spec path diagnostics
+
+excluded:
+  - sublayer composition
+  - references and payload composition
+  - sublayer/reference/payload asset resolution and loading
+  - inherits and specializes composition
+  - variant selection composition
+  - layer relocates semantics and application
+  - asset resolution
+  - value resolution
+  - stage population
+  - USDC
+  - USDZ
+
+boundary_guards:
+  defer_to:
+    resource_opening: usd-resource-protocol
+    layer_format_dispatch: usd-layer-open
+    usda_text_layer_opening: usda-layer-open
+    identifiers: usd-identifiers-and-names
+    paths: usd-paths
+    values: usd-foundational-values
+    listops: usd-listops-authored
+    layer_storage: usd-document-model
+    canonical_dump_json: validation adapter over usd-document-model
+  forbidden_local_reimplementations:
+    - parser-local resource protocol handling
+    - parser-local layer opening or format dispatch
+    - alternate path representation inside the USDA parser
+    - alternate value variant type inside the USDA parser
+    - JSON as the parser or layer-open domain return type
+    - implicit composition semantics
+    - resolving authored values across opinions
+    - filtering inactive prims from the layer
+
+acceptance:
+  score: "100%"
+  diagnostics: "must match golden diagnostics exactly"
+  hermeticity: "generated target may read only target source, standard toolchain, and provided inputs"

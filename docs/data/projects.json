@@ -44,8 +44,8 @@
     },
     {
       "slug": "ovrtx-ovphysx-livestream",
-      "title": "ovrtx + ovphysx Livestream Viewer",
-      "subtitle": "Desktop USD viewer with PhysX simulation in a separate process.",
+      "title": "ovrtx + ovphysx Sample Integration",
+      "subtitle": "Desktop USD Viewer built during the NVIDIA Omniverse livestream on April 15, 2026.",
       "type": "sample",
       "status": "working",
       "date": "2026-05-29",

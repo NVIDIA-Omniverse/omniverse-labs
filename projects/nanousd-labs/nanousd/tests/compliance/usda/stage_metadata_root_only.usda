@@ -1,0 +1,10 @@
+#usda 1.0
+(
+    subLayers = [
+        @./stage_metadata_weak.usda@
+    ]
+    defaultPrim = "Root"
+)
+
+def Xform "Root" {
+}

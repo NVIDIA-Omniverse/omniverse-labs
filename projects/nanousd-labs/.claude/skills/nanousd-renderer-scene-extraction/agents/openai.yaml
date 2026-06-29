@@ -1,0 +1,4 @@
+interface:
+  display_name: "NanoUSD Renderer Scene Extraction"
+  short_description: "USD to renderer scene via NanoUSD"
+  default_prompt: "Use $nanousd-renderer-scene-extraction to load USD through NanoUSD and convert composed prims into renderer-ready geometry, materials, lights, cameras, transforms, instancing, textures, and unsupported-feature diagnostics."

@@ -5,10 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="PySide6 desktop viewer that renders USD with ovrtx and streams PhysX poses from ovphysx in a separate process."
+      content="Desktop USD Viewer built during the NVIDIA Omniverse livestream on April 15, 2026."
     />
-    <title>ovrtx + ovphysx Livestream Viewer — Omniverse Labs</title>
+    <title>ovrtx + ovphysx Sample Integration — Omniverse Labs</title>
     <link rel="stylesheet" href="../../assets/css/main.css" />
+    <script src="https://assets.adobedtm.com/5d4962a43b79/814eb6e9b4e1/launch-4bc07f1e0b0b.min.js"></script>
   </head>
   <body data-base="../../">
     <header class="site-header site-header--compact">
@@ -31,9 +32,9 @@
     <article class="article-wrap">
       <header class="article-hero">
         <p class="article-kicker">Sample</p>
-        <h1 class="article-title">ovrtx + ovphysx Livestream Viewer</h1>
+        <h1 class="article-title">ovrtx + ovphysx Sample Integration</h1>
         <p class="article-deck">
-          A PySide6 desktop viewer that renders USD with ovrtx and streams PhysX simulation poses from ovphysx in a separate process.
+          Desktop USD Viewer built during the NVIDIA Omniverse livestream on April 15, 2026.
         </p>
         <div class="article-meta">
           <span>Status: Working</span>
@@ -53,10 +54,13 @@
           <strong>ovrtx</strong> for real-time rendering in the main process, and
           <strong>ovphysx</strong> for physics simulation in child worker processes.
           The viewer loads OVRTX-ready USD stages, renders offscreen, and displays the result in a Qt window.
+          It was built and demonstrated during an
+          <a href="https://www.youtube.com/watch?v=jqPzY43f1po" target="_blank" rel="noopener noreferrer">NVIDIA Omniverse Livestream</a>
+          on April 15, 2026.
         </p>
 
         <p>
-          Because ovrtx and ovphysx cannot reliably share the same process after USD loads (Carbonite plugin clashes),
+          At the time of this development, ovrtx and ovphysx cannot reliably share the same process after USD loads (Carbonite plugin clashes),
           PhysX workers run separately and stream pose data as JSON lines on stdout. The viewer applies those transforms
           with <code>map_attribute</code>, then steps the renderer — the same update-then-render loop used in other ovrtx examples.
         </p>
@@ -172,5 +176,6 @@ uv run hello_world_physx.py</code></pre>
         </ul>
       </nav>
     </footer>
+    <script type="text/javascript">_satellite.pageBottom();</script>
   </body>
 </html>

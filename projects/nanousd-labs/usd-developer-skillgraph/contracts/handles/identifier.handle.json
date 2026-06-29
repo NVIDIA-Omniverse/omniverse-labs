@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/identifier.handle.json",
+  "title": "USD Identifier Scanner Unit Contract",
+  "version": "0.1",
+  "spec_commit": "v1.0.1",
+  "capability_contracts": [
+    "contracts/capabilities/identifier-scanner.json"
+  ],
+  "scope": {
+    "included": [
+      "identifier validation",
+      "keywordless identifier validation",
+      "namespaced property-name validation",
+      "embedded identifier scanning from a caller-selected offset",
+      "single identifier-continuation scanning",
+      "valid UTF-8 identifier text"
+    ],
+    "deferred": [
+      "complete Unicode XID database conformance tables",
+      "malformed byte-sequence injection through JSON adapters",
+      "USDA tokenization outside identifier spans"
+    ]
+  },
+  "operations": {
+    "validate": {
+      "input": {
+        "text": "candidate identifier text"
+      },
+      "output": {
+        "canonical": "validated identifier text"
+      }
+    },
+    "validate_namespaced": {
+      "input": {
+        "text": "candidate colon-separated property name"
+      },
+      "output": {
+        "canonical": "validated namespaced property name"
+      }
+    },
+    "validate_keywordless": {
+      "input": {
+        "text": "candidate keywordless identifier text"
+      },
+      "output": {
+        "canonical": "validated identifier text"
+      }
+    },
+    "scan_identifier": {
+      "input": {
+        "text": "source text",
+        "prefix": "source prefix before the scan start"
+      },
+      "output": {
+        "span": "matched identifier text",
+        "remaining": "source text after the matched span"
+      }
+    },
+    "scan_continue": {
+      "input": {
+        "text": "source text",
+        "prefix": "source prefix before the scan start"
+      },
+      "output": {
+        "span": "one matched identifier-continuation code point",
+        "remaining": "source text after the matched span"
+      }
+    }
+  },
+  "laws": [
+    "validate(valid).canonical must equal the input text",
+    "scan_identifier(prefix + identifier + delimiter, prefix).span must equal identifier",
+    "scan_identifier must stop before caller-owned delimiters",
+    "scan_continue must consume exactly one valid identifier-continuation code point",
+    "namespaced property names must be colon-separated non-empty identifier components",
+    "keywordless validation must reject reserved USDA keywords"
+  ],
+  "adapter_protocol": {
+    "input": "A JSON file containing one case with an ops array.",
+    "output": "A JSON object with ok, diagnostics, and results. This uses the same adapter shape as handle tests but does not require persistent handles."
+  }
+}

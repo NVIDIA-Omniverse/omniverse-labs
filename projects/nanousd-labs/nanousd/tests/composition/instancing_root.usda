@@ -1,0 +1,40 @@
+#usda 1.0
+
+# Two instanceable prims referencing the same asset — should share one prototype
+def Mesh "InstanceA" (
+    instanceable = true
+    prepend references = @./instancing_ref.usda@</Template>
+)
+{
+    string localOverride = "should_be_filtered"
+}
+
+def Mesh "InstanceB" (
+    instanceable = true
+    prepend references = @./instancing_ref.usda@</Template>
+)
+{
+}
+
+# Instanceable prim with a different reference — gets its own prototype
+def Mesh "InstanceC" (
+    instanceable = true
+    prepend references = @./instancing_ref_b.usda@</OtherTemplate>
+)
+{
+}
+
+# Non-instanceable prim with a reference — NOT an instance
+def Mesh "NonInstance" (
+    prepend references = @./instancing_ref.usda@</Template>
+)
+{
+}
+
+# Instanceable without a composition arc — treated as normal prim
+def Mesh "InstanceableNoArc" (
+    instanceable = true
+)
+{
+    float radius = 1.0
+}

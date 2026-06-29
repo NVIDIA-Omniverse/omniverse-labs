@@ -1,0 +1,33 @@
+#usda 1.0
+(
+    defaultPrim = "robot_walk_idle"
+    metersPerUnit = 0.01
+    upAxis = "Y"
+    subLayers = [
+        @./robot_walk_idle.usdc@
+    ]
+)
+
+def DomeLight "CompareDome"
+{
+    color3f inputs:color = (0.78, 0.82, 0.9)
+    float inputs:intensity = 450
+}
+
+def SphereLight "CompareKey"
+{
+    color3f inputs:color = (1, 0.95, 0.86)
+    float inputs:intensity = 6000
+    float inputs:radius = 20.4085168
+    double3 xformOp:translate = (30.6144752, 57.0998632, 22.8571128)
+    uniform token[] xformOpOrder = ["xformOp:translate"]
+}
+
+def SphereLight "CompareFill"
+{
+    color3f inputs:color = (0.68, 0.76, 1)
+    float inputs:intensity = 1200
+    float inputs:radius = 36.7353303
+    double3 xformOp:translate = (-36.7336304, 20.3645328, -30.205031)
+    uniform token[] xformOpOrder = ["xformOp:translate"]
+}

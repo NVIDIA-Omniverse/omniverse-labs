@@ -1,0 +1,21 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    subLayers = [
+        @./squash_weak.usda@
+    ]
+)
+
+def Xform "World" (
+    references = @./squash_ref.usda@</Asset>
+    payload = @./squash_payload.usda@</PayloadAsset>
+)
+{
+    double local = 10
+    rel localTarget = </World/LocalChild>
+
+    def Scope "LocalChild"
+    {
+        string label = "local"
+    }
+}

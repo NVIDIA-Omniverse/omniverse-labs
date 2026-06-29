@@ -1,0 +1,11 @@
+#usda 1.0
+
+def Mesh "WithAPI" (
+    prepend apiSchemas = ["CollectionAPI:lights"]
+) {
+    float value = 1.0
+}
+
+def Xform "NoAPI" {
+    float value = 2.0
+}

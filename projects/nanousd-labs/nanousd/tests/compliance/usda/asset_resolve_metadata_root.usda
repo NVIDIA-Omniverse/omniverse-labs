@@ -1,0 +1,10 @@
+#usda 1.0
+(
+    subLayers = [@./sub/asset_resolve_metadata_ref.usda@]
+)
+
+def "World" (
+    references = @./sub/asset_resolve_metadata_ref.usda@</World>
+)
+{
+}

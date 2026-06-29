@@ -1,0 +1,13 @@
+#usda 1.0
+(
+    subLayers = [
+        @./base.usda@
+    ]
+    defaultPrim = "Root"
+)
+
+over "Root"
+{
+    float size = 2.0
+    bool visible = true
+}

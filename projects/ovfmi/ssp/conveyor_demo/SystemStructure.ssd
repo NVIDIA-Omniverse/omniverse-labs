@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ssd:SystemStructureDescription
+    xmlns:ssc="http://ssp-standard.org/SSP1/SystemStructureCommon"
+    xmlns:ssd="http://ssp-standard.org/SSP1/SystemStructureDescription"
+    xmlns:ssv="http://ssp-standard.org/SSP1/SystemStructureParameterValues"
+    xmlns:ssm="http://ssp-standard.org/SSP1/SystemStructureParameterMapping"
+    xmlns:ssb="http://ssp-standard.org/SSP1/SystemStructureSignalDictionary"
+    version="1.0"
+    name="ConveyorDemo"
+    description="Presence sensor, line controller, and five roller motor drives">
+
+  <ssd:System name="ConveyorDemo">
+    <ssd:Connectors>
+      <ssd:Connector name="rawPresence" kind="input"><ssc:Real/></ssd:Connector>
+      <ssd:Connector name="operatorSpeed" kind="input"><ssc:Real/></ssd:Connector>
+      <ssd:Connector name="enable" kind="input"><ssc:Real/></ssd:Connector>
+      <ssd:Connector name="eStop" kind="input"><ssc:Real/></ssd:Connector>
+      <ssd:Connector name="rejectSpeed" kind="input"><ssc:Real/></ssd:Connector>
+
+      <ssd:Connector name="targetVelocity0" kind="output"><ssc:Real/></ssd:Connector>
+      <ssd:Connector name="targetVelocity1" kind="output"><ssc:Real/></ssd:Connector>
+      <ssd:Connector name="targetVelocity2" kind="output"><ssc:Real/></ssd:Connector>
+      <ssd:Connector name="targetVelocity3" kind="output"><ssc:Real/></ssd:Connector>
+      <ssd:Connector name="targetVelocity4" kind="output"><ssc:Real/></ssd:Connector>
+      <ssd:Connector name="actualVelocity0" kind="output"><ssc:Real/></ssd:Connector>
+      <ssd:Connector name="actualVelocity1" kind="output"><ssc:Real/></ssd:Connector>
+      <ssd:Connector name="actualVelocity2" kind="output"><ssc:Real/></ssd:Connector>
+      <ssd:Connector name="actualVelocity3" kind="output"><ssc:Real/></ssd:Connector>
+      <ssd:Connector name="actualVelocity4" kind="output"><ssc:Real/></ssd:Connector>
+      <ssd:Connector name="presence" kind="output"><ssc:Real/></ssd:Connector>
+      <ssd:Connector name="rejectActive" kind="output"><ssc:Real/></ssd:Connector>
+    </ssd:Connectors>
+
+    <ssd:Elements>
+      <ssd:Component name="PresenceSensor" type="application/x-fmu-sharedlibrary"
+                     source="resources/PresenceSensor.fmu">
+        <ssd:Connectors>
+          <ssd:Connector name="rawPresence" kind="input"><ssc:Real/></ssd:Connector>
+          <ssd:Connector name="presence" kind="output"><ssc:Real/></ssd:Connector>
+        </ssd:Connectors>
+      </ssd:Component>
+
+      <ssd:Component name="ConveyorController" type="application/x-fmu-sharedlibrary"
+                     source="resources/ConveyorController.fmu">
+        <ssd:Connectors>
+          <ssd:Connector name="operatorSpeed" kind="input"><ssc:Real/></ssd:Connector>
+          <ssd:Connector name="enable" kind="input"><ssc:Real/></ssd:Connector>
+          <ssd:Connector name="eStop" kind="input"><ssc:Real/></ssd:Connector>
+          <ssd:Connector name="sensorPresence" kind="input"><ssc:Real/></ssd:Connector>
+          <ssd:Connector name="rejectSpeed" kind="input"><ssc:Real/></ssd:Connector>
+          <ssd:Connector name="zone0Speed" kind="output"><ssc:Real/></ssd:Connector>
+          <ssd:Connector name="zone1Speed" kind="output"><ssc:Real/></ssd:Connector>
+          <ssd:Connector name="zone2Speed" kind="output"><ssc:Real/></ssd:Connector>
+          <ssd:Connector name="zone3Speed" kind="output"><ssc:Real/></ssd:Connector>
+          <ssd:Connector name="zone4Speed" kind="output"><ssc:Real/></ssd:Connector>
+          <ssd:Connector name="rejectActive" kind="output"><ssc:Real/></ssd:Connector>
+        </ssd:Connectors>
+      </ssd:Component>
+
+      <ssd:Component name="MotorDrive0" type="application/x-fmu-sharedlibrary"
+                     source="resources/MotorDrive.fmu">
+        <ssd:Connectors>
+          <ssd:Connector name="speedCommand" kind="input"><ssc:Real/></ssd:Connector>
+          <ssd:Connector name="enable" kind="input"><ssc:Real/></ssd:Connector>
+          <ssd:Connector name="eStop" kind="input"><ssc:Real/></ssd:Connector>
+          <ssd:Connector name="targetVelocity" kind="output"><ssc:Real/></ssd:Connector>
+          <ssd:Connector name="actualVelocity" kind="output"><ssc:Real/></ssd:Connector>
+        </ssd:Connectors>
+      </ssd:Component>
+      <ssd:Component name="MotorDrive1" type="application/x-fmu-sharedlibrary"
+                     source="resources/MotorDrive.fmu">
+        <ssd:Connectors>
+          <ssd:Connector name="speedCommand" kind="input"><ssc:Real/></ssd:Connector>
+          <ssd:Connector name="enable" kind="input"><ssc:Real/></ssd:Connector>
+          <ssd:Connector name="eStop" kind="input"><ssc:Real/></ssd:Connector>
+          <ssd:Connector name="targetVelocity" kind="output"><ssc:Real/></ssd:Connector>
+          <ssd:Connector name="actualVelocity" kind="output"><ssc:Real/></ssd:Connector>
+        </ssd:Connectors>
+      </ssd:Component>
+      <ssd:Component name="MotorDrive2" type="application/x-fmu-sharedlibrary"
+                     source="resources/MotorDrive.fmu">
+        <ssd:Connectors>
+          <ssd:Connector name="speedCommand" kind="input"><ssc:Real/></ssd:Connector>
+          <ssd:Connector name="enable" kind="input"><ssc:Real/></ssd:Connector>
+          <ssd:Connector name="eStop" kind="input"><ssc:Real/></ssd:Connector>
+          <ssd:Connector name="targetVelocity" kind="output"><ssc:Real/></ssd:Connector>
+          <ssd:Connector name="actualVelocity" kind="output"><ssc:Real/></ssd:Connector>
+        </ssd:Connectors>
+      </ssd:Component>
+      <ssd:Component name="MotorDrive3" type="application/x-fmu-sharedlibrary"
+                     source="resources/MotorDrive.fmu">
+        <ssd:Connectors>
+          <ssd:Connector name="speedCommand" kind="input"><ssc:Real/></ssd:Connector>
+          <ssd:Connector name="enable" kind="input"><ssc:Real/></ssd:Connector>
+          <ssd:Connector name="eStop" kind="input"><ssc:Real/></ssd:Connector>
+          <ssd:Connector name="targetVelocity" kind="output"><ssc:Real/></ssd:Connector>
+          <ssd:Connector name="actualVelocity" kind="output"><ssc:Real/></ssd:Connector>
+        </ssd:Connectors>
+      </ssd:Component>
+      <ssd:Component name="MotorDrive4" type="application/x-fmu-sharedlibrary"
+                     source="resources/MotorDrive.fmu">
+        <ssd:Connectors>
+          <ssd:Connector name="speedCommand" kind="input"><ssc:Real/></ssd:Connector>
+          <ssd:Connector name="enable" kind="input"><ssc:Real/></ssd:Connector>
+          <ssd:Connector name="eStop" kind="input"><ssc:Real/></ssd:Connector>
+          <ssd:Connector name="targetVelocity" kind="output"><ssc:Real/></ssd:Connector>
+          <ssd:Connector name="actualVelocity" kind="output"><ssc:Real/></ssd:Connector>
+        </ssd:Connectors>
+      </ssd:Component>
+    </ssd:Elements>
+
+    <ssd:Connections>
+      <ssd:Connection startConnector="rawPresence" endElement="PresenceSensor" endConnector="rawPresence"/>
+      <ssd:Connection startElement="PresenceSensor" startConnector="presence" endElement="ConveyorController" endConnector="sensorPresence"/>
+      <ssd:Connection startElement="PresenceSensor" startConnector="presence" endConnector="presence"/>
+
+      <ssd:Connection startConnector="operatorSpeed" endElement="ConveyorController" endConnector="operatorSpeed"/>
+      <ssd:Connection startConnector="enable" endElement="ConveyorController" endConnector="enable"/>
+      <ssd:Connection startConnector="eStop" endElement="ConveyorController" endConnector="eStop"/>
+      <ssd:Connection startConnector="rejectSpeed" endElement="ConveyorController" endConnector="rejectSpeed"/>
+      <ssd:Connection startElement="ConveyorController" startConnector="rejectActive" endConnector="rejectActive"/>
+
+      <ssd:Connection startElement="ConveyorController" startConnector="zone0Speed" endElement="MotorDrive0" endConnector="speedCommand"/>
+      <ssd:Connection startElement="ConveyorController" startConnector="zone1Speed" endElement="MotorDrive1" endConnector="speedCommand"/>
+      <ssd:Connection startElement="ConveyorController" startConnector="zone2Speed" endElement="MotorDrive2" endConnector="speedCommand"/>
+      <ssd:Connection startElement="ConveyorController" startConnector="zone3Speed" endElement="MotorDrive3" endConnector="speedCommand"/>
+      <ssd:Connection startElement="ConveyorController" startConnector="zone4Speed" endElement="MotorDrive4" endConnector="speedCommand"/>
+
+      <ssd:Connection startConnector="enable" endElement="MotorDrive0" endConnector="enable"/>
+      <ssd:Connection startConnector="enable" endElement="MotorDrive1" endConnector="enable"/>
+      <ssd:Connection startConnector="enable" endElement="MotorDrive2" endConnector="enable"/>
+      <ssd:Connection startConnector="enable" endElement="MotorDrive3" endConnector="enable"/>
+      <ssd:Connection startConnector="enable" endElement="MotorDrive4" endConnector="enable"/>
+      <ssd:Connection startConnector="eStop" endElement="MotorDrive0" endConnector="eStop"/>
+      <ssd:Connection startConnector="eStop" endElement="MotorDrive1" endConnector="eStop"/>
+      <ssd:Connection startConnector="eStop" endElement="MotorDrive2" endConnector="eStop"/>
+      <ssd:Connection startConnector="eStop" endElement="MotorDrive3" endConnector="eStop"/>
+      <ssd:Connection startConnector="eStop" endElement="MotorDrive4" endConnector="eStop"/>
+
+      <ssd:Connection startElement="MotorDrive0" startConnector="targetVelocity" endConnector="targetVelocity0"/>
+      <ssd:Connection startElement="MotorDrive1" startConnector="targetVelocity" endConnector="targetVelocity1"/>
+      <ssd:Connection startElement="MotorDrive2" startConnector="targetVelocity" endConnector="targetVelocity2"/>
+      <ssd:Connection startElement="MotorDrive3" startConnector="targetVelocity" endConnector="targetVelocity3"/>
+      <ssd:Connection startElement="MotorDrive4" startConnector="targetVelocity" endConnector="targetVelocity4"/>
+      <ssd:Connection startElement="MotorDrive0" startConnector="actualVelocity" endConnector="actualVelocity0"/>
+      <ssd:Connection startElement="MotorDrive1" startConnector="actualVelocity" endConnector="actualVelocity1"/>
+      <ssd:Connection startElement="MotorDrive2" startConnector="actualVelocity" endConnector="actualVelocity2"/>
+      <ssd:Connection startElement="MotorDrive3" startConnector="actualVelocity" endConnector="actualVelocity3"/>
+      <ssd:Connection startElement="MotorDrive4" startConnector="actualVelocity" endConnector="actualVelocity4"/>
+    </ssd:Connections>
+  </ssd:System>
+
+  <ssd:DefaultExperiment startTime="0.0" stopTime="60.0"/>
+</ssd:SystemStructureDescription>

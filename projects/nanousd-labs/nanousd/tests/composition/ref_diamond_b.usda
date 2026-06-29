@@ -1,0 +1,8 @@
+#usda 1.0
+
+def Xform "B" (
+    prepend references = @./ref_diamond_c.usda@</C>
+)
+{
+    float bOnly = 2.0
+}

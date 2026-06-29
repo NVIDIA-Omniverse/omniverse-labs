@@ -1,0 +1,14 @@
+#usda 1.0
+(
+    defaultPrim = "InactiveDefault"
+)
+
+def Xform "InactiveDefault" (
+    active = false
+)
+{
+}
+
+def Xform "ActivePeer"
+{
+}

@@ -1,0 +1,20 @@
+#usda 1.0
+(
+    defaultPrim = "Tree"
+    upAxis = "Y"
+)
+
+def Xform "Tree"
+{
+    def Xform "xgBranches"
+    {
+        def BasisCurves "branch"
+        {
+            uniform token type = "linear"
+            int[] curveVertexCounts = [3]
+            point3f[] points = [(0, 1, 0), (0.35, 1.35, 0), (0.7, 1.6, 0.2)]
+            float[] widths = [0.08, 0.06, 0.04]
+            color3f[] primvars:displayColor = [(0.2, 0.75, 0.2)]
+        }
+    }
+}

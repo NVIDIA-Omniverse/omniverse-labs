@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<materialx version="1.39" colorspace="lin_rec709">
+  <nodegraph name="NG_ResourceGraph">
+    <input name="uvtiling" type="vector2" value="1.0, 1.0" />
+    <image name="node_image_base" type="color3">
+      <input name="file" type="filename" value="mx_env_base_color.png" />
+      <input name="uvtiling" type="vector2" interfacename="uvtiling" />
+    </image>
+    <image name="node_image_roughness" type="float">
+      <input name="file" type="filename" value="mx_env_roughness.png" />
+      <input name="uvtiling" type="vector2" interfacename="uvtiling" />
+    </image>
+    <image name="node_image_normal" type="vector3">
+      <input name="file" type="filename" value="mx_env_normal.png" />
+      <input name="uvtiling" type="vector2" interfacename="uvtiling" />
+    </image>
+    <normalmap name="node_normalmap" type="vector3">
+      <input name="in" type="vector3" nodename="node_image_normal" />
+    </normalmap>
+    <output name="base_color_output" type="color3" nodename="node_image_base" />
+    <output name="roughness_output" type="float" nodename="node_image_roughness" />
+    <output name="normal_output" type="vector3" nodename="node_normalmap" />
+  </nodegraph>
+  <standard_surface name="N_ResourceSurface" type="surfaceshader">
+    <input name="base_color" type="color3" nodegraph="NG_ResourceGraph" output="base_color_output" />
+    <input name="specular_roughness" type="float" nodegraph="NG_ResourceGraph" output="roughness_output" />
+    <input name="normal" type="vector3" nodegraph="NG_ResourceGraph" output="normal_output" />
+  </standard_surface>
+  <surfacematerial name="M_ResourceGraph" type="material">
+    <input name="surfaceshader" type="surfaceshader" nodename="N_ResourceSurface" />
+  </surfacematerial>
+</materialx>

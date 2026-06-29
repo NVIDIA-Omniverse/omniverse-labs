@@ -1,0 +1,11 @@
+#usda 1.0
+
+def Xform "Root" {
+    float scalarF = 3.14
+    double scalarD = 2.718
+    half scalarH = 0.000000059604644775390625
+    half scalarHTie = 1.00048828125
+    int scalarI = 42
+    string scalarS = "hello"
+    bool scalarB = true
+}

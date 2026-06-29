@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/token.performance.json",
+  "title": "USD Token Performance Contract",
+  "version": "0.1",
+  "spec_commit": "v1.0.1",
+  "scope": {
+    "included": [
+      "equality of existing token handles",
+      "hashing of existing token handles",
+      "assignment or copy of existing token handles"
+    ],
+    "excluded": [
+      "interning new text",
+      "looking up existing text in the token registry",
+      "UTF-8 validation",
+      "stringification or copying token text out of the implementation"
+    ]
+  },
+  "model": {
+    "Token": "First-class target-native value abstraction for already-created token data.",
+    "TokenHandle": "Opaque conformance-harness reference that may wrap a target-native Token value.",
+    "TokenIdentityDomain": "Implementation-defined domain in which Token values have canonical equality/hash identity. The performance contract applies after tokens have been created in a compatible identity domain.",
+    "constant_time": "Operation cost should be flat with respect to token text length once handles exist.",
+    "ratio_gate": "Compare long-token and short-token timings for the same operation. The long-token timing should not grow materially with text length."
+  },
+  "operations": {
+    "equal": {
+      "input": "Two existing TokenHandle values",
+      "expected_complexity": "amortized O(1) with respect to token text length"
+    },
+    "hash": {
+      "input": "One existing TokenHandle value",
+      "expected_complexity": "amortized O(1) with respect to token text length"
+    },
+    "assign": {
+      "input": "One existing TokenHandle value assigned or copied to another handle variable",
+      "expected_complexity": "O(1) with respect to token text length"
+    }
+  },
+  "measurement": {
+    "primary_signal": "long_ns_per_op / short_ns_per_op ratio",
+    "secondary_signal": "absolute ns_per_op ceiling to catch pathological adapter or implementation behavior",
+    "note": "Ratio gates are more portable than absolute timings across languages and machines."
+  }
+}

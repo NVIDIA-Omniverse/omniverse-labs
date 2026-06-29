@@ -1,0 +1,42 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    upAxis = "Z"
+)
+
+def Xform "World"
+{
+    def Mesh "Triangle"
+    {
+        point3f[] points = [(-1, 0, 0), (1, 0, 0), (0, 1, 0)]
+        int[] faceVertexCounts = [3]
+        int[] faceVertexIndices = [0, 1, 2]
+    }
+
+    def DistantLight "BareKey"
+    {
+        color3f color = (1.0, 0.8, 0.6)
+        float intensity = 700
+        float exposure = 1
+        float angle = 2
+    }
+
+    def RectLight "Panel"
+    {
+        color3f inputs:color = (0.2, 0.3, 0.4)
+        float inputs:intensity = 50
+        bool inputs:normalize = true
+        float inputs:width = 2
+        float inputs:height = 1
+        double3 xformOp:translate = (1, 2, 3)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def SphereLight "Bulb"
+    {
+        float inputs:intensity = 25
+        float inputs:radius = 0.25
+        double3 xformOp:translate = (-1, 0, 2)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+}

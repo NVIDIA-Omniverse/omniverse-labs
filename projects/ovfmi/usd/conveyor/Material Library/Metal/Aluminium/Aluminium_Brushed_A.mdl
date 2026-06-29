@@ -1,0 +1,15 @@
+mdl 1.4;
+
+using ::OmniPBR import OmniPBR;
+import ::tex::gamma_mode;
+import ::state::normal;
+import ::base::mono_mode;
+
+export material Aluminium_Brushed_A(*)
+ = OmniPBR(
+	diffuse_texture: texture_2d("../Textures/T_Aluminium_Brushed_A1_Albedo.png", ::tex::gamma_srgb),
+	enable_ORM_texture: true,
+	metallic_texture_influence: 1.0,
+	normalmap_texture: texture_2d("../Textures/T_Aluminium_Brushed_A1_Normal.png", ::tex::gamma_linear),
+	ORM_texture: texture_2d("../Textures/T_Aluminium_Brushed_A1_ORM.png", ::tex::gamma_linear),
+	reflection_roughness_texture_influence: 1.0);

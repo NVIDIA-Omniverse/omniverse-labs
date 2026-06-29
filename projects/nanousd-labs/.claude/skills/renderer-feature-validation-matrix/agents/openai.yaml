@@ -1,0 +1,4 @@
+interface:
+  display_name: "Renderer Feature Validation Matrix"
+  short_description: "Track renderer feature status"
+  default_prompt: "Use $renderer-feature-validation-matrix to give every renderer capability an owner, fixture, reference, observable output, acceptance criteria, and backend status before delegating or closing milestones."

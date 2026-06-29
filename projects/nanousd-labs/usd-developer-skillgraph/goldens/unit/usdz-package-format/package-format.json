@@ -1,0 +1,453 @@
+{
+  "suite": "usdz-package-format-basic",
+  "contract": "contracts/handles/usdz-package-format.handle.json",
+  "spec_commit": "6b4f01f2d6d46b01507481524eb516b4ef358c31",
+  "cases": [
+    {
+      "id": "index-default-usda",
+      "spec_refs": [
+        "contracts/handles/usdz-package-format.handle.json"
+      ],
+      "input": {
+        "ops": [
+          {
+            "op": "index_usdz_archive",
+            "display": "benchmarks/fixtures/usdz/default_root_usda.usdz",
+            "opened_resource": {
+              "ok": true,
+              "diagnostics": [],
+              "fixture": "benchmarks/fixtures/usdz/default_root_usda.usdz"
+            }
+          }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "index_usdz_archive",
+            "ok": true,
+            "entries": [
+              {
+                "name": "root.usda",
+                "local_header_offset": 0,
+                "data_offset": 64,
+                "byte_size": 34,
+                "compressed": false,
+                "encrypted": false
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "select-default-usdc",
+      "spec_refs": [
+        "contracts/handles/usdz-package-format.handle.json"
+      ],
+      "input": {
+        "ops": [
+          {
+            "op": "select_default_layer",
+            "display": "benchmarks/fixtures/usdz/default_root_usdc.usdz",
+            "opened_resource": {
+              "ok": true,
+              "diagnostics": [],
+              "fixture": "benchmarks/fixtures/usdz/default_root_usdc.usdz"
+            }
+          }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "select_default_layer",
+            "ok": true,
+            "entry": {
+              "name": "root.usdc",
+              "local_header_offset": 0,
+              "data_offset": 64,
+              "byte_size": 586,
+              "compressed": false,
+              "encrypted": false
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "find-explicit-usda-entry",
+      "spec_refs": [
+        "contracts/handles/usdz-package-format.handle.json"
+      ],
+      "input": {
+        "ops": [
+          {
+            "op": "find_entry",
+            "display": "benchmarks/fixtures/usdz/explicit_root_usda.usdz",
+            "opened_resource": {
+              "ok": true,
+              "diagnostics": [],
+              "fixture": "benchmarks/fixtures/usdz/explicit_root_usda.usdz"
+            },
+            "entry": "scenes/root.usda"
+          }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "find_entry",
+            "ok": true,
+            "found": true,
+            "entry": {
+              "name": "scenes/root.usda",
+              "local_header_offset": 83,
+              "data_offset": 192,
+              "byte_size": 34,
+              "compressed": false,
+              "encrypted": false
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "reject-compressed-entry",
+      "spec_refs": [
+        "contracts/handles/usdz-package-format.handle.json"
+      ],
+      "input": {
+        "ops": [
+          {
+            "op": "index_usdz_archive",
+            "display": "benchmarks/fixtures/usdz/compressed_entry.usdz",
+            "opened_resource": {
+              "ok": true,
+              "diagnostics": [],
+              "fixture": "benchmarks/fixtures/usdz/compressed_entry.usdz"
+            }
+          }
+        ]
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {
+            "severity": "error",
+            "code": "UnsupportedUsdzCompression",
+            "message": "USDZ entries must use ZIP stored method",
+            "path": "root.usda"
+          }
+        ],
+        "results": [
+          {
+            "op": "index_usdz_archive",
+            "ok": false,
+            "code": "UnsupportedUsdzCompression"
+          }
+        ]
+      }
+    },
+    {
+      "id": "reject-unsafe-entry-path",
+      "spec_refs": [
+        "contracts/handles/usdz-package-format.handle.json"
+      ],
+      "input": {
+        "ops": [
+          {
+            "op": "index_usdz_archive",
+            "display": "benchmarks/fixtures/usdz/unsafe_path.usdz",
+            "opened_resource": {
+              "ok": true,
+              "diagnostics": [],
+              "fixture": "benchmarks/fixtures/usdz/unsafe_path.usdz"
+            }
+          }
+        ]
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {
+            "severity": "error",
+            "code": "UnsafeUsdzEntryPath",
+            "message": "unsafe USDZ entry path: ../root.usda",
+            "path": "../root.usda"
+          }
+        ],
+        "results": [
+          {
+            "op": "index_usdz_archive",
+            "ok": false,
+            "code": "UnsafeUsdzEntryPath"
+          }
+        ]
+      }
+    },
+    {
+      "id": "select-default-first-physical",
+      "spec_refs": [
+        "contracts/handles/usdz-package-format.handle.json",
+        "docs/usdz-spec-errata.md#3-default-layer-is-the-first-physical-entry"
+      ],
+      "input": {
+        "ops": [
+          {
+            "op": "select_default_layer",
+            "display": "benchmarks/fixtures/usdz/explicit_root_usda.usdz",
+            "opened_resource": {
+              "ok": true,
+              "diagnostics": [],
+              "fixture": "benchmarks/fixtures/usdz/explicit_root_usda.usdz"
+            }
+          }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "select_default_layer",
+            "ok": true,
+            "entry": {
+              "name": "assets/notes.txt",
+              "local_header_offset": 0,
+              "data_offset": 64,
+              "byte_size": 19,
+              "compressed": false,
+              "encrypted": false
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "index-commented-eocd-leniency",
+      "spec_refs": [
+        "contracts/handles/usdz-package-format.handle.json",
+        "docs/usdz-spec-errata.md#2-eocd-comment-length-leniency"
+      ],
+      "input": {
+        "ops": [
+          {
+            "op": "index_usdz_archive",
+            "display": "benchmarks/fixtures/usdz/commented_eocd.usdz",
+            "opened_resource": {
+              "ok": true,
+              "diagnostics": [],
+              "fixture": "benchmarks/fixtures/usdz/commented_eocd.usdz"
+            }
+          }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "index_usdz_archive",
+            "ok": true,
+            "entries": [
+              {
+                "name": "root.usda",
+                "local_header_offset": 0,
+                "data_offset": 64,
+                "byte_size": 34,
+                "compressed": false,
+                "encrypted": false
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "find-missing-entry",
+      "spec_refs": [
+        "contracts/handles/usdz-package-format.handle.json"
+      ],
+      "input": {
+        "ops": [
+          {
+            "op": "find_entry",
+            "display": "benchmarks/fixtures/usdz/default_root_usda.usdz",
+            "opened_resource": {
+              "ok": true,
+              "diagnostics": [],
+              "fixture": "benchmarks/fixtures/usdz/default_root_usda.usdz"
+            },
+            "entry": "missing.usda"
+          }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "find_entry",
+            "ok": true,
+            "found": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "reject-invalid-zip",
+      "spec_refs": [
+        "contracts/handles/usdz-package-format.handle.json"
+      ],
+      "input": {
+        "ops": [
+          {
+            "op": "index_usdz_archive",
+            "display": "benchmarks/fixtures/usdz/invalid_zip.usdz",
+            "opened_resource": {
+              "ok": true,
+              "diagnostics": [],
+              "fixture": "benchmarks/fixtures/usdz/invalid_zip.usdz"
+            }
+          }
+        ]
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {
+            "severity": "error",
+            "code": "InvalidUsdzArchive",
+            "message": "could not locate ZIP end of central directory"
+          }
+        ],
+        "results": [
+          {
+            "op": "index_usdz_archive",
+            "ok": false,
+            "code": "InvalidUsdzArchive"
+          }
+        ]
+      }
+    },
+    {
+      "id": "reject-encrypted-entry",
+      "spec_refs": [
+        "contracts/handles/usdz-package-format.handle.json"
+      ],
+      "input": {
+        "ops": [
+          {
+            "op": "index_usdz_archive",
+            "display": "benchmarks/fixtures/usdz/encrypted_entry.usdz",
+            "opened_resource": {
+              "ok": true,
+              "diagnostics": [],
+              "fixture": "benchmarks/fixtures/usdz/encrypted_entry.usdz"
+            }
+          }
+        ]
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {
+            "severity": "error",
+            "code": "UnsupportedUsdzEncryption",
+            "message": "USDZ entries must not be encrypted",
+            "path": "root.usda"
+          }
+        ],
+        "results": [
+          {
+            "op": "index_usdz_archive",
+            "ok": false,
+            "code": "UnsupportedUsdzEncryption"
+          }
+        ]
+      }
+    },
+    {
+      "id": "reject-misaligned-entry",
+      "spec_refs": [
+        "contracts/handles/usdz-package-format.handle.json",
+        "docs/usdz-spec-errata.md#1-64-byte-alignment-applies-to-entry-data-not-the-local-file-header"
+      ],
+      "input": {
+        "ops": [
+          {
+            "op": "index_usdz_archive",
+            "display": "benchmarks/fixtures/usdz/misaligned_entry.usdz",
+            "opened_resource": {
+              "ok": true,
+              "diagnostics": [],
+              "fixture": "benchmarks/fixtures/usdz/misaligned_entry.usdz"
+            }
+          }
+        ]
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {
+            "severity": "error",
+            "code": "MisalignedUsdzEntryData",
+            "message": "USDZ entry data offset is not 64-byte aligned",
+            "path": "root.usda"
+          }
+        ],
+        "results": [
+          {
+            "op": "index_usdz_archive",
+            "ok": false,
+            "code": "MisalignedUsdzEntryData"
+          }
+        ]
+      }
+    },
+    {
+      "id": "reject-duplicate-entry-name",
+      "spec_refs": [
+        "contracts/handles/usdz-package-format.handle.json"
+      ],
+      "input": {
+        "ops": [
+          {
+            "op": "index_usdz_archive",
+            "display": "benchmarks/fixtures/usdz/duplicate_names.usdz",
+            "opened_resource": {
+              "ok": true,
+              "diagnostics": [],
+              "fixture": "benchmarks/fixtures/usdz/duplicate_names.usdz"
+            }
+          }
+        ]
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {
+            "severity": "error",
+            "code": "DuplicateUsdzEntryName",
+            "message": "duplicate USDZ entry name: root.usda",
+            "path": "root.usda"
+          }
+        ],
+        "results": [
+          {
+            "op": "index_usdz_archive",
+            "ok": false,
+            "code": "DuplicateUsdzEntryName"
+          }
+        ]
+      }
+    }
+  ]
+}

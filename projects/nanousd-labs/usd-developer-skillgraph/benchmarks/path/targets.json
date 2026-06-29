@@ -1,0 +1,122 @@
+{
+  "measurement_model": {
+    "id": "path-handle-hot-ops-v1",
+    "description": "Times operations on pre-created PathHandle values. Ratios compare deep paths against shallow paths to catch full-string rescans or full-path copies in handle hot paths."
+  },
+  "targets": [
+    {
+      "id": "equal_shallow",
+      "op": "equal",
+      "depth": 2,
+      "name_length": 8,
+      "iterations": 500000,
+      "max_ns_per_op": 1200
+    },
+    {
+      "id": "equal_deep",
+      "op": "equal",
+      "depth": 64,
+      "name_length": 8,
+      "iterations": 500000,
+      "max_ns_per_op": 1200
+    },
+    {
+      "id": "hash_shallow",
+      "op": "hash",
+      "depth": 2,
+      "name_length": 8,
+      "iterations": 500000,
+      "max_ns_per_op": 1200
+    },
+    {
+      "id": "hash_deep",
+      "op": "hash",
+      "depth": 64,
+      "name_length": 8,
+      "iterations": 500000,
+      "max_ns_per_op": 1200
+    },
+    {
+      "id": "parent_shallow",
+      "op": "parent",
+      "depth": 2,
+      "name_length": 8,
+      "iterations": 500000,
+      "max_ns_per_op": 1600
+    },
+    {
+      "id": "parent_deep",
+      "op": "parent",
+      "depth": 64,
+      "name_length": 8,
+      "iterations": 500000,
+      "max_ns_per_op": 1600
+    },
+    {
+      "id": "name_shallow",
+      "op": "name",
+      "depth": 2,
+      "name_length": 8,
+      "iterations": 500000,
+      "max_ns_per_op": 1600
+    },
+    {
+      "id": "name_deep",
+      "op": "name",
+      "depth": 64,
+      "name_length": 8,
+      "iterations": 500000,
+      "max_ns_per_op": 1600
+    },
+    {
+      "id": "prefix_shallow",
+      "op": "has_prefix",
+      "depth": 4,
+      "prefix_depth": 2,
+      "name_length": 8,
+      "iterations": 500000,
+      "max_ns_per_op": 1800
+    },
+    {
+      "id": "prefix_deep",
+      "op": "has_prefix",
+      "depth": 64,
+      "prefix_depth": 2,
+      "name_length": 8,
+      "iterations": 500000,
+      "max_ns_per_op": 1800
+    }
+  ],
+  "ratios": [
+    {
+      "id": "equal_depth_ratio",
+      "numerator": "equal_deep",
+      "denominator": "equal_shallow",
+      "max_ratio": 1.5
+    },
+    {
+      "id": "hash_depth_ratio",
+      "numerator": "hash_deep",
+      "denominator": "hash_shallow",
+      "max_ratio": 1.5
+    },
+    {
+      "id": "parent_depth_ratio",
+      "numerator": "parent_deep",
+      "denominator": "parent_shallow",
+      "max_ratio": 1.5
+    },
+    {
+      "id": "name_depth_ratio",
+      "numerator": "name_deep",
+      "denominator": "name_shallow",
+      "max_ratio": 1.5
+    },
+    {
+      "id": "prefix_depth_ratio",
+      "numerator": "prefix_deep",
+      "denominator": "prefix_shallow",
+      "max_ratio": 1.5
+    }
+  ]
+}

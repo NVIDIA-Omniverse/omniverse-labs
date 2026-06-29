@@ -37,7 +37,9 @@ linked here and archived.
 | [omniverse-usd-performance-tuning](./omniverse-usd-performance-tuning/) | Skills for optimizing large or complex USD scenes — LOD, culling, instancing, and scene graph pruning | Incubation | [↗](./omniverse-usd-performance-tuning/README.md) |
 | [omniverse-cad-to-simready](./omniverse-cad-to-simready/) | End-to-end pipeline skills for converting CAD geometry to SimReady USD assets | Incubation | [↗](./omniverse-cad-to-simready/README.md) |
 | [omniverse-realtime-viewer](./omniverse-realtime-viewer/) | Reference viewer built on `ovrtx`, `ovui`, and `ovstream` — intended as a starting point for partner-built viewers | Incubation | [↗](./omniverse-realtime-viewer/README.md) |
+| [ovfmi](./ovfmi/) | FMI models driven from USD with FMPy, `ovrtx` rendering, and optional `ovphysx` rigid-body simulation | Exploration | [↗](./ovfmi/README.md) |
 | [physical-ai-skill-hub](./physical-ai-skill-hub/) | Repository of Physical AI recipes and skills for sim-ready robotics and industrial workflows | Exploration | — | [↗](./physical-ai-skill-hub/README.md) |
+| [nanousd-labs](https://github.com/NVIDIA-Omniverse/nanousd-labs) | An experimental exploration of generating USD implementations and stacks from the USD Core Specification via agents | Exploration | [↗](https://github.com/NVIDIA-Omniverse/nanousd-labs#readme) |
 
 ---
 

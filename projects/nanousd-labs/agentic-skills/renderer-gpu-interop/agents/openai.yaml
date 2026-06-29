@@ -1,0 +1,4 @@
+interface:
+  display_name: "Renderer GPU Interop"
+  short_description: "Zero-copy interop + GPU lifetime"
+  default_prompt: "Use $renderer-gpu-interop to share renderer output zero-copy across GPU APIs/runtimes (Vulkan↔CUDA, Metal/MPS, DLPack to Warp/PyTorch) and own fd ownership, cross-API sync, double-buffering, and teardown order across that boundary."

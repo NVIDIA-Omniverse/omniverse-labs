@@ -1,0 +1,7 @@
+#usda 1.0
+
+def Scope "Bad"
+{
+    asset value = @foo
+bar@
+}

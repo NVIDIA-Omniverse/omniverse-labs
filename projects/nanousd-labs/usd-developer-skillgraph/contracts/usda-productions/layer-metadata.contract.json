@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/usda-productions/layer-metadata.contract.json",
+  "title": "USDA Layer Metadata Production Contract",
+  "version": "0.1",
+  "spec_commit": "v1.0.1",
+  "owned_by": "usda-spec-parser",
+  "derives_from": "contracts/document-model-productions/layer-spec.contract.json",
+  "format_neutral_rules": "contracts/document-model-productions/layer-spec.contract.json#laws — layer field set, subLayers/subLayerOffsets agreement, relocates value shape, primOrder semantics are pinned in the format-neutral production. This contract adds USDA-specific grammar dispatch and storage mapping.",
+  "spec_refs": [
+    "specification/file_formats/README.md#sublayer-metadata",
+    "specification/file_formats/README.md#layer-relocates-metadata",
+    "specification/file_formats/README.md#root-prim-reordering",
+    "specification/document_data_model/README.md#layer-spec"
+  ],
+  "scope": {
+    "included": [
+      "generic layer metadata through common metadata",
+      "standalone layer documentation string metadata through common metadata",
+      "subLayers metadata",
+      "subLayerOffsets metadata paired with subLayers",
+      "layer relocates metadata",
+      "root prim ordering metadata"
+    ],
+    "deferred": [
+      "sublayer composition",
+      "asset resolver search paths",
+      "dependent layer loading",
+      "relocates application during composition"
+    ]
+  },
+  "storage_mapping": {
+    "subLayers": "store authored asset references on the root layer spec",
+    "subLayerOffsets": "store one native Retiming value per subLayer item, using defaults where omitted",
+    "relocates": "store authored source-to-target path pairs and source-to-None deletes as native PathRef-to-PathRef entries in the canonical layerRelocates field on the root layer spec",
+    "reorder rootPrims": "store primOrder on the root layer spec"
+  },
+  "laws": [
+    "parsing subLayers does not imply loading referenced layers",
+    "repeated offset or scale fields inside one layer offset use last-one-wins",
+    "relocate path pairs and path-to-None deletes are parsed and stored without composition-time validation",
+    "layer metadata must not be dropped because its downstream semantics are deferred"
+  ],
+  "format_neutral_laws_hoisted": [
+    "subLayers and subLayerOffsets must have matching lengths in storage (document-model-productions/layer-spec.contract.json#laws)",
+    "subLayerOffsets must contain native Retiming records, not dictionaries or JSON objects (document-model-productions/layer-spec.contract.json#fields.subLayerOffsets)",
+    "layerRelocates must contain path references internally, not string-keyed dictionaries or JSON objects (document-model-productions/layer-spec.contract.json#fields.layerRelocates)",
+    "relocate path pairs are parsed and stored without composition-time validation (document-model-productions/layer-spec.contract.json#laws)"
+  ],
+  "golden_groups": [
+    "subLayers with and without offsets",
+    "repeated offset and scale last-one-wins",
+    "relocates dictionary parsing",
+    "root prim reorder sparse and repeated lists",
+    "generic layer metadata coexistence"
+  ],
+  "golden_files": [
+    "goldens/integration/usda-single-layer/layer-metadata.json",
+    "goldens/integration/usda-single-layer/basic.json",
+    "goldens/integration/usda-single-layer/common-metadata.json"
+  ]
+}

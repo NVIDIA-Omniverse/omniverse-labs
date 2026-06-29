@@ -1,0 +1,3 @@
+# Allow image files in this directory (overrides rendering/.gitignore)
+!*.jpg
+!*.png

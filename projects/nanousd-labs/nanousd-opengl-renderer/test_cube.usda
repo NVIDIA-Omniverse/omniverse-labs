@@ -1,0 +1,50 @@
+#usda 1.0
+(
+    metersPerUnit = 1
+    upAxis = "Y"
+)
+
+def Xform "World"
+{
+    def Mesh "Cube"
+    {
+        float3[] extent = [(-1, -1, -1), (1, 1, 1)]
+        int[] faceVertexCounts = [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]
+        int[] faceVertexIndices = [
+            0, 1, 2,  0, 2, 3,
+            4, 5, 6,  4, 6, 7,
+            0, 4, 5,  0, 5, 1,
+            2, 6, 7,  2, 7, 3,
+            0, 4, 7,  0, 7, 3,
+            1, 5, 6,  1, 6, 2
+        ]
+        point3f[] points = [
+            (-1, -1, -1), (1, -1, -1), (1, 1, -1), (-1, 1, -1),
+            (-1, -1,  1), (1, -1,  1), (1, 1,  1), (-1, 1,  1)
+        ]
+        normal3f[] normals = [
+            (0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, -1),
+            (0, 0,  1), (0, 0,  1), (0, 0,  1), (0, 0,  1),
+            (-1, 0, 0), (-1, 0, 0), (1, 0, 0), (1, 0, 0),
+            (-1, 0, 0), (-1, 0, 0), (1, 0, 0), (1, 0, 0),
+            (0, -1, 0), (0, -1, 0), (0, 1, 0), (0, 1, 0),
+            (0, -1, 0), (0, -1, 0), (0, 1, 0), (0, 1, 0),
+            (0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, -1),
+            (0, 0,  1), (0, 0,  1), (0, 0,  1), (0, 0,  1),
+            (-1, 0, 0), (-1, 0, 0), (1, 0, 0), (1, 0, 0)
+        ]
+        color3f[] primvars:displayColor = [(0.2, 0.6, 0.9)]
+        token primvars:displayColor:interpolation = "constant"
+    }
+
+    def Mesh "Floor"
+    {
+        float3[] extent = [(-5, 0, -5), (5, 0, 5)]
+        int[] faceVertexCounts = [3, 3]
+        int[] faceVertexIndices = [0, 1, 2, 0, 2, 3]
+        point3f[] points = [(-5, -1.5, -5), (5, -1.5, -5), (5, -1.5, 5), (-5, -1.5, 5)]
+        normal3f[] normals = [(0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0)]
+        color3f[] primvars:displayColor = [(0.4, 0.4, 0.4)]
+        token primvars:displayColor:interpolation = "constant"
+    }
+}

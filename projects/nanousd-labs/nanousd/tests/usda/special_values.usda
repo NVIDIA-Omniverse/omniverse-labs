@@ -1,0 +1,48 @@
+#usda 1.0
+
+def Scope "SpecialValues"
+{
+    # Value blocks (None)
+    float blocked = None
+    string blockedStr = None
+    float3 blockedVec = None
+    int[] blockedArray = None
+
+    # Infinity and NaN
+    float posInf = inf
+    float negInf = -inf
+    double posInfD = inf
+    double negInfD = -inf
+    float nanVal = nan
+    double nanValD = nan
+
+    # Positive values
+    float posExplicit = 3.14
+    int posInt = 42
+
+    # Zero forms
+    float zeroF = 0.0
+    float zeroFAlt = 0
+    float zeroFDot = .0
+    double zeroD = 0.0
+    int zeroI = 0
+
+    # Scientific notation edge cases
+    float sciNoFrac = 1e5
+    float sciPosFrac = 1.0e+5
+    float sciNegExp = 1.0e-5
+    float sciCapE = 1.0E10
+
+    # Float range limits
+    float floatMax = 3.4028235e+38
+    float floatMin = -3.4028235e+38
+    float floatSmallest = 1.17549435e-38
+    double doubleMax = 1.7976931348623157e+308
+    double doubleMin = -1.7976931348623157e+308
+    double doubleSmallest = 5e-324
+
+    # Half range limits
+    half halfMax = 65504
+    half halfMin = -65504
+    half halfSmallest = 0.00006103515625
+}

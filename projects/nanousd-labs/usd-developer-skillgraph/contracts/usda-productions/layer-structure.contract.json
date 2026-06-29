@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/usda-productions/layer-structure.contract.json",
+  "title": "USDA Layer Structure Production Contract",
+  "version": "0.1",
+  "spec_commit": "v1.0.1",
+  "owned_by": "usda-spec-parser",
+  "derives_from": "contracts/document-model-productions/layer-spec.contract.json",
+  "format_neutral_rules": "contracts/document-model-productions/layer-spec.contract.json — layer spec field set, primChildren maintenance, and storage rules are pinned in the format-neutral production. This contract covers the USDA-specific LayerHeader, LayerContent grammar, and reorder rootPrims keyword production.",
+  "spec_refs": [
+    "specification/file_formats/README.md#layer",
+    "specification/file_formats/README.md#layer-header",
+    "specification/file_formats/README.md#layer-content"
+  ],
+  "scope": {
+    "included": [
+      "LayerHeader parsing and validation",
+      "optional layer metadata block",
+      "top-level LayerItem sequence",
+      "root prim reorder statements",
+      "top-level prim specs",
+      "duplicate spec path diagnostics",
+      "statement separator and padding handling delegated to usda-lexical-format"
+    ],
+    "deferred": [
+      "USDC and USDZ formats",
+      "dependent layer loading",
+      "stage population"
+    ]
+  },
+  "storage_mapping": {
+    "LayerHeader": "validated by the parser and not stored in the document model",
+    "LayerMetadata": "stored on the root layer spec",
+    "reorder rootPrims": "stored as the root primOrder field",
+    "PrimSpec": "stored as child prim specs through usd-document-model"
+  },
+  "laws": [
+    "a successful parse returns a target-native document-model Layer, not JSON",
+    "all created specs must be stored through usd-document-model",
+    "duplicate paths must halt processing with a diagnostic"
+  ],
+  "format_neutral_laws_hoisted": [
+    "multiple authored root-prim reorderings leave the last authored list in primOrder (document-model-productions/layer-spec.contract.json#laws)",
+    "active=false is preserved as field storage; the parser does not filter inactive prims from the layer (document-model-productions/prim-spec.contract.json#laws)"
+  ],
+  "golden_groups": [
+    "valid and invalid layer headers",
+    "empty layer",
+    "metadata-only layer",
+    "root prim ordering last-one-wins",
+    "duplicate root and nested spec paths",
+    "padding, comments, and statement separators"
+  ],
+  "golden_files": [
+    "goldens/integration/usda-single-layer/basic.json",
+    "goldens/integration/usda-single-layer/layer-metadata.json",
+    "goldens/integration/usda-single-layer/parser-diagnostics.json"
+  ]
+}

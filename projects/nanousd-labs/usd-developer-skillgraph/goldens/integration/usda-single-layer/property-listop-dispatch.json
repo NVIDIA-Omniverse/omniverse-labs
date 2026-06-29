@@ -1,0 +1,88 @@
+{
+  "suite": "usda-property-listop-dispatch",
+  "contract": "contracts/handles/usda-spec-parser.handle.json",
+  "spec_commit": "v1.0.1",
+  "cases": [
+    {
+      "id": "relationship-and-connect-share-listop-prefix",
+      "spec_refs": [
+        "file_formats/README.md:916 ListOpConnect",
+        "file_formats/README.md:927 shared listOp production note",
+        "file_formats/README.md:1147 ListOpRelationship"
+      ],
+      "input": {
+        "usda": "#usda 1.0\n\ndef \"World\"\n{\n    append rel outputs = [</Rig.out>]\n    prepend custom rel customOutputs = </Rig.customOut>\n    append float driver.connect = </Rig.out>\n    delete custom float obsolete.connect = [</Rig.old>]\n}\n"
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "layer": {
+          "fields": {
+            "primChildren": {"type": "token[]", "value": ["World"]}
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "primChildren": {"type": "token[]", "value": ["World"]}
+              }
+            },
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": ["outputs", "customOutputs", "driver", "obsolete"]},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World.outputs": {
+              "kind": "relationship",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "targetPaths": {
+                  "type": "listop<ObjectPath>",
+                  "value": {"explicit": [], "prepend": [], "append": ["/Rig.out"], "delete": []}
+                }
+              }
+            },
+            "/World.customOutputs": {
+              "kind": "relationship",
+              "fields": {
+                "custom": {"type": "bool", "value": true},
+                "targetPaths": {
+                  "type": "listop<ObjectPath>",
+                  "value": {"explicit": [], "prepend": ["/Rig.customOut"], "append": [], "delete": []}
+                }
+              }
+            },
+            "/World.driver": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "variability": {"type": "variability", "value": "varying"},
+                "typeName": {"type": "token", "value": "float"},
+                "connectionPaths": {
+                  "type": "listop<ObjectPath>",
+                  "value": {"explicit": [], "prepend": [], "append": ["/Rig.out"], "delete": []}
+                }
+              }
+            },
+            "/World.obsolete": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": true},
+                "variability": {"type": "variability", "value": "varying"},
+                "typeName": {"type": "token", "value": "float"},
+                "connectionPaths": {
+                  "type": "listop<ObjectPath>",
+                  "value": {"explicit": [], "prepend": [], "append": [], "delete": ["/Rig.old"]}
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

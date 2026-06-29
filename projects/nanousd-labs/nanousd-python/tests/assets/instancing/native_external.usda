@@ -1,0 +1,25 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    upAxis = "Y"
+)
+
+def Xform "World"
+{
+    def Xform "A" (
+        instanceable = true
+        prepend references = @./native_ext_proto.usda@</Proto>
+    )
+    {
+        double3 xformOp:translate = (5, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+    def Xform "B" (
+        instanceable = true
+        prepend references = @./native_ext_proto.usda@</Proto>
+    )
+    {
+        double3 xformOp:translate = (-5, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+}

@@ -1,0 +1,27 @@
+{
+  "_note": "Controlled vocabulary for per-archetype semantics in pack.json. The harvest script + LLM gap-fill must use values from these lists. Extend the vocabulary by editing this file; new tokens take effect on the next validate_pack_semantics run. preferredNear/avoidNear are FREE-FORM lists of archetype names from this pack (no vocab check). placementBias is one of the placementBiases enum below.",
+  "placementBiases": ["edge", "center", "corner", null],
+  "anchors": [
+    "kitchen", "bathroom", "bedroom", "living_room", "dining_room", "office",
+    "entryway", "garage",
+    "server_floor", "rack_row", "cooling_alley", "power_zone",
+    "warehouse_storage", "warehouse_dock", "packing_line", "conveyor_run",
+    "shop_floor", "assembly_bay", "showroom",
+    "lobby", "reception", "corridor", "exterior", "outdoor"
+  ],
+  "surfaceLabels": [
+    "top", "counter", "table_top", "desk_top", "shelf", "rack_top",
+    "seat_pad", "rim", "lid", "platform", "tray", "conveyor_belt",
+    "drawer_top", "ledge", "floor_pad", "wall_mount"
+  ],
+  "affordances": [
+    "meal_prep", "dining", "cooking", "wash", "rinse", "drink", "serve_food",
+    "seating", "rest", "sleep",
+    "storage", "storage_kitchen", "storage_bedroom", "storage_office",
+    "compute", "store_servers", "liquid_cooling", "air_cooling",
+    "power_distribution", "networking", "cable_management",
+    "transport", "lift", "move_pallets", "package", "scan",
+    "hygiene", "urinate", "defecate", "shower", "bathe",
+    "display", "writing", "reading", "circulation"
+  ]
+}

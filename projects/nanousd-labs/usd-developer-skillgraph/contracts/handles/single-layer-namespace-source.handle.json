@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/single-layer-namespace-source.handle.json",
+  "title": "USD Single-Layer Namespace Source Contract",
+  "version": "0.1",
+  "spec_commit": "v1.0.1",
+  "capability_contracts": [
+    "contracts/capabilities/namespace-source.json",
+    "contracts/capabilities/semantic-runtime-types.json"
+  ],
+  "dependency_contracts": [
+    "contracts/handles/document-model.handle.json",
+    "contracts/handles/path.handle.json",
+    "contracts/handles/token.handle.json"
+  ],
+  "scope": {
+    "included": [
+      "wrapping one document-model Layer as a NamespaceSource",
+      "root-layer field lookup",
+      "prim spec lookup by path",
+      "attribute and relationship spec lookup by property path",
+      "child prim name enumeration from primChildren",
+      "property name enumeration from properties",
+      "primOrder and propertyOrder exposure without cross-layer merging",
+      "active, instanceable, specifier, typeName, and kind field exposure as authored layer values",
+      "diagnostics passthrough from the layer-open/parser boundary"
+    ],
+    "deferred": [
+      "composition of multiple opinions at a path",
+      "listOp composition across layers",
+      "relocates application",
+      "variant selection composition",
+      "schema fallback properties",
+      "payload load filtering",
+      "value interpolation or fallback value resolution"
+    ]
+  },
+  "model": {
+    "SingleLayerNamespaceSource": "A degenerate namespace source backed by exactly one document-model Layer. Every path has zero or one local spec opinion.",
+    "AuthoredFieldOpinion": "The authored field value stored on the layer spec, prim spec, attribute spec, or relationship spec. Missing fields remain missing until a consumer applies a fallback rule.",
+    "ChildNameSource": "The primChildren/propertyChildren fields maintained by usd-document-model. The source does not infer missing children by scanning unrelated specs.",
+    "SourceMode": "single_layer with composition, value_resolution, payload_loading, instancing, and schema_fallbacks all declared absent."
+  },
+  "operations": {
+    "wrap_layer": {
+      "input": {
+        "layer": "target-native document-model Layer"
+      },
+      "output": {
+        "source": "target-native SingleLayerNamespaceSource"
+      }
+    },
+    "inspect_source": {
+      "input": {},
+      "output": {
+        "mode": "single_layer",
+        "composition": "absent",
+        "value_resolution": "absent",
+        "payload_loading": "absent",
+        "instancing": "absent",
+        "schema_fallbacks": "absent",
+        "child_ordering": "raw_single_layer",
+        "property_ordering": "raw_single_layer"
+      }
+    },
+    "prim_input": {
+      "input": {
+        "path": "absolute prim path or /"
+      },
+      "output": {
+        "exists": "whether a layer or prim spec exists at the path",
+        "kind": "layer, prim, or missing",
+        "fields": "authored field map visible through target-native field values",
+        "childNames": "primChildren token list, or empty list when missing",
+        "propertyNames": "propertyChildren token list, or empty list when missing"
+      }
+    },
+    "property_input": {
+      "input": {
+        "path": "property path"
+      },
+      "output": {
+        "exists": "whether an attribute or relationship spec exists at the path",
+        "kind": "attribute, relationship, or missing",
+        "fields": "authored field map visible through target-native field values"
+      }
+    },
+    "prim_opinions": {
+      "input": {
+        "path": "absolute prim path, variant-selection prim path, or /"
+      },
+      "output": {
+        "opinions": "zero or one authored scene-object opinion for this single-layer source"
+      }
+    }
+  },
+  "laws": [
+    "the single-layer source consumes document-model storage and must not maintain a second independent spec store",
+    "spec path identity comes from usd-paths; adapters may accept string paths only at the conformance boundary",
+    "field names and child/property names use the document-model token/field-token identity domain",
+    "primChildren and propertyChildren are exposed in their stored order before stage-population applies primOrder/propertyOrder rules",
+    "active=false is exposed as an authored field; pruning inactive descendants is owned by usd-stage-population",
+    "specifier fallback is not applied by this provider; stage population owns query fallback policy for missing specifier fields",
+    "composition-arc fields such as references, payload, inheritPaths, specializes, variantSetNames, and variantSelection remain inert field values"
+  ],
+  "adapter_protocol": {
+    "input": "A JSON file containing one case with a canonical layer object and an ops array. The adapter must convert that JSON boundary into target-native document-model values before wrapping the source.",
+    "output": "A JSON object with ok, diagnostics, and results."
+  }
+}

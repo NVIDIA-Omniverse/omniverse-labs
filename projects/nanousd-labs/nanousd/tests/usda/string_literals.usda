@@ -1,0 +1,50 @@
+#usda 1.0
+
+def Scope "StringLiterals"
+{
+    # Double-quoted
+    string doubleQuoted = "hello world"
+    string doubleEmpty = ""
+    string doubleEscapes = "tab\there\nnewline\\backslash\"quote"
+
+    # Single-quoted
+    string singleQuoted = 'hello world'
+    string singleEmpty = ''
+    string singleEscapes = 'tab\there\nnewline\\backslash\'quote'
+
+    # Triple-double-quoted (preserves newlines)
+    string tripleDouble = """This is a
+multiline string
+with "embedded" quotes."""
+
+    # Triple-single-quoted
+    string tripleSingle = '''Another
+multiline string
+with 'embedded' quotes.'''
+
+    # Triple-quoted with escapes
+    string tripleEscapes = """line1\nline2\ttab"""
+
+    # Triple-quoted empty
+    string tripleEmpty = """"""
+
+    # Strings used as metadata values
+    string withMetadata = "value" (
+        doc = "A documented attribute"
+        displayName = 'Display Name'
+    )
+}
+
+def Scope "StringInMetadata" (
+    doc = "Documentation with \"escaped quotes\""
+)
+{
+}
+
+def Scope "TripleQuotedDoc" (
+    doc = """A long
+multiline
+documentation string."""
+)
+{
+}

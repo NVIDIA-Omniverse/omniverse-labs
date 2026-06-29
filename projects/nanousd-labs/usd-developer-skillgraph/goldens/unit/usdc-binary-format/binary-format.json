@@ -1,0 +1,702 @@
+{
+  "suite": "usdc-binary-format-basic",
+  "contract": "contracts/handles/usdc-binary-format.handle.json",
+  "production_contracts": [
+    "contracts/usdc-productions/crate-header-bootstrap.contract.json",
+    "contracts/usdc-productions/crate-toc.contract.json",
+    "contracts/usdc-productions/crate-compression.contract.json",
+    "contracts/usdc-productions/crate-reader-diagnostics.contract.json"
+  ],
+  "spec_commit": "6b4f01f2d6d46b01507481524eb516b4ef358c31",
+  "fixture_notes": {
+    "hex_payloads": "small payloads supplied inline as lowercase hex strings; the adapter must parse the hex into bytes before invoking the operation",
+    "fixture_paths": "larger payloads (LZ4, compressed integer arrays, real Crate files) supplied as repo-relative fixture paths read through the adapter's fixture protocol",
+    "missing_fixtures": "fixtures referenced under benchmarks/fixtures/usdc-unit/ are part of the next-batch fixture authoring task and do not exist yet; cases that use them are documented but their adapter execution depends on those fixtures landing"
+  },
+  "cases": [
+    {
+      "id": "valid-header-min-version",
+      "spec_refs": [
+        "specification/file_formats/README.md#header",
+        "specification/file_formats/README.md#bootstrap"
+      ],
+      "input": {
+        "ops": [
+          {
+            "op": "validate_header",
+            "bytes_hex": "5058522d5553444300080000000000004801000000000000000000000000000000000000000000000000000000000000"
+          }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "validate_header",
+            "ok": true,
+            "version": {
+              "major": 0,
+              "minor": 8,
+              "patch": 0
+            },
+            "tocOffset": 328
+          }
+        ]
+      }
+    },
+    {
+      "id": "valid-header-nonzero-unused-bytes",
+      "spec_refs": [
+        "specification/file_formats/README.md#header"
+      ],
+      "input": {
+        "ops": [
+          {
+            "op": "validate_header",
+            "bytes_hex": "5058522d555344430008000123456789200000000000000018000000deadbeef00000000000000000000000000000000",
+            "notes": "version triple 0.8.0; unused bytes (positions 11-15) are non-zero; spec permits any value"
+          }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "validate_header",
+            "ok": true,
+            "version": {
+              "major": 0,
+              "minor": 8,
+              "patch": 0
+            },
+            "tocOffset": 32
+          }
+        ]
+      }
+    },
+    {
+      "id": "valid-header-max-version-with-patch",
+      "spec_refs": [
+        "specification/file_formats/README.md#crate-versions"
+      ],
+      "input": {
+        "ops": [
+          {
+            "op": "validate_header",
+            "bytes_hex": "5058522d5553444300 0c 03 0000000000200000000000000000000000000000000000000000000000000000"
+          }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "validate_header",
+            "ok": true,
+            "version": {
+              "major": 0,
+              "minor": 12,
+              "patch": 3
+            },
+            "tocOffset": 32
+          }
+        ]
+      }
+    },
+    {
+      "id": "invalid-magic-rejected",
+      "spec_refs": [
+        "specification/file_formats/README.md#header"
+      ],
+      "input": {
+        "ops": [
+          {
+            "op": "validate_header",
+            "bytes_hex": "5058522d5553444100080000000000002000000000000000000000000000000000000000000000000000000000000000",
+            "notes": "magic ends in 'USDA' rather than 'USDC'"
+          }
+        ]
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {
+            "severity": "error",
+            "code": "InvalidUsdcHeader",
+            "message": "expected PXR-USDC magic"
+          }
+        ],
+        "results": [
+          {
+            "op": "validate_header",
+            "ok": false,
+            "code": "InvalidUsdcHeader"
+          }
+        ]
+      }
+    },
+    {
+      "id": "truncated-header-rejected",
+      "spec_refs": [
+        "specification/file_formats/README.md#header"
+      ],
+      "input": {
+        "ops": [
+          {
+            "op": "validate_header",
+            "bytes_hex": "5058522d555344430008",
+            "notes": "only 10 bytes; payload too short for a complete bootstrap"
+          }
+        ]
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {
+            "severity": "error",
+            "code": "InvalidUsdcHeader",
+            "message": "USDC payload is too short"
+          }
+        ],
+        "results": [
+          {
+            "op": "validate_header",
+            "ok": false,
+            "code": "InvalidUsdcHeader"
+          }
+        ]
+      }
+    },
+    {
+      "id": "unsupported-version-minor-7",
+      "spec_refs": [
+        "specification/file_formats/README.md#crate-versions"
+      ],
+      "input": {
+        "ops": [
+          {
+            "op": "validate_header",
+            "bytes_hex": "5058522d5553444300070000000000002000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ]
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {
+            "severity": "error",
+            "code": "UnsupportedUsdcVersion",
+            "message": "unsupported Crate version"
+          }
+        ],
+        "results": [
+          {
+            "op": "validate_header",
+            "ok": false,
+            "code": "UnsupportedUsdcVersion"
+          }
+        ]
+      }
+    },
+    {
+      "id": "unsupported-version-minor-13",
+      "spec_refs": [
+        "specification/file_formats/README.md#crate-versions"
+      ],
+      "input": {
+        "ops": [
+          {
+            "op": "validate_header",
+            "bytes_hex": "5058522d55534443000d0000000000002000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ]
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {
+            "severity": "error",
+            "code": "UnsupportedUsdcVersion",
+            "message": "unsupported Crate version"
+          }
+        ],
+        "results": [
+          {
+            "op": "validate_header",
+            "ok": false,
+            "code": "UnsupportedUsdcVersion"
+          }
+        ]
+      }
+    },
+    {
+      "id": "unsupported-version-major-1",
+      "spec_refs": [
+        "specification/file_formats/README.md#crate-versions"
+      ],
+      "input": {
+        "ops": [
+          {
+            "op": "validate_header",
+            "bytes_hex": "5058522d5553444301000000000000002000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ]
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {
+            "severity": "error",
+            "code": "UnsupportedUsdcVersion",
+            "message": "unsupported Crate version"
+          }
+        ],
+        "results": [
+          {
+            "op": "validate_header",
+            "ok": false,
+            "code": "UnsupportedUsdcVersion"
+          }
+        ]
+      }
+    },
+    {
+      "id": "toc-offset-beyond-payload",
+      "spec_refs": [
+        "specification/file_formats/README.md#bootstrap"
+      ],
+      "input": {
+        "ops": [
+          {
+            "op": "validate_header",
+            "bytes_hex": "5058522d555344430008000000000000ffffffffffffffff0000000000000000",
+            "notes": "tocOffset = 0xFFFFFFFFFFFFFFFF, far beyond the 32-byte payload"
+          }
+        ]
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {
+            "severity": "error",
+            "code": "MalformedUsdcBootstrap",
+            "message": "table of contents offset is outside the payload"
+          }
+        ],
+        "results": [
+          {
+            "op": "validate_header",
+            "ok": false,
+            "code": "MalformedUsdcBootstrap"
+          }
+        ]
+      }
+    },
+    {
+      "id": "real-minimal-fixture-read-toc",
+      "spec_refs": [
+        "specification/file_formats/README.md#table-of-contents",
+        "specification/file_formats/README.md#tokens-section",
+        "specification/file_formats/README.md#paths-section"
+      ],
+      "notes": "exact offset/size values vary per fixture; goldens match section_kinds presence and count, not byte coordinates [Moved from expected.results[].notes — score.py treats expected as a deep-comparison target, so prose here would force the adapter to emit the literal. Case-level notes are documentation only.]",
+      "input": {
+        "ops": [
+          {
+            "op": "validate_header",
+            "fixture": "benchmarks/fixtures/minimal_empty.usdc"
+          },
+          {
+            "op": "read_toc",
+            "fixture": "benchmarks/fixtures/minimal_empty.usdc"
+          },
+          {
+            "op": "section_kinds_present",
+            "fixture": "benchmarks/fixtures/minimal_empty.usdc"
+          }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "validate_header",
+            "ok": true,
+            "version": {
+              "major": 0,
+              "minor": 8,
+              "patch": 0
+            },
+            "tocOffset": 328
+          },
+          {
+            "op": "read_toc",
+            "ok": true,
+            "section_count": 6,
+            "section_kinds": [
+              "TOKENS",
+              "STRINGS",
+              "FIELDS",
+              "FIELDSETS",
+              "PATHS",
+              "SPECS"
+            ]
+          },
+          {
+            "op": "section_kinds_present",
+            "ok": true,
+            "TOKENS": true,
+            "STRINGS": true,
+            "FIELDS": true,
+            "FIELDSETS": true,
+            "PATHS": true,
+            "SPECS": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "section-bytes-O1-lookup",
+      "spec_refs": [
+        "specification/file_formats/README.md#table-of-contents"
+      ],
+      "notes": "section absence is reported cleanly; spec-parser policy decides if absence is an error [Moved from expected.results[].notes — score.py treats expected as a deep-comparison target, so prose here would force the adapter to emit the literal. Case-level notes are documentation only.]",
+      "input": {
+        "ops": [
+          {
+            "op": "validate_header",
+            "fixture": "benchmarks/fixtures/minimal_empty.usdc"
+          },
+          {
+            "op": "read_toc",
+            "fixture": "benchmarks/fixtures/minimal_empty.usdc"
+          },
+          {
+            "op": "section_bytes",
+            "kind": "TOKENS"
+          },
+          {
+            "op": "section_bytes",
+            "kind": "SPECS"
+          },
+          {
+            "op": "section_bytes",
+            "kind": "DOES_NOT_EXIST"
+          }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "validate_header",
+            "ok": true,
+            "version": {
+              "major": 0,
+              "minor": 8,
+              "patch": 0
+            }
+          },
+          {
+            "op": "read_toc",
+            "ok": true
+          },
+          {
+            "op": "section_bytes",
+            "ok": true,
+            "kind": "TOKENS",
+            "is_view": true,
+            "owned_copy": false
+          },
+          {
+            "op": "section_bytes",
+            "ok": true,
+            "kind": "SPECS",
+            "is_view": true,
+            "owned_copy": false
+          },
+          {
+            "op": "section_bytes",
+            "ok": false,
+            "kind": "DOES_NOT_EXIST",
+            "absent": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "lz4-buffer-zero-chunk-form",
+      "spec_refs": [
+        "specification/file_formats/README.md#lz4-compression"
+      ],
+      "input": {
+        "ops": [
+          {
+            "op": "decode_lz4_buffer",
+            "fixture": "benchmarks/fixtures/usdc-unit/lz4-zero-chunk.bin",
+            "notes": "chunk_count uint64=0; remainder is one LZ4 stream that decompresses to the canonical reference text 'crate-zero-chunk-roundtrip'"
+          }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "decode_lz4_buffer",
+            "ok": true,
+            "decompressed_text": "crate-zero-chunk-roundtrip",
+            "decompressed_byte_length": 26
+          }
+        ]
+      },
+      "fixture_obligation": "benchmarks/fixtures/usdc-unit/lz4-zero-chunk.bin must be authored: 8 bytes of zero (chunk_count=0) followed by a single LZ4 stream encoding ASCII 'crate-zero-chunk-roundtrip'"
+    },
+    {
+      "id": "lz4-buffer-multi-chunk-form",
+      "spec_refs": [
+        "specification/file_formats/README.md#lz4-compression"
+      ],
+      "input": {
+        "ops": [
+          {
+            "op": "decode_lz4_buffer",
+            "fixture": "benchmarks/fixtures/usdc-unit/lz4-multi-chunk.bin",
+            "notes": "chunk_count uint64=3; each chunk is prefixed by its 8B compressed size; decompresses to 3*N bytes"
+          }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "decode_lz4_buffer",
+            "ok": true,
+            "chunk_count_observed": 3,
+            "decompressed_text": "chunk-aaaaaaaaaaaaaaaa|chunk-bbbbbbbbbbbbbbbb|chunk-cccccccccccccccc",
+            "decompressed_byte_length": 68
+          }
+        ]
+      },
+      "fixture_obligation": "benchmarks/fixtures/usdc-unit/lz4-multi-chunk.bin must be authored: chunk_count=3, three LZ4-encoded chunks each with their 8B compressed-size prefix"
+    },
+    {
+      "id": "lz4-buffer-corrupt-stream",
+      "spec_refs": [
+        "specification/file_formats/README.md#lz4-compression"
+      ],
+      "input": {
+        "ops": [
+          {
+            "op": "decode_lz4_buffer",
+            "bytes_hex": "0000000000000000ffffffffffffffff",
+            "notes": "chunk_count=0; remainder is 8 bytes of 0xFF which is not a valid LZ4 stream"
+          }
+        ]
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {
+            "severity": "error",
+            "code": "MalformedUsdcLz4Buffer",
+            "message": "LZ4 stream is corrupt"
+          }
+        ],
+        "results": [
+          {
+            "op": "decode_lz4_buffer",
+            "ok": false,
+            "code": "MalformedUsdcLz4Buffer"
+          }
+        ]
+      }
+    },
+    {
+      "id": "compressed-int-array-int32-codepoints",
+      "spec_refs": [
+        "specification/file_formats/README.md#compressed-integer-arrays"
+      ],
+      "notes": "matches the worked example from §16.3.7.2.2; common_value=1 (signed int32) [Moved from expected.results[].notes — score.py treats expected as a deep-comparison target, so prose here would force the adapter to emit the literal. Case-level notes are documentation only.]",
+      "input": {
+        "ops": [
+          {
+            "op": "decode_compressed_int_array",
+            "fixture": "benchmarks/fixtures/usdc-unit/compint32-codepoints.bin",
+            "elementType": "int32",
+            "elementCount": 7,
+            "notes": "input deltas use codepoints 00 (common), 01 (i8 quarter), 10 (i16 half), and 11 (i32 full)"
+          }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "decode_compressed_int_array",
+            "ok": true,
+            "elementType": "int32",
+            "values": [
+              123,
+              124,
+              125,
+              100125,
+              100125,
+              100126,
+              100126
+            ]
+          }
+        ]
+      },
+      "fixture_obligation": "benchmarks/fixtures/usdc-unit/compint32-codepoints.bin must be authored: outer 8B compressed_size + LZ4 stream that decompresses to the inner encoding for the worked example [123, 124, 125, 100125, 100125, 100126, 100126]"
+    },
+    {
+      "id": "compressed-int-array-int64-codepoints",
+      "spec_refs": [
+        "specification/file_formats/README.md#compressed-integer-arrays"
+      ],
+      "notes": "exercises codepoint 01 (i16 quarter), 10 (i32 half), 00 (common), 11 (i64 full); common_value=1 (signed int64) [Moved from expected.results[].notes — score.py treats expected as a deep-comparison target, so prose here would force the adapter to emit the literal. Case-level notes are documentation only.]",
+      "input": {
+        "ops": [
+          {
+            "op": "decode_compressed_int_array",
+            "fixture": "benchmarks/fixtures/usdc-unit/compint64-codepoints.bin",
+            "elementType": "int64",
+            "elementCount": 5
+          }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "decode_compressed_int_array",
+            "ok": true,
+            "elementType": "int64",
+            "values": [
+              10,
+              11,
+              32779,
+              32779,
+              2147483659
+            ]
+          }
+        ]
+      },
+      "fixture_obligation": "benchmarks/fixtures/usdc-unit/compint64-codepoints.bin must be authored to match the int64 worked deltas"
+    },
+    {
+      "id": "compressed-int-array-uint-signed-common",
+      "spec_refs": [
+        "specification/file_formats/README.md#compressed-integer-arrays"
+      ],
+      "notes": "decoding common value as unsigned would yield 0xFFFFFFFD instead of -3 and corrupt the running sum [Moved from expected.results[].notes — score.py treats expected as a deep-comparison target, so prose here would force the adapter to emit the literal. Case-level notes are documentation only.]",
+      "input": {
+        "ops": [
+          {
+            "op": "decode_compressed_int_array",
+            "fixture": "benchmarks/fixtures/usdc-unit/compuint32-signed-common.bin",
+            "elementType": "uint32",
+            "elementCount": 5,
+            "notes": "the array element type is unsigned but the common value is the negative delta -3; readers must store common as signed int32"
+          }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "decode_compressed_int_array",
+            "ok": true,
+            "elementType": "uint32",
+            "values": [
+              100,
+              97,
+              94,
+              91,
+              88
+            ]
+          }
+        ]
+      },
+      "fixture_obligation": "benchmarks/fixtures/usdc-unit/compuint32-signed-common.bin must encode a 5-element uint32 array with all codepoints == 00 and a common value of -3 (stored as signed int32 0xFFFFFFFD)"
+    },
+    {
+      "id": "compressed-int-array-nonzero-padding-rejected",
+      "spec_refs": [
+        "specification/file_formats/README.md#compressed-integer-arrays"
+      ],
+      "input": {
+        "ops": [
+          {
+            "op": "decode_compressed_int_array",
+            "fixture": "benchmarks/fixtures/usdc-unit/compint-nonzero-padding.bin",
+            "elementType": "int32",
+            "elementCount": 3,
+            "notes": "3-element array uses 6 codepoint bits; remaining 2 padding bits are set to 11 instead of 00"
+          }
+        ]
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {
+            "severity": "error",
+            "code": "MalformedUsdcCompressedIntArray",
+            "message": "non-zero codepoint padding"
+          }
+        ],
+        "results": [
+          {
+            "op": "decode_compressed_int_array",
+            "ok": false,
+            "code": "MalformedUsdcCompressedIntArray"
+          }
+        ]
+      },
+      "fixture_obligation": "benchmarks/fixtures/usdc-unit/compint-nonzero-padding.bin must encode a 3-element int32 array whose codepoint padding bits are non-zero"
+    },
+    {
+      "id": "toc-not-at-end-of-file",
+      "spec_refs": [
+        "specification/file_formats/README.md#table-of-contents"
+      ],
+      "input": {
+        "ops": [
+          {
+            "op": "read_toc",
+            "fixture": "benchmarks/fixtures/usdc-unit/toc-trailing-garbage.usdc",
+            "notes": "valid PXR-USDC header and TOC followed by 64 trailing garbage bytes"
+          }
+        ]
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {
+            "severity": "error",
+            "code": "MalformedUsdcToc",
+            "message": "table of contents is not at end of file"
+          }
+        ],
+        "results": [
+          {
+            "op": "read_toc",
+            "ok": false,
+            "code": "MalformedUsdcToc"
+          }
+        ]
+      },
+      "fixture_obligation": "benchmarks/fixtures/usdc-unit/toc-trailing-garbage.usdc must be authored by appending bytes after a valid TOC"
+    }
+  ]
+}

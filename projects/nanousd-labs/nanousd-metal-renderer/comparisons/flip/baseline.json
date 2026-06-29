@@ -1,0 +1,162 @@
+{
+  "apple/ball_soccerball_camA/metal_raster": {
+    "deltae": 2.649,
+    "flip": 0.2242,
+    "gmsd": 0.0896
+  },
+  "apple/ball_soccerball_camA/metal_rt": {
+    "deltae": 2.96,
+    "flip": 0.2402,
+    "gmsd": 0.0971
+  },
+  "apple/ball_soccerball_camB/metal_raster": {
+    "deltae": 4.191,
+    "flip": 0.2947,
+    "gmsd": 0.0973
+  },
+  "apple/ball_soccerball_camB/metal_rt": {
+    "deltae": 4.125,
+    "flip": 0.2856,
+    "gmsd": 0.0918
+  },
+  "apple/fender_stratocaster_camA/metal_raster": {
+    "deltae": 6.102,
+    "flip": 0.3005,
+    "gmsd": 0.0747
+  },
+  "apple/fender_stratocaster_camA/metal_rt": {
+    "deltae": 6.078,
+    "flip": 0.3035,
+    "gmsd": 0.0867
+  },
+  "apple/fender_stratocaster_camB/metal_raster": {
+    "deltae": 8.0,
+    "flip": 0.3579,
+    "gmsd": 0.0838
+  },
+  "apple/fender_stratocaster_camB/metal_rt": {
+    "deltae": 7.955,
+    "flip": 0.3678,
+    "gmsd": 0.0938
+  },
+  "apple/pancakes_camA/metal_raster": {
+    "deltae": 6.051,
+    "flip": 0.378,
+    "gmsd": 0.0718
+  },
+  "apple/pancakes_camA/metal_rt": {
+    "deltae": 4.983,
+    "flip": 0.3015,
+    "gmsd": 0.0676
+  },
+  "apple/pancakes_camB/metal_raster": {
+    "deltae": 6.299,
+    "flip": 0.3996,
+    "gmsd": 0.0783
+  },
+  "apple/pancakes_camB/metal_rt": {
+    "deltae": 6.295,
+    "flip": 0.382,
+    "gmsd": 0.0814
+  },
+  "apple/robot_camA/metal_raster": {
+    "deltae": 3.944,
+    "flip": 0.236,
+    "gmsd": 0.0717
+  },
+  "apple/robot_camA/metal_rt": {
+    "deltae": 4.19,
+    "flip": 0.218,
+    "gmsd": 0.07
+  },
+  "apple/robot_camB/metal_raster": {
+    "deltae": 5.814,
+    "flip": 0.3028,
+    "gmsd": 0.0789
+  },
+  "apple/robot_camB/metal_rt": {
+    "deltae": 5.895,
+    "flip": 0.278,
+    "gmsd": 0.079
+  },
+  "apple/teapot_camA/metal_raster": {
+    "deltae": 7.311,
+    "flip": 0.4019,
+    "gmsd": 0.1107
+  },
+  "apple/teapot_camA/metal_rt": {
+    "deltae": 5.82,
+    "flip": 0.3158,
+    "gmsd": 0.1162
+  },
+  "apple/teapot_camB/metal_raster": {
+    "deltae": 9.957,
+    "flip": 0.5092,
+    "gmsd": 0.1094
+  },
+  "apple/teapot_camB/metal_rt": {
+    "deltae": 7.388,
+    "flip": 0.3924,
+    "gmsd": 0.1104
+  },
+  "apple/toy_drummer_camA/metal_raster": {
+    "deltae": 6.459,
+    "flip": 0.3682,
+    "gmsd": 0.0675
+  },
+  "apple/toy_drummer_camA/metal_rt": {
+    "deltae": 6.683,
+    "flip": 0.3306,
+    "gmsd": 0.0742
+  },
+  "apple/toy_drummer_camB/metal_raster": {
+    "deltae": 6.289,
+    "flip": 0.3518,
+    "gmsd": 0.0648
+  },
+  "apple/toy_drummer_camB/metal_rt": {
+    "deltae": 6.993,
+    "flip": 0.3593,
+    "gmsd": 0.0746
+  },
+  "chess/chess_set_camA/metal_raster": {
+    "deltae": 8.336,
+    "flip": 0.434,
+    "gmsd": 0.1046
+  },
+  "chess/chess_set_camA/metal_rt": {
+    "deltae": 9.092,
+    "flip": 0.4474,
+    "gmsd": 0.1023
+  },
+  "chess/chess_set_camB/metal_raster": {
+    "deltae": 4.31,
+    "flip": 0.2417,
+    "gmsd": 0.0901
+  },
+  "chess/chess_set_camB/metal_rt": {
+    "deltae": 5.346,
+    "flip": 0.2708,
+    "gmsd": 0.0871
+  },
+  "warehouse/warehouse_camA/metal_raster": {
+    "deltae": 9.519,
+    "flip": 0.8264,
+    "gmsd": 0.2024
+  },
+  "warehouse/warehouse_camA/metal_rt": {
+    "deltae": 7.305,
+    "flip": 0.742,
+    "gmsd": 0.1758
+  },
+  "warehouse/warehouse_camB/metal_raster": {
+    "deltae": 12.659,
+    "flip": 0.9108,
+    "gmsd": 0.2317
+  },
+  "warehouse/warehouse_camB/metal_rt": {
+    "deltae": 7.614,
+    "flip": 0.7808,
+    "gmsd": 0.1948
+  }
+}

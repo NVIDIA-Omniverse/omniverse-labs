@@ -1,0 +1,21 @@
+nanousdview
+Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License"); see the LICENSE
+file. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0.
+
+-------------------------------------------------------------------------------
+OpenUSD
+-------------------------------------------------------------------------------
+
+This repository includes content derived from OpenUSD
+(https://github.com/PixarAnimationStudios/OpenUSD), Copyright Pixar, licensed
+under the Apache License, Version 2.0 (license terms at
+https://openusd.org/license). The derived files retain their original
+Pixar / OpenUSD copyright headers.
+
+Derived OpenUSD content:
+
+  - python/nanousdview/usdviewq/ — a subset of OpenUSD's usdviewq module,
+    copied and adapted to drive the viewer UI against nanousd.

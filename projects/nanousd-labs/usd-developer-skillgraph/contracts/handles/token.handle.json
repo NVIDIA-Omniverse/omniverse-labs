@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/token.handle.json",
+  "title": "USD Token Handle Contract",
+  "version": "0.1",
+  "spec_commit": "v1.0.1",
+  "spec_requirements": [
+    "token is a scalar foundational type whose fundamental type is a UTF-8 encoded string",
+    "token and string values have the same specification, but runtimes may choose different runtime and storage representations",
+    "token is a distinct USD value type and must remain distinguishable from string in the value model",
+    "token values are expected to be commonly used strings optimized for hashing and equality",
+    "the glossary describes Token as a handle for a registered string that can be compared, assigned, and hashed in constant time",
+    "Token equality and hashing depend on registered identity within a compatible token identity domain",
+    "token is a required fundamental type for list operations",
+    "field-specific restrictions such as allowedTokens are not enforced at the layer document level"
+  ],
+  "model": {
+    "Context": "Implementation-owned state that creates, stores, interns, and releases opaque token handles during a conformance run. It may be an intern table, registry, arena, allocator context, or no-op wrapper around native values.",
+    "Token": "First-class target-native value abstraction for the USD token scalar type. It may wrap an interned ID, pointer, atom, string handle, or other storage strategy, but implementation code must not collapse token to an unadorned string or integer as its primary abstraction.",
+    "TokenIdentityDomain": "The implementation-defined domain in which Token values are canonical and mutually comparable. It may be process-wide, runtime-owned, sharded, arena-backed with non-escaping tokens, or backed by a native atom facility. The contract requires canonical identity inside any domain where Token values can be compared, not a specific global singleton.",
+    "TokenHandle": "Opaque conformance-harness reference to a token value owned by a Context. The handle is not a string, class, struct layout, pointer, atom index, or product API requirement, and it may wrap the target's native Token abstraction."
+  },
+  "operations": {
+    "intern": {
+      "input": {
+        "text": "UTF-8 string"
+      },
+      "output": {
+        "handle": "new or reused TokenHandle",
+        "text": "token string"
+      }
+    },
+    "intern_in_fresh_context": {
+      "input": {
+        "text": "UTF-8 string"
+      },
+      "output": {
+        "handle": "new or reused TokenHandle created through an independent conformance context or facade that participates in a compatible TokenIdentityDomain",
+        "text": "token string"
+      }
+    },
+    "to_string": {
+      "input": {
+        "token": "existing TokenHandle"
+      },
+      "output": {
+        "text": "token string"
+      }
+    },
+    "is_empty": {
+      "input": {
+        "token": "existing TokenHandle"
+      },
+      "output": {
+        "empty": "boolean"
+      }
+    },
+    "equal": {
+      "input": {
+        "lhs": "TokenHandle",
+        "rhs": "TokenHandle"
+      },
+      "output": {
+        "equal": "boolean"
+      }
+    },
+    "hash_equal": {
+      "input": {
+        "lhs": "TokenHandle",
+        "rhs": "TokenHandle"
+      },
+      "output": {
+        "hash_equal": "boolean indicating whether the target's token hash values compare equal"
+      }
+    },
+    "release": {
+      "input": {
+        "token": "TokenHandle"
+      },
+      "output": {
+        "released": "boolean"
+      }
+    }
+  },
+  "laws": [
+    "intern(text).to_string must return text",
+    "intern_in_fresh_context(text).to_string must return text",
+    "intern(a).equal(intern(b)) is true if and only if a and b are the same string",
+    "intern(a).equal(intern_in_fresh_context(b)) is true if and only if a and b are the same string",
+    "equal(a, b) implies hash_equal(a, b)",
+    "Token values that can be compared by the implementation must be canonical within a compatible TokenIdentityDomain",
+    "a raw local-table ID is not sufficient token identity unless tokens from that table cannot escape or be compared with tokens from another table",
+    "the token type must not reject empty strings, whitespace, reserved USDA keywords, or Unicode strings solely because of token type semantics",
+    "release invalidates the test-harness handle name but does not prescribe native lifetime strategy"
+  ],
+  "threading": {
+    "token_values": "Created Token values are immutable and may be copied, assigned, compared, and hashed concurrently without caller synchronization.",
+    "interning": "Concurrent interning into a shared TokenIdentityDomain must be safe, or the target must explicitly declare a weaker single-threaded threading model for this skill.",
+    "string_conversion": "String conversion must not expose references that become invalid under normal token-domain growth."
+  },
+  "adapter_protocol": {
+    "input": "A JSON file containing one case with an ops array.",
+    "output": "A JSON object with ok, diagnostics, and results. Test handle names are harness variables, not native handle values."
+  }
+}

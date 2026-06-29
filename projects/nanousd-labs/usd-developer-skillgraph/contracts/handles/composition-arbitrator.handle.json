@@ -1,0 +1,197 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/composition-arbitrator.handle.json",
+  "title": "USD Composition Arbitrator Contract",
+  "version": "0.1",
+  "spec_tag": "v1.0.1",
+  "spec_commit": "v1.0.1",
+  "spec_source": "aousd/specifications-public@v1.0.1",
+  "capability_contracts": [
+    "contracts/capabilities/namespace-source.json",
+    "contracts/capabilities/composition-opinion-source.json",
+    "contracts/capabilities/composition-opinion-stack.json",
+    "contracts/capabilities/composition-provenance.json",
+    "contracts/capabilities/semantic-runtime-types.json"
+  ],
+  "dependency_contracts": [
+    "contracts/handles/layer-stack-namespace-source.handle.json",
+    "contracts/handles/reference-namespace-source.handle.json",
+    "contracts/handles/payload-namespace-source.handle.json",
+    "contracts/handles/relocates-namespace-source.handle.json",
+    "contracts/handles/inherits-namespace-source.handle.json",
+    "contracts/handles/specializes-namespace-source.handle.json",
+    "contracts/handles/variant-namespace-source.handle.json",
+    "contracts/handles/document-model.handle.json",
+    "contracts/handles/path.handle.json",
+    "contracts/handles/token.handle.json",
+    "contracts/handles/foundational-values.handle.json"
+  ],
+  "coverage_contracts": [
+    "contracts/spec-coverage/composition-arbitrator.coverage.json"
+  ],
+  "scope": {
+    "included": [
+      "building a central composition arbitrator from already-opened layer-stack and bounded composition-arc opinion sources",
+      "collecting local, inherits, selected variant, relocates, reference, loaded payload, and specializes opinions into target-native prim/property opinion stacks",
+      "LIVERPS strength arbitration across available arc families",
+      "same-layer-stack ordering by layer strength for local opinions supplied by the layer-stack source",
+      "consuming recursive reference opinions when supplied by bounded reference sources",
+      "consuming recursive and implied inherit or specialize opinions when supplied by bounded arc sources",
+      "selected variant insertion, including recursive selected variant opinions when supplied by the variant source, at variant strength after selected variants have been computed",
+      "specializes placement as globally weakest opinions",
+      "preserving or consuming arc-source namespace remapping for path-valued field contents such as relationship targets and attribute connections",
+      "instance-filtered descendant prim/property inputs for supported non-local composition arc opinions under instanceable prims",
+      "composition diagnostics aggregated from consumed sources",
+      "namespace-source facade with composed prim_input, property_input, and prim_opinions results for stage population",
+      "source capability declaration that reports partial composition until deferred behavior is implemented"
+    ],
+    "deferred": [
+      "opening or resolving assets for references, payloads, or sublayers",
+      "recursive arc discovery not already supplied by bounded graph providers",
+      "unloaded payload state and load/unload policy",
+      "external variant fallback maps or stage/session policies not defined by the AOUSD v1.0.1 core composition text",
+      "implied inherits and specializes not represented by consumed sources",
+      "complete relocate validation and recursive relocate mapping beyond consumed bounded sources",
+      "dictionary merging, listOp value composition, time samples, splines, value clips, and attribute value resolution",
+      "schema fallback properties, model hierarchy policy, stage population, and implementation-specific prototype query APIs not required by the pinned AOUSD instancing text"
+    ]
+  },
+  "model": {
+    "CompositionArbitrator": "The central provider that forms composed prim/property indexes from all available local and arc-family opinion sources. It is the first graph node whose purpose is final LIVERPS arbitration.",
+    "LocalOpinionSource": "The layer-stack namespace source that contributes local layer-stack opinions in layer strength order.",
+    "ArcOpinionSource": "A bounded reference, payload, relocates, inherits, specializes, or variant provider that exposes mapped opinions or enough strength-ordered provenance to build CompositionOpinion records.",
+    "PrimIndex": "A composed prim index for an absolute scene prim path, containing strong-to-weak opinions and population-facing composed fields, child names, and property names.",
+    "PropertyIndex": "A composed property index for an absolute scene property path, containing strong-to-weak attribute or relationship opinions.",
+    "NamespaceSourceFacade": "The NamespaceSource surface returned by the composition arbitrator so stage population can build a Stage without knowing which composition arcs contributed."
+  },
+  "operations": {
+    "build_arbitrator": {
+      "input": {
+        "localSource": "target-native layer-stack NamespaceSource",
+        "arcSources": "available target-native arc opinion or namespace sources for references, payloads, relocates, inherits, specializes, and variants",
+        "payloadOpinionSource": "payload inclusion state represented by supplied payload opinion source availability"
+      },
+      "output": {
+        "arbitrator": "target-native CompositionArbitrator or diagnostics"
+      }
+    },
+    "inspect_source": {
+      "input": {},
+      "output": {
+        "mode": "composed_namespace",
+        "composition": "partial",
+        "value_resolution": "partial",
+        "payload_loading": "partial or absent according to supplied payload opinions",
+        "instancing": "full",
+        "schema_fallbacks": "absent",
+        "child_ordering": "composed",
+        "property_ordering": "composed"
+      }
+    },
+    "compose_prim_index": {
+      "input": {
+        "path": "absolute composed prim path or /"
+      },
+      "output": {
+        "exists": "whether any composed opinion contributes a prim-like input at the path",
+        "opinions": "strong-to-weak CompositionOpinion records",
+        "fields": "population-facing strongest authored fields per field token",
+        "childNames": "composition-ordered child prim names before population mask or active filtering",
+        "propertyNames": "composition-ordered property names before schema fallback injection"
+      }
+    },
+    "compose_property_index": {
+      "input": {
+        "path": "absolute composed property path"
+      },
+      "output": {
+        "exists": "whether any composed opinion contributes an attribute or relationship at the path",
+        "kind": "attribute, relationship, or missing",
+        "opinions": "strong-to-weak CompositionOpinion records",
+        "fields": "population-facing strongest authored fields per field token"
+      }
+    },
+    "compose_instance_prim_index": {
+      "input": {
+        "instanceRoot": "absolute composed instanceable prim path that owns the shared representation being populated",
+        "path": "absolute composed descendant prim path under an instanceable prim"
+      },
+      "output": {
+        "exists": "whether supported composition arcs authored on the instance root or recursively on their source prims contribute a prim-like input at the path",
+        "opinions": "strong-to-weak CompositionOpinion records from supported non-local arc families",
+        "fields": "population-facing strongest authored fields per field token from supported instance source opinions only",
+        "childNames": "composition-ordered child prim names from supported instance source opinions only",
+        "propertyNames": "composition-ordered property names from supported instance source opinions only"
+      }
+    },
+    "compose_instance_property_index": {
+      "input": {
+        "instanceRoot": "absolute composed instanceable prim path that owns the shared representation being populated",
+        "path": "absolute composed descendant property path under an instanceable prim"
+      },
+      "output": {
+        "exists": "whether supported composition arcs authored on the instance root or recursively on their source prims contribute an attribute or relationship input at the path",
+        "kind": "attribute, relationship, or missing",
+        "opinions": "strong-to-weak CompositionOpinion records from supported non-local arc families",
+        "fields": "population-facing strongest authored fields per field token from supported instance source opinions only"
+      }
+    },
+    "prim_input": {
+      "input": {
+        "path": "absolute composed prim path or /"
+      },
+      "output": {
+        "exists": "whether the composed namespace has a prim-like input at this path",
+        "kind": "layer, prim, or missing",
+        "fields": "population-facing composed field map",
+        "childNames": "composition-ordered child prim names",
+        "propertyNames": "composition-ordered property names",
+        "contributingSources": "adapter rendering of strong-to-weak typed CompositionOpinion provenance"
+      }
+    },
+    "property_input": {
+      "input": {
+        "path": "absolute composed property path"
+      },
+      "output": {
+        "exists": "whether the composed namespace has an attribute or relationship input at this path",
+        "kind": "attribute, relationship, or missing",
+        "fields": "population-facing composed field map",
+        "contributingSources": "adapter rendering of strong-to-weak typed CompositionOpinion provenance"
+      }
+    },
+    "diagnostics": {
+      "input": {},
+      "output": {
+        "diagnostics": "composition diagnostics aggregated from the arbitrator and consumed sources"
+      }
+    }
+  },
+  "laws": [
+    "the composition arbitrator is the graph-owned place where available composition opinions are evaluated to form composed prim and property indexes",
+    "the composition arbitrator must consume arc-source opinions or equivalent typed opinion stacks; it must not treat any consumed provider's flattened strongest field map as final LIVERPS output when another arc family is in scope",
+    "the composition arbitrator must order available opinion families strong-to-weak as local, inherits, variants, relocates, references, payloads, specializes",
+    "graph generation order and constructor dependency order must not be used as field-strength order; the CompositionOpinion strength key owns strength comparisons",
+    "selected variant opinions must be inserted at variant strength after variant selections have been computed from source-visible opinions",
+    "specializes opinions must be globally weaker than local, inherits, selected variant, relocates, reference, and loaded payload opinions",
+    "recursive reference opinions and recursive or implied inherit or specialize opinions supplied by arc sources must retain source-visible layer strength, namespace depth, source-visible order, namespace mapping, and authored/implied status where applicable until the composition arbitrator has formed the composed opinion stack",
+    "the composition arbitrator must not flatten recursive reference, inherit, or specialize contributors into an opaque field map before comparing them against local, variant, reference, payload, and specializes-family opinions",
+    "loaded payload opinions may participate only when a payload opinion source has supplied mapped loaded payload opinions; otherwise payload composition remains absent or partial in source_capabilities",
+    "source spec paths, exposed scene paths, arc authoring paths, target paths, variant-selection paths, and namespace mapping paths must be semantic path values in domain records",
+    "arc family names, field keys, child names, property names, variant set names, selected variant names, and type names used for identity must be tokens or semantic name handles in domain records",
+    "arc-source opinions consumed by the composition arbitrator must carry path-valued field contents in composed scene coordinates, or the composition arbitrator must apply the recorded namespace mapping before exposing those fields",
+    "targetPaths and connectionPaths listOp<ObjectPath> elements that cannot be mapped by the relevant namespace mapping must be pruned from the emitted composed field map unless the source opinion came from a same-namespace arc where the original path is already in composed coordinates",
+    "path-valued field remapping is required before stage population or nanousd backend queries observe the fields, even though full listOp value composition and attribute value resolution remain partial",
+    "for instance-filtered descendant inputs, local descendant opinions below an instanceable prim must be excluded unless they were introduced by supported composition arcs authored on the instanceable prim or recursively on the source prim of such arcs",
+    "instance-filtered descendant inputs must include supported non-local composition arc opinions authored on the instanceable prim or recursively on source prims of those arcs, and must exclude local descendant opinions under the instanceable prim",
+    "composition provenance must store source identifiers separately from semantic spec paths and must not rely on composite source:path strings for lookup or comparison",
+    "stage population must receive the composition arbitrator through the NamespaceSource facade and must not evaluate composition arcs or resolve opinion strength itself",
+    "a generated nanousd backend that opens a composed stage should call this provider before stage population instead of reimplementing prim/property opinion arbitration",
+    "the first bounded implementation may expose the strongest authored field value for each non-special field token; it must declare value_resolution partial and must not claim dictionary/listOp/value-resolution completeness",
+    "adapter JSON may construct the currently generated bounded provider chain for conformance, but generated domain APIs exchange target-native sources, paths, tokens, field values, and opinion records"
+  ],
+  "adapter_protocol": {
+    "input": "A JSON file containing one case with rootLayer, optional sublayers, referenceLayers, payloadLayers, includePayloadSource, arc-site overrides, and ops. The adapter may construct the existing bounded arc providers before building the composition arbitrator. includePayloadSource=false forces the adapter to omit the loaded-payload opinion source so payload_loading=absent and payload opinions are not composed.",
+    "output": "A JSON object with ok, diagnostics, and results. Opinion/provenance strings in JSON are rendered boundary values from typed domain records."
+  }
+}

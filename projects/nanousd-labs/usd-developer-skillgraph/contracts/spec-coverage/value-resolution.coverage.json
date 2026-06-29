@@ -1,0 +1,164 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/spec-coverage/value-resolution.coverage.json",
+  "title": "USD Value Resolution Spec Coverage Ledger",
+  "version": "0.2",
+  "spec_tag": "v1.0.1",
+  "spec_commit": "v1.0.1",
+  "normative_source": {
+    "repo": "aousd/specifications-public",
+    "tag": "v1.0.1",
+    "commit": "v1.0.1",
+    "rule": "Only the AOUSD core specification at aousd/specifications-public v1.0.1 is normative for this ledger. OpenUSD behavior is not a source for these requirements."
+  },
+  "status_values": {
+    "implemented": "In scope for this value-resolution contract and covered by goldens.",
+    "out_of_scope": "Belongs to composition, parsing, asset resolution, or stage population rather than value resolution."
+  },
+  "coverage_rules": [
+    "The resolver consumes composed strong-to-weak opinion stacks; it does not build composition indexes.",
+    "The resolver consumes typed document-model field values and does not parse USDA syntax or canonical JSON dumps as its durable value model.",
+    "Value resolution claims require independent contract goldens for metadata, attribute values, listOps, splines, clips, retiming, schema fallbacks, and relationship target behavior."
+  ],
+  "items": [
+    {
+      "id": "value-resolution.pipeline-boundary",
+      "owner": "usd-value-resolution",
+      "status": "implemented",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:core/1.0.1/core_spec.md#Value Resolution",
+        "aousd/specifications-public@v1.0.1:core/1.0.1/core_spec.md#Scope"
+      ],
+      "obligations": [
+        "Consume a strength-ordered composed opinion stack.",
+        "Preserve typed source provenance in resolver outputs.",
+        "Keep composition, stage population, and value resolution as separate graph-owned steps."
+      ],
+      "positive_goldens": [
+        "contracts/handles/value-resolution.handle.json#model",
+        "goldens/unit/usd-value-resolution/value-resolution.json#default-resolution-walks-opinion-stack"
+      ]
+    },
+    {
+      "id": "value-resolution.attribute-defaults-blocks-and-fallbacks",
+      "owner": "usd-value-resolution",
+      "status": "implemented",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:core/1.0.1/core_spec.md#Attribute Resolution",
+        "aousd/specifications-public@v1.0.1:core/1.0.1/core_spec.md#Default Values",
+        "aousd/specifications-public@v1.0.1:core/1.0.1/core_spec.md#Blocked Attributes",
+        "aousd/specifications-public@v1.0.1:core/1.0.1/core_spec.md#Fallback Value Resolution for Attributes"
+      ],
+      "obligations": [
+        "Resolve default-time attribute values by walking authored default opinions strongest to weakest.",
+        "Stop at authored value blocks and blocked time samples without considering weaker values.",
+        "Acquire schema fallback values from typed schemas, applied schemas, and default metadata."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-value-resolution/value-resolution.json#default-resolution-walks-opinion-stack",
+        "goldens/unit/usd-value-resolution/value-resolution.json#value-blocks-and-blocked-time-samples",
+        "goldens/unit/usd-value-resolution/value-resolution.json#schema-fallback-acquisition-order"
+      ]
+    },
+    {
+      "id": "value-resolution.time-samples-and-retiming",
+      "owner": "usd-value-resolution",
+      "status": "implemented",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:core/1.0.1/core_spec.md#Time Based",
+        "aousd/specifications-public@v1.0.1:core/1.0.1/core_spec.md#Layer Offsets",
+        "aousd/specifications-public@v1.0.1:core/1.0.1/core_spec.md#Interpolation"
+      ],
+      "obligations": [
+        "Resolve exact authored time samples.",
+        "Implement held and linear interpolation according to the stage interpolation mode.",
+        "Apply layer offset and scale before source-sample lookup."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-value-resolution/value-resolution.json#time-samples-held-linear-vector-and-retiming"
+      ]
+    },
+    {
+      "id": "value-resolution.metadata",
+      "owner": "usd-value-resolution",
+      "status": "implemented",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:core/1.0.1/core_spec.md#Metadata Resolution",
+        "aousd/specifications-public@v1.0.1:core/1.0.1/core_spec.md#specifier",
+        "aousd/specifications-public@v1.0.1:core/1.0.1/core_spec.md#typeName",
+        "aousd/specifications-public@v1.0.1:core/1.0.1/core_spec.md#variability",
+        "aousd/specifications-public@v1.0.1:core/1.0.1/core_spec.md#custom",
+        "aousd/specifications-public@v1.0.1:core/1.0.1/core_spec.md#Dictionaries",
+        "aousd/specifications-public@v1.0.1:core/1.0.1/core_spec.md#List Op Resolution",
+        "aousd/specifications-public@v1.0.1:core/1.0.1/core_spec.md#Layer Metadata"
+      ],
+      "obligations": [
+        "Resolve ordinary metadata from the strongest authored opinion.",
+        "Apply AOUSD special rules for specifier, typeName, variability, and custom.",
+        "Combine dictionaries recursively.",
+        "Combine generic metadata listOps, including targetPaths and connectionPaths.",
+        "Resolve layer metadata from the root layer spec only."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-value-resolution/value-resolution.json#metadata-custom-dictionary-and-ordinary-fields",
+        "goldens/unit/usd-value-resolution/value-resolution.json#metadata-special-fields-and-layer-metadata",
+        "goldens/unit/usd-value-resolution/value-resolution.json#listop-relationship-targets-and-connections"
+      ]
+    },
+    {
+      "id": "value-resolution.splines",
+      "owner": "usd-value-resolution",
+      "status": "implemented",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:core/1.0.1/core_spec.md#Spline",
+        "aousd/specifications-public@v1.0.1:core/1.0.1/core_spec.md#Interpolation"
+      ],
+      "obligations": [
+        "Evaluate spline knots before defaults and clips for timed queries.",
+        "Honor held, linear, curve, and value-block spline segment interpolation.",
+        "Honor spline extrapolation where a query falls outside authored knot times."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-value-resolution/value-resolution.json#spline-held-linear-curve-and-block-segments"
+      ]
+    },
+    {
+      "id": "value-resolution.value-clips",
+      "owner": "usd-value-resolution",
+      "status": "implemented",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:core/1.0.1/core_spec.md#Value Clips",
+        "aousd/specifications-public@v1.0.1:core/1.0.1/core_spec.md#Strength Ordering for Value Clips",
+        "aousd/specifications-public@v1.0.1:core/1.0.1/core_spec.md#Missing Values and Interpolating Missing Clips",
+        "aousd/specifications-public@v1.0.1:core/1.0.1/core_spec.md#Jump Discontinuities"
+      ],
+      "obligations": [
+        "Find active clips and map stage time to clip time through the times metadata.",
+        "Open and query clip layer data supplied to the resolver context.",
+        "Use manifest defaults and interpolate missing clip values when configured.",
+        "Apply clip strength between local data and weaker referenced data."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-value-resolution/value-resolution.json#value-clips-strength-time-mapping-and-manifest-defaults",
+        "goldens/unit/usd-value-resolution/value-resolution.json#value-clips-interpolate-missing-clip-values"
+      ]
+    },
+    {
+      "id": "value-resolution.relationships-and-connections",
+      "owner": "usd-value-resolution",
+      "status": "implemented",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:core/1.0.1/core_spec.md#Relationship Values",
+        "aousd/specifications-public@v1.0.1:core/1.0.1/core_spec.md#Attribute Connections"
+      ],
+      "obligations": [
+        "Resolve raw relationship targetPaths through generic listOp metadata.",
+        "Resolve forwarded relationship targets recursively.",
+        "Resolve attribute connectionPaths as raw connection targets without forwarding."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-value-resolution/value-resolution.json#listop-relationship-targets-and-connections"
+      ]
+    }
+  ]
+}

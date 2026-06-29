@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/usda-productions/relationship-specs.contract.json",
+  "title": "USDA Relationship Specs Production Contract",
+  "version": "0.1",
+  "spec_commit": "v1.0.1",
+  "owned_by": "usda-spec-parser",
+  "derives_from": "contracts/document-model-productions/relationship-spec.contract.json",
+  "format_neutral_rules": "contracts/document-model-productions/relationship-spec.contract.json#laws — field set and per-kind admission (which excludes attribute-only fields such as variability), listOp subfield rules, and authored target storage are pinned in the format-neutral production. This contract adds USDA-specific grammar dispatch and storage mapping.",
+  "spec_refs": [
+    "specification/file_formats/README.md#relationship-specs",
+    "specification/file_formats/README.md#relationship-types",
+    "specification/file_formats/README.md#relationship-values",
+    "specification/document_data_model/README.md#relationship-spec"
+  ],
+  "scope": {
+    "included": [
+      "rel and custom rel declarations",
+      "namespaced relationship names",
+      "relationship target assignment to None",
+      "single target path assignment",
+      "bracketed target path list assignment",
+      "alternate bracket target syntax",
+      "relationship metadata blocks",
+      "listOp relationship syntax"
+    ],
+    "deferred": [
+      "target path resolution",
+      "composition of target listOps across layers",
+      "relationship forwarding or schema behavior"
+    ]
+  },
+  "storage_mapping": {
+    "custom": "custom field, true only when custom rel is authored",
+    "NamespacedName": "property path component and parent propertyChildren entry",
+    "RelationshipAssignment": "targetPaths field as authored listOp<ObjectPath>",
+    "ListOpRelationship": "targetPaths field with the authored subfield selected by the listOp token"
+  },
+  "laws": [
+    "relationship specs must be stored through usd-document-model",
+    "target path leaves must consume usd-paths",
+    "ListOpRelationship shares the leading ListOp token with ListOpConnect, so property dispatch must inspect the following tokens before choosing the relationship production",
+    "relationship metadata accepts SharedMetadata/ListOpMetadata only; prim-only metadata keywords such as payload, references, inherits, specializes, variants, and variantSets are invalid in relationship metadata",
+    "variant selections in relationship target paths must either produce a parse diagnostic or be stripped according to a declared target policy"
+  ],
+  "format_neutral_laws_hoisted": [
+    "a single target path is authored as an explicit listOp containing one path (document-model-productions/relationship-spec.contract.json#listop_subfield_rules)",
+    "None target assignment is authored as an empty listOp (document-model-productions/relationship-spec.contract.json#listop_subfield_rules)",
+    "relationship specs admit only shared + relationship_only + custom; other-kind fields including variability are rejected and not interned as extension fields (document-model-productions/common-metadata.contract.json#spec_kind_field_admission)"
+  ],
+  "golden_groups": [
+    "rel and custom rel declarations",
+    "single, list, and None targets",
+    "alternate bracket target syntax",
+    "prepend, append, and delete target listOps",
+    "relationship metadata and repeated listOp subfields",
+    "target paths with variant selections under the declared policy"
+  ],
+  "golden_files": [
+    "goldens/integration/usda-single-layer/relationship-listops.json",
+    "goldens/integration/usda-single-layer/common-metadata.json",
+    "goldens/integration/usda-single-layer/parser-diagnostics.json"
+  ]
+}

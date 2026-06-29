@@ -1,0 +1,201 @@
+{
+  "suite": "usdc-layer-open-basic",
+  "contract": "contracts/handles/usdc-layer-open.handle.json",
+  "production_contracts": [
+    "contracts/usdc-productions/crate-reader-diagnostics.contract.json"
+  ],
+  "spec_commit": "6b4f01f2d6d46b01507481524eb516b4ef358c31",
+  "notes": "These cases exercise the USDC layer-format handler's dispatch predicate and the opened-payload handoff. The handler must NOT call usd-resource-protocol directly with a raw identifier string; it accepts a ResolvedLocation + ResourceReadResult from usd-layer-open and forwards bytes (plus file_backed_path when present) into usdc-spec-parser. Each open_usdc_layer op carries an `opened_resource` object naming the fixture; the harness pre-resolves it through usd_resource_protocol::read_resource(classify_resolved(...)) before invoking the adapter — the adapter never sees a raw fixture path. The 'must not call read_resource directly' and 'must not return canned dump literals' compliance laws are verified by harness/source_audit.py against generated/cpp/usdc_layer_open.{h,cpp} and generated/cpp/usdc_layer_open_adapter.cpp, not by adapter-side self-attestation ops.",
+  "cases": [
+    {
+      "id": "is-usdc-layer-location-by-extension",
+      "spec_refs": ["contracts/handles/usdc-layer-open.handle.json#operations.is_usdc_layer_location"],
+      "input": {
+        "ops": [
+          {"op": "is_usdc_layer_location", "display": "scenes/root.usdc"},
+          {"op": "is_usdc_layer_location", "display": "scenes/root.usda"},
+          {"op": "is_usdc_layer_location", "display": "scenes/root.usdz"},
+          {"op": "is_usdc_layer_location", "display": "scenes/root"},
+          {"op": "is_usdc_layer_location", "display": "ROOT.USDC"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "is_usdc_layer_location", "ok": true, "display": "scenes/root.usdc", "matches": true},
+          {"op": "is_usdc_layer_location", "ok": true, "display": "scenes/root.usda", "matches": false},
+          {"op": "is_usdc_layer_location", "ok": true, "display": "scenes/root.usdz", "matches": false, "notes": ".usdz is the package format; handled separately by usd-layer-open, not by this handler"},
+          {"op": "is_usdc_layer_location", "ok": true, "display": "scenes/root", "matches": false},
+          {"op": "is_usdc_layer_location", "ok": true, "display": "ROOT.USDC", "matches": true, "notes": "extension match is case-insensitive on the suffix per the layer-open dispatch contract"}
+        ]
+      }
+    },
+    {
+      "id": "open-localfile-backed-success",
+      "spec_refs": ["contracts/handles/usdc-layer-open.handle.json#operations.open_usdc_layer"],
+      "input": {
+        "ops": [
+          {
+            "op": "open_usdc_layer",
+            "display": "benchmarks/fixtures/minimal_empty.usdc",
+            "opened_resource": {
+              "ok": true,
+              "diagnostics": [],
+              "fixture": "benchmarks/fixtures/minimal_empty.usdc",
+              "file_backed_path": "benchmarks/fixtures/minimal_empty.usdc"
+            }
+          }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "open_usdc_layer",
+            "ok": true,
+            "dump": {
+              "ok": true,
+              "diagnostics": [],
+              "layer": {
+                "fields": {"primChildren": {"type": "token[]", "value": []}},
+                "specs": {"/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": []}}}}
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "file-backed-path-forwarded-to-parser",
+      "spec_refs": ["contracts/handles/usdc-layer-open.handle.json#laws (file_backed_path forwarding)"],
+      "input": {
+        "ops": [
+          {
+            "op": "open_usdc_layer",
+            "display": "benchmarks/fixtures/one_root_prim.usdc",
+            "opened_resource": {
+              "ok": true,
+              "diagnostics": [],
+              "fixture": "benchmarks/fixtures/one_root_prim.usdc",
+              "file_backed_path": "benchmarks/fixtures/one_root_prim.usdc"
+            },
+            "notes": "When file_backed_path is present, the handler must forward it to usdc-binary-format so the Crate decoder can use a memory-mapped fast path. This is observable end-to-end: the handler still has to produce the correct dump for one_root_prim.usdc, regardless of whether bytes arrived as a vector or via file_backed mapping. harness/source_audit.py separately confirms the handler does not copy the payload into an owning vector when file_backed_path is present."
+          }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "open_usdc_layer",
+            "ok": true,
+            "dump": {
+              "ok": true,
+              "diagnostics": [],
+              "layer": {
+                "fields": {"primChildren": {"type": "token[]", "value": ["World"]}},
+                "specs": {
+                  "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["World"]}}},
+                  "/World": {
+                    "kind": "prim",
+                    "fields": {
+                      "specifier": {"type": "specifier", "value": "def"},
+                      "typeName": {"type": "token", "value": "Xform"},
+                      "primChildren": {"type": "token[]", "value": []},
+                      "propertyChildren": {"type": "token[]", "value": []},
+                      "variantSetChildren": {"type": "token[]", "value": []}
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "passthrough-resource-open-failure",
+      "spec_refs": ["contracts/usdc-productions/crate-reader-diagnostics.contract.json"],
+      "input": {
+        "ops": [
+          {
+            "op": "open_usdc_layer",
+            "display": "missing.usdc",
+            "opened_resource": {
+              "ok": false,
+              "diagnostics": [
+                {"severity": "error", "code": "ResourceOpenFailed", "message": "could not open resource"}
+              ]
+            }
+          }
+        ]
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {"severity": "error", "code": "ResourceOpenFailed", "message": "could not open resource"}
+        ],
+        "results": [
+          {"op": "open_usdc_layer", "ok": false, "code": "ResourceOpenFailed"}
+        ]
+      }
+    },
+    {
+      "id": "passthrough-bad-magic-from-binary-format",
+      "spec_refs": ["contracts/usdc-productions/crate-reader-diagnostics.contract.json"],
+      "input": {
+        "ops": [
+          {
+            "op": "open_usdc_layer",
+            "display": "fake.usdc",
+            "opened_resource": {
+              "ok": true,
+              "diagnostics": [],
+              "bytes_hex": "5058522d5553444100080000000000002000000000000000",
+              "notes": "magic 'PXR-USDA' (last byte wrong); handler routes bytes into usdc-binary-format which fails with InvalidUsdcHeader; handler must pass the diagnostic through unchanged"
+            }
+          }
+        ]
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {"severity": "error", "code": "InvalidUsdcHeader", "message": "expected PXR-USDC magic"}
+        ],
+        "results": [
+          {"op": "open_usdc_layer", "ok": false, "code": "InvalidUsdcHeader"}
+        ]
+      }
+    },
+    {
+      "id": "passthrough-unsupported-version",
+      "spec_refs": ["contracts/usdc-productions/crate-reader-diagnostics.contract.json"],
+      "input": {
+        "ops": [
+          {
+            "op": "open_usdc_layer",
+            "display": "future.usdc",
+            "opened_resource": {
+              "ok": true,
+              "diagnostics": [],
+              "bytes_hex": "5058522d55534443000d00000000000020000000000000000000000000000000",
+              "notes": "magic OK, version 0.13.0 (outside accepted reader range); handler passes through UnsupportedUsdcVersion"
+            }
+          }
+        ]
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {"severity": "error", "code": "UnsupportedUsdcVersion", "message": "unsupported Crate version"}
+        ],
+        "results": [
+          {"op": "open_usdc_layer", "ok": false, "code": "UnsupportedUsdcVersion"}
+        ]
+      }
+    }
+  ]
+}

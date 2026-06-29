@@ -1,0 +1,10 @@
+#usda 1.0
+(
+    subLayers = [
+        @./anim.usda@ (offset = 10; scale = 2)
+    ]
+)
+
+def Xform "Anim"
+{
+}

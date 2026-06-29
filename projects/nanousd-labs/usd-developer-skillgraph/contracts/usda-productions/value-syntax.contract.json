@@ -1,0 +1,148 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/usda-productions/value-syntax.contract.json",
+  "title": "USDA Value Syntax Production Contract",
+  "version": "0.1",
+  "spec_commit": "v1.0.1",
+  "owned_by": "usda-value-parser",
+  "derives_from": "contracts/document-model-productions/attribute-spec.contract.json",
+  "format_neutral_rules": "contracts/document-model-productions/attribute-spec.contract.json — the TimeSamples and Spline value-shape rules, default-vs-typeName agreement, and value-block sentinel semantics are pinned in the format-neutral production. This contract adds USDA-specific grammar productions (TimeSampleMap, SplineMap, AssetRef forms, PathRef forms, LayerOffset).",
+  "spec_refs": [
+    "specification/file_formats/README.md#values",
+    "specification/file_formats/README.md#paths-and-asset-references",
+    "specification/file_formats/README.md#time-samples",
+    "specification/file_formats/README.md#splines",
+    "specification/file_formats/README.md#common-metadata",
+    "specification/foundational_data_types/README.md"
+  ],
+  "scope": {
+    "included": [
+      "typed scalar value spellings",
+      "tuple and array value spellings",
+      "dictionary values and string dictionaries",
+      "path references through usd-paths",
+      "asset references as authored asset values",
+      "None as a value block where the consuming production permits it",
+      "time sample maps as authored attribute field values",
+      "spline maps as authored attribute field values",
+      "declared attribute type validation and allowed numeric coercion"
+    ],
+    "deferred": [
+      "value resolution",
+      "time-sample interpolation",
+      "spline evaluation",
+      "asset resolution",
+      "USDC binary value decoding"
+    ]
+  },
+  "production_families": {
+    "basic_values": [
+      "String",
+      "Number",
+      "Identifier-token values",
+      "PathRef",
+      "AssetRef",
+      "None"
+    ],
+    "containers": [
+      "TupleValue",
+      "ListValue",
+      "DictionaryValue",
+      "StringDictionary"
+    ],
+    "specialized_maps": [
+      "TimeSampleMap",
+      "SplineMap"
+    ]
+  },
+  "production_details": {
+    "asset_ref": {
+      "forms": [
+        "@asset@",
+        "@@@multi-line-or-escaped-asset@@@"
+      ],
+      "requirements": [
+        "single-at asset refs terminate at the next at sign and may not contain CR/LF",
+        "triple-at asset refs terminate only at the matching triple-at delimiter",
+        "asset refs are stored as authored asset values and are not resolved by this parser"
+      ]
+    },
+    "path_ref": {
+      "forms": [
+        "<>",
+        "</Prim>",
+        "</Prim.property>",
+        "</Prim{variantSet=variant}/Child>"
+      ],
+      "requirements": [
+        "path text between angle brackets must be delegated to usd-paths",
+        "empty path refs are represented as the empty path/reference value where the consuming field permits it"
+      ]
+    },
+    "time_sample_map": {
+      "productions": [
+        "TimeSample <- Number ':' ('None' / TypedValue)",
+        "TimeSampleMap <- '{' List<TimeSample>? '}'"
+      ],
+      "storage": "native TimeSamples field value keyed by numeric time code with typed values or value-block sentinels",
+      "requirements": [
+        "time sample keys are numeric ordinates internally, not strings; string keys are canonical dump output only",
+        "time sample values must be parsed through the same TypedValue path as defaults",
+        "None inside a time sample stores a value-block sentinel",
+        "samples are stored as authored layer data and are not interpolated or resolved",
+        "sample value types should agree with the containing attribute typeName when the type is known"
+      ]
+    },
+    "spline_map": {
+      "productions": [
+        "SplineMap",
+        "SplineCurveTypeItem",
+        "SplineExtrapolationItem",
+        "SplineLoopItem",
+        "SplineKnotItem",
+        "SplineKnotParameters"
+      ],
+      "storage": "native Spline field value retaining curve type, extrapolation, loop, knot, tangent, interpolation, and custom-data authoring",
+      "requirements": [
+        "duplicate curve type, extrapolation, loop, or knot subfields use last-one-wins as specified by the spline text format",
+        "post knot items carry segment interpolation mode, not a separate post tangent mode",
+        "spline data is stored for editing/value-resolution consumers but is not evaluated by the parser",
+        "spline records must not be represented internally as Python dict/list payloads, std::map<string, Json>, or canonical dump object trees"
+      ]
+    },
+    "layer_offset": {
+      "productions": [
+        "LayerOffset <- 'offset' '=' Number / 'scale' '=' Number"
+      ],
+      "requirements": [
+        "offset defaults to 0.0 when omitted",
+        "scale defaults to 1.0 when omitted",
+        "within one offset parameter list, repeated offset or scale fields use last-one-wins"
+      ]
+    }
+  },
+  "laws": [
+    "value parsing must consume usda-lexical-format for tokenization and string/comment handling",
+    "path references must consume usd-paths and must not use an independent path parser",
+    "foundational values must be represented through usd-foundational-values storage",
+    "authored listOp values must be represented through usd-listops-authored storage",
+    "dictionary values must retain typed entries in native storage and materialize JSON only for adapters",
+    "unknown declared attribute types have undefined validation behavior unless a golden requires a diagnostic",
+    "known declared foundational types must reject values that cannot be coerced to the declared type",
+    "None must be accepted only where the consuming production maps it to a value block or empty authored listOp"
+  ],
+  "golden_groups": [
+    "scalar and token values",
+    "numeric coercion and type mismatch diagnostics",
+    "tuples, arrays, vectors, matrices, and semantic alias values",
+    "dictionary and string dictionary values",
+    "asset and path references",
+    "time sample maps with blocked samples",
+    "spline maps with repeated last-one-wins items"
+  ],
+  "golden_files": [
+    "goldens/integration/usda-single-layer/value-syntax.json",
+    "goldens/integration/usda-single-layer/attribute-time-samples.json",
+    "goldens/integration/usda-single-layer/parser-diagnostics.json"
+  ]
+}

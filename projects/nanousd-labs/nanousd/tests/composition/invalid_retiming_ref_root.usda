@@ -1,0 +1,7 @@
+#usda 1.0
+
+def Scope "Prim" (
+    prepend references = @./invalid_retiming_source.usda@</Source> (offset = 10; scale = -1)
+)
+{
+}

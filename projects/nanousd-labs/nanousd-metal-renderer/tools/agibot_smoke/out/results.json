@@ -1,0 +1,1253 @@
+[
+  {
+    "category": "air_freshener",
+    "asset": "benchmark_air_freshener_000",
+    "status": "ok",
+    "ms": 798.618917,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "air_freshener__benchmark_air_freshener_000.png"
+  },
+  {
+    "category": "apple",
+    "asset": "benchmark_apple_000",
+    "status": "ok",
+    "ms": 925.4057090000001,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "apple__benchmark_apple_000.png"
+  },
+  {
+    "category": "balance",
+    "asset": "benchmark_balance_000",
+    "status": "ok",
+    "ms": 766.231333,
+    "n_meshes": 7,
+    "error": "",
+    "thumbnail": "balance__benchmark_balance_000.png"
+  },
+  {
+    "category": "ball",
+    "asset": "benchmark_ball_000",
+    "status": "ok",
+    "ms": 822.8295,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "ball__benchmark_ball_000.png"
+  },
+  {
+    "category": "barcode_scanner",
+    "asset": "benchmark_barcode_scanner_000",
+    "status": "ok",
+    "ms": 1018.010834,
+    "n_meshes": 2,
+    "error": "",
+    "thumbnail": "barcode_scanner__benchmark_barcode_scanner_000.png"
+  },
+  {
+    "category": "basket",
+    "asset": "benchmark_basket_000",
+    "status": "ok",
+    "ms": 1074.6000000000001,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "basket__benchmark_basket_000.png"
+  },
+  {
+    "category": "bathroom_vanity",
+    "asset": "benchmark_bathroom_vanity_000",
+    "status": "ok",
+    "ms": 961.2394999999996,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "bathroom_vanity__benchmark_bathroom_vanity_000.png"
+  },
+  {
+    "category": "bearing",
+    "asset": "benchmark_bearing_000",
+    "status": "ok",
+    "ms": 590.349583,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "bearing__benchmark_bearing_000.png"
+  },
+  {
+    "category": "bed",
+    "asset": "benchmark_bed_000",
+    "status": "ok",
+    "ms": 1255.2146670000006,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "bed__benchmark_bed_000.png"
+  },
+  {
+    "category": "bedroom_wardrobe",
+    "asset": "benchmark_bedroom_wardrobe_000",
+    "status": "ok",
+    "ms": 1039.7862920000005,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "bedroom_wardrobe__benchmark_bedroom_wardrobe_000.png"
+  },
+  {
+    "category": "beer",
+    "asset": "benchmark_beer_000",
+    "status": "ok",
+    "ms": 958.366667,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "beer__benchmark_beer_000.png"
+  },
+  {
+    "category": "beer_bottle",
+    "asset": "benchmark_beer_bottle_000",
+    "status": "ok",
+    "ms": 525.809916,
+    "n_meshes": 2,
+    "error": "",
+    "thumbnail": "beer_bottle__benchmark_beer_bottle_000.png"
+  },
+  {
+    "category": "beer_mug",
+    "asset": "benchmark_beer_mug_000",
+    "status": "ok",
+    "ms": 689.3499999999992,
+    "n_meshes": 3,
+    "error": "",
+    "thumbnail": "beer_mug__benchmark_beer_mug_000.png"
+  },
+  {
+    "category": "beverage_bottle",
+    "asset": "benchmark_beverage_bottle_001",
+    "status": "ok",
+    "ms": 568.4497499999992,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "beverage_bottle__benchmark_beverage_bottle_001.png"
+  },
+  {
+    "category": "billboard",
+    "asset": "benchmark_billboard_000",
+    "status": "ok",
+    "ms": 855.1584169999984,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "billboard__benchmark_billboard_000.png"
+  },
+  {
+    "category": "billiards",
+    "asset": "benchmark_billiards_000",
+    "status": "ok",
+    "ms": 579.4573750000005,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "billiards__benchmark_billiards_000.png"
+  },
+  {
+    "category": "blackboard_eraser",
+    "asset": "benchmark_blackboard_eraser_000",
+    "status": "ok",
+    "ms": 636.3203340000006,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "blackboard_eraser__benchmark_blackboard_eraser_000.png"
+  },
+  {
+    "category": "book",
+    "asset": "benchmark_book_00",
+    "status": "ok",
+    "ms": 762.7403749999999,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "book__benchmark_book_00.png"
+  },
+  {
+    "category": "bookshelf",
+    "asset": "benchmark_bookshelf_000",
+    "status": "ok",
+    "ms": 522.6220419999983,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "bookshelf__benchmark_bookshelf_000.png"
+  },
+  {
+    "category": "bottle",
+    "asset": "benchmark_bottle_017",
+    "status": "ok",
+    "ms": 574.3578330000005,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "bottle__benchmark_bottle_017.png"
+  },
+  {
+    "category": "bowl",
+    "asset": "benchmark_bowl_000",
+    "status": "ok",
+    "ms": 580.6253750000003,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "bowl__benchmark_bowl_000.png"
+  },
+  {
+    "category": "bowl_sponge",
+    "asset": "benchmark_bowl_sponge_000",
+    "status": "ok",
+    "ms": 835.5898330000002,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "bowl_sponge__benchmark_bowl_sponge_000.png"
+  },
+  {
+    "category": "box",
+    "asset": "benchmark_box_000",
+    "status": "ok",
+    "ms": 739.0446250000018,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "box__benchmark_box_000.png"
+  },
+  {
+    "category": "bread",
+    "asset": "benchmark_bread_001",
+    "status": "ok",
+    "ms": 1188.325791999997,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "bread__benchmark_bread_001.png"
+  },
+  {
+    "category": "bread_maker",
+    "asset": "benchmark_bread_maker_000",
+    "status": "ok",
+    "ms": 557.8625829999986,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "bread_maker__benchmark_bread_maker_000.png"
+  },
+  {
+    "category": "building_blocks",
+    "asset": "benchmark_building_blocks_000",
+    "status": "ok",
+    "ms": 657.5191670000003,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "building_blocks__benchmark_building_blocks_000.png"
+  },
+  {
+    "category": "button",
+    "asset": "benchmark_button_000",
+    "status": "ok",
+    "ms": 610.840459000002,
+    "n_meshes": 2,
+    "error": "",
+    "thumbnail": "button__benchmark_button_000.png"
+  },
+  {
+    "category": "cabinet",
+    "asset": "benchmark_cabinet_000",
+    "status": "ok",
+    "ms": 900.72975,
+    "n_meshes": 6,
+    "error": "",
+    "thumbnail": "cabinet__benchmark_cabinet_000.png"
+  },
+  {
+    "category": "calculator",
+    "asset": "benchmark_calculator_000",
+    "status": "ok",
+    "ms": 612.722209000001,
+    "n_meshes": 29,
+    "error": "",
+    "thumbnail": "calculator__benchmark_calculator_000.png"
+  },
+  {
+    "category": "carton",
+    "asset": "benchmark_carton_000",
+    "status": "ok",
+    "ms": 835.4716660000037,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "carton__benchmark_carton_000.png"
+  },
+  {
+    "category": "cashier",
+    "asset": "benchmark_cashier_002",
+    "status": "ok",
+    "ms": 950.1058749999984,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "cashier__benchmark_cashier_002.png"
+  },
+  {
+    "category": "ceiling_light",
+    "asset": "benchmark_ceiling_light_000",
+    "status": "ok",
+    "ms": 569.2514160000002,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "ceiling_light__benchmark_ceiling_light_000.png"
+  },
+  {
+    "category": "chair",
+    "asset": "benchmark_chair_005",
+    "status": "ok",
+    "ms": 1202.7517090000047,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "chair__benchmark_chair_005.png"
+  },
+  {
+    "category": "character",
+    "asset": "benchmark_character_000",
+    "status": "ok",
+    "ms": 1505.8649159999932,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "character__benchmark_character_000.png"
+  },
+  {
+    "category": "chess",
+    "asset": "benchmark_chess_000",
+    "status": "ok",
+    "ms": 772.5767080000026,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "chess__benchmark_chess_000.png"
+  },
+  {
+    "category": "chessboard",
+    "asset": "benchmark_chessboard_000",
+    "status": "ok",
+    "ms": 788.5694580000049,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "chessboard__benchmark_chessboard_000.png"
+  },
+  {
+    "category": "cigarette",
+    "asset": "benchmark_cigarette_000",
+    "status": "ok",
+    "ms": 856.4908749999915,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "cigarette__benchmark_cigarette_000.png"
+  },
+  {
+    "category": "cleaning_products",
+    "asset": "benchmark_cleaning_products_003",
+    "status": "ok",
+    "ms": 782.3740000000043,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "cleaning_products__benchmark_cleaning_products_003.png"
+  },
+  {
+    "category": "clock",
+    "asset": "benchmark_clock_044",
+    "status": "ok",
+    "ms": 560.2463339999986,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "clock__benchmark_clock_044.png"
+  },
+  {
+    "category": "coaster",
+    "asset": "benchmark_coaster_000",
+    "status": "ok",
+    "ms": 565.9570410000043,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "coaster__benchmark_coaster_000.png"
+  },
+  {
+    "category": "coffee_table",
+    "asset": "benchmark_coffee_table_000",
+    "status": "ok",
+    "ms": 841.41975,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "coffee_table__benchmark_coffee_table_000.png"
+  },
+  {
+    "category": "conveyor_belt",
+    "asset": "benchmark_conveyor_belt_001",
+    "status": "ok",
+    "ms": 713.9042499999988,
+    "n_meshes": 2,
+    "error": "",
+    "thumbnail": "conveyor_belt__benchmark_conveyor_belt_001.png"
+  },
+  {
+    "category": "cosmetics",
+    "asset": "benchmark_cosmetics_000",
+    "status": "ok",
+    "ms": 604.4957080000017,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "cosmetics__benchmark_cosmetics_000.png"
+  },
+  {
+    "category": "cup",
+    "asset": "benchmark_cup_043",
+    "status": "ok",
+    "ms": 734.5236250000085,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "cup__benchmark_cup_043.png"
+  },
+  {
+    "category": "cushion",
+    "asset": "benchmark_cushion_000",
+    "status": "ok",
+    "ms": 622.6429580000001,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "cushion__benchmark_cushion_000.png"
+  },
+  {
+    "category": "dairy",
+    "asset": "benchmark_dairy_000",
+    "status": "ok",
+    "ms": 787.3392919999986,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "dairy__benchmark_dairy_000.png"
+  },
+  {
+    "category": "desk_decoration",
+    "asset": "benchmark_desk_decoration_000",
+    "status": "ok",
+    "ms": 534.7092920000023,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "desk_decoration__benchmark_desk_decoration_000.png"
+  },
+  {
+    "category": "dishwasher",
+    "asset": "benchmark_dishwasher_000",
+    "status": "ok",
+    "ms": 851.1414999999971,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "dishwasher__benchmark_dishwasher_000.png"
+  },
+  {
+    "category": "disposable_paper_cup_packaging_bag",
+    "asset": "benchmark_disposable_paper_cup_packaging_bag_000",
+    "status": "ok",
+    "ms": 617.1447080000121,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "disposable_paper_cup_packaging_bag__benchmark_disposable_paper_cup_packaging_bag_000.png"
+  },
+  {
+    "category": "docking_station",
+    "asset": "benchmark_docking_station_000",
+    "status": "ok",
+    "ms": 653.5882080000022,
+    "n_meshes": 2,
+    "error": "",
+    "thumbnail": "docking_station__benchmark_docking_station_000.png"
+  },
+  {
+    "category": "door",
+    "asset": "benchmark_door_000",
+    "status": "ok",
+    "ms": 1009.4412079999984,
+    "n_meshes": 4,
+    "error": "",
+    "thumbnail": "door__benchmark_door_000.png"
+  },
+  {
+    "category": "electrical_appliance",
+    "asset": "benchmark_electrical_appliance_005",
+    "status": "ok",
+    "ms": 978.1112080000014,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "electrical_appliance__benchmark_electrical_appliance_005.png"
+  },
+  {
+    "category": "faucet",
+    "asset": "benchmark_faucet_000",
+    "status": "ok",
+    "ms": 689.4140830000026,
+    "n_meshes": 2,
+    "error": "",
+    "thumbnail": "faucet__benchmark_faucet_000.png"
+  },
+  {
+    "category": "flower",
+    "asset": "benchmark_flower_000",
+    "status": "ok",
+    "ms": 652.8148330000079,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "flower__benchmark_flower_000.png"
+  },
+  {
+    "category": "food",
+    "asset": "benchmark_food_000",
+    "status": "ok",
+    "ms": 696.2188749999996,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "food__benchmark_food_000.png"
+  },
+  {
+    "category": "freezer",
+    "asset": "benchmark_freezer_000",
+    "status": "ok",
+    "ms": 923.9428330000123,
+    "n_meshes": 2,
+    "error": "",
+    "thumbnail": "freezer__benchmark_freezer_000.png"
+  },
+  {
+    "category": "frozen_food",
+    "asset": "benchmark_frozen_food_000",
+    "status": "ok",
+    "ms": 619.2239999999742,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "frozen_food__benchmark_frozen_food_000.png"
+  },
+  {
+    "category": "frozen_ready_meals",
+    "asset": "benchmark_frozen_ready_meals_000",
+    "status": "ok",
+    "ms": 800.0772909999796,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "frozen_ready_meals__benchmark_frozen_ready_meals_000.png"
+  },
+  {
+    "category": "fruit",
+    "asset": "benchmark_fruit_021",
+    "status": "ok",
+    "ms": 913.3912499999894,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "fruit__benchmark_fruit_021.png"
+  },
+  {
+    "category": "gear",
+    "asset": "benchmark_gear_000",
+    "status": "ok",
+    "ms": 619.1041670000175,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "gear__benchmark_gear_000.png"
+  },
+  {
+    "category": "gearbox",
+    "asset": "benchmark_gearbox_000",
+    "status": "ok",
+    "ms": 593.9310839999905,
+    "n_meshes": 4,
+    "error": "",
+    "thumbnail": "gearbox__benchmark_gearbox_000.png"
+  },
+  {
+    "category": "grain",
+    "asset": "benchmark_grain_000",
+    "status": "ok",
+    "ms": 734.8455000000058,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "grain__benchmark_grain_000.png"
+  },
+  {
+    "category": "green_apple",
+    "asset": "benchmark_green_apple_000",
+    "status": "ok",
+    "ms": 929.5964579999918,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "green_apple__benchmark_green_apple_000.png"
+  },
+  {
+    "category": "green_plants",
+    "asset": "benchmark_green_plants_000",
+    "status": "ok",
+    "ms": 595.7494159999897,
+    "n_meshes": 3,
+    "error": "",
+    "thumbnail": "green_plants__benchmark_green_plants_000.png"
+  },
+  {
+    "category": "handbag",
+    "asset": "benchmark_handbag_000",
+    "status": "ok",
+    "ms": 643.7410000000057,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "handbag__benchmark_handbag_000.png"
+  },
+  {
+    "category": "hanger",
+    "asset": "benchmark_hanger_000",
+    "status": "ok",
+    "ms": 632.8847499999881,
+    "n_meshes": 2,
+    "error": "",
+    "thumbnail": "hanger__benchmark_hanger_000.png"
+  },
+  {
+    "category": "jewelry_box",
+    "asset": "benchmark_jewelry_box_000",
+    "status": "ok",
+    "ms": 630.4888749999975,
+    "n_meshes": 2,
+    "error": "",
+    "thumbnail": "jewelry_box__benchmark_jewelry_box_000.png"
+  },
+  {
+    "category": "kitchen_counter",
+    "asset": "benchmark_kitchen_counter_001",
+    "status": "ok",
+    "ms": 615.2497920000144,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "kitchen_counter__benchmark_kitchen_counter_001.png"
+  },
+  {
+    "category": "kitchen_island",
+    "asset": "benchmark_kitchen_island_000",
+    "status": "ok",
+    "ms": 1088.952207999995,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "kitchen_island__benchmark_kitchen_island_000.png"
+  },
+  {
+    "category": "kitchenware",
+    "asset": "benchmark_kitchenware_000",
+    "status": "ok",
+    "ms": 628.814540999997,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "kitchenware__benchmark_kitchenware_000.png"
+  },
+  {
+    "category": "laptop",
+    "asset": "benchmark_laptop_000",
+    "status": "ok",
+    "ms": 1418.0695830000047,
+    "n_meshes": 3,
+    "error": "",
+    "thumbnail": "laptop__benchmark_laptop_000.png"
+  },
+  {
+    "category": "lego",
+    "asset": "benchmark_lego_000",
+    "status": "ok",
+    "ms": 807.6362089999805,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "lego__benchmark_lego_000.png"
+  },
+  {
+    "category": "lemon",
+    "asset": "benchmark_lemon_027",
+    "status": "ok",
+    "ms": 525.4632500000014,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "lemon__benchmark_lemon_027.png"
+  },
+  {
+    "category": "letter",
+    "asset": "benchmark_letter_000",
+    "status": "ok",
+    "ms": 612.0218750000106,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "letter__benchmark_letter_000.png"
+  },
+  {
+    "category": "light_bulb",
+    "asset": "benchmark_light_bulb_000",
+    "status": "ok",
+    "ms": 626.5710829999875,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "light_bulb__benchmark_light_bulb_000.png"
+  },
+  {
+    "category": "light_fixture",
+    "asset": "benchmark_light_fixture_000",
+    "status": "ok",
+    "ms": 587.1113339999852,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "light_fixture__benchmark_light_fixture_000.png"
+  },
+  {
+    "category": "mat",
+    "asset": "benchmark_mat_000",
+    "status": "ok",
+    "ms": 656.7067919999658,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "mat__benchmark_mat_000.png"
+  },
+  {
+    "category": "material_tray",
+    "asset": "benchmark_material_tray_000",
+    "status": "ok",
+    "ms": 760.9031669999808,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "material_tray__benchmark_material_tray_000.png"
+  },
+  {
+    "category": "medicine_bottle",
+    "asset": "benchmark_medicine_bottle_000",
+    "status": "ok",
+    "ms": 689.2090000000053,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "medicine_bottle__benchmark_medicine_bottle_000.png"
+  },
+  {
+    "category": "microwave_oven",
+    "asset": "benchmark_microwave_oven_003",
+    "status": "ok",
+    "ms": 907.592166000029,
+    "n_meshes": 3,
+    "error": "",
+    "thumbnail": "microwave_oven__benchmark_microwave_oven_003.png"
+  },
+  {
+    "category": "motherboard",
+    "asset": "benchmark_motherboard_000",
+    "status": "ok",
+    "ms": 632.4639589999492,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "motherboard__benchmark_motherboard_000.png"
+  },
+  {
+    "category": "mouse",
+    "asset": "benchmark_mouse_000",
+    "status": "ok",
+    "ms": 569.6859169999584,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "mouse__benchmark_mouse_000.png"
+  },
+  {
+    "category": "network_device",
+    "asset": "benchmark_network_device_000",
+    "status": "ok",
+    "ms": 879.0695420000247,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "network_device__benchmark_network_device_000.png"
+  },
+  {
+    "category": "nightstand",
+    "asset": "benchmark_nightstand_000",
+    "status": "ok",
+    "ms": 837.884167000027,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "nightstand__benchmark_nightstand_000.png"
+  },
+  {
+    "category": "orange",
+    "asset": "benchmark_orange_001",
+    "status": "ok",
+    "ms": 860.4444590000071,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "orange__benchmark_orange_001.png"
+  },
+  {
+    "category": "oven",
+    "asset": "benchmark_oven_000",
+    "status": "ok",
+    "ms": 599.0268749999927,
+    "n_meshes": 6,
+    "error": "",
+    "thumbnail": "oven__benchmark_oven_000.png"
+  },
+  {
+    "category": "peach",
+    "asset": "benchmark_peach_000",
+    "status": "ok",
+    "ms": 539.4885420000151,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "peach__benchmark_peach_000.png"
+  },
+  {
+    "category": "pen",
+    "asset": "benchmark_pen_000",
+    "status": "ok",
+    "ms": 619.351292000033,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "pen__benchmark_pen_000.png"
+  },
+  {
+    "category": "plant",
+    "asset": "benchmark_plant_000",
+    "status": "ok",
+    "ms": 1308.6504579999882,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "plant__benchmark_plant_000.png"
+  },
+  {
+    "category": "plate",
+    "asset": "benchmark_plate_000",
+    "status": "ok",
+    "ms": 540.165208000019,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "plate__benchmark_plate_000.png"
+  },
+  {
+    "category": "plug",
+    "asset": "benchmark_plug_000",
+    "status": "ok",
+    "ms": 962.4900420000131,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "plug__benchmark_plug_000.png"
+  },
+  {
+    "category": "pomegranate",
+    "asset": "benchmark_pomegranate_000",
+    "status": "ok",
+    "ms": 567.6560420000101,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "pomegranate__benchmark_pomegranate_000.png"
+  },
+  {
+    "category": "popcorn",
+    "asset": "benchmark_popcorn_001",
+    "status": "ok",
+    "ms": 684.3149170000515,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "popcorn__benchmark_popcorn_001.png"
+  },
+  {
+    "category": "popcorn_bucket",
+    "asset": "benchmark_popcorn_bucket_001",
+    "status": "ok",
+    "ms": 751.9430830000147,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "popcorn_bucket__benchmark_popcorn_bucket_001.png"
+  },
+  {
+    "category": "popcorn_car",
+    "asset": "benchmark_popcorn_car_000",
+    "status": "ok",
+    "ms": 1113.2546250000246,
+    "n_meshes": 2,
+    "error": "",
+    "thumbnail": "popcorn_car__benchmark_popcorn_car_000.png"
+  },
+  {
+    "category": "popcorn_machine",
+    "asset": "benchmark_popcorn_machine_001",
+    "status": "ok",
+    "ms": 627.2199579999551,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "popcorn_machine__benchmark_popcorn_machine_001.png"
+  },
+  {
+    "category": "popcorn_scoop",
+    "asset": "benchmark_popcorn_scoop_001",
+    "status": "ok",
+    "ms": 1140.374832999953,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "popcorn_scoop__benchmark_popcorn_scoop_001.png"
+  },
+  {
+    "category": "pot",
+    "asset": "benchmark_pot_000",
+    "status": "ok",
+    "ms": 1019.6264589999942,
+    "n_meshes": 2,
+    "error": "",
+    "thumbnail": "pot__benchmark_pot_000.png"
+  },
+  {
+    "category": "power_strip",
+    "asset": "benchmark_power_strip_001",
+    "status": "ok",
+    "ms": 649.0326669999718,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "power_strip__benchmark_power_strip_001.png"
+  },
+  {
+    "category": "ram",
+    "asset": "benchmark_ram_000",
+    "status": "ok",
+    "ms": 615.9409999999639,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "ram__benchmark_ram_000.png"
+  },
+  {
+    "category": "range_hood",
+    "asset": "benchmark_range_hood_000",
+    "status": "ok",
+    "ms": 839.8290000000088,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "range_hood__benchmark_range_hood_000.png"
+  },
+  {
+    "category": "refrigerator",
+    "asset": "benchmark_refrigerator_000",
+    "status": "ok",
+    "ms": 840.5179999999746,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "refrigerator__benchmark_refrigerator_000.png"
+  },
+  {
+    "category": "rubik_cube",
+    "asset": "benchmark_rubik_cube_001",
+    "status": "ok",
+    "ms": 708.5164999999733,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "rubik_cube__benchmark_rubik_cube_001.png"
+  },
+  {
+    "category": "scanner",
+    "asset": "benchmark_scanner_000",
+    "status": "ok",
+    "ms": 645.4907919999755,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "scanner__benchmark_scanner_000.png"
+  },
+  {
+    "category": "seasoning_bottle",
+    "asset": "benchmark_seasoning_bottle_003",
+    "status": "ok",
+    "ms": 1005.2424169999767,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "seasoning_bottle__benchmark_seasoning_bottle_003.png"
+  },
+  {
+    "category": "shelf",
+    "asset": "benchmark_shelf_000",
+    "status": "ok",
+    "ms": 650.6126250000079,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "shelf__benchmark_shelf_000.png"
+  },
+  {
+    "category": "shoe",
+    "asset": "benchmark_shoe_002",
+    "status": "ok",
+    "ms": 694.6301250000033,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "shoe__benchmark_shoe_002.png"
+  },
+  {
+    "category": "shopping_cart",
+    "asset": "benchmark_shopping_cart_000",
+    "status": "ok",
+    "ms": 1066.5023749999705,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "shopping_cart__benchmark_shopping_cart_000.png"
+  },
+  {
+    "category": "shower",
+    "asset": "benchmark_shower_000",
+    "status": "ok",
+    "ms": 836.7373340000199,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "shower__benchmark_shower_000.png"
+  },
+  {
+    "category": "skincare_products",
+    "asset": "benchmark_skincare_products_000",
+    "status": "ok",
+    "ms": 609.3821249999678,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "skincare_products__benchmark_skincare_products_000.png"
+  },
+  {
+    "category": "snack",
+    "asset": "benchmark_snack_207",
+    "status": "ok",
+    "ms": 995.181500000001,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "snack__benchmark_snack_207.png"
+  },
+  {
+    "category": "sofa",
+    "asset": "benchmark_sofa_000",
+    "status": "ok",
+    "ms": 620.8505000000173,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "sofa__benchmark_sofa_000.png"
+  },
+  {
+    "category": "stationery",
+    "asset": "benchmark_stationery_003",
+    "status": "ok",
+    "ms": 773.9042499999869,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "stationery__benchmark_stationery_003.png"
+  },
+  {
+    "category": "stopper",
+    "asset": "benchmark_stopper_000",
+    "status": "ok",
+    "ms": 1226.445124999998,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "stopper__benchmark_stopper_000.png"
+  },
+  {
+    "category": "storage_bin",
+    "asset": "benchmark_storage_bin_000",
+    "status": "ok",
+    "ms": 836.4563750000116,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "storage_bin__benchmark_storage_bin_000.png"
+  },
+  {
+    "category": "storage_box",
+    "asset": "benchmark_storage_box_000",
+    "status": "ok",
+    "ms": 669.9974169999905,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "storage_box__benchmark_storage_box_000.png"
+  },
+  {
+    "category": "supermarket_shelf",
+    "asset": "benchmark_supermarket_shelf_000",
+    "status": "ok",
+    "ms": 626.7368329999954,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "supermarket_shelf__benchmark_supermarket_shelf_000.png"
+  },
+  {
+    "category": "table",
+    "asset": "benchmark_table_000",
+    "status": "ok",
+    "ms": 975.1697089999993,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "table__benchmark_table_000.png"
+  },
+  {
+    "category": "tableware",
+    "asset": "benchmark_tableware_000",
+    "status": "ok",
+    "ms": 541.8654590000074,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "tableware__benchmark_tableware_000.png"
+  },
+  {
+    "category": "tape_measure",
+    "asset": "benchmark_tape_measure_007",
+    "status": "ok",
+    "ms": 562.8764580000052,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "tape_measure__benchmark_tape_measure_007.png"
+  },
+  {
+    "category": "tea_table",
+    "asset": "benchmark_tea_table_000",
+    "status": "ok",
+    "ms": 888.7981670000045,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "tea_table__benchmark_tea_table_000.png"
+  },
+  {
+    "category": "text",
+    "asset": "benchmark_text_010",
+    "status": "ok",
+    "ms": 1539.716750000025,
+    "n_meshes": 2601,
+    "error": "",
+    "thumbnail": "text__benchmark_text_010.png"
+  },
+  {
+    "category": "tissue",
+    "asset": "benchmark_tissue_000",
+    "status": "ok",
+    "ms": 656.769708000013,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "tissue__benchmark_tissue_000.png"
+  },
+  {
+    "category": "tissue_box",
+    "asset": "benchmark_tissue_box_000",
+    "status": "ok",
+    "ms": 874.6178330000021,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "tissue_box__benchmark_tissue_box_000.png"
+  },
+  {
+    "category": "toilet",
+    "asset": "benchmark_toilet_000",
+    "status": "ok",
+    "ms": 850.1013339999872,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "toilet__benchmark_toilet_000.png"
+  },
+  {
+    "category": "toilet_paper_packaging",
+    "asset": "benchmark_toilet_paper_packaging_000",
+    "status": "ok",
+    "ms": 611.7444169999544,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "toilet_paper_packaging__benchmark_toilet_paper_packaging_000.png"
+  },
+  {
+    "category": "toiletries",
+    "asset": "benchmark_toiletries_009",
+    "status": "ok",
+    "ms": 683.4387499999934,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "toiletries__benchmark_toiletries_009.png"
+  },
+  {
+    "category": "toy",
+    "asset": "benchmark_toy_003",
+    "status": "ok",
+    "ms": 810.8666670000275,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "toy__benchmark_toy_003.png"
+  },
+  {
+    "category": "toy_car",
+    "asset": "benchmark_toy_car_018",
+    "status": "ok",
+    "ms": 553.5100409999814,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "toy_car__benchmark_toy_car_018.png"
+  },
+  {
+    "category": "toy_plane",
+    "asset": "benchmark_toy_plane_029",
+    "status": "ok",
+    "ms": 544.5013749999816,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "toy_plane__benchmark_toy_plane_029.png"
+  },
+  {
+    "category": "trash",
+    "asset": "benchmark_trash_000",
+    "status": "ok",
+    "ms": 578.8952919999701,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "trash__benchmark_trash_000.png"
+  },
+  {
+    "category": "trash_can",
+    "asset": "benchmark_trash_can_000",
+    "status": "ok",
+    "ms": 1753.1283330000633,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "trash_can__benchmark_trash_can_000.png"
+  },
+  {
+    "category": "tv_cabinet",
+    "asset": "benchmark_tv_cabinet_000",
+    "status": "ok",
+    "ms": 1074.1190420000066,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "tv_cabinet__benchmark_tv_cabinet_000.png"
+  },
+  {
+    "category": "umbrella",
+    "asset": "benchmark_umbrella_000",
+    "status": "ok",
+    "ms": 799.7579999999971,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "umbrella__benchmark_umbrella_000.png"
+  },
+  {
+    "category": "usb",
+    "asset": "benchmark_usb_000",
+    "status": "ok",
+    "ms": 721.1745000000747,
+    "n_meshes": 2,
+    "error": "",
+    "thumbnail": "usb__benchmark_usb_000.png"
+  },
+  {
+    "category": "vase",
+    "asset": "benchmark_vase_000",
+    "status": "ok",
+    "ms": 656.3087079999832,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "vase__benchmark_vase_000.png"
+  },
+  {
+    "category": "washing_machine",
+    "asset": "benchmark_washing_machine_000",
+    "status": "ok",
+    "ms": 832.6241670000627,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "washing_machine__benchmark_washing_machine_000.png"
+  },
+  {
+    "category": "water",
+    "asset": "benchmark_water_000",
+    "status": "ok",
+    "ms": 507.9601669999647,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "water__benchmark_water_000.png"
+  },
+  {
+    "category": "whiteboard",
+    "asset": "benchmark_whiteboard_000",
+    "status": "ok",
+    "ms": 611.9127499999877,
+    "n_meshes": 1,
+    "error": "",
+    "thumbnail": "whiteboard__benchmark_whiteboard_000.png"
+  }
+]

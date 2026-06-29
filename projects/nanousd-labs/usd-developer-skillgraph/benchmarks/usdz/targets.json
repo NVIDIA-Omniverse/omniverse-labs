@@ -1,0 +1,26 @@
+{
+  "measurement_model": {
+    "id": "cli_process_smoke",
+    "description": "End-to-end command invocation for checked-in USDZ fixtures. Timings include process startup, package read, package indexing, selected layer parsing, JSON serialization, and process teardown."
+  },
+  "targets": [
+    {
+      "id": "default_root_usda_usdz_parse",
+      "fixture": "benchmarks/fixtures/usdz/default_root_usda.usdz",
+      "runs": 10,
+      "max_ms": 200.0
+    },
+    {
+      "id": "default_root_usdc_usdz_parse",
+      "fixture": "benchmarks/fixtures/usdz/default_root_usdc.usdz",
+      "runs": 10,
+      "max_ms": 250.0
+    },
+    {
+      "id": "explicit_root_usda_usdz_parse",
+      "fixture": "benchmarks/fixtures/usdz/explicit_root_usda.usdz[scenes/root.usda]",
+      "runs": 10,
+      "max_ms": 250.0
+    }
+  ]
+}

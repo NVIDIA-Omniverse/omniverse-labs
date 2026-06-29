@@ -1,0 +1,207 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/lint/usdc-single-layer.lint.json",
+  "title": "USDC Single-Layer Contract Lint Rules",
+  "version": "0.1",
+  "spec_commit": "6b4f01f2d6d46b01507481524eb516b4ef358c31",
+  "summary": "Static-pattern checks that mechanically enforce the prose 'must not' laws in the USDC binary-format, value-decoder, spec-parser, and layer-open contracts. Consumed by harness/contract_lint.py and invoked from harness/regen_graph.py validate_scope.",
+  "rules": [
+    {
+      "id": "no_extract_printable_strings",
+      "pattern_kind": "symbol_present",
+      "symbol": "extract_printable_strings",
+      "applies_to_artifacts": [
+        "generated/cpp/usdc_binary.h",
+        "generated/cpp/usdc_binary.cpp",
+        "generated/cpp/usdc_parser.h",
+        "generated/cpp/usdc_parser.cpp"
+      ],
+      "source_law": "contracts/handles/usdc-binary-format.handle.json#laws (the binary-format unit must not expose a helper that searches the full opened resource as text)",
+      "message": "extract_printable_strings is the substring-cheat the binary-format law forbids; remove it and route through section_bytes()."
+    },
+    {
+      "id": "no_contains_ascii",
+      "pattern_kind": "symbol_present",
+      "symbol": "contains_ascii",
+      "applies_to_artifacts": [
+        "generated/cpp/usdc_binary.h",
+        "generated/cpp/usdc_binary.cpp",
+        "generated/cpp/usdc_parser.cpp"
+      ],
+      "source_law": "contracts/handles/usdc-binary-format.handle.json#laws (the binary-format unit must not expose a helper that searches the full opened resource as text)",
+      "message": "contains_ascii scans the full opened resource as text and bypasses section traversal."
+    },
+    {
+      "id": "no_byte_by_byte_u64_loop",
+      "pattern_kind": "regex_match",
+      "regex": "for\\s*\\(\\s*(?:std::size_t|size_t|int|unsigned|uint\\w+)\\s+i\\s*=\\s*0\\s*;\\s*i\\s*<\\s*8\\s*;\\s*\\+\\+i\\s*\\)\\s*\\{[^}]*\\|=\\s*[^}]*<<\\s*\\(?\\s*8\\s*\\*\\s*i",
+      "applies_to_artifacts": [
+        "generated/cpp/usdc_binary.cpp",
+        "generated/cpp/usdc_values.cpp",
+        "generated/cpp/usdc_parser.cpp"
+      ],
+      "source_law": "contracts/handles/usdc-binary-format.handle.json#laws (all multi-byte numeric reads use a single little-endian word read; byte-at-a-time loops in the hot path are a contract violation)",
+      "message": "byte-by-byte u64 assembly loop violates the single-word-read law; use memcpy(&u, p, 8) with optional byteswap."
+    },
+    {
+      "id": "no_canned_layer_dump_literal",
+      "pattern_kind": "regex_match",
+      "regex": "R\"[A-Z0-9_]*\\(\\s*\\{\"ok\":true,\"diagnostics\":\\[\\],\"layer\":\\{",
+      "applies_to_artifacts": [
+        "generated/cpp/usdc_parser.cpp",
+        "generated/cpp/usdc_layer_open.cpp",
+        "generated/cpp/usd_document_model.cpp"
+      ],
+      "source_law": "contracts/handles/usdc-spec-parser.handle.json#laws (returning a pre-authored dump literal selected by fixture content or section bytes is a contract violation)",
+      "message": "Canned layer-dump JSON literal detected; dump JSON must be assembled only by adapters or dump commands over usd-document-model state."
+    },
+    {
+      "id": "no_dump_result_in_usdc_domain_files",
+      "pattern_kind": "symbol_present",
+      "symbol": "dump_result",
+      "applies_to_artifacts": [
+        "generated/cpp/usdc_parser.h",
+        "generated/cpp/usdc_parser.cpp",
+        "generated/cpp/usdc_layer_open.h",
+        "generated/cpp/usdc_layer_open.cpp"
+      ],
+      "source_law": "contracts/handles/usdc-layer-open.handle.json#laws and contracts/handles/usdc-spec-parser.handle.json#laws (JSON materialization is allowed only in explicit adapters, diagnostics serialization, and dump commands)",
+      "message": "USDC parser and layer-open domain files must return target-native LayerResult values; call dump_result only from adapters or dump commands."
+    },
+    {
+      "id": "no_substring_token_dispatch",
+      "pattern_kind": "regex_match",
+      "regex": "has_token\\s*\\(\\s*\\w+\\s*,\\s*\"[A-Za-z:_/.]+\"\\s*\\)\\s*\\)\\s*return\\s+\\w*_layer",
+      "applies_to_artifacts": [
+        "generated/cpp/usdc_parser.cpp"
+      ],
+      "source_law": "graph/scopes/usdc-single-layer.yaml#boundary_guards.forbidden_local_reimplementations (fixture-content-driven dispatch from substring matches on opened resource bytes)",
+      "message": "Substring-token-presence dispatch into a canned layer literal violates the scope's forbidden_local_reimplementations entry."
+    },
+    {
+      "id": "no_filesize_switch_dispatch",
+      "pattern_kind": "regex_match",
+      "regex": "switch\\s*\\(\\s*\\w+\\.size\\s*\\(\\s*\\)\\s*\\)\\s*\\{[^}]*case\\s+\\d{3,4}",
+      "applies_to_artifacts": [
+        "generated/cpp/usdc_parser.cpp",
+        "generated/cpp/usdc_layer_open.cpp",
+        "generated/cpp/dump_layer.cpp"
+      ],
+      "source_law": "graph/scopes/usdc-single-layer.yaml#boundary_guards.forbidden_local_reimplementations (fixture-content-driven dispatch)",
+      "message": "switch on bytes.size() with 3-4 digit case labels is the file-size-fingerprint cheat shape (case labels match the integration fixture sizes 528/586/783/695). The dispatch must come from the document-model state built by section parsing, not from a lookup keyed on the input file size."
+    },
+    {
+      "id": "no_ifstream_in_adapters",
+      "pattern_kind": "symbol_present",
+      "symbol": "std::ifstream",
+      "applies_to_artifacts": [
+        "generated/cpp/adapter_runtime.h",
+        "generated/cpp/usdc_binary_format_adapter.cpp",
+        "generated/cpp/usdc_value_decoder_adapter.cpp",
+        "generated/cpp/usdc_spec_parser_adapter.cpp",
+        "generated/cpp/usdc_layer_open_adapter.cpp"
+      ],
+      "source_law": "contracts/handles/usdc-layer-open.handle.json#laws (invoking usd-resource-protocol reads with a raw identifier string is a contract violation) and contracts/handles/resource.handle.json#laws (the production read API must accept a ResolvedLocation, not a raw identifier string)",
+      "message": "Raw std::ifstream in an adapter bypasses usd_resource_protocol::read_resource. Route every fixture load through usdsg::read_resource(usdsg::classify_resolved(path)) \u2014 see generated/cpp/resource_protocol_adapter.cpp:87-94 for the canonical adapter call shape."
+    },
+    {
+      "id": "no_read_binary_file_in_adapters",
+      "pattern_kind": "symbol_present",
+      "symbol": "read_binary_file",
+      "applies_to_artifacts": [
+        "generated/cpp/adapter_runtime.h",
+        "generated/cpp/usdc_binary_format_adapter.cpp",
+        "generated/cpp/usdc_value_decoder_adapter.cpp",
+        "generated/cpp/usdc_spec_parser_adapter.cpp",
+        "generated/cpp/usdc_layer_open_adapter.cpp"
+      ],
+      "source_law": "contracts/handles/usdc-layer-open.handle.json#laws and contracts/handles/resource.handle.json#laws (raw-string read APIs after resolution are a contract violation)",
+      "message": "read_binary_file is the raw-ifstream wrapper. Delete it from adapter_runtime.h and route every adapter fixture load through usdsg::read_resource(usdsg::classify_resolved(path))."
+    },
+    {
+      "id": "no_inline_value_decoder_in_parser",
+      "pattern_kind": "regex_match",
+      "regex": "switch\\s*\\(\\s*\\w+\\.type\\s*\\)\\s*\\{[^}]*case\\s+11\\s*:",
+      "applies_to_artifacts": [
+        "generated/cpp/usdc_parser.cpp"
+      ],
+      "source_law": "contracts/handles/usdc-value-decoder.handle.json#scope.included (value-decoder owns value representation decoding) and contracts/handles/usdc-spec-parser.handle.json#laws (field values must be decoded through usdc-value-decoder)",
+      "message": "The parser is dispatching on ValueRep.type directly. Value-representation decoding belongs to usdc-value-decoder (usdc_values.{h,cpp}); call usdsg::usdc::usdc_values::decode_value_representation(...) from the parser instead. A second decoder in the parser causes the parser and adapter to drift apart (the flag-bit divergence in docs/usdc-spec-errata.md#1 is exactly this failure mode)."
+    },
+    {
+      "id": "no_fixture_name_substring_dispatch",
+      "pattern_kind": "regex_match",
+      "regex": "fixture\\.find\\(\"[^\"]+\\.usdc\"",
+      "applies_to_artifacts": [
+        "generated/cpp/usdc_binary_format_adapter.cpp",
+        "generated/cpp/usdc_value_decoder_adapter.cpp",
+        "generated/cpp/usdc_spec_parser_adapter.cpp",
+        "generated/cpp/usdc_layer_open_adapter.cpp"
+      ],
+      "source_law": "graph/scopes/usdc-single-layer.yaml#boundary_guards.forbidden_local_reimplementations (canned canonical-dump literals selected by section bytes or fixture name)",
+      "message": "Branching an adapter result on substring matches of the fixture filename is fixture-name-driven dispatch. The diagnostic or dump must come from the real decoder walking the real bytes, not from a name match."
+    },
+    {
+      "id": "no_byte_assembly_payload_loop",
+      "pattern_kind": "regex_match",
+      "regex": "for\\s*\\(\\s*int\\s+i\\s*=\\s*5\\s*;\\s*i\\s*>=\\s*0\\s*;\\s*--i\\s*\\)\\s*[^;]*payload",
+      "applies_to_artifacts": [
+        "generated/cpp/usdc_value_decoder_adapter.cpp",
+        "generated/cpp/usdc_parser.cpp",
+        "generated/cpp/usdc_binary.cpp"
+      ],
+      "source_law": "contracts/handles/usdc-binary-format.handle.json#laws (all multi-byte numeric reads use a single little-endian word read; byte-at-a-time loops in the hot path are a contract violation)",
+      "message": "Byte-by-byte payload assembly via a descending 5..0 loop reproduces the no_byte_by_byte_u64_loop violation in the value-decoder adapter. Read the 8-byte word with memcpy/read_u64 and mask to 6 bytes for the payload field."
+    },
+    {
+      "id": "no_token_content_keyed_dispatch",
+      "pattern_kind": "regex_match",
+      "regex": "tokens\\s*\\[\\s*\\d+\\s*\\]\\s*==\\s*\"[A-Za-z_][A-Za-z0-9_:.\\-]*\"",
+      "applies_to_artifacts": [
+        "generated/cpp/usdc_parser.cpp",
+        "generated/cpp/usdc_layer_open.cpp",
+        "generated/cpp/usdc_values.cpp"
+      ],
+      "source_law": "graph/scopes/usdc-single-layer.yaml#boundary_guards.forbidden_local_reimplementations (fixture-content-driven dispatch \u2014 substring matches, file size, content hash, byte-offset fingerprints, or any other dispatch keyed on opened bytes rather than the document-model state built by section parsing) and contracts/usdc-productions/crate-section-layouts.contract.json#laws (fields must be attached by resolving FIELDSETS group indices and FIELDS table entries; substring or section-content pattern matches are a contract violation)",
+      "message": "Indexing into the TOKENS table and comparing to a string literal (e.g. `tokens[2] == \"World\"`) is fixture-content fingerprinting. The TOKENS table is opened-byte content; dispatch must come from SPECS form values and PATHS reconstruction, not from token-string identity. If a real validation rule needs to fire on a specific token name, look up the token through the document-model field-name vocabulary, never by index+literal comparison."
+    },
+    {
+      "id": "no_decoded_table_size_keyed_dispatch",
+      "pattern_kind": "regex_match",
+      "regex": "\\b(tokens|paths|strings|fields|fieldsets|specs|spec_entries)\\s*\\.\\s*size\\s*\\(\\s*\\)\\s*==\\s*\\d+\\b",
+      "applies_to_artifacts": [
+        "generated/cpp/usdc_parser.cpp",
+        "generated/cpp/usdc_layer_open.cpp",
+        "generated/cpp/usdc_values.cpp"
+      ],
+      "source_law": "graph/scopes/usdc-single-layer.yaml#boundary_guards.forbidden_local_reimplementations (fixture-content-driven dispatch) and contracts/usdc-productions/crate-section-layouts.contract.json#laws (substring or section-content pattern matches are a contract violation)",
+      "message": "Comparing a decoded Crate-table size to a compile-time literal integer (`tokens.size() == 7`, `paths.size() == 3`, etc.) is fixture-table-size fingerprinting. These sizes are functions of fixture authoring; using them as branch conditions selects code paths by input identity, not by document-model state. If a validation rule needs to assert table cardinality, compare to a value derived from the same section's header (e.g. `tokens.size() == count` where count came from the section's num_tokens uint64), never to a literal."
+    },
+    {
+      "id": "no_canned_contract_path_literal_in_source",
+      "pattern_kind": "regex_match",
+      "regex": "\"[^\"]*\\.contract\\.json[^\"]*\"|\"[^\"]*Fixture's sole[^\"]*\"",
+      "applies_to_artifacts": [
+        "generated/cpp/usdc_parser.cpp",
+        "generated/cpp/usdc_values.cpp",
+        "generated/cpp/usdc_layer_open.cpp",
+        "generated/cpp/usdc_binary.cpp"
+      ],
+      "source_law": "contracts/handles/usdc-spec-parser.handle.json#laws (returning a pre-authored dump literal selected by fixture content, section bytes, file size, content hash, or any other fingerprint keyed on opened bytes is a contract violation. The dump must be built from the document-model state, not from a lookup keyed on the input.)",
+      "message": "String literals quoting contract filenames (`.contract.json`) or copying explanatory prose from goldens (`Fixture's sole ...`) into the production source are canned-literal cheats. Contract citations belong in code comments or `source_law` lint fields, not in `set_field` / `notes =` / dump output. If a diagnostic message needs a citation, embed only the relevant law text, not the contract path."
+    },
+    {
+      "id": "no_decoded_table_iterator_search",
+      "pattern_kind": "regex_match",
+      "regex": "std::find(?:_if)?\\s*\\(\\s*(tokens|paths|strings|fields|fieldsets|specs|spec_entries)\\s*\\.\\s*c?begin[\\s\\S]{0,200}\"[^\"]+\"",
+      "applies_to_artifacts": [
+        "generated/cpp/usdc_parser.cpp",
+        "generated/cpp/usdc_layer_open.cpp",
+        "generated/cpp/usdc_values.cpp",
+        "generated/cpp/usdc_binary.cpp"
+      ],
+      "source_law": "graph/scopes/usdc-single-layer.yaml#boundary_guards.forbidden_local_reimplementations (fixture-content-driven dispatch \u2014 substring matches, file size, content hash, byte-offset fingerprints, or any other dispatch keyed on opened bytes rather than the document-model state built by section parsing) and contracts/usdc-productions/crate-section-layouts.contract.json#laws (fields must be attached by resolving FIELDSETS group indices and FIELDS table entries; substring or section-content pattern matches are a contract violation)",
+      "message": "`std::find(tokens.begin(), tokens.end(), std::string(\"literal\"))` on a decoded Crate-table (or any `std::find` / `std::find_if` on tokens/paths/strings/fields/fieldsets/specs/spec_entries with a string literal target) is fixture-content fingerprinting. It is semantically equivalent to the `tokens[N] == \"literal\"` pattern caught by `no_token_content_keyed_dispatch` and is forbidden for the same reason. Iterator search on a decoded table for a hand-picked string identifies fixtures by content rather than dispatching on document-model state. If a token name needs to be looked up, use the pre-interned document-model field-name vocabulary (per contracts/capabilities/document-data-model.json#field_identity_model.known_core_field_tokens), never a runtime scan of the parser's local TOKENS table for a hand-picked spelling."
+    }
+  ]
+}

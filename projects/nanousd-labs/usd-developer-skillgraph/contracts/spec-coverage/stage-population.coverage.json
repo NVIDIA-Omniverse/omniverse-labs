@@ -1,0 +1,188 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/spec-coverage/stage-population.coverage.json",
+  "title": "USD Stage Population Spec Coverage Ledger",
+  "version": "0.1",
+  "spec_commit": "v1.0.1",
+  "normative_source": {
+    "repo": "aousd/specifications-public",
+    "commit": "v1.0.1",
+    "rule": "The pinned stage_population specification is normative. This ledger decomposes the parts covered by the first stage-population skill and names dependencies or deferrals for the rest."
+  },
+  "status_values": {
+    "implemented": "In scope for this skill contract and covered by goldens.",
+    "provider_dependent": "Owned by the stage-population contract but semantically limited by the NamespaceSource capability level.",
+    "deferred": "Specified but intentionally not implemented in the first stage-population contract.",
+    "out_of_scope": "Belongs to another subsystem or future skill."
+  },
+  "coverage_rules": [
+    "Stage population consumes a NamespaceSource so it can be tested now with a single-layer source and later with composed sources.",
+    "A generated target must not claim full composition, value resolution, payload loading, or schema fallback support unless the consumed NamespaceSource declares that capability.",
+    "Stage population may preserve schema-defined properties supplied by a schema-aware NamespaceSource, but must not compute prim definitions locally.",
+    "Population and query semantics must use target-native paths, tokens, and field values; canonical JSON is only a conformance boundary."
+  ],
+  "items": [
+    {
+      "id": "stage.root-and-traversal",
+      "owner": "usd-stage-population",
+      "status": "implemented",
+      "spec_refs": [
+        "stage_population/README.md:11 The Stage",
+        "stage_population/README.md:17 Populating the Stage",
+        "stage_population/README.md:198 Stage Queries"
+      ],
+      "obligations": [
+        "Create a root scene object at /.",
+        "Populate reachable child prim paths from source child names.",
+        "Expose ordered stage traversal for populated prims."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-stage-population/stage-population.json#hierarchy-traversal-and-queries"
+      ]
+    },
+    {
+      "id": "stage.population-mask",
+      "owner": "usd-stage-population",
+      "status": "implemented",
+      "spec_refs": [
+        "stage_population/README.md:19 population mask",
+        "stage_population/README.md:72 populate_children"
+      ],
+      "obligations": [
+        "Include requested paths and their ancestors.",
+        "Exclude unrelated branches.",
+        "Do not let a mask force descendants under inactive ancestors into the populated stage."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-stage-population/stage-population.json#population-mask-keeps-ancestors"
+      ]
+    },
+    {
+      "id": "stage.active-pruning",
+      "owner": "usd-stage-population",
+      "status": "implemented",
+      "spec_refs": [
+        "stage_population/README.md:36 active check",
+        "stage_population/README.md:104 inactive descendants"
+      ],
+      "obligations": [
+        "Apply active=true fallback when no active opinion exists.",
+        "Do not populate inactive prims or their descendants in normal traversal.",
+        "Keep active=false as layer data in the document model; pruning belongs only to population."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-stage-population/stage-population.json#active-prunes-descendants"
+      ]
+    },
+    {
+      "id": "stage.ordered-children-and-properties",
+      "owner": "usd-stage-population",
+      "status": "provider_dependent",
+      "spec_refs": [
+        "stage_population/README.md:107 Ordered Prim Children",
+        "stage_population/README.md:151 Ordered Property Children",
+        "document_data_model/README.md:555 Population Fields"
+      ],
+      "obligations": [
+        "For a single-layer source, reorder source primChildren with that spec's primOrder.",
+        "For a single-layer source, sort source properties by path element order and apply that spec's propertyOrder.",
+        "For composed sources that declare composed ordering, preserve provider-supplied child/property order while still applying population masks and active pruning.",
+        "For schema-aware sources, preserve schema-defined property names supplied by the provider."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-stage-population/stage-population.json#hierarchy-traversal-and-queries",
+        "goldens/unit/usd-stage-population/stage-population.json#property-ordering",
+        "goldens/integration/usd-schema-stage-population/schema-stage-population.json#schema-properties-populate-stage"
+      ]
+    },
+    {
+      "id": "stage.query-flags",
+      "owner": "usd-stage-population",
+      "status": "provider_dependent",
+      "spec_refs": [
+        "stage_population/README.md:198 Stage Queries",
+        "document_data_model/README.md:642 specifier",
+        "document_data_model/README.md:820 active",
+        "document_data_model/README.md:829 instanceable"
+      ],
+      "obligations": [
+        "Expose Active, Loaded, Model Hierarchy, Defined, Abstract, and Instance query flags where the provider has sufficient opinions.",
+        "Use fallback policy for missing active, instanceable, kind, and specifier fields.",
+        "Do not evaluate non-portable model hierarchy aliases."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-stage-population/stage-population.json#hierarchy-traversal-and-queries",
+        "goldens/integration/usd-instancing-model-stage-population/instancing-model-stage-population.json#portable-kind-model-hierarchy-traversal"
+      ]
+    },
+    {
+      "id": "stage.value-resolution",
+      "owner": "usd-value-resolution",
+      "status": "provider_dependent",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:core/1.0.1/core_spec.md#Value Resolution",
+        "stage_population/README.md:15 value resolution"
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-value-resolution/value-resolution.json#default-resolution-walks-opinion-stack",
+        "goldens/unit/usd-value-resolution/value-resolution.json#time-samples-held-linear-vector-and-retiming",
+        "goldens/unit/usd-value-resolution/value-resolution.json#schema-fallback-acquisition-order",
+        "goldens/unit/usd-value-resolution/value-resolution.json#value-clips-strength-time-mapping-and-manifest-defaults"
+      ],
+      "obligations": [
+        "Stage population may expose source-visible authored fields for structural queries.",
+        "Any stage property API that returns resolved values must call the usd-value-resolution provider instead of reimplementing value resolution locally.",
+        "A populated stage can only claim resolved values when its consumed NamespaceSource supplies the opinion stacks, retiming, schema fallback context, and clip context required by the value-resolution contract."
+      ]
+    },
+    {
+      "id": "stage.instancing",
+      "owner": "usd-stage-population",
+      "status": "provider_dependent",
+      "spec_refs": [
+        "stage_population/README.md:171 Scene Graph Instancing",
+        "stage_population/README.md:176 matching criteria may not be sufficient with population masks",
+        "composition/README.md:1306 Instancing"
+      ],
+      "obligations": [
+        "Treat a prim as a supported instance only when it is marked instanceable and supported composition-arc provenance is available.",
+        "Assign shared representation identities for matching supported composition-arc provenance when population-mask context is compatible.",
+        "Do not share otherwise matching instanceable prims when the population mask affects their subtrees differently.",
+        "Consume instance-filtered descendant inputs from the composed namespace source so local descendant opinions under an instanceable prim are excluded for supported non-local composition arc families."
+      ],
+      "positive_goldens": [
+        "goldens/integration/usd-instancing-model-stage-population/instancing-model-stage-population.json#reference-backed-instances-share-and-filter-descendants",
+        "goldens/integration/usd-instancing-model-stage-population/instancing-model-stage-population.json#population-mask-prevents-instance-sharing",
+        "goldens/integration/usd-instancing-model-stage-population/instancing-model-stage-population.json#variant-backed-instances-share-and-filter-descendants",
+        "goldens/integration/usd-instancing-model-stage-population/instancing-model-stage-population.json#inherits-and-specializes-backed-instances-share-and-filter-descendants",
+        "goldens/integration/usd-instancing-model-stage-population/instancing-model-stage-population.json#relocated-reference-instances-share-and-filter-descendants"
+      ]
+    },
+    {
+      "id": "stage.model-hierarchy",
+      "owner": "usd-stage-population",
+      "status": "implemented",
+      "spec_refs": [
+        "stage_population/README.md:184 Scene Graph Model Hierarchy",
+        "stage_population/README.md:198 Stage Queries",
+        "document_data_model/README.md:835 kind"
+      ],
+      "obligations": [
+        "Include portable group and assembly prims in the model hierarchy and let them continue hierarchy traversal.",
+        "Include portable component prims but do not include descendants of those components in the model hierarchy.",
+        "Exclude subcomponent, empty, and unknown kind values and terminate model hierarchy continuity through them.",
+        "Leave custom aliases and validation diagnostics implementation-dependent."
+      ],
+      "positive_goldens": [
+        "goldens/integration/usd-instancing-model-stage-population/instancing-model-stage-population.json#portable-kind-model-hierarchy-traversal"
+      ]
+    },
+    {
+      "id": "stage.nanousd-capi-backend",
+      "owner": "future-nanousd-capi-backend-skill",
+      "status": "out_of_scope",
+      "spec_refs": [],
+      "deferred_reason": "The current work defines stage population contracts only. C API backend compatibility should consume this skill later."
+    }
+  ]
+}

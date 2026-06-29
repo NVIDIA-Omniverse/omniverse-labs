@@ -1,0 +1,145 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/nanousd-readonly-c-api-backend.json",
+  "title": "nanousd Read-Only C API Backend Capability",
+  "version": "0.1",
+  "spec_commit": "v1.0.1",
+  "nanousd_headers": [
+    "include/nanousd/nanousdapi.h",
+    "include/nanousd/nanousd_backend.h"
+  ],
+  "dependency_contracts": [
+    "contracts/capabilities/semantic-runtime-types.json"
+  ],
+  "purpose": "Define the bounded read-only contract for generating a backend that serves nanousd's C API from the skillgraph USD layer, composition, stage, path, token, listOp, and typed-value contracts.",
+  "scope": {
+    "included": [
+      "exported nanousd_create_backend_v1 entry point with C linkage",
+      "complete NanousdBackend_v1 function pointer population with no null slots",
+      "crash-safe C ABI behavior for null, invalid, malformed, missing, and unsupported inputs",
+      "generated portable CMake build metadata for the C++ backend and adapter",
+      "NanousdBackend_v1 vtable population for read-only functions",
+      "deterministic unsupported stubs for mutating functions",
+      "runtime stage-open and traversal behavior for supported local USDA fixtures through usd-composed-stage-open",
+      "composed stage-open result consumption before nanousd stage handle construction",
+      "stage lifecycle over a generated read-only stage object",
+      "stage validity, error, root-layer path, and contributing layer enumeration",
+      "stage metadata reads for numeric, string, and token-like authored fields",
+      "prim traversal by index, path, defaultPrim, children, and child name",
+      "prim path, name, typeName, kind, active, specifier-derived defined/abstract, and instanceable queries",
+      "attribute enumeration, type-name query, authored default reads, and connection target reads",
+      "typed scalar attribute reads for bool, integer, int64, float, double, string, token, and asset values",
+      "typed vector, quaternion, matrix3d, matrix4d, and homogeneous array reads from foundational typed payload metadata",
+      "time sample key enumeration and exact authored sample reads for supported scalar, vector, and homogeneous array values",
+      "relationship target enumeration",
+      "path handle parse/string/parent/name/append/equality predicates with real typed handles by delegating to usd-paths",
+      "standalone listOp create/introspection/combine/free utilities and source-visible authored listOp reads by delegating to usd-listops-authored",
+      "stateless vector, matrix, and quaternion math utilities where the C API operates only on caller-provided arrays"
+    ],
+    "deferred": [
+      "all C API setters, create functions, clear/block functions, reference/relationship writes, variant writes, schema registration, and file serialization",
+      "USDC and USDZ parsing or writing",
+      "full asset resolver behavior beyond the existing resource and layer-open contracts",
+      "full runtime composition of recursive or chained sublayers, references, payloads, and variant-contained arcs behind nanousd_open",
+      "recursive value resolution, interpolation, clips, spline evaluation, and schema fallback values",
+      "schema registry semantics for isa/hasapi beyond direct authored type/API metadata visibility",
+      "instancing/prototype query semantics",
+      "zero-copy arraydata pointers when the generated storage is not already contiguous for the requested element type",
+      "xformOp stack evaluation and composed local transform calculation",
+      "complete nanousd diagnostic category parity"
+    ]
+  },
+  "dependencies": {
+    "required": [
+      {
+        "provider": "usd-composed-stage-open",
+        "capability": "composed_stage_open",
+        "reason": "The backend open path must consume a graph-owned composed stage-open result that discovers and opens direct local composition dependencies before stage population."
+      },
+      {
+        "provider": "usd-stage-population",
+        "capability": "stage_population",
+        "reason": "The C API stage and prim handles expose populated stage traversal and query indexes."
+      },
+      {
+        "provider": "usd-document-model",
+        "capability": "document_model",
+        "reason": "Attribute, relationship, and metadata reads consume typed source-visible field values."
+      },
+      {
+        "provider": "usd-foundational-values",
+        "capability": "foundational_value_model",
+        "reason": "Typed C API readers depend on scalar domain, shape, matrix, quaternion, semantic alias, array, dictionary, and valueBlock payload metadata."
+      },
+      {
+        "provider": "usd-paths",
+        "capability": "path references",
+        "reason": "NanousdPath operations and relationship target output delegate to graph path identity."
+      },
+      {
+        "provider": "usd-tokens",
+        "capability": "token_identity",
+        "reason": "Token-valued attribute and metadata reads preserve token identity internally while exposing C strings at the C boundary."
+      },
+      {
+        "provider": "usd-listops-authored",
+        "capability": "authored_listops",
+        "reason": "Prim listOp read/introspection consumes the authored listOp model rather than parsing adapter dictionaries."
+      }
+    ]
+  },
+  "c_api_partition": {
+    "implemented_readonly": [
+      "stage lifecycle and read metadata",
+      "prim traversal and prim field queries",
+      "attribute enumeration, type query, scalar/vector/quaternion/matrix/array default reads",
+      "time sample key enumeration and exact sample reads",
+      "relationship and connection target reads",
+      "path utilities with total null-safe companion functions",
+      "listOp create/read/introspection/combine utilities with total null-safe companion functions",
+      "stateless math utilities"
+    ],
+    "unsupported_stubs": [
+      "stage creation",
+      "prim creation",
+      "attribute setters",
+      "time sample setters",
+      "relationship setters",
+      "composition arc writes",
+      "variant selection writes",
+      "schema registration",
+      "USDA/USDC write APIs"
+    ]
+  },
+  "value_mapping": {
+    "scalar_reads": "Nanousd scalar readers consume checked field reads and set ok=0 on missing or type mismatch.",
+    "vector_reads": "Dimensioned values and semantic aliases with compatible underlying types are read by shape and element type. Numeric conversion to the requested C output type is permitted at the C boundary.",
+    "quaternion_reads": "Stored USD quaternion payloads use component order i,j,k,w. nanousd C API quaternion readers return w,i,j,k and must reorder components explicitly.",
+    "matrix_reads": "Matrix3d and Matrix4d readers flatten row-major matrix payloads to double[9] or double[16]. Nested row adapter shape is a serialization detail, not a storage requirement.",
+    "array_reads": "Homogeneous typed arrays are read according to their element type and element shape. Generic heterogeneous arrays and dictionaries are not valid numeric array reads.",
+    "string_reads": "Returned C strings are owned by the backend handle or stage and remain valid until the owning handle is freed or the stage is closed.",
+    "half_reads": "Half and half-dimensioned values may be read through float-returning C API functions by numeric conversion at the C boundary; the underlying stored type identity remains half."
+  },
+  "laws": [
+    "the generated backend must export nanousd_create_backend_v1 with C linkage and return a non-null NanousdBackend_v1 pointer",
+    "every NanousdBackend_v1 function pointer slot must be non-null; read-only and utility functions point to generated implementations, while mutating or deferred functions point to deterministic unsupported stubs",
+    "every generated C ABI function must be total for null handles, invalid handles, null input pointers, out-of-range indices, malformed text, missing values, type mismatches, and unsupported features; failures must be reported through nanousd return conventions rather than process termination",
+    "no exception may cross the nanousd C ABI boundary; generated entry points must catch implementation exceptions and return deterministic failure values",
+    "functions returning const char* must never return null; missing, invalid, or unsupported string results return a stable empty string unless the nanousd C API explicitly specifies an owning null pointer failure",
+    "functions returning caller-owned C strings must return either null on failure or memory compatible with nanousd_free_string; generated code must not return string literals or handle-local buffers from owning string APIs",
+    "functions returning opaque handles must return either null or a valid generated handle whose companion functions are total; generated code must not return partially initialized handles",
+    "nanousd_open with a null or empty filepath returns null; failed non-null opens may return either null or an invalid stage handle, but every stage function must safely accept both cases",
+    "utility functions classified as path, listOp, or math support must not use generic fallback stubs; they must be implemented as typed utility functions with explicit null and invalid-input behavior",
+    "the generated C++ target must not depend exclusively on Windows-specific build scripts; it must emit a CMake project that can build on Windows and Linux when a supported compiler and nanousd headers are available",
+    "the benchmark-stage-load slice of the generated backend must open supported local USDA files through usd-composed-stage-open and serve nanousd_nprims, nanousd_prim, nanousd_nattribs, nanousd_freeprim, diagnostics, and root-layer/layer-count queries from the resulting populated Stage; the backend must not construct layer-stack, reference, payload, or composition-arbitrator sources directly",
+    "read-only C API functions must not mutate the generated stage, layer, namespace source, path table, token table, or field storage except for handle-local caches and C string lifetime buffers",
+    "C strings returned by the backend are ABI boundary strings; generated backend storage and query state must retain paths, tokens, field keys, and semantic names through the graph's semantic runtime types",
+    "missing values and type mismatches follow nanousd C API conventions: scalar reads set ok=0 and return a neutral value, vector/quaternion/matrix reads return 0, array copy reads return -1, and string reads return null or an empty failure string as specified by the C API",
+    "typed attribute reads use document-model checked reads and foundational payload metadata; they must not recover type identity by reparsing canonical JSON dumps",
+    "semantic aliases such as point3f, normal3f, color3f, frame4d, and texCoord2f may satisfy C API readers for their underlying typed payload when the requested shape and element type agree",
+    "quaternion C API readers must convert USD payload order i,j,k,w to nanousd C API order w,i,j,k",
+    "matrix C API readers return row-major flattened arrays",
+    "zero-copy arraydata functions may return null until a later contract requires contiguous native storage for the requested array element type",
+    "write and create functions in a read-only backend are deterministic unsupported stubs and must not partially mutate stage state"
+  ]
+}

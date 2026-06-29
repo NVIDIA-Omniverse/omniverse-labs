@@ -1,0 +1,4 @@
+interface:
+  display_name: "Renderer Implementation Roadmap"
+  short_description: "Sequence a renderer build"
+  default_prompt: "Use $renderer-implementation-roadmap to sequence a renderer build from contracts through backend bring-up, scene extraction, ray tracing, materials, validation, and performance, with a correctness gate per phase."

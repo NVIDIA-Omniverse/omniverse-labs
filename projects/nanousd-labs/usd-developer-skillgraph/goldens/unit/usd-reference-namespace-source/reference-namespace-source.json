@@ -1,0 +1,516 @@
+{
+  "suite": "usd-reference-namespace-source",
+  "contract": "contracts/handles/reference-namespace-source.handle.json",
+  "spec_commit": "v1.0.1",
+  "cases": [
+    {
+      "id": "composes-external-reference-tree",
+      "input": {
+        "rootLayer": {
+          "identifier": "root.usda",
+          "fields": {"primChildren": {"type": "token[]", "value": ["World"]}},
+          "specs": {
+            "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["World"]}}},
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "over"},
+                "kind": {"type": "token", "value": "assembly"},
+                "references": {
+                  "type": "listop<Reference>",
+                  "value": {
+                    "explicit": [{"asset": "asset.usda", "path": "/Model", "offset": 0.0, "scale": 1.0}],
+                    "prepend": [],
+                    "append": [],
+                    "delete": []
+                  }
+                },
+                "primChildren": {"type": "token[]", "value": ["Local"]},
+                "propertyChildren": {"type": "token[]", "value": ["visibility"]},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World/Local": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World.visibility": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "typeName": {"type": "token", "value": "token"},
+                "variability": {"type": "variability", "value": "varying"},
+                "default": {"type": "token", "value": "inherited"}
+              }
+            }
+          }
+        },
+        "referenceLayers": {
+          "asset.usda": {
+            "identifier": "asset.usda",
+            "fields": {"primChildren": {"type": "token[]", "value": ["Model"]}},
+            "specs": {
+              "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["Model"]}}},
+              "/Model": {
+                "kind": "prim",
+                "fields": {
+                  "specifier": {"type": "specifier", "value": "def"},
+                  "typeName": {"type": "token", "value": "Xform"},
+                  "primChildren": {"type": "token[]", "value": ["Geom"]},
+                  "propertyChildren": {"type": "token[]", "value": ["size"]},
+                  "variantSetChildren": {"type": "token[]", "value": []}
+                }
+              },
+              "/Model/Geom": {
+                "kind": "prim",
+                "fields": {
+                  "specifier": {"type": "specifier", "value": "def"},
+                  "typeName": {"type": "token", "value": "Mesh"},
+                  "primChildren": {"type": "token[]", "value": []},
+                  "propertyChildren": {"type": "token[]", "value": []},
+                  "variantSetChildren": {"type": "token[]", "value": []}
+                }
+              },
+              "/Model.size": {
+                "kind": "attribute",
+                "fields": {
+                  "custom": {"type": "bool", "value": false},
+                  "typeName": {"type": "token", "value": "float"},
+                  "variability": {"type": "variability", "value": "varying"},
+                  "default": {"type": "float", "value": 2.0}
+                }
+              }
+            }
+          }
+        },
+        "ops": [
+          {"op": "build_source"},
+          {"op": "inspect_source"},
+          {"op": "reference_summary"},
+          {"op": "prim_input", "path": "/World"},
+          {"op": "prim_input", "path": "/World/Geom"},
+          {"op": "prim_input", "path": "/World/Local"},
+          {"op": "property_input", "path": "/World.size"},
+          {"op": "property_input", "path": "/World.visibility"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "build_source", "ok": true},
+          {
+            "op": "inspect_source",
+            "ok": true,
+            "mode": "composed_namespace",
+            "composition": "partial",
+            "value_resolution": "partial",
+            "payload_loading": "absent",
+            "instancing": "absent",
+            "schema_fallbacks": "absent",
+            "child_ordering": "composed",
+            "property_ordering": "composed"
+          },
+          {
+            "op": "reference_summary",
+            "ok": true,
+            "references": [
+              {"primPath": "/World", "asset": "asset.usda", "targetPath": "/Model", "offset": 0.0, "scale": 1.0}
+            ],
+            "diagnostics": []
+          },
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/World",
+            "exists": true,
+            "kind": "prim",
+            "fields": {
+              "specifier": {"type": "specifier", "value": "def"},
+              "typeName": {"type": "token", "value": "Xform"},
+              "kind": {"type": "token", "value": "assembly"},
+              "references": {
+                "type": "listop<Reference>",
+                "value": {
+                  "append": [],
+                  "delete": [],
+                  "explicit": [{"asset": "asset.usda", "offset": 0.0, "path": "/Model", "scale": 1.0}],
+                  "prepend": []
+                }
+              },
+              "primChildren": {"type": "token[]", "value": ["Local"]},
+              "propertyChildren": {"type": "token[]", "value": ["visibility"]},
+              "variantSetChildren": {"type": "token[]", "value": []}
+            },
+            "childNames": ["Geom", "Local"],
+            "propertyNames": ["size", "visibility"],
+            "contributingSources": ["root.usda:/World", "asset.usda:/Model"]
+          },
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/World/Geom",
+            "exists": true,
+            "kind": "prim",
+            "fields": {
+              "specifier": {"type": "specifier", "value": "def"},
+              "typeName": {"type": "token", "value": "Mesh"},
+              "primChildren": {"type": "token[]", "value": []},
+              "propertyChildren": {"type": "token[]", "value": []},
+              "variantSetChildren": {"type": "token[]", "value": []}
+            },
+            "childNames": [],
+            "propertyNames": [],
+            "contributingSources": ["asset.usda:/Model/Geom"]
+          },
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/World/Local",
+            "exists": true,
+            "kind": "prim",
+            "fields": {
+              "specifier": {"type": "specifier", "value": "def"},
+              "primChildren": {"type": "token[]", "value": []},
+              "propertyChildren": {"type": "token[]", "value": []},
+              "variantSetChildren": {"type": "token[]", "value": []}
+            },
+            "childNames": [],
+            "propertyNames": [],
+            "contributingSources": ["root.usda:/World/Local"]
+          },
+          {
+            "op": "property_input",
+            "ok": true,
+            "path": "/World.size",
+            "exists": true,
+            "kind": "attribute",
+            "fields": {
+              "custom": {"type": "bool", "value": false},
+              "typeName": {"type": "token", "value": "float"},
+              "variability": {"type": "variability", "value": "varying"},
+              "default": {"type": "float", "value": 2.0}
+            },
+            "contributingSources": ["asset.usda:/Model.size"]
+          },
+          {
+            "op": "property_input",
+            "ok": true,
+            "path": "/World.visibility",
+            "exists": true,
+            "kind": "attribute",
+            "fields": {
+              "custom": {"type": "bool", "value": false},
+              "typeName": {"type": "token", "value": "token"},
+              "variability": {"type": "variability", "value": "varying"},
+              "default": {"type": "token", "value": "inherited"}
+            },
+            "contributingSources": ["root.usda:/World.visibility"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "asset-reference-uses-default-prim",
+      "input": {
+        "rootLayer": {
+          "identifier": "root.usda",
+          "fields": {"primChildren": {"type": "token[]", "value": ["World"]}},
+          "specs": {
+            "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["World"]}}},
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "over"},
+                "references": {
+                  "type": "listop<Reference>",
+                  "value": {
+                    "explicit": [{"asset": "asset.usda", "offset": 0.0, "scale": 1.0}],
+                    "prepend": [],
+                    "append": [],
+                    "delete": []
+                  }
+                },
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        },
+        "referenceLayers": {
+          "asset.usda": {
+            "identifier": "asset.usda",
+            "fields": {
+              "defaultPrim": {"type": "token", "value": "Model"},
+              "primChildren": {"type": "token[]", "value": ["Model"]}
+            },
+            "specs": {
+              "/": {
+                "kind": "layer",
+                "fields": {
+                  "defaultPrim": {"type": "token", "value": "Model"},
+                  "primChildren": {"type": "token[]", "value": ["Model"]}
+                }
+              },
+              "/Model": {
+                "kind": "prim",
+                "fields": {
+                  "specifier": {"type": "specifier", "value": "def"},
+                  "typeName": {"type": "token", "value": "Xform"},
+                  "primChildren": {"type": "token[]", "value": ["Geom"]},
+                  "propertyChildren": {"type": "token[]", "value": []},
+                  "variantSetChildren": {"type": "token[]", "value": []}
+                }
+              },
+              "/Model/Geom": {
+                "kind": "prim",
+                "fields": {
+                  "specifier": {"type": "specifier", "value": "def"},
+                  "primChildren": {"type": "token[]", "value": []},
+                  "propertyChildren": {"type": "token[]", "value": []},
+                  "variantSetChildren": {"type": "token[]", "value": []}
+                }
+              }
+            }
+          }
+        },
+        "ops": [
+          {"op": "build_source"},
+          {"op": "reference_summary"},
+          {"op": "prim_input", "path": "/World"},
+          {"op": "prim_input", "path": "/World/Geom"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "build_source", "ok": true},
+          {
+            "op": "reference_summary",
+            "ok": true,
+            "references": [
+              {"primPath": "/World", "asset": "asset.usda", "targetPath": "/Model", "offset": 0.0, "scale": 1.0}
+            ],
+            "diagnostics": []
+          },
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/World",
+            "exists": true,
+            "kind": "prim",
+            "fields": {
+              "specifier": {"type": "specifier", "value": "def"},
+              "typeName": {"type": "token", "value": "Xform"},
+              "references": {
+                "type": "listop<Reference>",
+                "value": {
+                  "append": [],
+                  "delete": [],
+                  "explicit": [{"asset": "asset.usda", "offset": 0.0, "scale": 1.0}],
+                  "prepend": []
+                }
+              },
+              "primChildren": {"type": "token[]", "value": []},
+              "propertyChildren": {"type": "token[]", "value": []},
+              "variantSetChildren": {"type": "token[]", "value": []}
+            },
+            "childNames": ["Geom"],
+            "propertyNames": [],
+            "contributingSources": ["root.usda:/World", "asset.usda:/Model"]
+          },
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/World/Geom",
+            "exists": true,
+            "kind": "prim",
+            "fields": {
+              "specifier": {"type": "specifier", "value": "def"},
+              "primChildren": {"type": "token[]", "value": []},
+              "propertyChildren": {"type": "token[]", "value": []},
+              "variantSetChildren": {"type": "token[]", "value": []}
+            },
+            "childNames": [],
+            "propertyNames": [],
+            "contributingSources": ["asset.usda:/Model/Geom"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "missing-reference-layer",
+      "input": {
+        "rootLayer": {
+          "identifier": "root.usda",
+          "fields": {"primChildren": {"type": "token[]", "value": ["World"]}},
+          "specs": {
+            "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["World"]}}},
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "over"},
+                "references": {
+                  "type": "listop<Reference>",
+                  "value": {
+                    "explicit": [{"asset": "missing.usda", "path": "/Model", "offset": 0.0, "scale": 1.0}],
+                    "prepend": [],
+                    "append": [],
+                    "delete": []
+                  }
+                },
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        },
+        "referenceLayers": {},
+        "ops": [
+          {"op": "build_source"}
+        ]
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {
+            "code": "MissingReferenceLayer",
+            "message": "No supplied layer for reference asset missing.usda"
+          }
+        ],
+        "results": [
+          {"op": "build_source", "ok": false}
+        ]
+      }
+    },
+    {
+      "id": "nested-references-remain-deferred",
+      "input": {
+        "rootLayer": {
+          "identifier": "root.usda",
+          "fields": {"primChildren": {"type": "token[]", "value": ["World"]}},
+          "specs": {
+            "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["World"]}}},
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "over"},
+                "references": {
+                  "type": "listop<Reference>",
+                  "value": {
+                    "explicit": [{"asset": "asset.usda", "path": "/Model", "offset": 0.0, "scale": 1.0}],
+                    "prepend": [],
+                    "append": [],
+                    "delete": []
+                  }
+                },
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        },
+        "referenceLayers": {
+          "asset.usda": {
+            "identifier": "asset.usda",
+            "fields": {"primChildren": {"type": "token[]", "value": ["Model"]}},
+            "specs": {
+              "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["Model"]}}},
+              "/Model": {
+                "kind": "prim",
+                "fields": {
+                  "specifier": {"type": "specifier", "value": "def"},
+                  "references": {
+                    "type": "listop<Reference>",
+                    "value": {
+                      "explicit": [{"asset": "nested.usda", "path": "/NestedOnly", "offset": 0.0, "scale": 1.0}],
+                      "prepend": [],
+                      "append": [],
+                      "delete": []
+                    }
+                  },
+                  "primChildren": {"type": "token[]", "value": []},
+                  "propertyChildren": {"type": "token[]", "value": []},
+                  "variantSetChildren": {"type": "token[]", "value": []}
+                }
+              }
+            }
+          },
+          "nested.usda": {
+            "identifier": "nested.usda",
+            "fields": {"primChildren": {"type": "token[]", "value": ["NestedOnly"]}},
+            "specs": {
+              "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["NestedOnly"]}}},
+              "/NestedOnly": {
+                "kind": "prim",
+                "fields": {
+                  "specifier": {"type": "specifier", "value": "def"},
+                  "primChildren": {"type": "token[]", "value": []},
+                  "propertyChildren": {"type": "token[]", "value": []},
+                  "variantSetChildren": {"type": "token[]", "value": []}
+                }
+              }
+            }
+          }
+        },
+        "ops": [
+          {"op": "build_source"},
+          {"op": "prim_input", "path": "/World"},
+          {"op": "prim_input", "path": "/World/NestedOnly"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "build_source", "ok": true},
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/World",
+            "exists": true,
+            "kind": "prim",
+            "fields": {
+              "specifier": {"type": "specifier", "value": "def"},
+              "references": {
+                "type": "listop<Reference>",
+                "value": {
+                  "append": [],
+                  "delete": [],
+                  "explicit": [{"asset": "asset.usda", "offset": 0.0, "path": "/Model", "scale": 1.0}],
+                  "prepend": []
+                }
+              },
+              "primChildren": {"type": "token[]", "value": []},
+              "propertyChildren": {"type": "token[]", "value": []},
+              "variantSetChildren": {"type": "token[]", "value": []}
+            },
+            "childNames": [],
+            "propertyNames": [],
+            "contributingSources": ["root.usda:/World", "asset.usda:/Model"]
+          },
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/World/NestedOnly",
+            "exists": false,
+            "kind": "missing",
+            "fields": {},
+            "childNames": [],
+            "propertyNames": [],
+            "contributingSources": []
+          }
+        ]
+      }
+    }
+  ]
+}

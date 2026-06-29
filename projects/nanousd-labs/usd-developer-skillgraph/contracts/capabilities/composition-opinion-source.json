@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/composition-opinion-source.json",
+  "title": "USD Composition Opinion Source Capability",
+  "version": "0.1",
+  "dependency_contracts": [
+    "contracts/capabilities/namespace-source.json",
+    "contracts/capabilities/composition-provenance.json",
+    "contracts/capabilities/semantic-runtime-types.json"
+  ],
+  "purpose": "Distinguish a provider that produces mapped opinions for one composition arc family from the usd-composition-arbitrator provider that merges those opinions with other arc families into a final composed namespace.",
+  "scope": {
+    "included": [
+      "arc-family-specific opinion sources such as direct references or direct loaded payloads",
+      "mapped prim/property opinions in composed scene coordinates",
+      "namespace remapping of path-valued authored field contents carried by mapped opinions",
+      "typed provenance for the source specs that contributed those opinions",
+      "boundary conversion to namespace-source inputs for conformance tests"
+    ],
+    "deferred": [
+      "full LIVERPS merge logic, which belongs to usd-composition-arbitrator",
+      "field-strength arbitration against local or other arc-family opinions",
+      "payload load policy, recursive arc expansion beyond arc-specific bounded contracts, and asset opening",
+      "requiring a particular C++ base class or ABI layout"
+    ]
+  },
+  "model": {
+    "ArcOpinionSource": "A target-native provider of opinions from one composition arc family, already mapped to the composed scene path where those opinions would contribute.",
+    "CompositionArbitrator": "The separate usd-composition-arbitrator provider that consumes local and arc-family opinion sources and merges them into a composed NamespaceSource according to LIVERPS strength.",
+    "MappedOpinion": "A prim or property opinion with semantic exposed path, semantic source spec path, field map, child/property names, and source provenance."
+  },
+  "laws": [
+    "an arc opinion source must not require a stronger or weaker arc-family provider merely to exist",
+    "an arc opinion source may consume authored arc records, already-opened target layers, path services, token services, and document-model values",
+    "an arc opinion source may expose its mapped opinions through the NamespaceSource shape for testing, but that does not make it responsible for merging those opinions with local or other arc-family opinions",
+    "usd-composition-arbitrator, not an individual payload, reference, variant, inherits, relocates, or specializes source, owns LIVERPS arbitration between local, inherits, variants, relocates, references, payloads, and specializes",
+    "an arc opinion source that owns bounded recursive expansion for its arc family must detect cycles and emit diagnostics rather than recursing unboundedly or crashing generated implementations",
+    "a generated constructor for a payload opinion source must not require ReferenceNamespaceSource or another concrete prior composition provider",
+    "an arc opinion source that maps a source prim or property subtree into composed scene coordinates must also map path-valued field contents carried by those opinions into the same composed scene coordinates",
+    "listOp<ObjectPath> fields such as targetPaths and connectionPaths must have each semantic path element mapped through the arc namespace mapping before the field map is emitted; elements outside the mapped source subtree must be preserved only when the arc source and exposed target share the same composed namespace identity, otherwise they must be pruned rather than left in source coordinates",
+    "path-valued field remapping is namespace mapping of semantic values and must not be deferred as dictionary merging, listOp value composition, or attribute value resolution",
+    "stage population should consume the final composed NamespaceSource facade produced by usd-composition-arbitrator when more than one opinion source is in scope"
+  ]
+}

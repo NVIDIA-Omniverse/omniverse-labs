@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/spec-coverage/sublayer-loading.coverage.json",
+  "title": "USD Sublayer Loading Spec Coverage Ledger",
+  "version": "0.1",
+  "spec_commit": "v1.0.1",
+  "normative_source": {
+    "repo": "aousd/specifications-public",
+    "commit": "v1.0.1",
+    "rule": "The pinned composition, document_data_model, file_formats, and resource-interface specifications are normative. This ledger covers bounded recursive local sublayer resource loading."
+  },
+  "status_values": {
+    "implemented": "In scope for the layer-stack-open contract and covered by goldens.",
+    "partial": "A bounded local subset is included and later contracts must extend it.",
+    "deferred": "Specified behavior intentionally not included in this first loading contract.",
+    "out_of_scope": "Belongs to another subsystem or future skill."
+  },
+  "coverage_rules": [
+    "The loader opens resources and delegates namespace composition to usd-layer-stack-namespace-source.",
+    "The resolver policy is local and relative to the layer that authored each subLayer, not full USD asset resolution.",
+    "A generated target must not claim package loading or full asset resolver support from this provider."
+  ],
+  "items": [
+    {
+      "id": "sublayer-loading.root-open",
+      "owner": "usd-layer-stack-open",
+      "status": "implemented",
+      "spec_refs": [
+        "file_formats/README.md Text",
+        "resource interface resolved resource interaction"
+      ],
+      "obligations": [
+        "Open the root layer through usd-layer-open.",
+        "Preserve layer-open diagnostics on failure.",
+        "Return a target-native result, not a dump JSON tree."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-layer-stack-open/layer-stack-open.json#loads-direct-sublayers"
+      ]
+    },
+    {
+      "id": "sublayer-loading.direct-local-sublayers",
+      "owner": "usd-layer-stack-open",
+      "status": "partial",
+      "spec_refs": [
+        "document_data_model/README.md:496 subLayers",
+        "document_data_model/README.md:505 subLayerOffsets"
+      ],
+      "obligations": [
+        "Read the root layer's direct subLayers.",
+        "Resolve direct local sublayer identifiers relative to the root resource.",
+        "Open direct sublayers through usd-layer-open.",
+        "Pass opened layers to usd-layer-stack-namespace-source."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-layer-stack-open/layer-stack-open.json#loads-direct-sublayers"
+      ],
+      "deferred_reason": "Full asset resolver behavior remains separate from this local prototype policy."
+    },
+    {
+      "id": "sublayer-loading.missing-sublayers",
+      "owner": "usd-layer-stack-open",
+      "status": "implemented",
+      "spec_refs": [
+        "resource interface diagnostics"
+      ],
+      "obligations": [
+        "Report missing sublayer resources clearly at any recursive stack depth.",
+        "Include the authored asset identifier in diagnostics.",
+        "Do not construct a successful layer-stack source when required sublayers fail."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-layer-stack-open/layer-stack-open.json#missing-sublayer-resource"
+      ]
+    },
+    {
+      "id": "sublayer-loading.unsupported-protocols",
+      "owner": "usd-layer-stack-open",
+      "status": "implemented",
+      "spec_refs": [
+        "resource interface URI support"
+      ],
+      "obligations": [
+        "Unsupported URI schemes fail clearly.",
+        "Unsupported URI schemes must not silently fall back to local filesystem paths."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-layer-stack-open/layer-stack-open.json#unsupported-sublayer-scheme"
+      ]
+    },
+    {
+      "id": "sublayer-loading.recursive-stacks",
+      "owner": "usd-layer-stack-open",
+      "status": "implemented",
+      "spec_refs": [
+        "composition/README.md sublayers"
+      ],
+      "obligations": [
+        "Read subLayers from every successfully opened local layer.",
+        "Resolve nested relative sublayer identifiers relative to the resource location of the layer that authored them.",
+        "Open recursively discovered local sublayers through usd-layer-open.",
+        "Insert nested sublayers depth-first immediately after the sublayer that authored them and before later siblings.",
+        "Detect cycles by resolved layer location, report a diagnostic, and avoid unbounded recursion."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-layer-stack-open/layer-stack-open.json#loads-recursive-sublayers",
+        "goldens/unit/usd-layer-stack-open/layer-stack-open.json#recursive-sublayer-cycle-diagnostic"
+      ]
+    },
+    {
+      "id": "sublayer-loading.package-resources",
+      "owner": "future-package-layer-loading-skill",
+      "status": "deferred",
+      "spec_refs": [
+        "resource interface package resources",
+        "file_formats/README.md Package"
+      ],
+      "deferred_reason": "The existing resource protocol models package spelling, but package sublayer loading and inner-root selection remain out of scope here."
+    }
+  ]
+}

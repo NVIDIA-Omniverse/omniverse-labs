@@ -1,0 +1,26 @@
+#usda 1.0
+(
+    defaultPrim = "Model"
+)
+
+# Variant body carrying a reference — exercises chained composition:
+# selecting "high" should materialize the referenced template's content
+# inside /Model's namespace via the variant.
+
+def Xform "Model" (
+    variantSets = "detail"
+    variants = {
+        string detail = "high"
+    }
+)
+{
+    variantSet "detail" = {
+        "high" (
+            prepend references = @./variant_ref_target.usda@
+        ) {
+        }
+        "low" {
+            int placeholder = 0
+        }
+    }
+}

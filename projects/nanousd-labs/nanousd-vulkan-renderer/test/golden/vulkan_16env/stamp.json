@@ -1,0 +1,14 @@
+{
+  "mode": "vulkan_16env",
+  "renderer_head": "288a9f096cbf48d0ee0976a35852c606754e31a5",
+  "renderer_dirty": true,
+  "renderer_dirty_hash": "a92354a139d9",
+  "env_subset": {
+    "NU_DEFERRED_SHADE": "",
+    "NU_DEFERRED_DEBUG_MODE": "",
+    "NUSD_INVERTED_INTEROP": "",
+    "NU_TILE_RES": "",
+    "NU_FRAME_SKIP": ""
+  },
+  "wrote_at": 1778123150.2569127
+}

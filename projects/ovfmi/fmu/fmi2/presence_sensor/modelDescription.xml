@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<fmiModelDescription
+    fmiVersion="2.0"
+    modelName="PresenceSensor"
+    guid="66eda679-b905-4b9d-9af4-cfbb9fc81aa6"
+    generationTool="NVIDIA ovx-USD-FMI"
+    description="Presence sensor conditioner for overlap query signals">
+
+  <CoSimulation modelIdentifier="PresenceSensor" canHandleVariableCommunicationStepSize="true"/>
+
+  <ModelVariables>
+    <ScalarVariable name="rawPresence" valueReference="0" causality="input" variability="continuous">
+      <Real start="0.0"/>
+    </ScalarVariable>
+    <ScalarVariable name="presence" valueReference="2" causality="output" variability="continuous" initial="calculated">
+      <Real/>
+    </ScalarVariable>
+    <ScalarVariable name="risingEdge" valueReference="3" causality="output" variability="continuous" initial="calculated">
+      <Real/>
+    </ScalarVariable>
+    <ScalarVariable name="fallingEdge" valueReference="4" causality="output" variability="continuous" initial="calculated">
+      <Real/>
+    </ScalarVariable>
+    <ScalarVariable name="dwellTime" valueReference="5" causality="output" variability="continuous" initial="calculated">
+      <Real/>
+    </ScalarVariable>
+    <ScalarVariable name="onThreshold" valueReference="7" causality="parameter" variability="fixed">
+      <Real start="0.5"/>
+    </ScalarVariable>
+    <ScalarVariable name="offThreshold" valueReference="8" causality="parameter" variability="fixed">
+      <Real start="0.5"/>
+    </ScalarVariable>
+    <ScalarVariable name="time" valueReference="9" causality="independent" variability="continuous">
+      <Real/>
+    </ScalarVariable>
+  </ModelVariables>
+
+  <ModelStructure>
+    <Outputs>
+      <Unknown index="2"/>
+      <Unknown index="3"/>
+      <Unknown index="4"/>
+      <Unknown index="5"/>
+    </Outputs>
+  </ModelStructure>
+
+</fmiModelDescription>

@@ -1,0 +1,162 @@
+{
+  "apple/ball_soccerball_camA/vk_raster": {
+    "deltae": 4.649,
+    "flip": 0.3133,
+    "gmsd": 0.0457
+  },
+  "apple/ball_soccerball_camA/vk_rt": {
+    "deltae": 8.795,
+    "flip": 0.5167,
+    "gmsd": 0.0637
+  },
+  "apple/ball_soccerball_camB/vk_raster": {
+    "deltae": 4.239,
+    "flip": 0.3139,
+    "gmsd": 0.0548
+  },
+  "apple/ball_soccerball_camB/vk_rt": {
+    "deltae": 11.297,
+    "flip": 0.5941,
+    "gmsd": 0.0725
+  },
+  "apple/fender_stratocaster_camA/vk_raster": {
+    "deltae": 11.032,
+    "flip": 0.4235,
+    "gmsd": 0.0707
+  },
+  "apple/fender_stratocaster_camA/vk_rt": {
+    "deltae": 18.109,
+    "flip": 0.7386,
+    "gmsd": 0.09
+  },
+  "apple/fender_stratocaster_camB/vk_raster": {
+    "deltae": 11.205,
+    "flip": 0.4476,
+    "gmsd": 0.0732
+  },
+  "apple/fender_stratocaster_camB/vk_rt": {
+    "deltae": 18.401,
+    "flip": 0.7514,
+    "gmsd": 0.0991
+  },
+  "apple/pancakes_camA/vk_raster": {
+    "deltae": 10.905,
+    "flip": 0.5577,
+    "gmsd": 0.0857
+  },
+  "apple/pancakes_camA/vk_rt": {
+    "deltae": 21.043,
+    "flip": 0.8263,
+    "gmsd": 0.1285
+  },
+  "apple/pancakes_camB/vk_raster": {
+    "deltae": 8.717,
+    "flip": 0.4659,
+    "gmsd": 0.0827
+  },
+  "apple/pancakes_camB/vk_rt": {
+    "deltae": 17.628,
+    "flip": 0.7463,
+    "gmsd": 0.1254
+  },
+  "apple/robot_camA/vk_raster": {
+    "deltae": 9.299,
+    "flip": 0.3993,
+    "gmsd": 0.0773
+  },
+  "apple/robot_camA/vk_rt": {
+    "deltae": 15.269,
+    "flip": 0.5664,
+    "gmsd": 0.1372
+  },
+  "apple/robot_camB/vk_raster": {
+    "deltae": 8.166,
+    "flip": 0.3819,
+    "gmsd": 0.082
+  },
+  "apple/robot_camB/vk_rt": {
+    "deltae": 15.149,
+    "flip": 0.6183,
+    "gmsd": 0.1473
+  },
+  "apple/teapot_camA/vk_raster": {
+    "deltae": 9.398,
+    "flip": 0.4731,
+    "gmsd": 0.0973
+  },
+  "apple/teapot_camA/vk_rt": {
+    "deltae": 21.665,
+    "flip": 0.8849,
+    "gmsd": 0.1279
+  },
+  "apple/teapot_camB/vk_raster": {
+    "deltae": 9.494,
+    "flip": 0.4726,
+    "gmsd": 0.0964
+  },
+  "apple/teapot_camB/vk_rt": {
+    "deltae": 21.619,
+    "flip": 0.8594,
+    "gmsd": 0.1254
+  },
+  "apple/toy_drummer_camA/vk_raster": {
+    "deltae": 9.847,
+    "flip": 0.4601,
+    "gmsd": 0.0704
+  },
+  "apple/toy_drummer_camA/vk_rt": {
+    "deltae": 19.555,
+    "flip": 0.7197,
+    "gmsd": 0.1014
+  },
+  "apple/toy_drummer_camB/vk_raster": {
+    "deltae": 8.698,
+    "flip": 0.4357,
+    "gmsd": 0.068
+  },
+  "apple/toy_drummer_camB/vk_rt": {
+    "deltae": 17.723,
+    "flip": 0.6913,
+    "gmsd": 0.1003
+  },
+  "chess/chess_set_camA/vk_raster": {
+    "deltae": 8.849,
+    "flip": 0.4681,
+    "gmsd": 0.112
+  },
+  "chess/chess_set_camA/vk_rt": {
+    "deltae": 13.51,
+    "flip": 0.6566,
+    "gmsd": 0.1542
+  },
+  "chess/chess_set_camB/vk_raster": {
+    "deltae": 5.885,
+    "flip": 0.3397,
+    "gmsd": 0.0859
+  },
+  "chess/chess_set_camB/vk_rt": {
+    "deltae": 11.083,
+    "flip": 0.5168,
+    "gmsd": 0.1383
+  },
+  "warehouse/warehouse_camA/vk_raster": {
+    "deltae": 6.851,
+    "flip": 0.768,
+    "gmsd": 0.2131
+  },
+  "warehouse/warehouse_camA/vk_rt": {
+    "deltae": 7.25,
+    "flip": 0.9241,
+    "gmsd": 0.2135
+  },
+  "warehouse/warehouse_camB/vk_raster": {
+    "deltae": 8.395,
+    "flip": 0.8112,
+    "gmsd": 0.2378
+  },
+  "warehouse/warehouse_camB/vk_rt": {
+    "deltae": 9.939,
+    "flip": 0.9606,
+    "gmsd": 0.2424
+  }
+}

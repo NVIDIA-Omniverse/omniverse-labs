@@ -1,0 +1,10 @@
+# Cache venv lives in ~/.cache/sketch-stage/ — never committed.
+# Local copies if anyone places one inside the skill dir:
+.venv/
+venv/
+*.pyc
+__pycache__/
+.requirements_hash
+# Live demo outputs, snapshots, realized stages
+demo/
+*.events.jsonl

@@ -1,0 +1,99 @@
+{
+  "suite": "usda-attribute-time-samples-and-connections",
+  "contract": "contracts/usda-productions/attribute-specs.contract.json",
+  "spec_commit": "v1.0.1",
+  "cases": [
+    {
+      "id": "time-samples-value-blocks-connections-and-spline",
+      "spec_refs": [
+        "file_formats/README.md:659 TimeSample",
+        "file_formats/README.md:910 SpecialAttributeType",
+        "file_formats/README.md:916 ListOpConnect",
+        "document_data_model/README.md:1080 timeSamples",
+        "document_data_model/README.md:1104 connectionPaths"
+      ],
+      "input": {
+        "usda": "#usda 1.0\n\ndef \"World\"\n{\n    float size\n    float size.timeSamples = {\n        1: 1.0,\n        2: None,\n        3.5: 4\n    }\n    append float driver.connect = [</Rig.output>, </Rig.fallback>]\n    float radius.spline = {\n        bezier,\n        pre: sloped(0),\n        post: held,\n        1: 0; post curve (1, 1),\n        5: 3.14; post none\n    }\n}\n"
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "layer": {
+          "fields": {
+            "primChildren": {"type": "token[]", "value": ["World"]}
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "primChildren": {"type": "token[]", "value": ["World"]}
+              }
+            },
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": ["size", "driver", "radius"]},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World.size": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "variability": {"type": "variability", "value": "varying"},
+                "typeName": {"type": "token", "value": "float"},
+                "timeSamples": {
+                  "type": "TimeSamples",
+                  "value": {
+                    "1": {"type": "float", "value": 1.0},
+                    "2": {"type": "valueBlock", "value": null},
+                    "3.5": {"type": "float", "value": 4.0}
+                  }
+                }
+              }
+            },
+            "/World.driver": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "variability": {"type": "variability", "value": "varying"},
+                "typeName": {"type": "token", "value": "float"},
+                "connectionPaths": {
+                  "type": "listop<ObjectPath>",
+                  "value": {
+                    "explicit": [],
+                    "prepend": [],
+                    "append": ["/Rig.output", "/Rig.fallback"],
+                    "delete": []
+                  }
+                }
+              }
+            },
+            "/World.radius": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "variability": {"type": "variability", "value": "varying"},
+                "typeName": {"type": "token", "value": "float"},
+                "spline": {
+                  "type": "Spline",
+                  "value": {
+                    "curveType": "bezier",
+                    "preExtrapolation": {"mode": "sloped", "slope": 0.0},
+                    "postExtrapolation": {"mode": "held"},
+                    "knots": [
+                      {"time": 1.0, "value": 0.0, "nextInterpolation": "curve", "postTangent": {"slope": 1.0, "width": 1.0}},
+                      {"time": 5.0, "value": 3.14, "nextInterpolation": "none"}
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

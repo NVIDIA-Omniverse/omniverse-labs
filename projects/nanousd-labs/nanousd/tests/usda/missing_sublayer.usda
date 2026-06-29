@@ -1,0 +1,10 @@
+#usda 1.0
+(
+    subLayers = [
+        @./nonexistent_sublayer_abc.usda@
+    ]
+)
+
+def Xform "Root"
+{
+}

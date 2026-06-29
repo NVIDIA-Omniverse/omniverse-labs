@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/usda-value-parser.handle.json",
+  "title": "USDA Value Parser Contract",
+  "version": "0.1",
+  "spec_commit": "v1.0.1",
+  "dependency_contracts": [
+    "contracts/capabilities/usda-lexical-format.json",
+    "contracts/handles/foundational-values.handle.json",
+    "contracts/handles/path.handle.json",
+    "contracts/capabilities/semantic-runtime-types.json",
+    "contracts/handles/listops-authored.handle.json",
+    "contracts/value.schema.json"
+  ],
+  "production_contracts": [
+    "contracts/usda-productions/value-syntax.contract.json"
+  ],
+  "scope": {
+    "included": [
+      "USDA right-hand-side values used by a single text layer",
+      "scalar, tuple, array, dictionary, string dictionary, asset, token, path, and value-block spelling",
+      "time sample map and spline map spellings as stored authored values",
+      "attribute default value validation against declared foundational type names",
+      "relationship target ObjectPath listOp value construction",
+      "authored listOp field value handoff to usd-listops-authored"
+    ],
+    "deferred": [
+      "value resolution",
+      "spline evaluation",
+      "schema fallback values",
+      "time sample interpolation",
+      "composition of listOps across layers",
+      "USDC binary value decoding"
+    ]
+  },
+  "model": {
+    "ParsedValue": "A target-native semantic value returned to the spec parser. It may be represented as a raw typed-value variant, typed dictionary entries, value-block sentinel, path handle, asset string, native time-sample map, native spline value, or authored listOp value. It must not be represented as Json, a tagged JSON object, Python dict/list payload standing in for a specialized value, std::map<string, Json>, or a canonical dump tree in domain APIs.",
+    "DeclaredType": "A token-like USD type name used to validate attribute default values when the type is in the foundational catalog.",
+    "RelationshipTargets": "A specialized authored listOp<ObjectPath> value for relationship target fields.",
+    "AdapterValue": "Canonical tagged JSON matching contracts/value.schema.json is an adapter and dump serialization shape only."
+  },
+  "operations": {
+    "parse_attribute_default": {
+      "input": {
+        "declaredType": "USD attribute type token",
+        "text": "USDA value spelling"
+      },
+      "output": {
+        "value": "target-native typed value or diagnostic; adapters may serialize this as a canonical tagged value"
+      }
+    },
+    "parse_metadata_value": {
+      "input": {
+        "field": "metadata field token or extension field name",
+        "text": "USDA metadata value spelling"
+      },
+      "output": {
+        "value": "target-native typed metadata value or diagnostic; adapters may serialize this as a canonical tagged value"
+      }
+    },
+    "parse_relationship_targets": {
+      "input": {
+        "text": "USDA relationship target spelling"
+      },
+      "output": {
+        "value": "target-native authored listOp<ObjectPath> value or diagnostic; adapters may serialize this as a canonical tagged value"
+      }
+    }
+  },
+  "laws": [
+    "typed value storage must consume usd-foundational-values",
+    "path-valued leaves and relationship targets must consume usd-paths",
+    "path, token, and semantic name spellings parsed from USDA text must be converted out of boundary strings before returning domain values to the spec parser",
+    "authored listOp structure must consume usd-listops-authored",
+    "domain parser APIs consumed by usda-spec-parser must not return Json, dict, tagged JSON, or canonical dump trees",
+    "dictionary and metadata values must preserve typed entries in target-native value storage rather than map<string, Json> or equivalent JSON object trees",
+    "time-sample maps must use numeric time keys internally and FieldValue/value-block entries; string keys are canonical dump output only",
+    "spline maps must be native spline records with typed extrapolation, loop, knot, tangent, and interpolation members; JSON/dict forms are adapter output only",
+    "canonical tagged JSON may be materialized only by explicit validation adapters, diagnostics serialization, or dump commands",
+    "the value parser must not create specs or mutate layer storage",
+    "included value production details are governed by contracts/usda-productions/value-syntax.contract.json",
+    "unknown attribute type validation remains out of scope unless a golden requires a diagnostic"
+  ],
+  "adapter_protocol": {
+    "input": "Future unit adapters may accept a JSON case with value-parse operations.",
+    "output": "Outputs use canonical tagged values and diagnostics compatible with layer-dump.schema.json."
+  }
+}

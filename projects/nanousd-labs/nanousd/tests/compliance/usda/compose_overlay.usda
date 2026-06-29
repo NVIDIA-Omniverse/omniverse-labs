@@ -1,0 +1,12 @@
+#usda 1.0
+(
+    subLayers = [
+        @./compose_base.usda@
+    ]
+    defaultPrim = "Root"
+)
+
+over "Root" {
+    float size = 2.0
+    bool visible = true
+}

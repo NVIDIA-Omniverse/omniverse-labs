@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/usdz-productions/package-diagnostics.contract.json",
+  "title": "USDZ Package Diagnostics Productions",
+  "version": "0.1",
+  "diagnostics": [
+    {"code": "InvalidUsdzArchive", "meaning": "ZIP structure is missing, truncated, multi-disk, or out of bounds"},
+    {"code": "UnsupportedZip64", "meaning": "Zip64 metadata is present; this initial reader covers standard ZIP only"},
+    {"code": "UnsupportedUsdzCompression", "meaning": "an entry uses a compression method other than stored"},
+    {"code": "UnsupportedUsdzEncryption", "meaning": "an entry sets the ZIP encryption flag"},
+    {"code": "MisalignedUsdzEntryData", "meaning": "an entry's local file data does not start on a 64-byte boundary"},
+    {"code": "UnsafeUsdzEntryPath", "meaning": "an entry or explicit request uses an unsafe package path"},
+    {"code": "DuplicateUsdzEntryName", "meaning": "two central directory entries normalize to the same package path"},
+    {"code": "MissingUsdzDefaultLayer", "meaning": "whole-package open found no first physical file entry"},
+    {"code": "MissingUsdzEntry", "meaning": "an explicit package entry was not present"},
+    {"code": "UnsupportedPackageLayerFormat", "meaning": "the selected package entry is not .usda or .usdc"},
+    {"code": "NestedUsdzUnsupported", "meaning": "the selected package entry is itself .usdz"}
+  ],
+  "laws": [
+    "diagnostics must be emitted before invoking USDA or USDC parsing when the package layout or selected entry is invalid",
+    "diagnostics that refer to a package entry should include the normalized entry path when available"
+  ]
+}

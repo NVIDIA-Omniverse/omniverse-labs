@@ -1,0 +1,7 @@
+#usda 1.0
+
+def Xform "MyPrim" (
+    prepend references = @./write_ref_source.usda@
+) {
+    float height = 99.0
+}

@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/layer-dump.schema.json",
+  "title": "Canonical Single-Layer Dump",
+  "type": "object",
+  "required": ["ok", "diagnostics"],
+  "additionalProperties": false,
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": {
+        "$ref": "diagnostics.schema.json"
+      }
+    },
+    "layer": {
+      "type": "object",
+      "required": ["fields", "specs"],
+      "additionalProperties": false,
+      "properties": {
+        "fields": {
+          "$ref": "#/$defs/fieldMap"
+        },
+        "specs": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/spec"
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "fieldMap": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "value.schema.json"
+      }
+    },
+    "spec": {
+      "type": "object",
+      "required": ["kind", "fields"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": ["layer", "prim", "attribute", "relationship", "variantSet", "variant"]
+        },
+        "fields": {
+          "$ref": "#/$defs/fieldMap"
+        }
+      }
+    }
+  }
+}

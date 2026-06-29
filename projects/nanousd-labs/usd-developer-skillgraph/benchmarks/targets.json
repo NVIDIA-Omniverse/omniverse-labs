@@ -1,0 +1,26 @@
+{
+  "measurement_model": {
+    "id": "cli_process_smoke",
+    "description": "End-to-end command invocation. Timings include process startup, input file read, parsing, JSON serialization, and process teardown. Use this as a regression smoke check, not as the final parser performance contract."
+  },
+  "targets": [
+    {
+      "id": "tiny_layer_parse",
+      "fixture": "benchmarks/fixtures/tiny.usda",
+      "runs": 10,
+      "max_ms": 150.0
+    },
+    {
+      "id": "large_flat_prim_parse",
+      "fixture": "benchmarks/fixtures/large_flat_prim.usda",
+      "runs": 5,
+      "max_ms": 300.0
+    },
+    {
+      "id": "many_attributes_parse",
+      "fixture": "benchmarks/fixtures/many_attributes.usda",
+      "runs": 5,
+      "max_ms": 400.0
+    }
+  ]
+}

@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/layer-stack-open.handle.json",
+  "title": "USD Layer Stack Open Contract",
+  "version": "0.1",
+  "spec_commit": "v1.0.1",
+  "dependency_contracts": [
+    "contracts/handles/layer-open.handle.json",
+    "contracts/handles/resource.handle.json",
+    "contracts/handles/layer-stack-namespace-source.handle.json"
+  ],
+  "coverage_contracts": [
+    "contracts/spec-coverage/sublayer-loading.coverage.json"
+  ],
+  "scope": {
+    "included": [
+      "open one resolved root layer resource",
+      "read subLayers and paired subLayerOffsets from the root and recursively opened local sublayers",
+      "local authoring-layer-relative resolution for sublayer asset identifiers",
+      "open recursively discovered local sublayer resources through usd-layer-open",
+      "detect recursive sublayer cycles by resolved layer location",
+      "construct a LayerStackNamespaceSource from opened root and recursive sublayers",
+      "surface root-open, sublayer-open, unsupported-resource, sublayer-cycle, and layer-stack diagnostics",
+      "adapter validation with temporary local USDA resources"
+    ],
+    "deferred": [
+      "full asset resolver search paths, callbacks, contexts, identifiers, and repository policy",
+      "package resource sublayer loading",
+      "network or remote protocol resource loading",
+      "references, payloads, inherits, specializes, variants, relocates, and value clips",
+      "attribute value resolution and subLayerOffsets retiming",
+      "schema fallback properties",
+      "stage population and instancing"
+    ]
+  },
+  "model": {
+    "LayerStackOpenResult": "Target-native result containing either a LayerStackNamespaceSource or diagnostics. It is not canonical dump JSON.",
+    "RootLayerResource": "Resolved local root layer resource supplied by a caller or adapter.",
+    "SublayerResource": "An authored subLayer asset identifier resolved by this contract's local policy and opened through usd-layer-open.",
+    "LocalResolutionPolicy": "Prototype policy that resolves plain and ./ or ../ relative local sublayer identifiers against the containing directory of the layer that authored the subLayer.",
+    "OpenedLayerSet": "The root document-model Layer and recursively discovered local sublayer document-model Layers returned by usd-layer-open.",
+    "ComposedSource": "The LayerStackNamespaceSource constructed from the opened layer set."
+  },
+  "operations": {
+    "open_layer_stack": {
+      "input": {
+        "rootLocation": "resolved local root layer resource location"
+      },
+      "output": {
+        "result": "target-native LayerStackOpenResult containing a LayerStackNamespaceSource or diagnostics"
+      }
+    },
+    "resolve_sublayer": {
+      "input": {
+        "authoringLayerLocation": "resolved local resource location of the layer that authored the subLayer",
+        "assetIdentifier": "authored subLayer asset value"
+      },
+      "output": {
+        "resolvedLocation": "resolved local sublayer location or diagnostic"
+      }
+    },
+    "inspect_source": {
+      "input": {
+        "result": "successful LayerStackOpenResult"
+      },
+      "output": {
+        "mode": "layer_stack",
+        "composition": "partial",
+        "value_resolution": "partial",
+        "payload_loading": "absent",
+        "instancing": "absent",
+        "schema_fallbacks": "absent",
+        "child_ordering": "composed",
+        "property_ordering": "composed"
+      }
+    },
+    "layer_stack_summary": {
+      "input": {
+        "result": "successful LayerStackOpenResult"
+      },
+      "output": {
+        "layers": "strong-to-weak opened layer entries with identifier, resolvedLocation, strengthIndex, offset, and scale; recursive sublayers appear depth-first immediately after the layer that authored them",
+        "diagnostics": "open and source diagnostics"
+      }
+    },
+    "prim_input": {
+      "input": {
+        "result": "successful LayerStackOpenResult",
+        "path": "absolute prim path or /"
+      },
+      "output": {
+        "sourceResult": "same shape as layer-stack namespace-source prim_input"
+      }
+    },
+    "property_input": {
+      "input": {
+        "result": "successful LayerStackOpenResult",
+        "path": "property path"
+      },
+      "output": {
+        "sourceResult": "same shape as layer-stack namespace-source property_input"
+      }
+    }
+  },
+  "laws": [
+    "root and sublayer resources must be opened through usd-layer-open",
+    "the loader must not parse USDA text directly or maintain parser-local syntax trees",
+    "successful layer-open results must be passed as document-model Layers to usd-layer-stack-namespace-source",
+    "the loader must not duplicate layer-stack composition semantics already owned by usd-layer-stack-namespace-source",
+    "plain relative and anchored relative local sublayer identifiers are resolved against the containing directory of the layer that authored the subLayer for this prototype contract",
+    "unsupported URI schemes must fail clearly and must not fall back to local filesystem strings",
+    "missing sublayer resources must fail clearly and include the authored asset identifier",
+    "recursive sublayer cycles must fail clearly, include the authored asset identifier that would close the cycle, and must not recurse unboundedly",
+    "recursive sublayers are ordered depth-first at the authored subLayer site, before later sibling sublayers from the same authoring layer",
+    "subLayerOffsets are passed through to the layer-stack namespace source but are not applied to values",
+    "adapter JSON may create temporary local resources for conformance tests, but domain APIs exchange resolved locations, LayerOpenResult values, document-model Layers, and LayerStackNamespaceSource objects"
+  ],
+  "adapter_protocol": {
+    "input": "A JSON file containing one case with rootLocation, optional resources mapping temporary relative resource paths to USDA text, and an ops array. The adapter may materialize resources in a temporary directory before calling the domain loader.",
+    "output": "A JSON object with ok, diagnostics, and results."
+  }
+}

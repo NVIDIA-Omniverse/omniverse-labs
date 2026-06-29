@@ -1,0 +1,923 @@
+{
+  "suite": "usd-instancing-model-stage-population",
+  "contract": "contracts/handles/stage-population.handle.json",
+  "spec_tag": "v1.0.1",
+  "spec_commit": "v1.0.1",
+  "cases": [
+    {
+      "id": "reference-backed-instances-share-and-filter-descendants",
+      "input": {
+        "rootLayer": {
+          "identifier": "root.usda",
+          "fields": {
+            "primChildren": {"type": "token[]", "value": ["AssetA", "AssetB", "MarkedOnly"]}
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "primChildren": {"type": "token[]", "value": ["AssetA", "AssetB", "MarkedOnly"]}
+              }
+            },
+            "/AssetA": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "instanceable": {"type": "bool", "value": true},
+                "references": {
+                  "type": "listop<Reference>",
+                  "value": {
+                    "explicit": [{"asset": "asset.usda", "path": "/Model", "offset": 0.0, "scale": 1.0}],
+                    "prepend": [],
+                    "append": [],
+                    "delete": []
+                  }
+                },
+                "primChildren": {"type": "token[]", "value": ["Sphere"]},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/AssetA/Sphere": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "over"},
+                "typeName": {"type": "token", "value": "IgnoredLocal"},
+                "references": {
+                  "type": "listop<Reference>",
+                  "value": {
+                    "explicit": [{"asset": "local.usda", "path": "/Injected", "offset": 0.0, "scale": 1.0}],
+                    "prepend": [],
+                    "append": [],
+                    "delete": []
+                  }
+                },
+                "primChildren": {"type": "token[]", "value": ["Injected"]},
+                "propertyChildren": {"type": "token[]", "value": ["localOnly"]},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/AssetA/Sphere.localOnly": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": true},
+                "typeName": {"type": "token", "value": "token"},
+                "variability": {"type": "variability", "value": "uniform"},
+                "default": {"type": "token", "value": "ignored"}
+              }
+            },
+            "/AssetB": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "instanceable": {"type": "bool", "value": true},
+                "references": {
+                  "type": "listop<Reference>",
+                  "value": {
+                    "explicit": [{"asset": "asset.usda", "path": "/Model", "offset": 0.0, "scale": 1.0}],
+                    "prepend": [],
+                    "append": [],
+                    "delete": []
+                  }
+                },
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/MarkedOnly": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "instanceable": {"type": "bool", "value": true},
+                "primChildren": {"type": "token[]", "value": ["Child"]},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/MarkedOnly/Child": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        },
+        "referenceLayers": {
+          "asset.usda": {
+            "identifier": "asset.usda",
+            "fields": {"primChildren": {"type": "token[]", "value": ["Model"]}},
+            "specs": {
+              "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["Model"]}}},
+              "/Model": {
+                "kind": "prim",
+                "fields": {
+                  "specifier": {"type": "specifier", "value": "def"},
+                  "typeName": {"type": "token", "value": "Xform"},
+                  "primChildren": {"type": "token[]", "value": ["Sphere"]},
+                  "propertyChildren": {"type": "token[]", "value": []},
+                  "variantSetChildren": {"type": "token[]", "value": []}
+                }
+              },
+              "/Model/Sphere": {
+                "kind": "prim",
+                "fields": {
+                  "specifier": {"type": "specifier", "value": "def"},
+                  "typeName": {"type": "token", "value": "Mesh"},
+                  "primChildren": {"type": "token[]", "value": []},
+                  "propertyChildren": {"type": "token[]", "value": ["points"]},
+                  "variantSetChildren": {"type": "token[]", "value": []}
+                }
+              },
+              "/Model/Sphere.points": {
+                "kind": "attribute",
+                "fields": {
+                  "custom": {"type": "bool", "value": false},
+                  "typeName": {"type": "token", "value": "float[]"},
+                  "variability": {"type": "variability", "value": "varying"},
+                  "default": {"type": "float[]", "value": [1.0, 2.0, 3.0]}
+                }
+              }
+            }
+          },
+          "local.usda": {
+            "identifier": "local.usda",
+            "fields": {"primChildren": {"type": "token[]", "value": ["Injected"]}},
+            "specs": {
+              "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["Injected"]}}},
+              "/Injected": {
+                "kind": "prim",
+                "fields": {
+                  "specifier": {"type": "specifier", "value": "def"},
+                  "typeName": {"type": "token", "value": "Scope"},
+                  "primChildren": {"type": "token[]", "value": []},
+                  "propertyChildren": {"type": "token[]", "value": []},
+                  "variantSetChildren": {"type": "token[]", "value": []}
+                }
+              }
+            }
+          }
+        },
+        "ops": [
+          {"op": "populate_stage"},
+          {"op": "stage_summary"},
+          {"op": "traverse_prims"},
+          {"op": "instance_summary", "path": "/AssetA"},
+          {"op": "instance_summary", "path": "/AssetB"},
+          {"op": "instance_summary", "path": "/MarkedOnly"},
+          {"op": "prim_summary", "path": "/AssetA/Sphere"},
+          {"op": "property_summary", "path": "/AssetA/Sphere.points"},
+          {"op": "property_summary", "path": "/AssetA/Sphere.localOnly"},
+          {"op": "prim_summary", "path": "/AssetA/Sphere/Injected"},
+          {"op": "prim_summary", "path": "/AssetB/Sphere"},
+          {"op": "prim_summary", "path": "/MarkedOnly/Child"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "populate_stage", "ok": true},
+          {"op": "stage_summary", "ok": true, "sourceMode": "composed_namespace", "primCount": 5, "defaultPrim": "", "diagnostics": []},
+          {"op": "traverse_prims", "ok": true, "paths": ["/AssetA", "/AssetA/Sphere", "/AssetB", "/MarkedOnly", "/MarkedOnly/Child"]},
+          {"op": "instance_summary", "ok": true, "exists": true, "path": "/AssetA", "instanceable": true, "instance": true, "hasInstanceArcs": true, "sharedRepresentationId": "shared:1", "sharedRepresentationFirstUse": true},
+          {"op": "instance_summary", "ok": true, "exists": true, "path": "/AssetB", "instanceable": true, "instance": true, "hasInstanceArcs": true, "sharedRepresentationId": "shared:1", "sharedRepresentationFirstUse": false},
+          {"op": "instance_summary", "ok": true, "exists": true, "path": "/MarkedOnly", "instanceable": true, "instance": false, "hasInstanceArcs": false, "sharedRepresentationId": "", "sharedRepresentationFirstUse": false},
+          {"op": "prim_summary", "ok": true, "exists": true, "path": "/AssetA/Sphere", "name": "Sphere", "parent": "/AssetA", "children": [], "properties": ["points"], "typeName": "Mesh", "specifier": "def", "active": true, "loaded": true, "defined": true, "abstract": false, "instanceable": false},
+          {
+            "op": "property_summary",
+            "ok": true,
+            "exists": true,
+            "path": "/AssetA/Sphere.points",
+            "kind": "attribute",
+            "owner": "/AssetA/Sphere",
+            "name": "points",
+            "fields": {
+              "custom": {"type": "bool", "value": false},
+              "typeName": {"type": "token", "value": "float[]"},
+              "variability": {"type": "variability", "value": "varying"},
+              "default": {"type": "float[]", "value": [1.0, 2.0, 3.0]}
+            }
+          },
+          {"op": "property_summary", "ok": true, "exists": false, "path": "/AssetA/Sphere.localOnly"},
+          {"op": "prim_summary", "ok": true, "exists": false, "path": "/AssetA/Sphere/Injected"},
+          {"op": "prim_summary", "ok": true, "exists": false, "path": "/AssetB/Sphere"},
+          {"op": "prim_summary", "ok": true, "exists": true, "path": "/MarkedOnly/Child", "name": "Child", "parent": "/MarkedOnly", "children": [], "properties": [], "typeName": "", "specifier": "def", "active": true, "loaded": true, "defined": true, "abstract": false, "instanceable": false}
+        ]
+      }
+    },
+    {
+      "id": "population-mask-prevents-instance-sharing",
+      "input": {
+        "populationMask": ["/AssetA/Sphere", "/AssetB"],
+        "rootLayer": {
+          "identifier": "root.usda",
+          "fields": {
+            "primChildren": {"type": "token[]", "value": ["AssetA", "AssetB"]}
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "primChildren": {"type": "token[]", "value": ["AssetA", "AssetB"]}
+              }
+            },
+            "/AssetA": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "instanceable": {"type": "bool", "value": true},
+                "references": {
+                  "type": "listop<Reference>",
+                  "value": {
+                    "explicit": [{"asset": "asset.usda", "path": "/Model", "offset": 0.0, "scale": 1.0}],
+                    "prepend": [],
+                    "append": [],
+                    "delete": []
+                  }
+                },
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/AssetB": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "instanceable": {"type": "bool", "value": true},
+                "references": {
+                  "type": "listop<Reference>",
+                  "value": {
+                    "explicit": [{"asset": "asset.usda", "path": "/Model", "offset": 0.0, "scale": 1.0}],
+                    "prepend": [],
+                    "append": [],
+                    "delete": []
+                  }
+                },
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        },
+        "referenceLayers": {
+          "asset.usda": {
+            "identifier": "asset.usda",
+            "fields": {"primChildren": {"type": "token[]", "value": ["Model"]}},
+            "specs": {
+              "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["Model"]}}},
+              "/Model": {
+                "kind": "prim",
+                "fields": {
+                  "specifier": {"type": "specifier", "value": "def"},
+                  "primChildren": {"type": "token[]", "value": ["Sphere"]},
+                  "propertyChildren": {"type": "token[]", "value": []},
+                  "variantSetChildren": {"type": "token[]", "value": []}
+                }
+              },
+              "/Model/Sphere": {
+                "kind": "prim",
+                "fields": {
+                  "specifier": {"type": "specifier", "value": "def"},
+                  "primChildren": {"type": "token[]", "value": []},
+                  "propertyChildren": {"type": "token[]", "value": []},
+                  "variantSetChildren": {"type": "token[]", "value": []}
+                }
+              }
+            }
+          }
+        },
+        "ops": [
+          {"op": "populate_stage"},
+          {"op": "stage_summary"},
+          {"op": "traverse_prims"},
+          {"op": "instance_summary", "path": "/AssetA"},
+          {"op": "instance_summary", "path": "/AssetB"},
+          {"op": "prim_summary", "path": "/AssetB/Sphere"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "populate_stage", "ok": true},
+          {"op": "stage_summary", "ok": true, "sourceMode": "composed_namespace", "primCount": 3, "defaultPrim": "", "diagnostics": []},
+          {"op": "traverse_prims", "ok": true, "paths": ["/AssetA", "/AssetA/Sphere", "/AssetB"]},
+          {"op": "instance_summary", "ok": true, "exists": true, "path": "/AssetA", "instanceable": true, "instance": true, "hasInstanceArcs": true, "sharedRepresentationId": "shared:1", "sharedRepresentationFirstUse": true},
+          {"op": "instance_summary", "ok": true, "exists": true, "path": "/AssetB", "instanceable": true, "instance": true, "hasInstanceArcs": true, "sharedRepresentationId": "shared:2", "sharedRepresentationFirstUse": true},
+          {"op": "prim_summary", "ok": true, "exists": false, "path": "/AssetB/Sphere"}
+        ]
+      }
+    },
+    {
+      "id": "variant-backed-instances-share-and-filter-descendants",
+      "input": {
+        "rootLayer": {
+          "identifier": "root.usda",
+          "fields": {
+            "primChildren": {"type": "token[]", "value": ["AssetA", "AssetB"]}
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "primChildren": {"type": "token[]", "value": ["AssetA", "AssetB"]}
+              }
+            },
+            "/AssetA": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "instanceable": {"type": "bool", "value": true},
+                "variantSetNames": {
+                  "type": "listop<string>",
+                  "value": {"explicit": ["shape"], "prepend": [], "append": [], "delete": []}
+                },
+                "variantSelection": {
+                  "type": "VariantSetMap",
+                  "value": {"shape": "hi"}
+                },
+                "primChildren": {"type": "token[]", "value": ["Geom"]},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": ["shape"]}
+              }
+            },
+            "/AssetA/Geom": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "over"},
+                "typeName": {"type": "token", "value": "IgnoredLocal"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": ["localOnly"]},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/AssetA/Geom.localOnly": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": true},
+                "typeName": {"type": "token", "value": "token"},
+                "variability": {"type": "variability", "value": "uniform"},
+                "default": {"type": "token", "value": "ignored"}
+              }
+            },
+            "/AssetA{shape=}": {
+              "kind": "variantSet",
+              "fields": {"variantChildren": {"type": "token[]", "value": ["hi"]}}
+            },
+            "/AssetA{shape=hi}": {
+              "kind": "variant",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "typeName": {"type": "token", "value": "VariantRoot"},
+                "primChildren": {"type": "token[]", "value": ["Geom"]},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/AssetA{shape=hi}Geom": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "typeName": {"type": "token", "value": "VariantMesh"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": ["variantToken"]},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/AssetA{shape=hi}Geom.variantToken": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "typeName": {"type": "token", "value": "token"},
+                "variability": {"type": "variability", "value": "uniform"},
+                "default": {"type": "token", "value": "variant"}
+              }
+            },
+            "/AssetB": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "instanceable": {"type": "bool", "value": true},
+                "variantSetNames": {
+                  "type": "listop<string>",
+                  "value": {"explicit": ["shape"], "prepend": [], "append": [], "delete": []}
+                },
+                "variantSelection": {
+                  "type": "VariantSetMap",
+                  "value": {"shape": "hi"}
+                },
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": ["shape"]}
+              }
+            },
+            "/AssetB{shape=}": {
+              "kind": "variantSet",
+              "fields": {"variantChildren": {"type": "token[]", "value": ["hi"]}}
+            },
+            "/AssetB{shape=hi}": {
+              "kind": "variant",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "typeName": {"type": "token", "value": "VariantRoot"},
+                "primChildren": {"type": "token[]", "value": ["Geom"]},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/AssetB{shape=hi}Geom": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "typeName": {"type": "token", "value": "VariantMesh"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": ["variantToken"]},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/AssetB{shape=hi}Geom.variantToken": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "typeName": {"type": "token", "value": "token"},
+                "variability": {"type": "variability", "value": "uniform"},
+                "default": {"type": "token", "value": "variant"}
+              }
+            }
+          }
+        },
+        "ops": [
+          {"op": "populate_stage"},
+          {"op": "stage_summary"},
+          {"op": "traverse_prims"},
+          {"op": "instance_summary", "path": "/AssetA"},
+          {"op": "instance_summary", "path": "/AssetB"},
+          {"op": "prim_summary", "path": "/AssetA/Geom"},
+          {"op": "property_summary", "path": "/AssetA/Geom.variantToken"},
+          {"op": "property_summary", "path": "/AssetA/Geom.localOnly"},
+          {"op": "prim_summary", "path": "/AssetB/Geom"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "populate_stage", "ok": true},
+          {"op": "stage_summary", "ok": true, "sourceMode": "composed_namespace", "primCount": 3, "defaultPrim": "", "diagnostics": []},
+          {"op": "traverse_prims", "ok": true, "paths": ["/AssetA", "/AssetA/Geom", "/AssetB"]},
+          {"op": "instance_summary", "ok": true, "exists": true, "path": "/AssetA", "instanceable": true, "instance": true, "hasInstanceArcs": true, "sharedRepresentationId": "shared:1", "sharedRepresentationFirstUse": true},
+          {"op": "instance_summary", "ok": true, "exists": true, "path": "/AssetB", "instanceable": true, "instance": true, "hasInstanceArcs": true, "sharedRepresentationId": "shared:1", "sharedRepresentationFirstUse": false},
+          {"op": "prim_summary", "ok": true, "exists": true, "path": "/AssetA/Geom", "name": "Geom", "parent": "/AssetA", "children": [], "properties": ["variantToken"], "typeName": "VariantMesh", "specifier": "def", "active": true, "loaded": true, "defined": true, "abstract": false, "instanceable": false},
+          {
+            "op": "property_summary",
+            "ok": true,
+            "exists": true,
+            "path": "/AssetA/Geom.variantToken",
+            "kind": "attribute",
+            "owner": "/AssetA/Geom",
+            "name": "variantToken",
+            "fields": {
+              "custom": {"type": "bool", "value": false},
+              "typeName": {"type": "token", "value": "token"},
+              "variability": {"type": "variability", "value": "uniform"},
+              "default": {"type": "token", "value": "variant"}
+            }
+          },
+          {"op": "property_summary", "ok": true, "exists": false, "path": "/AssetA/Geom.localOnly"},
+          {"op": "prim_summary", "ok": true, "exists": false, "path": "/AssetB/Geom"}
+        ]
+      }
+    },
+    {
+      "id": "inherits-and-specializes-backed-instances-share-and-filter-descendants",
+      "input": {
+        "rootLayer": {
+          "identifier": "root.usda",
+          "fields": {
+            "primChildren": {"type": "token[]", "value": ["AssetA", "AssetB"]}
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "primChildren": {"type": "token[]", "value": ["AssetA", "AssetB"]}
+              }
+            },
+            "/AssetA": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "instanceable": {"type": "bool", "value": true},
+                "inheritPaths": {
+                  "type": "listop<ObjectPath>",
+                  "value": {"explicit": ["/_Class"], "prepend": [], "append": [], "delete": []}
+                },
+                "specializes": {
+                  "type": "listop<ObjectPath>",
+                  "value": {"explicit": ["/_Specialized"], "prepend": [], "append": [], "delete": []}
+                },
+                "primChildren": {"type": "token[]", "value": ["Inherited"]},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/AssetA/Inherited": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "over"},
+                "typeName": {"type": "token", "value": "IgnoredLocal"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": ["localOnly"]},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/AssetA/Inherited.localOnly": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": true},
+                "typeName": {"type": "token", "value": "token"},
+                "variability": {"type": "variability", "value": "uniform"},
+                "default": {"type": "token", "value": "ignored"}
+              }
+            },
+            "/AssetB": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "instanceable": {"type": "bool", "value": true},
+                "inheritPaths": {
+                  "type": "listop<ObjectPath>",
+                  "value": {"explicit": ["/_Class"], "prepend": [], "append": [], "delete": []}
+                },
+                "specializes": {
+                  "type": "listop<ObjectPath>",
+                  "value": {"explicit": ["/_Specialized"], "prepend": [], "append": [], "delete": []}
+                },
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/_Class": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "class"},
+                "primChildren": {"type": "token[]", "value": ["Inherited"]},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/_Class/Inherited": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "typeName": {"type": "token", "value": "InheritedMesh"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": ["inheritedToken"]},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/_Class/Inherited.inheritedToken": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "typeName": {"type": "token", "value": "token"},
+                "variability": {"type": "variability", "value": "uniform"},
+                "default": {"type": "token", "value": "inherited"}
+              }
+            },
+            "/_Specialized": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "primChildren": {"type": "token[]", "value": ["Specialized"]},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/_Specialized/Specialized": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "typeName": {"type": "token", "value": "SpecializedMesh"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        },
+        "ops": [
+          {"op": "populate_stage"},
+          {"op": "stage_summary"},
+          {"op": "traverse_prims"},
+          {"op": "instance_summary", "path": "/AssetA"},
+          {"op": "instance_summary", "path": "/AssetB"},
+          {"op": "prim_summary", "path": "/AssetA/Inherited"},
+          {"op": "property_summary", "path": "/AssetA/Inherited.inheritedToken"},
+          {"op": "property_summary", "path": "/AssetA/Inherited.localOnly"},
+          {"op": "prim_summary", "path": "/AssetA/Specialized"},
+          {"op": "prim_summary", "path": "/AssetB/Inherited"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "populate_stage", "ok": true},
+          {"op": "stage_summary", "ok": true, "sourceMode": "composed_namespace", "primCount": 4, "defaultPrim": "", "diagnostics": []},
+          {"op": "traverse_prims", "ok": true, "paths": ["/AssetA", "/AssetA/Specialized", "/AssetA/Inherited", "/AssetB"]},
+          {"op": "instance_summary", "ok": true, "exists": true, "path": "/AssetA", "instanceable": true, "instance": true, "hasInstanceArcs": true, "sharedRepresentationId": "shared:1", "sharedRepresentationFirstUse": true},
+          {"op": "instance_summary", "ok": true, "exists": true, "path": "/AssetB", "instanceable": true, "instance": true, "hasInstanceArcs": true, "sharedRepresentationId": "shared:1", "sharedRepresentationFirstUse": false},
+          {"op": "prim_summary", "ok": true, "exists": true, "path": "/AssetA/Inherited", "name": "Inherited", "parent": "/AssetA", "children": [], "properties": ["inheritedToken"], "typeName": "InheritedMesh", "specifier": "def", "active": true, "loaded": true, "defined": true, "abstract": false, "instanceable": false},
+          {
+            "op": "property_summary",
+            "ok": true,
+            "exists": true,
+            "path": "/AssetA/Inherited.inheritedToken",
+            "kind": "attribute",
+            "owner": "/AssetA/Inherited",
+            "name": "inheritedToken",
+            "fields": {
+              "custom": {"type": "bool", "value": false},
+              "typeName": {"type": "token", "value": "token"},
+              "variability": {"type": "variability", "value": "uniform"},
+              "default": {"type": "token", "value": "inherited"}
+            }
+          },
+          {"op": "property_summary", "ok": true, "exists": false, "path": "/AssetA/Inherited.localOnly"},
+          {"op": "prim_summary", "ok": true, "exists": true, "path": "/AssetA/Specialized", "name": "Specialized", "parent": "/AssetA", "children": [], "properties": [], "typeName": "SpecializedMesh", "specifier": "def", "active": true, "loaded": true, "defined": true, "abstract": false, "instanceable": false},
+          {"op": "prim_summary", "ok": true, "exists": false, "path": "/AssetB/Inherited"}
+        ]
+      }
+    },
+    {
+      "id": "relocated-reference-instances-share-and-filter-descendants",
+      "input": {
+        "rootLayer": {
+          "identifier": "root.usda",
+          "fields": {
+            "primChildren": {"type": "token[]", "value": ["AssetA", "AssetB"]},
+            "layerRelocates": {
+              "type": "Relocates",
+              "value": {"/AssetA/Source": "/AssetA/Moved", "/AssetB/Source": "/AssetB/Moved"}
+            }
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "primChildren": {"type": "token[]", "value": ["AssetA", "AssetB"]},
+                "layerRelocates": {
+                  "type": "Relocates",
+                  "value": {"/AssetA/Source": "/AssetA/Moved", "/AssetB/Source": "/AssetB/Moved"}
+                }
+              }
+            },
+            "/AssetA": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "instanceable": {"type": "bool", "value": true},
+                "references": {
+                  "type": "listop<Reference>",
+                  "value": {
+                    "explicit": [{"asset": "asset.usda", "path": "/Model", "offset": 0.0, "scale": 1.0}],
+                    "prepend": [],
+                    "append": [],
+                    "delete": []
+                  }
+                },
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/AssetB": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "instanceable": {"type": "bool", "value": true},
+                "references": {
+                  "type": "listop<Reference>",
+                  "value": {
+                    "explicit": [{"asset": "asset.usda", "path": "/Model", "offset": 0.0, "scale": 1.0}],
+                    "prepend": [],
+                    "append": [],
+                    "delete": []
+                  }
+                },
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        },
+        "referenceLayers": {
+          "asset.usda": {
+            "identifier": "asset.usda",
+            "fields": {"primChildren": {"type": "token[]", "value": ["Model"]}},
+            "specs": {
+              "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["Model"]}}},
+              "/Model": {
+                "kind": "prim",
+                "fields": {
+                  "specifier": {"type": "specifier", "value": "def"},
+                  "primChildren": {"type": "token[]", "value": ["Source"]},
+                  "propertyChildren": {"type": "token[]", "value": []},
+                  "variantSetChildren": {"type": "token[]", "value": []}
+                }
+              },
+              "/Model/Source": {
+                "kind": "prim",
+                "fields": {
+                  "specifier": {"type": "specifier", "value": "def"},
+                  "typeName": {"type": "token", "value": "RelocatedMesh"},
+                  "primChildren": {"type": "token[]", "value": []},
+                  "propertyChildren": {"type": "token[]", "value": ["relocatedToken"]},
+                  "variantSetChildren": {"type": "token[]", "value": []}
+                }
+              },
+              "/Model/Source.relocatedToken": {
+                "kind": "attribute",
+                "fields": {
+                  "custom": {"type": "bool", "value": false},
+                  "typeName": {"type": "token", "value": "token"},
+                  "variability": {"type": "variability", "value": "uniform"},
+                  "default": {"type": "token", "value": "relocated"}
+                }
+              }
+            }
+          }
+        },
+        "ops": [
+          {"op": "populate_stage"},
+          {"op": "stage_summary"},
+          {"op": "traverse_prims"},
+          {"op": "instance_summary", "path": "/AssetA"},
+          {"op": "instance_summary", "path": "/AssetB"},
+          {"op": "prim_summary", "path": "/AssetA/Moved"},
+          {"op": "property_summary", "path": "/AssetA/Moved.relocatedToken"},
+          {"op": "prim_summary", "path": "/AssetA/Source"},
+          {"op": "prim_summary", "path": "/AssetB/Moved"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "populate_stage", "ok": true},
+          {"op": "stage_summary", "ok": true, "sourceMode": "composed_namespace", "primCount": 3, "defaultPrim": "", "diagnostics": []},
+          {"op": "traverse_prims", "ok": true, "paths": ["/AssetA", "/AssetA/Moved", "/AssetB"]},
+          {"op": "instance_summary", "ok": true, "exists": true, "path": "/AssetA", "instanceable": true, "instance": true, "hasInstanceArcs": true, "sharedRepresentationId": "shared:1", "sharedRepresentationFirstUse": true},
+          {"op": "instance_summary", "ok": true, "exists": true, "path": "/AssetB", "instanceable": true, "instance": true, "hasInstanceArcs": true, "sharedRepresentationId": "shared:1", "sharedRepresentationFirstUse": false},
+          {"op": "prim_summary", "ok": true, "exists": true, "path": "/AssetA/Moved", "name": "Moved", "parent": "/AssetA", "children": [], "properties": ["relocatedToken"], "typeName": "RelocatedMesh", "specifier": "def", "active": true, "loaded": true, "defined": true, "abstract": false, "instanceable": false},
+          {
+            "op": "property_summary",
+            "ok": true,
+            "exists": true,
+            "path": "/AssetA/Moved.relocatedToken",
+            "kind": "attribute",
+            "owner": "/AssetA/Moved",
+            "name": "relocatedToken",
+            "fields": {
+              "custom": {"type": "bool", "value": false},
+              "typeName": {"type": "token", "value": "token"},
+              "variability": {"type": "variability", "value": "uniform"},
+              "default": {"type": "token", "value": "relocated"}
+            }
+          },
+          {"op": "prim_summary", "ok": true, "exists": false, "path": "/AssetA/Source"},
+          {"op": "prim_summary", "ok": true, "exists": false, "path": "/AssetB/Moved"}
+        ]
+      }
+    },
+    {
+      "id": "portable-kind-model-hierarchy-traversal",
+      "input": {
+        "rootLayer": {
+          "identifier": "root.usda",
+          "fields": {
+            "primChildren": {"type": "token[]", "value": ["World", "BrokenRoot"]}
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "primChildren": {"type": "token[]", "value": ["World", "BrokenRoot"]}
+              }
+            },
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "kind": {"type": "token", "value": "group"},
+                "primChildren": {"type": "token[]", "value": ["Set", "LooseComponent", "Sub"]},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World/Set": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "kind": {"type": "token", "value": "assembly"},
+                "primChildren": {"type": "token[]", "value": ["Asset"]},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World/Set/Asset": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "kind": {"type": "token", "value": "component"},
+                "primChildren": {"type": "token[]", "value": ["Geom"]},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World/Set/Asset/Geom": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "kind": {"type": "token", "value": "group"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World/LooseComponent": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "kind": {"type": "token", "value": "component"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World/Sub": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "kind": {"type": "token", "value": "subcomponent"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/BrokenRoot": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "primChildren": {"type": "token[]", "value": ["ChildComponent"]},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/BrokenRoot/ChildComponent": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "kind": {"type": "token", "value": "component"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        },
+        "ops": [
+          {"op": "populate_stage"},
+          {"op": "traverse_model_hierarchy"},
+          {"op": "model_hierarchy_summary", "path": "/World"},
+          {"op": "model_hierarchy_summary", "path": "/World/Set/Asset"},
+          {"op": "model_hierarchy_summary", "path": "/World/Set/Asset/Geom"},
+          {"op": "model_hierarchy_summary", "path": "/World/Sub"},
+          {"op": "model_hierarchy_summary", "path": "/BrokenRoot/ChildComponent"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "populate_stage", "ok": true},
+          {"op": "traverse_model_hierarchy", "ok": true, "paths": ["/World", "/World/Set", "/World/Set/Asset", "/World/LooseComponent"]},
+          {"op": "model_hierarchy_summary", "ok": true, "exists": true, "path": "/World", "kind": "group", "modelHierarchy": true, "modelHierarchyContinuity": true, "modelHierarchyTerminal": false},
+          {"op": "model_hierarchy_summary", "ok": true, "exists": true, "path": "/World/Set/Asset", "kind": "component", "modelHierarchy": true, "modelHierarchyContinuity": false, "modelHierarchyTerminal": true},
+          {"op": "model_hierarchy_summary", "ok": true, "exists": true, "path": "/World/Set/Asset/Geom", "kind": "group", "modelHierarchy": false, "modelHierarchyContinuity": false, "modelHierarchyTerminal": false},
+          {"op": "model_hierarchy_summary", "ok": true, "exists": true, "path": "/World/Sub", "kind": "subcomponent", "modelHierarchy": false, "modelHierarchyContinuity": false, "modelHierarchyTerminal": false},
+          {"op": "model_hierarchy_summary", "ok": true, "exists": true, "path": "/BrokenRoot/ChildComponent", "kind": "component", "modelHierarchy": false, "modelHierarchyContinuity": false, "modelHierarchyTerminal": false}
+        ]
+      }
+    }
+  ]
+}

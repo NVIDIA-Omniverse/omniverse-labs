@@ -1,0 +1,33 @@
+#usda 1.0
+(
+    defaultPrim = "Root"
+    metersPerUnit = 1
+    upAxis = "Z"
+    subLayers = [
+        @./full_warehouse.usd@
+    ]
+)
+
+def DomeLight "CompareDome"
+{
+    color3f inputs:color = (0.78, 0.82, 0.9)
+    float inputs:intensity = 450
+}
+
+def SphereLight "CompareKey"
+{
+    color3f inputs:color = (1, 0.95, 0.86)
+    float inputs:intensity = 6000
+    float inputs:radius = 41.7744172
+    double3 xformOp:translate = (52.6616279, 46.1383481, 96.5492023)
+    uniform token[] xformOpOrder = ["xformOp:translate"]
+}
+
+def SphereLight "CompareFill"
+{
+    color3f inputs:color = (0.68, 0.76, 1)
+    float inputs:intensity = 1200
+    float inputs:radius = 75.1939509
+    double3 xformOp:translate = (-85.1939487, -62.4751366, 21.3552514)
+    uniform token[] xformOpOrder = ["xformOp:translate"]
+}

@@ -1,0 +1,11 @@
+#usda 1.0
+
+def Xform "PayloadAsset"
+{
+    double payloadOnly = 40
+
+    def Scope "PayloadChild"
+    {
+        string label = "payload"
+    }
+}

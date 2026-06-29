@@ -1,0 +1,157 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/value-resolution.handle.json",
+  "title": "USD Value Resolution Contract",
+  "version": "0.2",
+  "spec_tag": "v1.0.1",
+  "spec_commit": "v1.0.1",
+  "spec_source": "aousd/specifications-public@v1.0.1",
+  "capability_contracts": [
+    "contracts/capabilities/composition-opinion-stack.json",
+    "contracts/capabilities/semantic-runtime-types.json"
+  ],
+  "dependency_contracts": [
+    "contracts/handles/composition-arbitrator.handle.json",
+    "contracts/handles/document-model.handle.json",
+    "contracts/handles/foundational-values.handle.json",
+    "contracts/handles/listops-authored.handle.json",
+    "contracts/handles/path.handle.json",
+    "contracts/handles/token.handle.json"
+  ],
+  "coverage_contracts": [
+    "contracts/spec-coverage/value-resolution.coverage.json"
+  ],
+  "scope": {
+    "included": [
+      "a target-native value resolver consuming strong-to-weak composed opinion stacks",
+      "attribute default-time value resolution by walking authored default opinions strongest to weakest",
+      "attribute value blocks and blocked time samples that stop weaker authored values and return fallback or the empty sentinel",
+      "timed attribute queries over authored timeSamples with exact sample lookup, held interpolation, and AOUSD linear interpolation for implemented value types",
+      "spline evaluation for held, linear, curve, value-block, and extrapolated spline segments represented by target-native spline values",
+      "value clip and clip set resolution using manifest declarations, active clips, times mapping, missing-value handling, and clip strength relative to local and referenced data",
+      "layer-offset retiming for composed value opinions",
+      "schema fallback value acquisition from prim definitions, applied schemas, and default-metadata fallback",
+      "ordinary metadata field resolution, custom metadata, dictionaries, and generic listOp metadata",
+      "special metadata rules for specifier, typeName, and variability",
+      "relationship target forwarding and raw attribute connection target resolution",
+      "layer metadata resolution from the root layer spec only",
+      "operation-local diagnostics surfaced through resolver results"
+    ]
+  },
+  "model": {
+    "ValueResolver": "A target-native resolver that accepts a composed opinion stack and resolves one metadata field or attribute value according to AOUSD value-resolution rules.",
+    "ValueResolutionOpinion": "One strong-to-weak contributing opinion containing source provenance, arc family identity, source spec path, direct-inherit context when relevant, layer-offset retiming when relevant, and typed field values.",
+    "PrimDefinition": "The schema-derived context used by metadata and fallback rules, including typeName, variability, schema-defined custom state, typed schema fallbacks, applied schema fallbacks, and default-metadata fallback.",
+    "ClipSetContext": "The clip metadata, manifests, active clip entries, times mapping, clip layers, and interpolation policy used for value clip resolution.",
+    "ResolvedValue": "The resolver output: ok state, hasValue state, resolved typed value or empty sentinel, resolution rule name, optional source provenance, and diagnostics.",
+    "InterpolationMode": "The stage-level interpolation mode supplied by the caller for time-sample evaluation. Supported values are held and linear, with linear as the default when omitted."
+  },
+  "operations": {
+    "inspect_resolver": {
+      "input": {},
+      "output": {
+        "mode": "opinion_stack_value_resolver",
+        "attributeDefaultResolution": "implemented",
+        "timeSampleResolution": "implemented",
+        "metadataResolution": "implemented",
+        "dictionaryResolution": "implemented",
+        "listOpResolution": "implemented",
+        "splineEvaluation": "implemented",
+        "valueClipResolution": "implemented",
+        "schemaFallbackSource": "implemented",
+        "relationshipForwarding": "implemented",
+        "retiming": "implemented"
+      }
+    },
+    "resolve_attribute": {
+      "input": {
+        "path": "absolute composed property path used for diagnostics and reporting",
+        "time": "default or a numeric time code",
+        "interpolation": "optional held or linear stage interpolation mode; defaults to linear",
+        "primDefinition": "optional schema fallback context for this attribute",
+        "clipSets": "optional value clip context supplied by the composed prim stack"
+      },
+      "output": {
+        "hasValue": "whether a resolved value is available",
+        "value": "canonical tagged resolved value, empty sentinel, or null when hasValue is false",
+        "resolution": "authoredDefault, blockedFallback, fallback, timeSampleExact, timeSampleHeld, timeSampleLinear, splineHeld, splineLinear, splineCurve, valueClipSample, valueClipManifestDefault, valueClipInterpolatedMissing, schemaFallback, or related rule name",
+        "sourceIdentifier": "source identifier for single-opinion resolutions when available",
+        "specPath": "source spec path for single-opinion resolutions when available",
+        "diagnostics": "operation-local diagnostics"
+      }
+    },
+    "resolve_metadata": {
+      "input": {
+        "field": "metadata field token",
+        "primDefinition": "optional prim-definition context for special metadata rules",
+        "fallback": "optional canonical tagged fallback value used when no authored or schema value exists"
+      },
+      "output": {
+        "hasValue": "whether a resolved value is available",
+        "value": "canonical tagged resolved value when hasValue is true, otherwise null",
+        "resolution": "strongestAuthoredMetadata, customAnyTrue, customSchemaDefinedFalse, dictionaryCombine, listOpCombine, specifierOver, specifierClass, specifierDef, primDefinitionTypeName, primDefinitionVariability, weakestVariability, fallback, or related rule name",
+        "sourceIdentifier": "source identifier for single-opinion resolutions when available",
+        "specPath": "source spec path for single-opinion resolutions when available",
+        "diagnostics": "operation-local diagnostics"
+      }
+    },
+    "resolve_layer_metadata": {
+      "input": {
+        "field": "metadata field token",
+        "rootLayerFields": "root layer spec fields",
+        "subLayerFields": "optional sublayer fields that must be ignored for layer metadata resolution"
+      },
+      "output": {
+        "hasValue": "whether the root layer spec authored the field or a fallback was supplied",
+        "value": "canonical tagged resolved value when hasValue is true, otherwise null",
+        "resolution": "rootLayerMetadata or fallback",
+        "diagnostics": "operation-local diagnostics"
+      }
+    },
+    "resolve_relationship_targets": {
+      "input": {
+        "field": "targetPaths",
+        "forwarded": "false for raw targets or true for recursive relationship forwarding",
+        "relationshipNetwork": "optional map from relationship path to resolved raw target paths used only when forwarded is true"
+      },
+      "output": {
+        "targets": "ordered composed object paths",
+        "resolution": "rawRelationshipTargets or forwardedRelationshipTargets",
+        "diagnostics": "operation-local diagnostics"
+      }
+    },
+    "resolve_connections": {
+      "input": {
+        "field": "connectionPaths"
+      },
+      "output": {
+        "targets": "ordered raw connection object paths resolved from generic listOp metadata",
+        "resolution": "rawConnectionTargets",
+        "diagnostics": "operation-local diagnostics"
+      }
+    }
+  },
+  "laws": [
+    "value resolution must consume a strength-ordered stack of typed opinions; it must not resolve from a flattened strongest-field map when weaker authored values or blocks may matter",
+    "the resolver must not evaluate composition arcs or construct the opinion stack itself",
+    "stage population must not implement value resolution locally; it may only expose authored fields or call a value-resolution provider",
+    "a default-time attribute query must consult authored default values strongest to weakest and use a schema fallback only if no authored default survives",
+    "an authored valueBlock or blocked time sample must stop weaker values and return the resolved fallback or the empty sentinel",
+    "a timed attribute query must consult timeSamples before spline, default, and clip data for the applicable authored opinion",
+    "the default interpolation mode for time samples is linear when the caller does not specify a stage interpolation mode",
+    "time-sample and spline evaluation must apply layer-offset retiming before looking up source samples",
+    "value clips are resolved at the clip-set strength specified by AOUSD and must not be treated as weaker than referenced data or stronger than local authored data",
+    "metadata resolution must return the strongest authored value for ordinary metadata fields unless a documented special rule applies",
+    "specifier, typeName, variability, and custom must follow their AOUSD special metadata rules",
+    "dictionary metadata must combine the whole strength-ordered stack recursively instead of returning only the strongest dictionary opinion",
+    "generic listOp metadata value resolution must combine the stack of authored list operations; relationship targetPaths and attribute connectionPaths use this path",
+    "forwarded relationship targets recursively follow relationship target chains; attribute connections expose raw resolved connectionPaths and are not forwarded",
+    "layer metadata resolution must use only the root layer spec and ignore sublayer and composition-arc opinions",
+    "schema fallback acquisition must prefer typed schema fallbacks, then applied schema fallbacks in composed schema order, then the unauthorable empty sentinel or default-metadata fallback",
+    "adapter JSON is a conformance boundary; generated domain logic should exchange typed values, tokens, paths, splines, listOps, clip contexts, and opinion records"
+  ],
+  "adapter_protocol": {
+    "input": "A JSON file containing one case with an opinionStack array, optional primDefinition, optional clipSets, optional layer metadata fields, and ops. Each opinion has family, sourceIdentifier, specPath, fields, and optional directInherit and retiming members. Fields use the canonical tagged field-value JSON shape.",
+    "output": "A JSON object with ok, diagnostics, and results. Each operation reports operation-local diagnostics and does not mutate the opinion stack."
+  }
+}

@@ -1,0 +1,188 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/spec-coverage/sublayer-composition.coverage.json",
+  "title": "USD Sublayer Composition Spec Coverage Ledger",
+  "version": "0.1",
+  "spec_commit": "v1.0.1",
+  "normative_source": {
+    "repo": "aousd/specifications-public",
+    "commit": "v1.0.1",
+    "rule": "The pinned composition, stage_population, and document_data_model specifications are normative. This ledger covers the in-memory recursive-sublayer namespace provider."
+  },
+  "status_values": {
+    "implemented": "In scope for the layer-stack namespace-source contract and covered by goldens.",
+    "partial": "A bounded subset is included and later contracts must extend it.",
+    "deferred": "Specified behavior intentionally not included in this first sublayer contract.",
+    "out_of_scope": "Belongs to another subsystem or future skill."
+  },
+  "coverage_rules": [
+    "The sublayer composition contract consumes already-opened Layers; it does not resolve or open sublayer assets.",
+    "Recursive stack construction is included only when every reached sublayer has already been supplied at this boundary.",
+    "The provider returns a NamespaceSource so existing stage population can consume composed child/property names without learning layer-stack storage.",
+    "A generated target must not claim full composition or value resolution from this provider."
+  ],
+  "items": [
+    {
+      "id": "sublayers.direct-layer-stack",
+      "owner": "usd-layer-stack-namespace-source",
+      "status": "implemented",
+      "spec_refs": [
+        "document_data_model/README.md:496 subLayers",
+        "document_data_model/README.md:505 subLayerOffsets"
+      ],
+      "obligations": [
+        "Read root layer subLayers as the direct weaker layer stack.",
+        "Pair subLayerOffsets with subLayers for reporting.",
+        "Require supplied already-opened layers for authored sublayer assets."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-layer-stack-namespace-source/layer-stack-namespace-source.json#capabilities-and-stack-summary"
+      ]
+    },
+    {
+      "id": "sublayers.recursive-layer-stack",
+      "owner": "usd-layer-stack-namespace-source",
+      "status": "implemented",
+      "spec_refs": [
+        "composition/README.md sublayers",
+        "document_data_model/README.md:496 subLayers",
+        "document_data_model/README.md:505 subLayerOffsets"
+      ],
+      "obligations": [
+        "Traverse supplied already-opened layers recursively through authored subLayers.",
+        "Insert nested sublayers depth-first immediately after the sublayer that authored them and before later siblings.",
+        "Pair each subLayerOffset with the immediate sublayer edge that authored it.",
+        "Detect cycles during in-memory stack construction and avoid unbounded recursion.",
+        "Do not resolve assets or open resources while constructing the source."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-layer-stack-namespace-source/layer-stack-namespace-source.json#recursive-sublayer-stack-order"
+      ]
+    },
+    {
+      "id": "sublayers.prim-spec-contribution",
+      "owner": "usd-layer-stack-namespace-source",
+      "status": "implemented",
+      "spec_refs": [
+        "stage_population/README.md:11 The Stage",
+        "stage_population/README.md:17 Populating the Stage"
+      ],
+      "obligations": [
+        "A path exists when any stack layer contributes a spec.",
+        "Expose contributing layers in strong-to-weak order.",
+        "Expose population-facing fields for stage population."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-layer-stack-namespace-source/layer-stack-namespace-source.json#stronger-root-overrides-and-weaker-supplies"
+      ]
+    },
+    {
+      "id": "sublayers.effective-specifier",
+      "owner": "usd-layer-stack-namespace-source",
+      "status": "partial",
+      "spec_refs": [
+        "document_data_model/README.md:642 specifier",
+        "stage_population/README.md:198 Stage Queries"
+      ],
+      "obligations": [
+        "Preserve weaker def/class definitions through stronger over specs for population query flags.",
+        "Return over only when no contributing defining specifier exists."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-layer-stack-namespace-source/layer-stack-namespace-source.json#stronger-root-overrides-and-weaker-supplies"
+      ],
+      "deferred_reason": "Full LIVERPS specifier behavior across references, payloads, variants, inherits, specializes, and relocates remains future work."
+    },
+    {
+      "id": "sublayers.ordered-children",
+      "owner": "usd-layer-stack-namespace-source",
+      "status": "implemented",
+      "spec_refs": [
+        "stage_population/README.md:107 Ordered Prim Children"
+      ],
+      "obligations": [
+        "Merge primChildren from weakest to strongest contributing spec.",
+        "Apply each spec's primOrder after that spec contributes child names.",
+        "Do not apply relocates in this first provider."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-layer-stack-namespace-source/layer-stack-namespace-source.json#child-and-property-ordering"
+      ]
+    },
+    {
+      "id": "sublayers.ordered-properties",
+      "owner": "usd-layer-stack-namespace-source",
+      "status": "implemented",
+      "spec_refs": [
+        "stage_population/README.md:151 Ordered Property Children",
+        "stage_population/README.md:167 strongest propertyOrder note"
+      ],
+      "obligations": [
+        "Union property names across contributing specs.",
+        "Sort by path element ordering.",
+        "Apply only the strongest authored propertyOrder."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-layer-stack-namespace-source/layer-stack-namespace-source.json#child-and-property-ordering"
+      ]
+    },
+    {
+      "id": "sublayers.authored-listop-fields",
+      "owner": "usd-layer-stack-namespace-source",
+      "status": "implemented",
+      "spec_refs": [
+        "foundational_data_types/README.md:180 list operation supported element types",
+        "foundational_data_types/README.md:300 Combining",
+        "composition/README.md:182 layer-stack list-op application",
+        "schemas/README.md:37 apiSchemas"
+      ],
+      "obligations": [
+        "Combine same-typed authored listOp field opinions from contributing specs in strong-over-weak order.",
+        "Preserve the authored listOp element type in the composed field value.",
+        "Do not reinterpret schema semantics or inject schema fallback properties while composing apiSchemas."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-layer-stack-namespace-source/layer-stack-namespace-source.json#authored-listop-field-composition"
+      ]
+    },
+    {
+      "id": "sublayers.asset-loading",
+      "owner": "future-sublayer-loader-skill",
+      "status": "deferred",
+      "spec_refs": [
+        "composition/README.md sublayers",
+        "resource interface and asset resolution sections"
+      ],
+      "deferred_reason": "This provider accepts already-opened layers. Resolver policy, resource protocol use, package handling, and unavailable resources remain separate contracts."
+    },
+    {
+      "id": "sublayers.value-resolution",
+      "owner": "usd-value-resolution",
+      "status": "implemented",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:core/1.0.1/core_spec.md#Value Resolution",
+        "stage_population/README.md:15 value resolution"
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-value-resolution/value-resolution.json#default-resolution-walks-opinion-stack",
+        "goldens/unit/usd-value-resolution/value-resolution.json#metadata-custom-dictionary-and-ordinary-fields",
+        "goldens/unit/usd-value-resolution/value-resolution.json#time-samples-held-linear-vector-and-retiming",
+        "goldens/unit/usd-value-resolution/value-resolution.json#listop-relationship-targets-and-connections"
+      ],
+      "obligations": [
+        "Preserve layer-stack contribution order and subLayerOffsets so the value resolver can apply retiming.",
+        "Keep source-visible field storage separate from resolved values.",
+        "Route listOp, spline, clip, fallback, and timed value queries through the usd-value-resolution provider."
+      ]
+    },
+    {
+      "id": "sublayers.relocates",
+      "owner": "future-relocates-composition-skill",
+      "status": "deferred",
+      "spec_refs": [
+        "stage_population/README.md:109 relocates"
+      ],
+      "deferred_reason": "Relocates affect ordered children and namespace mapping. They are deliberately excluded from this layer-stack provider."
+    }
+  ]
+}

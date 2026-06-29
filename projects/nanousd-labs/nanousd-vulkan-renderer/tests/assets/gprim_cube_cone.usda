@@ -1,0 +1,22 @@
+#usda 1.0
+(
+    doc = "UsdGeomCube (size 2 -> +-1 all axes) + UsdGeomCone (radius 1, height 2, axis Z -> +-1 radial, +-1 axial) for the implicit-gprim render gate."
+    defaultPrim = "World"
+    upAxis = "Y"
+    metersPerUnit = 1
+)
+def Xform "World"
+{
+    def Cube "box"
+    {
+        double size = 2.0
+        color3f[] primvars:displayColor = [(0.3, 0.6, 0.8)]
+    }
+    def Cone "cone"
+    {
+        double radius = 1.0
+        double height = 2.0
+        uniform token axis = "Z"
+        color3f[] primvars:displayColor = [(0.8, 0.6, 0.3)]
+    }
+}

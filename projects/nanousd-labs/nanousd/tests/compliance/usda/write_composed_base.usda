@@ -1,0 +1,20 @@
+#usda 1.0
+(
+    defaultPrim = "Root"
+)
+
+def Xform "Root" {
+    float strong_val = 1.0
+    float weak_val = 42.0
+    string name = "base"
+    float3 position = (0, 0, 0)
+
+    float animated.timeSamples = {
+        1: 10.0,
+        24: 20.0,
+    }
+
+    def Mesh "Child" {
+        int count = 5
+    }
+}

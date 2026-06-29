@@ -1,0 +1,156 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/path.handle.json",
+  "title": "USD Path Handle Contract",
+  "version": "0.1",
+  "spec_commit": "v1.0.1",
+  "scope": {
+    "included": [
+      "absolute root path",
+      "absolute prim paths",
+      "relative paths accepted by the normative Path grammar",
+      "property paths",
+      "variant-selection paths accepted by the normative Path grammar",
+      "namespaced property names",
+      "canonical component identity satisfying the graph's component identity dependency",
+      "parent/name queries",
+      "child/property path construction",
+      "equality",
+      "stable total ordering"
+    ],
+    "deferred": [
+      "target paths with mapper expressions",
+      "relational attribute paths",
+      "compatibility-mode legacy path grammar extensions",
+      "path expression evaluation",
+      "namespace mapping or composition-time remapping"
+    ]
+  },
+  "dependency_contracts": [
+    "contracts/capabilities/identifier-scanner.json",
+    "contracts/handles/token.handle.json"
+  ],
+  "performance_contracts": [
+    "contracts/performance/path.performance.json"
+  ],
+  "model": {
+    "Context": "Implementation-owned state that creates, stores, and releases opaque handles during a conformance run. It may be an arena, registry, interner, allocator context, or a no-op wrapper around native values.",
+    "PathIdentifierScanner": "Identifier recognition inside path parsing is consumed from the graph-provided identifier scanner capability. Path implementations own path delimiters and sequencing, not independent UTF-8/XID validity rules.",
+    "PathComponentIdentity": "Reusable path component names are canonicalized through a graph-provided registered-string or component-identity capability. Whole-path storage is implementation-defined, but generated targets should not keep only parser-local raw strings for component identity.",
+    "PathHandle": "Opaque reference to a path value owned by a Context. The handle is not a string, struct layout, class name, pointer, or product API requirement.",
+    "PathKind": [
+      "root",
+      "prim",
+      "property",
+      "relative",
+      "variant"
+    ]
+  },
+  "operations": {
+    "parse": {
+      "input": {
+        "text": "canonical or parseable path text"
+      },
+      "output": {
+        "handle": "new PathHandle on success",
+        "path": "canonical path text",
+        "kind": "PathKind"
+      }
+    },
+    "to_string": {
+      "input": {
+        "path": "existing PathHandle"
+      },
+      "output": {
+        "path": "canonical path text"
+      }
+    },
+    "kind": {
+      "input": {
+        "path": "existing PathHandle"
+      },
+      "output": {
+        "kind": "PathKind"
+      }
+    },
+    "parent": {
+      "input": {
+        "path": "existing PathHandle"
+      },
+      "output": {
+        "path": "parent path text or null for root",
+        "kind": "parent PathKind or null for root"
+      }
+    },
+    "name": {
+      "input": {
+        "path": "existing PathHandle"
+      },
+      "output": {
+        "name": "final prim or property name, empty for root"
+      }
+    },
+    "append_child": {
+      "input": {
+        "parent": "root or prim PathHandle",
+        "name": "prim name"
+      },
+      "output": {
+        "handle": "new PathHandle on success",
+        "path": "canonical path text",
+        "kind": "prim"
+      }
+    },
+    "append_property": {
+      "input": {
+        "parent": "prim PathHandle",
+        "name": "property name"
+      },
+      "output": {
+        "handle": "new PathHandle on success",
+        "path": "canonical path text",
+        "kind": "property"
+      }
+    },
+    "equal": {
+      "input": {
+        "lhs": "PathHandle",
+        "rhs": "PathHandle"
+      },
+      "output": {
+        "equal": "boolean"
+      }
+    },
+    "compare": {
+      "input": {
+        "lhs": "PathHandle",
+        "rhs": "PathHandle"
+      },
+      "output": {
+        "order": "-1, 0, or 1 in the implementation's stable total order"
+      }
+    },
+    "release": {
+      "input": {
+        "path": "PathHandle"
+      },
+      "output": {
+        "released": "boolean"
+      }
+    }
+  },
+  "laws": [
+    "parse(to_string(h)) must produce a path equal to h",
+    "append_child(parent, name).parent must equal parent",
+    "append_property(parent, name).parent must equal parent",
+    "equal(a, b) implies compare(a, b) == 0",
+    "paths with the same component sequence must compare equal even when constructed through parse and append operations",
+    "component equality for reusable prim/property names should use canonical component identity rather than repeated raw string scans",
+    "compare must be stable for the lifetime of the Context",
+    "release invalidates the test-harness handle name but does not prescribe native lifetime strategy"
+  ],
+  "adapter_protocol": {
+    "input": "A JSON file containing one case with an ops array.",
+    "output": "A JSON object with ok, diagnostics, and results. Test handle names are harness variables, not native handle values."
+  }
+}

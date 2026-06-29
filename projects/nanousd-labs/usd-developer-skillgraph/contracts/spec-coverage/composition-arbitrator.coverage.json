@@ -1,0 +1,259 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/spec-coverage/composition-arbitrator.coverage.json",
+  "title": "USD Composition Arbitrator Spec Coverage Ledger",
+  "version": "0.1",
+  "spec_tag": "v1.0.1",
+  "spec_commit": "v1.0.1",
+  "normative_source": {
+    "repo": "aousd/specifications-public",
+    "tag": "v1.0.1",
+    "commit": "v1.0.1",
+    "rule": "Only the AOUSD core specification at aousd/specifications-public v1.0.1 is normative for this ledger. This ledger covers the central composition-arbitrator boundary and not OpenUSD PCP implementation details."
+  },
+  "status_values": {
+    "implemented": "In scope for the composition-arbitrator contract and expected from generated targets that claim this node.",
+    "optional_supported": "Supported for an optional spec input or capability, but not required for baseline compliance.",
+    "partial": "A bounded subset is included and later contracts must extend it.",
+    "deferred": "Specified behavior intentionally not included in this first composition-arbitrator contract.",
+    "out_of_scope": "Belongs to another subsystem or future skill."
+  },
+  "coverage_rules": [
+    "The composition arbitrator owns final LIVERPS arbitration across available graph opinion sources.",
+    "Stage population consumes the composed NamespaceSource facade and does not evaluate composition arcs.",
+    "A generated target must not claim recursive composition, payload loading, full value resolution, schema fallbacks, value clips, or implementation-specific prototype query APIs from this first bounded contract."
+  ],
+  "items": [
+    {
+      "id": "composition.algorithm-boundary",
+      "owner": "usd-composition-arbitrator",
+      "status": "partial",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:13 algorithm inputs",
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:19 algorithm outputs",
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:24 composing a prim"
+      ],
+      "obligations": [
+        "Build prim and property opinion indexes from the root/local layer stack plus available composition arc opinions.",
+        "Expose composed prim and property inputs through the namespace-source boundary.",
+        "Aggregate composition diagnostics without aborting unrelated path composition."
+      ],
+      "positive_goldens": [
+        "graph/skillgraph.json#usd-composition-arbitrator",
+        "goldens/unit/usd-composition-arbitrator/composition-arbitrator.json#liverps-family-ordering",
+        "goldens/unit/usd-composition-arbitrator/composition-arbitrator.json#aggregates-consumed-source-diagnostics"
+      ],
+      "deferred_reason": "The first boundary is a central arbitration contract over bounded sources; recursive arc discovery and complete value composition are deferred."
+    },
+    {
+      "id": "composition.liverps-family-order",
+      "owner": "usd-composition-arbitrator",
+      "status": "implemented",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:800 Strength Ordering",
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:820 composition arc order",
+        "aousd/specifications-public@v1.0.1:specification/glossary/README.md:85 LIVERPS"
+      ],
+      "obligations": [
+        "Order available opinions strong-to-weak as local, inherits, variants, relocates, references, payloads, specializes.",
+        "Keep graph construction order separate from opinion strength order.",
+        "Do not let individual arc providers or stage population own final family ordering."
+      ],
+      "positive_goldens": [
+        "contracts/capabilities/composition-opinion-stack.json#strength_order",
+        "goldens/unit/usd-composition-arbitrator/composition-arbitrator.json#liverps-family-ordering"
+      ]
+    },
+    {
+      "id": "composition.layer-stack-strength",
+      "owner": "usd-composition-arbitrator",
+      "status": "partial",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:62 sublayers",
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:808 same layer stack strength"
+      ],
+      "obligations": [
+        "Preserve local layer-stack opinion order supplied by the layer-stack namespace source.",
+        "Treat stronger layers in the same layer stack as stronger opinions.",
+        "Do not reopen or re-resolve sublayers in the composition arbitrator."
+      ],
+      "positive_goldens": [
+        "contracts/handles/layer-stack-namespace-source.handle.json"
+      ],
+      "deferred_reason": "Full local layer-stack strength still depends on bounded source coverage; asset resolver and value-resolution details remain outside the composition arbitrator."
+    },
+    {
+      "id": "composition.same-arc-family-order",
+      "owner": "usd-composition-arbitrator",
+      "status": "partial",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:839 same arc type strength ordering",
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:843 deeper namespace arcs",
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:847 authored versus implied arcs",
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:850 sibling arc ordering"
+      ],
+      "obligations": [
+        "Represent namespace depth, authored/implied status, and source-visible sibling order when supplied by an arc source.",
+        "Use those values in the CompositionOpinion strength key before exposing composed fields.",
+        "Declare partial composition when an input provider cannot supply implied arcs or recursive sibling arc data."
+      ],
+      "deferred_reason": "The current bounded arc providers do not yet supply every implied or recursive arc needed for full same-family ordering."
+    },
+    {
+      "id": "composition.variant-deferral-and-insertion",
+      "owner": "usd-composition-arbitrator",
+      "status": "implemented",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:582 variants",
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:597 defer variants",
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:603 computing variant selection"
+      ],
+      "obligations": [
+        "Require variant selections to be computed from source-visible opinions after other arc opinions are available.",
+        "Insert selected variant opinions at variant LIVERPS strength in the final stack.",
+        "Keep selected variant paths out of stage population's composed scene paths."
+      ],
+      "positive_goldens": [
+        "contracts/handles/variant-namespace-source.handle.json",
+        "contracts/capabilities/composition-opinion-stack.json#variant_rule",
+        "goldens/unit/usd-composition-arbitrator/composition-arbitrator.json#liverps-family-ordering",
+        "goldens/unit/usd-composition-arbitrator/composition-arbitrator.json#variant-selection-from-referenced-layer"
+      ]
+    },
+    {
+      "id": "composition.specializes-global-weakness",
+      "owner": "usd-composition-arbitrator",
+      "status": "implemented",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:524 specializes",
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:856 specializes strength ordering",
+        "aousd/specifications-public@v1.0.1:specification/glossary/README.md:166 Specializes"
+      ],
+      "obligations": [
+        "Keep specializes opinions globally weaker than local, inherits, variants, relocates, references, and loaded payloads.",
+        "Do not infer specializes strength from the graph position of the specializes provider.",
+        "Permit variants to observe specializes for selection while still inserting selected variant opinions stronger than specializes."
+      ],
+      "positive_goldens": [
+        "contracts/handles/specializes-namespace-source.handle.json",
+        "contracts/capabilities/composition-opinion-stack.json#specializes_rule",
+        "goldens/unit/usd-composition-arbitrator/composition-arbitrator.json#liverps-family-ordering"
+      ]
+    },
+    {
+      "id": "composition.path-valued-field-remapping",
+      "owner": "usd-composition-arbitrator",
+      "status": "implemented",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:713 Namespace Mapping"
+      ],
+      "obligations": [
+        "Expose relationship targetPaths and attribute connectionPaths from consumed arc-source opinions in composed scene coordinates.",
+        "Prune target or connection path elements that cannot be mapped through the consumed source's namespace mapping.",
+        "Perform remapping before stage population or backend queries observe the composed property fields."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-composition-arbitrator/composition-arbitrator.json#reference-path-valued-fields-remap"
+      ]
+    },
+    {
+      "id": "composition.instance-descendant-filtering",
+      "owner": "usd-composition-arbitrator",
+      "status": "implemented",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:1306 Instancing",
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:1319 descendant opinions",
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:1331 matching instanceable prims"
+      ],
+      "obligations": [
+        "Expose instance-filtered descendant prim and property inputs that exclude local descendant specs under an instanceable prim.",
+        "Include supported non-local composition arc opinions authored on the instanceable prim, plus recursive opinions from the source prim of such arcs.",
+        "Expose supported composition-arc provenance for stage-population shared representation matching."
+      ],
+      "positive_goldens": [
+        "goldens/integration/usd-instancing-model-stage-population/instancing-model-stage-population.json#reference-backed-instances-share-and-filter-descendants",
+        "goldens/integration/usd-instancing-model-stage-population/instancing-model-stage-population.json#population-mask-prevents-instance-sharing",
+        "goldens/integration/usd-instancing-model-stage-population/instancing-model-stage-population.json#variant-backed-instances-share-and-filter-descendants",
+        "goldens/integration/usd-instancing-model-stage-population/instancing-model-stage-population.json#inherits-and-specializes-backed-instances-share-and-filter-descendants",
+        "goldens/integration/usd-instancing-model-stage-population/instancing-model-stage-population.json#relocated-reference-instances-share-and-filter-descendants"
+      ]
+    },
+    {
+      "id": "composition.stage-population-boundary",
+      "owner": "usd-stage-population",
+      "status": "implemented",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:specification/stage_population/README.md:17 stage population",
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:19 algorithm outputs"
+      ],
+      "obligations": [
+        "Expose a composed namespace-source facade for stage population.",
+        "Require stage population to preserve composed child/property ordering and avoid composition arc evaluation.",
+        "Declare source capabilities so stage queries cannot overclaim missing composition features."
+      ],
+      "positive_goldens": [
+        "contracts/handles/stage-population.handle.json",
+        "contracts/handles/composition-arbitrator.handle.json#prim_input"
+      ]
+    },
+    {
+      "id": "composition.value-resolution",
+      "owner": "usd-value-resolution",
+      "status": "implemented",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:core/1.0.1/core_spec.md#Value Resolution"
+      ],
+      "obligations": [
+        "Expose enough strong-to-weak property opinion provenance for a value-resolution provider to consume.",
+        "Do not claim value resolution from the composition arbitrator's flattened population-facing fields.",
+        "Route metadata, attribute, relationship, connection, clip, retiming, and fallback value queries through the usd-value-resolution provider."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-value-resolution/value-resolution.json#default-resolution-walks-opinion-stack",
+        "goldens/unit/usd-value-resolution/value-resolution.json#metadata-special-fields-and-layer-metadata",
+        "goldens/unit/usd-value-resolution/value-resolution.json#listop-relationship-targets-and-connections",
+        "goldens/unit/usd-value-resolution/value-resolution.json#spline-held-linear-curve-and-block-segments",
+        "goldens/unit/usd-value-resolution/value-resolution.json#value-clips-strength-time-mapping-and-manifest-defaults"
+      ]
+    },
+    {
+      "id": "composition.payload-source-availability",
+      "owner": "usd-composition-arbitrator",
+      "status": "implemented",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:331 payloads"
+      ],
+      "obligations": [
+        "Report payload_loading=absent when no loaded payload opinion source is supplied.",
+        "Do not include loaded payload opinions when the payload source is omitted, even if payload metadata and payload layers are present in the adapter input.",
+        "Aggregate diagnostics emitted by a supplied payload opinion source."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-composition-arbitrator/composition-arbitrator.json#omits-payload-source",
+        "goldens/unit/usd-composition-arbitrator/composition-arbitrator.json#aggregates-consumed-source-diagnostics"
+      ]
+    },
+    {
+      "id": "composition.payload-loading-policy",
+      "owner": "usd-composed-stage-open",
+      "status": "optional_supported",
+      "spec_refs": [
+        "aousd/specifications-public@2f9e746c4fbd7f48d6d2c9ac568133fe398bbfc0:core/1.0.1/core_spec.md:3935 composition input whether payload arcs are considered",
+        "aousd/specifications-public@2f9e746c4fbd7f48d6d2c9ac568133fe398bbfc0:core/1.0.1/core_spec.md:4261 payloads loaded or ignored by composition input",
+        "aousd/specifications-public@2f9e746c4fbd7f48d6d2c9ac568133fe398bbfc0:core/1.0.1/core_spec.md:5208 population mask may provide payload flag"
+      ],
+      "obligations": [
+        "Composition arbitrator reports payload_loading=partial when a loaded-payload opinion source is supplied.",
+        "Composition arbitrator reports payload_loading=absent when no payload opinion source is supplied.",
+        "Runtime stage open maps the adapter payloadInclusion=omit scenario to no supplied payload opinion source.",
+        "Runtime stage open maps the adapter payloadInclusion=include scenario to opened direct payload assets supplied as payload opinions."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-composition-arbitrator/composition-arbitrator.json#omits-payload-source",
+        "goldens/unit/usd-composed-stage-open/composed-stage-open.json#opens-payload-assets-when-inclusion-requested",
+        "goldens/unit/usd-composed-stage-open/composed-stage-open.json#omits-payload-assets-when-inclusion-omitted"
+      ],
+      "deferred_reason": "Fine-grained payload load masks, unloaded-payload prim state, and load/unload mutation remain future optional payload-loading work."
+    }
+  ]
+}

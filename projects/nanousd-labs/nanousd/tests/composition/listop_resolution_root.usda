@@ -1,0 +1,26 @@
+#usda 1.0
+(
+    defaultPrim = "Source"
+    subLayers = [
+        @./listop_resolution_base.usda@
+    ]
+)
+
+# Stronger layer for listop combining tests (spec §12.2.6).
+# Both root and base use composable list ops; the resolved value must
+# combine them per §6.6.3.6: root's prepends precede base's prepends.
+
+over "Source" (
+    prepend apiSchemas = ["RootAPI"]
+)
+{
+    prepend rel relTargets = [
+        </Source/StrongProp>,
+        </Source/SharedProp>
+    ]
+
+    def Scope "StrongProp"
+    {
+        int v = 0
+    }
+}

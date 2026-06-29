@@ -1,0 +1,28 @@
+#usda 1.0
+# [snippet:doc-usda-inline-sublayers-camera-renderproduct]
+(
+    subLayers = [
+        @../../data/ovrtx-test-base.usda@
+    ]
+)
+
+def Camera "DocsCamera" (
+    prepend apiSchemas = ["OmniSensorGenericCameraCoreAPI"]
+)
+{
+}
+
+def "Render"
+{
+    def RenderProduct "DocsCamera"
+    {
+        rel camera = </DocsCamera>
+        rel orderedVars = [<LdrColor>]
+
+        def RenderVar "LdrColor"
+        {
+            string sourceName = "LdrColor"
+        }
+    }
+}
+# [/snippet:doc-usda-inline-sublayers-camera-renderproduct]

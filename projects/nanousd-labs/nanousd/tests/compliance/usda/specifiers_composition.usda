@@ -1,0 +1,11 @@
+#usda 1.0
+(
+    subLayers = [
+        @./specifiers_composition_sub.usda@
+    ]
+)
+
+over "GainsDef" {
+    reorder properties = ["overValue", "baseValue"]
+    float overValue = 10.0
+}

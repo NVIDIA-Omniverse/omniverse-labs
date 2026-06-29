@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/usda-productions/variant-specs.contract.json",
+  "title": "USDA Variant Specs Production Contract",
+  "version": "0.1",
+  "spec_commit": "v1.0.1",
+  "owned_by": "usda-spec-parser",
+  "derives_from": "contracts/document-model-productions/variant-spec.contract.json",
+  "format_neutral_rules": "contracts/document-model-productions/variant-spec.contract.json#laws — variant/variantSet spec kinds, parent-child rules, specifier=over invariant, variantSetChildren-vs-variantSetNames separation, and nested-variantSet rules are pinned in the format-neutral production. This contract adds USDA-specific grammar dispatch and storage mapping.",
+  "spec_refs": [
+    "specification/file_formats/README.md#prim-specs",
+    "specification/file_formats/README.md#specifier-and-typename-for-variants",
+    "specification/document_data_model/README.md#variant-and-variant-set-specs"
+  ],
+  "scope": {
+    "included": [
+      "variantSet statements inside prim specs",
+      "variant statements inside variant sets",
+      "variant metadata blocks",
+      "prim/property/variantSet contents inside variants",
+      "variantSetChildren maintenance on containing prim specs",
+      "variant specs stored as document-model specs"
+    ],
+    "deferred": [
+      "variant selection composition",
+      "variant value resolution",
+      "stage population through selected variants"
+    ]
+  },
+  "storage_mapping": {
+    "VariantSetStatement": "variant set spec plus parent variantSetChildren entry",
+    "VariantStatement": "variant spec under the containing variant set",
+    "VariantContents": "same child, property, and nested variant storage rules as prim contents",
+    "VariantSpecifier": "store specifier as over for USDA-authored variants",
+    "VariantTypeName": "leave typeName unauthored for USDA-authored variants"
+  },
+  "production_details": {
+    "variant_set_statement": {
+      "production": "VariantSetStatement <- 'variantSet' String '=' '{' VariantStatement+ '}'",
+      "storage": "variant set spec plus parent variantSetChildren entry",
+      "requirements": [
+        "variantSet statements may appear wherever PrimItem permits them",
+        "the variant set name is stored as a child variant set name on the containing prim",
+        "variantSetChildren storage must remain distinct from variantSetNames listOp metadata"
+      ]
+    },
+    "variant_statement": {
+      "production": "VariantStatement <- String PrimMetadata? '{' PrimContents '}'",
+      "storage": "variant spec with optional metadata and prim-like contents",
+      "requirements": [
+        "variant names use the document-model variant-name grammar",
+        "variant metadata uses the same PrimMetadata parser as prim specs",
+        "variant contents may include prim specs, property specs, reorder statements, and nested variant set specs",
+        "USDA-authored variant specs store specifier as over and leave typeName unauthored"
+      ]
+    }
+  },
+  "laws": [
+    "variant set statements may appear wherever the USDA PrimItem grammar permits them"
+  ],
+  "format_neutral_laws_hoisted": [
+    "variant set and variant specs are authored layer storage, not composition evaluation (document-model-productions/variant-spec.contract.json#laws)",
+    "variant contents use the same document-model storage APIs as prim contents (document-model-productions/variant-spec.contract.json#laws)",
+    "variant specs report specifier=over and leave typeName unauthored (document-model-productions/variant-spec.contract.json#laws)",
+    "variantSetChildren on the containing prim or variant is the spec-storage list; variantSetNames is authored composition metadata (document-model-productions/variant-spec.contract.json#nesting_rules)",
+    "variantSet specs maintain variantChildren in agreement with stored variant specs (document-model-productions/variant-spec.contract.json#laws)"
+  ],
+  "golden_groups": [
+    "single variant set with one variant",
+    "multiple variants and variant metadata",
+    "prim and property specs inside variants",
+    "nested variant sets inside variants",
+    "variantSetChildren storage",
+    "variant specifier and typeName storage rule"
+  ],
+  "golden_files": [
+    "goldens/integration/usda-single-layer/variant-specs.json",
+    "goldens/integration/usda-single-layer/prim-metadata-composition.json"
+  ]
+}

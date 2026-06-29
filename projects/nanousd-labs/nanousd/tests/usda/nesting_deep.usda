@@ -1,0 +1,63 @@
+#usda 1.0
+
+def Xform "L1"
+{
+    float l1_attr = 1.0
+
+    def Xform "L2"
+    {
+        float l2_attr = 2.0
+
+        def Scope "L3"
+        {
+            float l3_attr = 3.0
+
+            def Mesh "L4"
+            {
+                float l4_attr = 4.0
+
+                def Scope "L5"
+                {
+                    float l5_attr = 5.0
+
+                    def Scope "L6"
+                    {
+                        float l6_attr = 6.0
+
+                        def Scope "L7"
+                        {
+                            float l7_attr = 7.0
+
+                            def Scope "L8"
+                            {
+                                float l8_attr = 8.0
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    def Xform "Sibling1"
+    {
+        def Mesh "Child1" {}
+        def Mesh "Child2" {}
+    }
+
+    def Xform "Sibling2"
+    {
+        def Mesh "Child1" {}
+    }
+}
+
+# Multiple root prims
+def Xform "Root2"
+{
+    def Scope "A"
+    {
+        def Scope "B" {}
+    }
+}
+
+def Xform "Root3" {}

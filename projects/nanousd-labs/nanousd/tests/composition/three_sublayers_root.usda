@@ -1,0 +1,13 @@
+#usda 1.0
+(
+    subLayers = [
+        @./three_sublayers_mid.usda@,
+        @./three_sublayers_weak.usda@
+    ]
+)
+
+def Xform "Prim"
+{
+    string opinion = "strongest"
+    float rootOnly = 1.0
+}

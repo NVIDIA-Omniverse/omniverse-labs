@@ -1,0 +1,13 @@
+#usda 1.0
+(
+    subLayers = [
+        @./sublayer_ref_over.usda@
+    ]
+)
+
+def Xform "Prim" (
+    prepend references = @./sublayer_ref_source.usda@</Template>
+)
+{
+    string opinion = "root_local"
+}

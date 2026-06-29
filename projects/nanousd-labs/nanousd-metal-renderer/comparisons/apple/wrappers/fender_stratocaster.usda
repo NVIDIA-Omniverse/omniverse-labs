@@ -1,0 +1,33 @@
+#usda 1.0
+(
+    defaultPrim = "fender_stratocaster"
+    metersPerUnit = 0.01
+    upAxis = "Y"
+    subLayers = [
+        @./fender_stratocaster.usdc@
+    ]
+)
+
+def DomeLight "CompareDome"
+{
+    color3f inputs:color = (0.78, 0.82, 0.9)
+    float inputs:intensity = 450
+}
+
+def SphereLight "CompareKey"
+{
+    color3f inputs:color = (1, 0.95, 0.86)
+    float inputs:intensity = 6000
+    float inputs:radius = 64.3039549
+    double3 xformOp:translate = (96.4559323, 195.594854, 70.7652918)
+    uniform token[] xformOpOrder = ["xformOp:translate"]
+}
+
+def SphereLight "CompareFill"
+{
+    color3f inputs:color = (0.68, 0.76, 1)
+    float inputs:intensity = 1200
+    float inputs:radius = 115.747119
+    double3 xformOp:translate = (-115.747119, 79.8477353, -96.424991)
+    uniform token[] xformOpOrder = ["xformOp:translate"]
+}

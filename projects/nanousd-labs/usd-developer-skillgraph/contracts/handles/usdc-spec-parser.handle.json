@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/usdc-spec-parser.handle.json",
+  "title": "USDC Spec Parser Unit Contract",
+  "version": "0.1",
+  "spec_commit": "6b4f01f2d6d46b01507481524eb516b4ef358c31",
+  "dependency_contracts": [
+    "contracts/handles/usdc-binary-format.handle.json",
+    "contracts/handles/usdc-value-decoder.handle.json",
+    "contracts/handles/document-model.handle.json",
+    "contracts/handles/path.handle.json"
+  ],
+  "adapter_contracts": [
+    "contracts/layer-dump.schema.json"
+  ],
+  "performance_contracts": [
+    "contracts/performance/usdc.performance.json"
+  ],
+  "scope": {
+    "included": [
+      "TOKENS section mapping",
+      "STRINGS section mapping",
+      "FIELDS section mapping",
+      "FIELDSETS section mapping",
+      "PATHS section mapping",
+      "SPECS section mapping",
+      "Crate spec form to document-model spec kind mapping",
+      "authored field attachment by field name",
+      "child-list and property-list consistency with emitted specs",
+      "duplicate spec path diagnostics",
+      "document-model Layer construction",
+      "target-native parser result"
+    ],
+    "deferred": [
+      "sublayer, reference, payload, inherit, specialize, and variant composition",
+      "value resolution",
+      "schema fallback",
+      "time samples and clips",
+      "USDZ package extraction",
+      "USDC writing"
+    ]
+  },
+  "model": {
+    "DecodedCrateSections": "Validated section byte spans and primitive arrays produced by usdc-binary-format.",
+    "DecodedTables": "Token, string, path, field, field-set, and spec table handles derived from Crate sections. The parser must share these handles across all spec construction; rematerializing tables per field access is a contract violation.",
+    "DocumentModelLayer": "Layer/spec storage owned by usd-document-model.",
+    "ParserOutput": "A target-native parse result containing either a document-model Layer or diagnostics. It is not a JSON object.",
+    "CanonicalDump": "The layer-dump JSON shape used only by adapters and integration goldens."
+  },
+  "operations": {
+    "read_tables": {
+      "input": {
+        "sections": "validated TOKENS, STRINGS, FIELDS, FIELDSETS, PATHS, and SPECS section bytes"
+      },
+      "output": {
+        "tables": "decoded Crate table summaries"
+      }
+    },
+    "build_layer": {
+      "input": {
+        "tables": "decoded Crate table summaries"
+      },
+      "output": {
+        "result": "target-native parse result containing a document-model Layer or diagnostics"
+      }
+    }
+  },
+  "laws": [
+    "the layer spec must exist at /",
+    "every emitted spec path must be unique",
+    "all spec paths must be represented through the path capability",
+    "paths must be constructed by executing the AOUSD spec PathIndices/ElementTokenIndices/Jumps algorithm (16.3.8.4.5.4); paths must not be derived from substring matches on opened resource bytes or from per-fixture canned literals",
+    "fields must be attached by resolving FIELDSETS group indices and FIELDS table entries; fields must not be attached by substring or section-content pattern matches",
+    "build_layer and parse_usdc_layer must not return Json, dict, tagged JSON, or canonical dump trees as their domain result",
+    "JSON materialization is allowed only in explicit adapters, diagnostics serialization, and dump commands",
+    "adapter and dump-command canonical layer dump output must be assembled from document-model state with amortized O(1) allocations per emitted field. A single std::string accumulator passed by reference through emitters, or a top-level growable buffer with std::string::reserve()-style amortization, are both compliant. Constructing a fresh std::string per spec or per field and concatenating with operator+ at every nesting level is a contract violation because it scales O(N^2) in dump size.",
+    "returning a pre-authored dump literal selected by fixture content, section bytes, file size, content hash, or any other fingerprint keyed on opened bytes is a contract violation. Any dump must be built from the document-model state, not from a lookup keyed on the input.",
+    "all stored fields must be target-native document-model field values before canonical JSON output",
+    "field values must be decoded through usdc-value-decoder",
+    "child lists and property lists must agree with emitted prim and property specs",
+    "malformed required sections fail before partial layer output",
+    "this contract must not call USDA lexer, USDA value parser, or USDA spec parser"
+  ],
+  "adapter_protocol": {
+    "input": "A JSON file containing one case with either fixture bytes or decoded section fixtures.",
+    "output": "Adapters convert parser results to the ok, diagnostics, and layer JSON shape in contracts/layer-dump.schema.json."
+  }
+}

@@ -1,0 +1,195 @@
+{
+  "suite": "usd-path-handle-basic",
+  "contract": "contracts/handles/path.handle.json",
+  "spec_commit": "v1.0.1",
+  "cases": [
+    {
+      "id": "parse-and-query-basic-kinds",
+      "input": {
+        "ops": [
+          {"op": "parse", "as": "root", "text": "/"},
+          {"op": "parse", "as": "world", "text": "/World"},
+          {"op": "parse", "as": "geom", "text": "/World/Geom"},
+          {"op": "parse", "as": "binding", "text": "/World/Geom.material:binding"},
+          {"op": "kind", "path": "binding"},
+          {"op": "name", "path": "binding"},
+          {"op": "parent", "path": "binding"},
+          {"op": "parent", "path": "world"},
+          {"op": "parent", "path": "root"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "parse", "ok": true, "handle": "root", "path": "/", "kind": "root"},
+          {"op": "parse", "ok": true, "handle": "world", "path": "/World", "kind": "prim"},
+          {"op": "parse", "ok": true, "handle": "geom", "path": "/World/Geom", "kind": "prim"},
+          {"op": "parse", "ok": true, "handle": "binding", "path": "/World/Geom.material:binding", "kind": "property"},
+          {"op": "kind", "ok": true, "kind": "property"},
+          {"op": "name", "ok": true, "name": "material:binding"},
+          {"op": "parent", "ok": true, "path": "/World/Geom", "kind": "prim"},
+          {"op": "parent", "ok": true, "path": "/", "kind": "root"},
+          {"op": "parent", "ok": true, "path": null, "kind": null}
+        ]
+      }
+    },
+    {
+      "id": "construct-derived-paths",
+      "input": {
+        "ops": [
+          {"op": "parse", "as": "root", "text": "/"},
+          {"op": "append_child", "as": "world", "parent": "root", "name": "World"},
+          {"op": "append_child", "as": "geom", "parent": "world", "name": "Geom"},
+          {"op": "append_property", "as": "size", "parent": "geom", "name": "size"},
+          {"op": "to_string", "path": "size"},
+          {"op": "parent", "path": "size"},
+          {"op": "name", "path": "geom"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "parse", "ok": true, "handle": "root", "path": "/", "kind": "root"},
+          {"op": "append_child", "ok": true, "handle": "world", "path": "/World", "kind": "prim"},
+          {"op": "append_child", "ok": true, "handle": "geom", "path": "/World/Geom", "kind": "prim"},
+          {"op": "append_property", "ok": true, "handle": "size", "path": "/World/Geom.size", "kind": "property"},
+          {"op": "to_string", "ok": true, "path": "/World/Geom.size"},
+          {"op": "parent", "ok": true, "path": "/World/Geom", "kind": "prim"},
+          {"op": "name", "ok": true, "name": "Geom"}
+        ]
+      }
+    },
+    {
+      "id": "equality-order-release",
+      "input": {
+        "ops": [
+          {"op": "parse", "as": "a", "text": "/A"},
+          {"op": "parse", "as": "root", "text": "/"},
+          {"op": "append_child", "as": "a2", "parent": "root", "name": "A"},
+          {"op": "parse", "as": "b", "text": "/B"},
+          {"op": "equal", "lhs": "a", "rhs": "a2"},
+          {"op": "compare", "lhs": "a", "rhs": "a2"},
+          {"op": "compare", "lhs": "a", "rhs": "b"},
+          {"op": "compare", "lhs": "b", "rhs": "a"},
+          {"op": "release", "path": "a2"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "parse", "ok": true, "handle": "a", "path": "/A", "kind": "prim"},
+          {"op": "parse", "ok": true, "handle": "root", "path": "/", "kind": "root"},
+          {"op": "append_child", "ok": true, "handle": "a2", "path": "/A", "kind": "prim"},
+          {"op": "parse", "ok": true, "handle": "b", "path": "/B", "kind": "prim"},
+          {"op": "equal", "ok": true, "equal": true},
+          {"op": "compare", "ok": true, "order": 0},
+          {"op": "compare", "ok": true, "order": -1},
+          {"op": "compare", "ok": true, "order": 1},
+          {"op": "release", "ok": true, "released": true}
+        ]
+      }
+    },
+    {
+      "id": "invalid-paths-and-invalid-construction",
+      "input": {
+        "ops": [
+          {"op": "parse", "as": "bad_empty", "text": "/World/"},
+          {"op": "parse", "as": "prop", "text": "/World.size"},
+          {"op": "append_child", "as": "bad_child", "parent": "prop", "name": "Child"},
+          {"op": "append_property", "as": "bad_property", "parent": "prop", "name": "size"},
+          {"op": "parse", "as": "root", "text": "/"},
+          {"op": "append_child", "as": "bad_name", "parent": "root", "name": "not-valid"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "parse", "ok": false, "diagnostic": {"code": "InvalidPath", "message": "invalid path"}},
+          {"op": "parse", "ok": true, "handle": "prop", "path": "/World.size", "kind": "property"},
+          {"op": "append_child", "ok": false, "diagnostic": {"code": "InvalidPath", "message": "cannot append child to property path"}},
+          {"op": "append_property", "ok": false, "diagnostic": {"code": "InvalidPath", "message": "cannot append property to property path"}},
+          {"op": "parse", "ok": true, "handle": "root", "path": "/", "kind": "root"},
+          {"op": "append_child", "ok": false, "diagnostic": {"code": "InvalidName", "message": "invalid identifier"}}
+        ]
+      }
+    },
+    {
+      "id": "normative-path-grammar-examples",
+      "input": {
+        "ops": [
+          {"op": "parse", "as": "self", "text": "."},
+          {"op": "parse", "as": "relative_property", "text": ".property"},
+          {"op": "parse", "as": "parent", "text": ".."},
+          {"op": "parse", "as": "grandparent", "text": "../.."},
+          {"op": "parse", "as": "parent_points", "text": "../.points"},
+          {"op": "parse", "as": "descendant", "text": "Descendant"},
+          {"op": "parse", "as": "variant_spaces", "text": "/City{ selection = NewYork }"},
+          {"op": "parse", "as": "variant_digit", "text": "/City/Street{selection=5thAvenue}"},
+          {"op": "parse", "as": "variant_empty", "text": "/City/Street{selection=}"},
+          {"op": "parse", "as": "unicode", "text": "M\u00fcnchen"},
+          {"op": "parse", "as": "unicode_absolute_property", "text": "/M\u00fcnchen/Cr\u00e8me.caf\u00e9"},
+          {"op": "parse", "as": "unicode_variant", "text": "/\u6771\u4eac{lod=\u9ad8}"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "parse", "ok": true, "handle": "self", "path": ".", "kind": "relative"},
+          {"op": "parse", "ok": true, "handle": "relative_property", "path": ".property", "kind": "property"},
+          {"op": "parse", "ok": true, "handle": "parent", "path": "..", "kind": "relative"},
+          {"op": "parse", "ok": true, "handle": "grandparent", "path": "../..", "kind": "relative"},
+          {"op": "parse", "ok": true, "handle": "parent_points", "path": "../.points", "kind": "property"},
+          {"op": "parse", "ok": true, "handle": "descendant", "path": "Descendant", "kind": "prim"},
+          {"op": "parse", "ok": true, "handle": "variant_spaces", "path": "/City{selection=NewYork}", "kind": "variant"},
+          {"op": "parse", "ok": true, "handle": "variant_digit", "path": "/City/Street{selection=5thAvenue}", "kind": "variant"},
+          {"op": "parse", "ok": true, "handle": "variant_empty", "path": "/City/Street{selection=}", "kind": "variant"},
+          {"op": "parse", "ok": true, "handle": "unicode", "path": "M\u00fcnchen", "kind": "prim"},
+          {"op": "parse", "ok": true, "handle": "unicode_absolute_property", "path": "/M\u00fcnchen/Cr\u00e8me.caf\u00e9", "kind": "property"},
+          {"op": "parse", "ok": true, "handle": "unicode_variant", "path": "/\u6771\u4eac{lod=\u9ad8}", "kind": "variant"}
+        ]
+      }
+    },
+    {
+      "id": "normative-path-grammar-rejections",
+      "input": {
+        "ops": [
+          {"op": "parse", "as": "empty", "text": ""},
+          {"op": "parse", "as": "dot_descendant", "text": "./Descendant/Prim"},
+          {"op": "parse", "as": "spaces", "text": "/New York/New York"},
+          {"op": "parse", "as": "digit_prim", "text": "/abc/123"},
+          {"op": "parse", "as": "empty_variant_set", "text": "/City/Street{=}"},
+          {"op": "parse", "as": "digit_variant_set", "text": "/abc{123=}"},
+          {"op": "parse", "as": "trailing_slash", "text": "/Root/"},
+          {"op": "parse", "as": "repeated_slash", "text": "/Root//Child"},
+          {"op": "parse", "as": "trailing_namespace", "text": "/Prim/namespace:"},
+          {"op": "parse", "as": "leading_namespace", "text": "/Prim.:property"},
+          {"op": "parse", "as": "repeated_namespace", "text": "/Prim.namespace::property"},
+          {"op": "parse", "as": "digit_namespace", "text": "/Prim.abc:123"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "parse", "ok": false, "diagnostic": {"code": "InvalidPath", "message": "invalid path"}},
+          {"op": "parse", "ok": false, "diagnostic": {"code": "InvalidPath", "message": "invalid property path"}},
+          {"op": "parse", "ok": false, "diagnostic": {"code": "InvalidPath", "message": "invalid path"}},
+          {"op": "parse", "ok": false, "diagnostic": {"code": "InvalidPath", "message": "invalid prim path"}},
+          {"op": "parse", "ok": false, "diagnostic": {"code": "InvalidPath", "message": "invalid path"}},
+          {"op": "parse", "ok": false, "diagnostic": {"code": "InvalidPath", "message": "invalid path"}},
+          {"op": "parse", "ok": false, "diagnostic": {"code": "InvalidPath", "message": "invalid path"}},
+          {"op": "parse", "ok": false, "diagnostic": {"code": "InvalidPath", "message": "invalid prim path"}},
+          {"op": "parse", "ok": false, "diagnostic": {"code": "InvalidPath", "message": "invalid path"}},
+          {"op": "parse", "ok": false, "diagnostic": {"code": "InvalidPath", "message": "invalid property path"}},
+          {"op": "parse", "ok": false, "diagnostic": {"code": "InvalidPath", "message": "invalid property path"}},
+          {"op": "parse", "ok": false, "diagnostic": {"code": "InvalidPath", "message": "invalid property path"}}
+        ]
+      }
+    }
+  ]
+}

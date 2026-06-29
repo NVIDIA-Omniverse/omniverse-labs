@@ -1,0 +1,19 @@
+#usda 1.0
+
+# [snippet:doc-camera-sensor-render-product]
+def "Render" {
+    def RenderProduct "Camera" {
+        int2 resolution = (1920, 1080)
+        rel camera = </World/Camera>
+        rel orderedVars = [<LdrColor>, <HdrColor>]
+
+        def RenderVar "LdrColor" {
+            string sourceName = "LdrColor"
+        }
+
+        def RenderVar "HdrColor" {
+            string sourceName = "HdrColor"
+        }
+    }
+}
+# [/snippet:doc-camera-sensor-render-product]

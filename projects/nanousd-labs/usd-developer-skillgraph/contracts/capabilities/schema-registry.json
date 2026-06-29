@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/schema-registry.json",
+  "title": "USD Schema Registry Capability",
+  "version": "0.1",
+  "spec_tag": "v1.0.1",
+  "spec_commit": "v1.0.1",
+  "spec_source": "aousd/specifications-public@v1.0.1",
+  "purpose": "Describe the implementation-defined runtime input that supplies typed and applied schema definitions used to build prim definitions, schema-defined properties, and schema fallback values.",
+  "scope": {
+    "included": [
+      "runtime registration of typed schema definitions",
+      "runtime registration of applied single and multiple schema definitions",
+      "schema property definitions with kind, metadata fields, and fallback default values",
+      "typed schema base inheritance",
+      "applied schema instance-name substitution for multiple applied schemas",
+      "fallbackPrimTypes substitution for unregistered typed schema names when a registered fallback type is available",
+      "built-in applied schema inclusion lists",
+      "auto-apply schema inclusion lists",
+      "override properties for sparse strengthening of included schema property fields",
+      "schema inclusion and override-property contract diagnostics"
+    ],
+    "deferred": [
+      "file format or plugin mechanism used to discover schema definitions",
+      "schema family version selection beyond exact registered schema names",
+      "domain behavior for concrete schemas such as collections, color, xforms, materials, or geometry"
+    ]
+  },
+  "model": {
+    "SchemaRegistry": "Target-native registry of schema definitions. The AOUSD v1.0.1 schemas chapter leaves ingestion and runtime registration mechanisms implementation-defined.",
+    "SchemaDefinition": "Typed or applied schema declaration containing properties and optional inheritance metadata.",
+    "SchemaPropertyDefinition": "Schema-defined property declaration containing property kind and typed metadata/fallback fields.",
+    "PrimDefinition": "The composed schema context for one composed prim, including schema order and schema-defined property definitions."
+  },
+  "laws": [
+    "schema definition ingestion is an implementation boundary and must not be inferred from OpenUSD registry behavior",
+    "registered schema names, applied schema names, instance names, property names, field names, and type names must use semantic token/name handles rather than parser-local strings in generated domain logic",
+    "schema-defined properties are weaker than authored composed property specs on the prim",
+    "schema built-ins and auto-applies are explicit registry data and must not be inferred from OpenUSD",
+    "override properties may sparsely strengthen included schema properties but must not define new properties or override typeName and variability",
+    "schema fallback defaults must be reported as schema-defined fallback data, not as authored layer opinions",
+    "fallbackPrimTypes is interpreted on the composed prim, not as layer-level schema semantics"
+  ]
+}

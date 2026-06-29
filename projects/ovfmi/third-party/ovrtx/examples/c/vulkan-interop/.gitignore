@@ -1,0 +1,18 @@
+# Build directories
+build/
+_build/
+
+.cache/
+
+# IDE
+.vscode/
+.idea/
+
+# Compiled shaders (generated in build)
+*.spv
+
+# Don't accidentally commit 1.5GB of ovrtx package, or crash logs
+*.7z
+*.zip.toml
+*.zip
+crash*.txt

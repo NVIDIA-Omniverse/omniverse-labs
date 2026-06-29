@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<fmiModelDescription
+  fmiVersion="3.0"
+  modelName="TrajectoryGenerator"
+  description="Circular orbit trajectory generator. Outputs time-varying target position for use with a PD controller."
+  generationTool="ovx-USD-FMI"
+  instantiationToken="{C4A8D3F2-7E95-4B1A-8D6C-2E9F0A47C583}">
+
+  <CoSimulation
+    modelIdentifier="TrajectoryGenerator"
+    canHandleVariableCommunicationStepSize="true"
+    fixedInternalStepSize="1e-3"/>
+
+  <UnitDefinitions>
+    <Unit name="m">
+      <BaseUnit m="1"/>
+    </Unit>
+    <Unit name="rad/s">
+      <BaseUnit s="-1"/>
+    </Unit>
+    <Unit name="rad">
+      <BaseUnit/>
+    </Unit>
+  </UnitDefinitions>
+
+  <TypeDefinitions>
+    <Float64Type name="Position" quantity="Position" unit="m"/>
+    <Float64Type name="AngularVelocity" quantity="AngularVelocity" unit="rad/s"/>
+    <Float64Type name="Angle" quantity="Angle" unit="rad"/>
+  </TypeDefinitions>
+
+  <DefaultExperiment startTime="0" stopTime="30" stepSize="1e-2"/>
+
+  <ModelVariables>
+    <!-- Independent variable (required by FMI 3.0) -->
+    <Float64 name="time" valueReference="9" causality="independent" variability="continuous" description="Simulation time"/>
+
+    <!-- Outputs: target position -->
+    <Float64 name="target_x" valueReference="0" causality="output" variability="continuous" initial="exact" start="1.5" declaredType="Position" description="Target x position (on circular orbit)"/>
+    <Float64 name="target_y" valueReference="1" causality="output" variability="continuous" initial="exact" start="2.0" declaredType="Position" description="Target y position (orbit height)"/>
+    <Float64 name="target_z" valueReference="2" causality="output" variability="continuous" initial="exact" start="0.0" declaredType="Position" description="Target z position (on circular orbit)"/>
+
+    <!-- Parameters: orbit configuration -->
+    <Float64 name="radius"   valueReference="3" causality="parameter" variability="tunable" initial="exact" start="1.5"  declaredType="Position" description="Orbit radius"/>
+    <Float64 name="height"   valueReference="4" causality="parameter" variability="tunable" initial="exact" start="2.0"  declaredType="Position" description="Orbit height (center y)"/>
+    <Float64 name="omega"    valueReference="5" causality="parameter" variability="tunable" initial="exact" start="1.0"  declaredType="AngularVelocity" description="Angular velocity (rad/s)"/>
+    <Float64 name="phase"    valueReference="6" causality="parameter" variability="tunable" initial="exact" start="0.0"  declaredType="Angle" description="Initial phase offset (rad)"/>
+    <Float64 name="center_x" valueReference="7" causality="parameter" variability="tunable" initial="exact" start="0.0"  declaredType="Position" description="Orbit center x"/>
+    <Float64 name="center_z" valueReference="8" causality="parameter" variability="tunable" initial="exact" start="0.0"  declaredType="Position" description="Orbit center z"/>
+  </ModelVariables>
+
+  <ModelStructure>
+    <Output valueReference="0"/>
+    <Output valueReference="1"/>
+    <Output valueReference="2"/>
+  </ModelStructure>
+
+</fmiModelDescription>

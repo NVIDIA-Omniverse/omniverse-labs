@@ -1,0 +1,26 @@
+#usda 1.0
+
+def Scope "RoleTypes"
+{
+    # Point (positional semantics)
+    point3f ptf = (1.0, 2.0, 3.0)
+    point3d ptd = (1.0, 2.0, 3.0)
+
+    # Normal (direction semantics, transforms with inverse transpose)
+    normal3f nf = (0.0, 1.0, 0.0)
+    normal3d nd = (0.0, 1.0, 0.0)
+
+    # Vector (direction semantics)
+    vector3f vf = (1.0, 0.0, 0.0)
+    vector3d vd = (1.0, 0.0, 0.0)
+
+    # Color
+    color3f c3f = (1.0, 0.5, 0.0)
+    color3d c3d = (1.0, 0.5, 0.0)
+    color4f c4f = (1.0, 0.5, 0.0, 1.0)
+    color4d c4d = (1.0, 0.5, 0.0, 1.0)
+
+    # TexCoord
+    texCoord2f tc2f = (0.5, 0.5)
+    texCoord2d tc2d = (0.5, 0.5)
+}

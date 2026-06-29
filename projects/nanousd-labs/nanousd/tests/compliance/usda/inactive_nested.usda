@@ -1,0 +1,15 @@
+#usda 1.0
+
+def Xform "Parent" {
+    def Xform "Inactive" (
+        active = false
+    ) {
+        def Mesh "ActiveChild" {
+            float value = 1.0
+        }
+    }
+
+    def Mesh "ActiveSibling" {
+        float value = 2.0
+    }
+}

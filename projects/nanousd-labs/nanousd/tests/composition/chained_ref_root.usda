@@ -1,0 +1,8 @@
+#usda 1.0
+
+def Xform "Prim" (
+    prepend references = @./chained_ref_a.usda@</A>
+)
+{
+    string opinion = "root"
+}

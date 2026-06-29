@@ -1,0 +1,50 @@
+#usda 1.0
+# Line comment after header
+
+// C++-style line comment
+
+/* Block comment on one line */
+
+/*
+  Multi-line
+  block comment
+*/
+
+def /* inline block comment */ Xform "Root"
+{
+    # Comment before property
+    float size = 1.0 # Comment after value (this is NOT a comment in standard grammar, but parsed as end-of-line)
+
+    // Another comment style
+    int count = /* inline */ 5
+
+    /* Multi-line
+       inline comment */ double weight = 2.0
+}
+
+def Scope "WhitespaceVariations"
+{
+    # Extra whitespace around operators
+    float    a    =    1.0
+    int      b    =    2
+
+    # Minimal whitespace
+    float c=3.0
+
+    # Tab-indented
+	float d = 4.0
+
+    # Semicolons as separators
+    float e = 5.0; float f = 6.0; int g = 7
+}
+
+def Scope "EmptyBody"
+{
+}
+
+def Scope "NestedEmpty"
+{
+    def Scope "AlsoEmpty"
+    {
+    }
+}

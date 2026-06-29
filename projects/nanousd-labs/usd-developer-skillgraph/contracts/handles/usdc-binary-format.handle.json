@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/usdc-binary-format.handle.json",
+  "title": "USDC Binary Format Unit Contract",
+  "version": "0.1",
+  "spec_commit": "6b4f01f2d6d46b01507481524eb516b4ef358c31",
+  "performance_contracts": [
+    "contracts/performance/usdc.performance.json"
+  ],
+  "version_policy": {
+    "accepted_reader_range": {
+      "major": 0,
+      "minor_min": 8,
+      "minor_max": 12,
+      "patch": "any"
+    },
+    "feature_decoding": {
+      "minor_lt_10": "all required Crate value types and sections used by AOUSD 1.0.1 readers must be decoded",
+      "minor_ge_10": "the version triple must be accepted, but value types introduced at minor 10 or later (Splines, Relocates, PathExpression) may emit a clear UnsupportedUsdcFeature diagnostic rather than be decoded"
+    },
+    "rejection": "version triples with major != 0, minor < 8, or minor > 12 must be rejected before any section interpretation"
+  },
+  "scope": {
+    "included": [
+      "byte cursor with strict bounds checks",
+      "little-endian integer and floating-point primitive reads",
+      "PXR-USDC header validation",
+      "Crate version validation for minor 8 through 12",
+      "bootstrap metadata reads",
+      "table-of-contents section reads",
+      "section offset and size validation",
+      "non-owning section byte views into the opened resource",
+      "O(1) section addressing by standard section kind",
+      "LZ4 buffer envelope decoding boundary",
+      "compressed integer array decoding boundary"
+    ],
+    "deferred": [
+      "mapping decoded sections into USD document specs",
+      "Crate value representation decoding",
+      "USDC writing",
+      "USDZ package reads",
+      "Crate versions with major != 0 or minor < 8 or minor > 12",
+      "0.10.0+ feature value-type decoding (Splines, Relocates, PathExpression)"
+    ]
+  },
+  "model": {
+    "OpenedResourceByteView": "Non-owning byte view plus opaque owner of the opened USDC resource bytes. The decoder must not copy this opened resource to advance through sections.",
+    "ByteCursor": "Target-native cursor over the OpenedResourceByteView byte view. Reads advance only after validating bounds and operate on non-owning bytes.",
+    "UsdcHeader": "Magic bytes, version triple (major, minor, patch), and bootstrap pointer metadata required before section reads.",
+    "UsdcToc": "Table of contents mapping Crate section names to validated byte ranges inside the same payload. TOC entries are read as raw uncompressed bytes (8B section count + N x 32B entries); only section-internal payloads (TOKENS data, FIELDS value reps, compressed integer arrays in FIELDSETS/PATHS/SPECS) are LZ4-compressed.",
+    "SectionTable": "Validated mapping from standard section kind (TOKENS, STRINGS, FIELDS, FIELDSETS, PATHS, SPECS) to byte views in the opened resource. Lookup is O(1) by section kind.",
+    "UsdcSectionBytes": "Non-owning validated byte view for one table-of-contents section, sourced from the OpenedResourceByteView.",
+    "CompressedIntArray": "Crate integer array representation decoded into target-native signed or unsigned integer vectors before higher-level section interpretation."
+  },
+  "operations": {
+    "validate_header": {
+      "input": {
+        "bytes": "complete opened USDC resource bytes"
+      },
+      "output": {
+        "version": "decoded Crate version triple (major, minor, patch)",
+        "tocOffset": "validated table-of-contents offset"
+      }
+    },
+    "read_toc": {
+      "input": {
+        "bytes": "complete opened USDC resource bytes",
+        "tocOffset": "validated table-of-contents offset"
+      },
+      "output": {
+        "sections": "array of section name, offset, and byte size entries",
+        "sectionTable": "O(1)-addressable SectionTable indexed by standard section kind"
+      }
+    },
+    "section_bytes": {
+      "input": {
+        "section": "section name or section kind from a validated table of contents"
+      },
+      "output": {
+        "bytes": "validated non-owning section byte view"
+      }
+    },
+    "decode_lz4_buffer": {
+      "input": {
+        "bytes": "Crate compressed buffer envelope"
+      },
+      "output": {
+        "bytes": "decompressed bytes"
+      }
+    },
+    "decode_compressed_int_array": {
+      "input": {
+        "bytes": "Crate compressed integer array payload",
+        "elementType": "signed or unsigned integer width"
+      },
+      "output": {
+        "values": "decoded target-native integer array"
+      }
+    }
+  },
+  "laws": [
+    "all multi-byte numeric reads are little-endian",
+    "all multi-byte numeric reads use a single little-endian word read; byte-at-a-time loops in the hot path are a contract violation",
+    "invalid magic bytes fail before any section interpretation",
+    "version triples outside the accepted reader range (major 0, minor 8 through 12) fail before any section interpretation",
+    "all table-of-contents offsets and sizes must lie within the opened resource byte view",
+    "integer overflow in offset, size, count, or decompressed-size arithmetic is an error",
+    "standard TOC sections are addressable by section kind in O(1) after read_toc",
+    "section bytes are returned as non-owning views into the opened resource byte view; copies are not permitted in the hot path",
+    "section bytes are returned only from validated table-of-contents entries",
+    "the binary-format unit must not expose a helper that searches the full opened resource as text, since such helpers exist only to bypass section traversal",
+    "this contract does not create USD specs, paths, tokens, fields, or canonical layer dumps"
+  ],
+  "adapter_protocol": {
+    "input": "A JSON file containing one case with an ops array. Binary payloads are supplied as fixture paths or hex strings.",
+    "output": "A JSON object with ok, diagnostics, and results."
+  }
+}

@@ -1,0 +1,15 @@
+build/
+build-sanitize/
+backends/OpenUSD
+err.txt
+out.txt
+.claude
+# Ignore build/runtime artifacts
+core.*
+__pycache__/
+*.pyc
+sim_frames_hd/
+dry_run.sh
+AUDIT-REPORT.md
+.azDownload-*
+nv-internal-planning-docs/mdpdf.log

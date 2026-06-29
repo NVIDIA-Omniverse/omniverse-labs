@@ -1,0 +1,15 @@
+#usda 1.0
+
+def Scope "Source"
+{
+    double value.timeSamples = {
+        0: 0,
+        10: 10,
+    }
+}
+
+def Scope "Prim" (
+    payload = </Source> (offset = 10; scale = -1)
+)
+{
+}

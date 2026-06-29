@@ -1,0 +1,16 @@
+#usda 1.0
+
+def Xform "World" (
+    inherits = </Base>
+    kind = "component"
+    payload = @./payload.usda@</Inner>
+    references = @./asset.usda@</Source>
+    specializes = </Specialized>
+    variants = {
+        string style = "red"
+    }
+    variantSets = "style"
+)
+{
+}
+

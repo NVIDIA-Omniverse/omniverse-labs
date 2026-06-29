@@ -1,0 +1,17 @@
+#usda 1.0
+(
+    defaultPrim = "Root"
+)
+
+def Xform "Root" {
+    float height = 5.0
+    double width = 10.0
+    int count = 3
+    string label = "hello"
+    float3 position = (1, 2, 3)
+
+    float animated.timeSamples = {
+        1: 10.0,
+        2: 20.0,
+    }
+}

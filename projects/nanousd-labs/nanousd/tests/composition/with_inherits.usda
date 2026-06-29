@@ -1,0 +1,119 @@
+#usda 1.0
+(
+    "Inherits-arc test fixture (composition arc resolution)."
+    "Mirrors the spec-audited cases from"
+    " proof/sandboxes/inherits/goldens/inherits-basic.json"
+    " on branch aluk/phase-2-regeneration-proof, plus the chained"
+    " inherit regression that follows the same spec rule as specializes."
+    " Cycle cases use a different cycle-handling convention here than"
+    " the sandbox impl; both are spec-permissible per the spec-silent"
+    " note in the regen's spec-ambiguity-notes.md)."
+)
+
+# case: single_inherit — /A inherits /B; /A merges B's opinions.
+def "Single_A" (
+    inherits = </Single_B>
+)
+{
+    int aVal = 1
+}
+def "Single_B"
+{
+    int bVal = 2
+    int shared = 10
+}
+
+# case: multi_target_inherit — list-op order preserved (first strongest).
+def "Multi_A" (
+    inherits = [</Multi_B>, </Multi_C>]
+)
+{
+}
+def "Multi_B"
+{
+    int bVal = 1
+    int conflict = 100
+}
+def "Multi_C"
+{
+    int cVal = 2
+    int conflict = 200
+}
+
+# case: dangling_target — composition error per spec §10.5.1 lines 459-461.
+def "Dangling_A" (
+    inherits = </Missing_For_Dangling>
+)
+{
+}
+
+# case: inherit_deeper_namespace — target lives under /Lib.
+def "Deeper_A" (
+    inherits = </Lib/Base>
+)
+{
+}
+def "Lib"
+{
+    def "Base"
+    {
+        int baseVal = 42
+    }
+}
+
+# case: inherit_from_prim_with_no_inherits — terminal target, no chain.
+def "NoChain_A" (
+    inherits = </NoChain_B>
+)
+{
+}
+def "NoChain_B"
+{
+    int val = 1
+}
+
+# case: inherit_namespace_mapping — /B's children become /A's children.
+def "Mapping_A" (
+    inherits = </Mapping_B>
+)
+{
+}
+def "Mapping_B"
+{
+    int parentVal = 1
+    def "Child"
+    {
+        int childVal = 2
+    }
+}
+
+# case: inherit_opinions_weaker_than_direct — direct authoring wins per LIVRPS.
+def "Strength_A" (
+    inherits = </Strength_B>
+)
+{
+    int val = 1
+}
+def "Strength_B"
+{
+    int val = 999
+}
+
+# case: chained_inherit - /A inherits /B; /B inherits /C.
+# Each level walks the next, so /A's resolved opinions include both /B's
+# and /C's contributions, all under /A's namespace via composed mappings.
+def "Chained_A" (
+    inherits = </Chained_B>
+)
+{
+}
+def "Chained_B" (
+    inherits = </Chained_C>
+)
+{
+    int bVal = 2
+}
+def "Chained_C"
+{
+    int cVal = 3
+}

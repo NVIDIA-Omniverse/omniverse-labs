@@ -1,0 +1,43 @@
+#usda 1.0
+
+# Instancing + variants interaction (spec §11.2 + §11.3).
+#
+# Both /InstanceHigh and /InstanceLow reference the same asset
+# (instancing_variant_target.usda@</Template>) and are marked
+# instanceable. But each selects a different variant of the "lod"
+# variant set, so their composed bodies differ — /InstanceHigh has a
+# HighChild subprim and fromVariant=100; /InstanceLow has fromVariant=10
+# and no HighChild. Per §11.3 their prototypes must therefore differ.
+#
+# /InstanceHighAlt also selects "high" from the same reference — it
+# should share a prototype with /InstanceHigh (same composed body).
+
+def Xform "InstanceHigh" (
+    instanceable = true
+    prepend references = @./instancing_variant_target.usda@</Template>
+    variants = {
+        string lod = "high"
+    }
+)
+{
+}
+
+def Xform "InstanceHighAlt" (
+    instanceable = true
+    prepend references = @./instancing_variant_target.usda@</Template>
+    variants = {
+        string lod = "high"
+    }
+)
+{
+}
+
+def Xform "InstanceLow" (
+    instanceable = true
+    prepend references = @./instancing_variant_target.usda@</Template>
+    variants = {
+        string lod = "low"
+    }
+)
+{
+}

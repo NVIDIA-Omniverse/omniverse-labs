@@ -1,0 +1,17 @@
+#usda 1.0
+
+def "Mat"
+{
+}
+
+def "Mesh"
+{
+    rel material:binding = </Mat> (
+        bindMaterialAs = "strongerThanDescendants"
+    )
+}
+
+def "Anim"
+{
+    double height.timeSamples = { 1: 0.0, 2: 5.0, 3: 10.0 }
+}

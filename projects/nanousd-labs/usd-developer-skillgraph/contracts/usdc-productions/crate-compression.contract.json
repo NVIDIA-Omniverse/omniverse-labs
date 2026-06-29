@@ -1,0 +1,150 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/usdc-productions/crate-compression.contract.json",
+  "title": "Crate Compression Production Contract",
+  "version": "0.1",
+  "spec_commit": "6b4f01f2d6d46b01507481524eb516b4ef358c31",
+  "owned_by": "usdc-binary-format",
+  "spec_refs": [
+    "specification/file_formats/README.md#lz4-compression",
+    "specification/file_formats/README.md#compressed-integer-arrays",
+    "specification/file_formats/README.md#compressed-floating-point-arrays"
+  ],
+  "scope": {
+    "included": [
+      "LZ4 buffer envelope decoding with 0-chunk and N-chunk forms",
+      "Compressed integer array decoding for 32-bit and 64-bit element widths",
+      "Two-level structure (outer LZ4 envelope around inner codepoint encoding)",
+      "Codepoint table dispatch (00, 01, 10, 11) with width-pair semantics",
+      "Signed common value regardless of array signedness",
+      "Compressed float array primitives reusable by usdc-value-decoder"
+    ],
+    "deferred": [
+      "value type dispatch (owned by usdc-value-decoder)",
+      "section traversal (owned by usdc-spec-parser)",
+      "compressed float lookup-table 't' form value canonicalization (the integer-indices substream is owned here; value emission is owned by usdc-value-decoder)"
+    ]
+  },
+  "lz4_buffer": {
+    "errata_ref": "docs/usdc-spec-errata.md#2-lz4-envelope-uses-tffastcompression-framing-not-the-specs-u64u64-framing",
+    "errata_note": "AOUSD §16.3.7.1 prose suggests a u64 chunk count + per-chunk u64 size. Real .usdc files (from the reference USD writer's pxr_lz4::CompressToBuffer / TfFastCompression) use a u8 chunk count + per-chunk i32 size. The TfFastCompression framing below is normative for this repository; the spec text is the errata. A reader must not also accept the spec-text u64+u64 framing as a fallback for the same reason given in the value-representation flag-bit errata: tolerating both layouts hides the divergence and lets one decoder pass two contradictory suites.",
+    "envelope_layout": {
+      "chunk_count": {
+        "size_bytes": 1,
+        "value": "unsigned 8-bit integer"
+      },
+      "zero_chunk_form": {
+        "condition": "chunk_count == 0",
+        "payload": "the remainder of the buffer is one LZ4 stream decompressed as a whole"
+      },
+      "multi_chunk_form": {
+        "condition": "chunk_count > 0",
+        "payload": "chunk_count chunks; each chunk is prefixed by a 4B signed 32-bit little-endian compressed size followed by that many LZ4-compressed bytes"
+      }
+    },
+    "laws": [
+      "decode_lz4_buffer must accept both chunk_count == 0 and chunk_count > 0 forms; rejecting either is a contract violation",
+      "implementations must use a real LZ4 decoder (lz4_decompress_safe or equivalent); a byte-at-a-time interpreter is a contract violation per the performance contract",
+      "the LZ4 envelope uses TfFastCompression framing (u8 chunk count, per-chunk i32 size) as normative for this repository; see docs/usdc-spec-errata.md#2. Accepting the spec-text u64+u64 framing as a fallback is a contract violation."
+    ]
+  },
+  "compressed_integer_array": {
+    "outer_envelope": {
+      "compressed_size": {
+        "size_bytes": 8,
+        "value": "unsigned 64-bit little-endian integer"
+      },
+      "lz4_payload": "compressed_size bytes of LZ4-compressed data following the size field; the decompressed bytes form the inner codepoint encoding"
+    },
+    "inner_encoding": {
+      "common_value": {
+        "size_bytes_for_int32_array": 4,
+        "size_bytes_for_int64_array": 8,
+        "signedness": "stored as the signed version of the array's integer width regardless of whether the array element type is signed or unsigned",
+        "purpose": "the most common value in the array of differences; used when codepoint 00 is decoded"
+      },
+      "codepoints": {
+        "bit_width_per_value": 2,
+        "stream_layout": "packed 2-bit codes, one per array element, padded to a byte boundary at the end",
+        "padding_bits": "zero",
+        "table": {
+          "00": {
+            "name": "Use the Common Value",
+            "stored_bytes_for_int32_array": 0,
+            "stored_bytes_for_int64_array": 0,
+            "decoded_difference": "common_value"
+          },
+          "01": {
+            "name": "Quarter width signed integer",
+            "stored_bytes_for_int32_array": 1,
+            "stored_bytes_for_int64_array": 2,
+            "decoded_difference_type": "signed int8 for 32-bit arrays; signed int16 for 64-bit arrays"
+          },
+          "10": {
+            "name": "Half width signed integer",
+            "stored_bytes_for_int32_array": 2,
+            "stored_bytes_for_int64_array": 4,
+            "decoded_difference_type": "signed int16 for 32-bit arrays; signed int32 for 64-bit arrays"
+          },
+          "11": {
+            "name": "Full width signed integer",
+            "stored_bytes_for_int32_array": 4,
+            "stored_bytes_for_int64_array": 8,
+            "decoded_difference_type": "signed int32 for 32-bit arrays; signed int64 for 64-bit arrays"
+          }
+        }
+      },
+      "values_stream": "concatenated per-codepoint values in the order their codepoints appear; codepoint 00 contributes no bytes",
+      "delta_reconstruction": "running sum of decoded differences; the first difference is added to 0 (§16.3.7.2.2: 'If no previous value exists, it starts at 0')"
+    },
+    "supported_widths": ["int32", "uint32", "int64", "uint64"],
+    "laws": [
+      "the outer envelope is LZ4 (with an 8B compressed-size prefix); skipping the LZ4 decompression step is a contract violation",
+      "common value is signed at the array's element width even when the array element type is unsigned; reading common value as unsigned produces wrong deltas for negative jumps",
+      "codepoint width pairs differ between 32-bit and 64-bit arrays (01/10/11 ⇒ i8/i16/i32 for 32b vs i16/i32/i64 for 64b); using the same width pair for both is a contract violation",
+      "codepoint stream padding must be zero-padded to a byte boundary; non-zero padding is an error",
+      "decoding is linear in the element count using table dispatch; per-element branch chains on the 2-bit code are a contract violation per the performance contract"
+    ]
+  },
+  "compressed_float_array": {
+    "encoding_char": {
+      "size_bytes": 1,
+      "values": {
+        "i": "integer-encoded — uses the compressed integer array path on the array's integer-equivalent width",
+        "t": "lookup-table-encoded — followed by 4B LUT count, count * sizeof(element) value bytes, then a compressed integer array of indices into the LUT"
+      }
+    },
+    "i_form": {
+      "description": "the float array is representable losslessly as an integer array; the binary-format unit provides the integer values, and usdc-value-decoder canonicalizes them as the requested float type",
+      "primitive_reuse": "this contract's compressed integer array primitives are reused; usdc-value-decoder must not reimplement the codepoint decoder"
+    },
+    "t_form": {
+      "lut_count": "unsigned 32-bit integer giving the number of distinct values in the LUT",
+      "lut_values": "lut_count contiguous values of the float type's underlying size (4B for float, 8B for double, 2B for half)",
+      "lut_indices": "a compressed integer array of length equal to the array's element count, each entry an Index into the LUT",
+      "primitive_reuse": "the index substream uses this contract's compressed integer array primitive on uint32"
+    },
+    "laws": [
+      "i-form compressed float arrays must reuse this contract's compressed integer array decoder; reimplementing the codepoint decoder in usdc-value-decoder is a contract violation",
+      "t-form lookup table indices are compressed integer arrays of uint32 (Index); they must use this contract's decoder"
+    ]
+  },
+  "laws": [
+    "this contract owns LZ4 envelopes and compressed integer array decoding; section traversal and value canonicalization are deferred",
+    "all numeric reads are single little-endian word reads; byte-at-a-time scalar loops in the hot path are a contract violation per the performance contract",
+    "decompression output is owned (mmap-backed input cannot be aliased after LZ4 decompression); the owned decompressed buffer is exposed to consumers as a non-owning view for the lifetime of the read"
+  ],
+  "golden_groups": [
+    "LZ4 buffer with chunk_count == 0",
+    "LZ4 buffer with chunk_count > 0 (multi-chunk)",
+    "compressed integer array exercising codepoints 01, 10, 11 in the same payload (int32 width)",
+    "compressed integer array exercising codepoints 01, 10, 11 in the same payload (int64 width)",
+    "compressed integer array with codepoint 00 (common value) for at least one element",
+    "compressed integer array on an unsigned target with a negative common value (signedness boundary)",
+    "compressed float array, i-form (round-trip)",
+    "compressed float array, t-form (LUT) with at least three repeated values to exercise dedup"
+  ],
+  "golden_files": [
+    "goldens/unit/usdc-binary-format/binary-format.json"
+  ]
+}

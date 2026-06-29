@@ -1,0 +1,12 @@
+#usda 1.0
+(
+    subLayers = [
+        @./api_base.usda@
+    ]
+)
+
+over "Prim" (
+    prepend apiSchemas = ["ColorSpaceAPI"]
+)
+{
+}

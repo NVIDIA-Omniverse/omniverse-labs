@@ -1,0 +1,16 @@
+# Cache directory for verify_rendering_correctness.py captures.
+#
+# The Vulkan-side .npy interop dumps are 64 MB raw per buffer (per-env
+# layout: 4096 envs * 64*64*4 bytes); too large for git. Regenerated on
+# every run that doesn't have a matching cached stamp.
+#
+# The Newton 16-env RGB reference (newton_16env/capture_newton_16env_rgb.npy)
+# is only 192 KB and is renderer-independent, so we DO commit it so the
+# suite has a reference baseline on a fresh checkout.
+#
+# JSON summaries + stamp.json files are small and worth keeping in
+# version control so behaviour deltas across machines / branches are
+# tracked.
+vulkan_*/capture_*.npy
+vulkan_*/*.ppm
+

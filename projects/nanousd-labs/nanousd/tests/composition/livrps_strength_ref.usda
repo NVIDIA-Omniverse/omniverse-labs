@@ -1,0 +1,12 @@
+#usda 1.0
+
+class "RefClass"
+{
+    int authoredVsImpliedVal = 30
+}
+
+def "Ref" (
+    inherits = </RefClass>
+)
+{
+}

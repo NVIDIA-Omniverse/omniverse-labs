@@ -1,0 +1,195 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/usdc-productions/crate-section-layouts.contract.json",
+  "title": "Crate Section Layouts Production Contract",
+  "version": "0.1",
+  "spec_commit": "6b4f01f2d6d46b01507481524eb516b4ef358c31",
+  "owned_by": "usdc-spec-parser",
+  "spec_refs": [
+    "specification/file_formats/README.md#tokens-section",
+    "specification/file_formats/README.md#strings-section",
+    "specification/file_formats/README.md#fields-section",
+    "specification/file_formats/README.md#field-sets-section",
+    "specification/file_formats/README.md#paths-section",
+    "specification/file_formats/README.md#path-construction-algorithm",
+    "specification/file_formats/README.md#specs-section",
+    "specification/file_formats/README.md#index"
+  ],
+  "scope": {
+    "included": [
+      "TOKENS section parsing into a token table",
+      "STRINGS section parsing into a string table (indices into TOKENS)",
+      "FIELDS section parsing into a fields table (token-name + value representation pairs)",
+      "FIELDSETS section parsing into field-group ranges terminated by 0xFFFFFFFF",
+      "PATHS section parsing into a path table via the spec PathIndices/ElementTokenIndices/Jumps algorithm",
+      "SPECS section parsing into per-spec form and field-set associations",
+      "spec form table mapping to document-model spec kinds",
+      "document-model construction through usd-document-model",
+      "canonical dump emission from the populated document-model layer"
+    ],
+    "deferred": [
+      "Crate byte-level decoding (owned by usdc-binary-format)",
+      "value representation decoding (owned by usdc-value-decoder)",
+      "composition, value resolution, schema fallback, stage population, USDC writing"
+    ]
+  },
+  "index_type": {
+    "name": "Index",
+    "size_bytes": 4,
+    "encoding": "unsigned 32-bit little-endian integer",
+    "purpose": "lookup into TOKENS, STRINGS, FIELDS, FIELDSETS, PATHS, SPECS tables",
+    "sentinels": {
+      "0xFFFFFFFF": "FIELDSETS group terminator (also expressible as signed -1)"
+    }
+  },
+  "section_layouts": {
+    "TOKENS": {
+      "layout": [
+        {"name": "num_tokens", "size_bytes": 8, "type": "uint64"},
+        {"name": "uncompressed_size", "size_bytes": 8, "type": "uint64"},
+        {"name": "compressed_size", "size_bytes": 8, "type": "uint64"},
+        {"name": "data", "size_bytes": "compressed_size", "type": "LZ4-compressed bytes that decompress to a series of NUL-terminated UTF-8 tokens"}
+      ],
+      "requirements": [
+        "the first token at index 0 must not be referenced by other sections; readers preserve it but do not require it to be a specific value",
+        "tokens are UTF-8 encoded and NUL-delimited inside the decompressed buffer",
+        "the decompressed buffer length must match uncompressed_size"
+      ]
+    },
+    "STRINGS": {
+      "layout": [
+        {"name": "num_indices", "size_bytes": 8, "type": "uint64"},
+        {"name": "indices", "size_bytes": "num_indices * 4", "type": "contiguous Index values into the TOKENS table"}
+      ],
+      "requirements": [
+        "TOKENS must be processed before STRINGS",
+        "indices outside the TOKENS table range are an error"
+      ]
+    },
+    "FIELDS": {
+      "layout": [
+        {"name": "num_fields", "size_bytes": 8, "type": "uint64"},
+        {"name": "compressed_indices", "size_bytes": "Compressed Integer Array (Index width)", "type": "compressed array of Token indices for field names"},
+        {"name": "data_size", "size_bytes": 8, "type": "uint64"},
+        {"name": "compressed_value_reps", "size_bytes": "data_size", "type": "LZ4-compressed value representation records"}
+      ],
+      "requirements": [
+        "TOKENS must be processed before FIELDS",
+        "the number of decoded value representations must equal num_fields",
+        "each field is (token-name Index, value-representation 8B word) for consumers' downstream lookup"
+      ]
+    },
+    "FIELDSETS": {
+      "layout": [
+        {"name": "num_indices", "size_bytes": 8, "type": "uint64"},
+        {"name": "compressed_indices", "size_bytes": "Compressed Integer Array (Index width)", "type": "flat Index array into FIELDS with 0xFFFFFFFF group terminators"}
+      ],
+      "requirements": [
+        "FIELDS must be processed before FIELDSETS",
+        "group terminators (0xFFFFFFFF) split the flat array into ordered field-id groups; each group is one FieldSet",
+        "every FieldSet index referenced by SPECS must point at the start of a group (immediately after a 0xFFFFFFFF or at index 0)"
+      ]
+    },
+    "PATHS": {
+      "layout": [
+        {"name": "num_paths", "size_bytes": 8, "type": "uint64"},
+        {"name": "path_indices", "size_bytes": "Compressed Integer Array (Index width)", "type": "compressed array of Index values"},
+        {"name": "element_token_indices", "size_bytes": "Compressed Integer Array (signed int32)", "type": "compressed array of signed 32-bit integers"},
+        {"name": "jumps", "size_bytes": "Compressed Integer Array (signed int32)", "type": "compressed array of signed 32-bit integers"}
+      ],
+      "requirements": [
+        "TOKENS must be processed before PATHS",
+        "the three arrays have equal length equal to num_paths",
+        "element_token_indices are signed: positive ⇒ prim path component (/ delimiter); negative ⇒ property path component (. delimiter); absolute value indexes into TOKENS",
+        "element_token_indices must never reference TOKENS index 0",
+        "jumps values: > 0 ⇒ sibling offset; 0 ⇒ index has only siblings; -1 ⇒ index has only a child; -2 ⇒ leaf",
+        "paths are reconstructed via the PathIndices/ElementTokenIndices/Jumps algorithm (§16.3.8.4.5.4); the output array is pre-allocated and filled out-of-order at the position given by path_indices"
+      ]
+    },
+    "SPECS": {
+      "layout": [
+        {"name": "num_specs", "size_bytes": 8, "type": "uint64"},
+        {"name": "path_indices", "size_bytes": "Compressed Integer Array (Index width)", "type": "compressed array of indices into PATHS"},
+        {"name": "field_set_indices", "size_bytes": "Compressed Integer Array (Index width)", "type": "compressed array of indices into FIELDSETS (must point at group starts)"},
+        {"name": "forms", "size_bytes": "Compressed Integer Array (uint32)", "type": "compressed array of spec form identifiers"}
+      ],
+      "spec_form_table": {
+        "normative": {
+          "0": "Unknown (inert)",
+          "1": "Attribute",
+          "6": "Prim",
+          "7": "Layer",
+          "8": "Relationship",
+          "10": "Variant",
+          "11": "VariantSet"
+        },
+        "compatibility": {
+          "2": "Connection",
+          "3": "Expression",
+          "4": "Mapper",
+          "5": "MapperArg",
+          "9": "RelationshipTarget"
+        }
+      },
+      "requirements": [
+        "PATHS, FIELDS, FIELDSETS, and TOKENS must be processed before SPECS",
+        "the three arrays have equal length equal to num_specs",
+        "unknown spec forms (value 0) are processed but inert; values outside the normative+compatibility table are an error",
+        "compatibility forms (2, 3, 4, 5, 9) may be consumed and their fields may be ignored without diagnostic"
+      ]
+    }
+  },
+  "path_construction_algorithm": {
+    "summary": "paths are reconstructed by the recursive algorithm specified in §16.3.8.4.5.4, using the three PATHS arrays",
+    "steps": [
+      "preallocate an output array of length num_paths",
+      "starting index X = 0 with an empty parent path",
+      "if the parent path is empty, set parent path and current path to '/' (absolute root)",
+      "otherwise look up path_indices[X], element_token_indices[X], jumps[X]",
+      "construct the current path by appending the token (resolved via |element_token_indices[X]| in TOKENS) to the parent path with '/' for positive or '.' for negative element_token_indices",
+      "store the resulting path in the output array at the path_indices[X] position",
+      "if jumps[X] == -2, stop (leaf)",
+      "if jumps[X] >= 0, recurse starting at index X + jumps[X] with the same parent path (sibling)",
+      "set parent path to the just-stored output array entry and continue with X+1 (child)"
+    ],
+    "laws": [
+      "paths must be reconstructed by executing this algorithm; deriving paths from substring matches on the opened payload or from fixture-content matches is a contract violation",
+      "the output is pre-allocated and filled out-of-order at path_indices positions; building the output sequentially in the order the arrays are walked is a contract violation when the path_indices are not the identity permutation"
+    ]
+  },
+  "document_model_storage": {
+    "layer_spec": "the layer spec is materialized at path '/' through usd-document-model",
+    "prim_specs": "form 6 specs are stored as prim specs through usd-document-model.add_prim",
+    "attribute_specs": "form 1 specs are stored as attribute specs through usd-document-model.add_attribute",
+    "relationship_specs": "form 8 specs are stored as relationship specs through usd-document-model.add_relationship",
+    "variant_set_specs": "form 11 specs are stored as variant-set specs through usd-document-model",
+    "variant_specs": "form 10 specs are stored as variant specs through usd-document-model",
+    "fields": "each field name is resolved through TOKENS, the value is decoded by usdc-value-decoder, and the (name, value) pair is set on the spec through usd-document-model.set_field"
+  },
+  "laws": [
+    "section traversal is owned by this contract; usdc-binary-format provides validated section byte views and usdc-value-decoder provides decoded values",
+    "paths must be constructed by executing the AOUSD spec PathIndices/ElementTokenIndices/Jumps algorithm; paths must not be derived from substring matches on the opened payload or from per-fixture canned literals",
+    "fields must be attached by resolving FIELDSETS group indices and FIELDS table entries; substring or section-content pattern matches are a contract violation",
+    "TOKENS, STRINGS, FIELDS, FIELDSETS, and PATHS tables must be shared as handles across all spec construction; rematerializing tables per field access is a contract violation",
+    "the FIELDSETS group terminator is exactly 0xFFFFFFFF (uint32 max); using any other sentinel is a contract violation",
+    "the canonical layer dump must be assembled by emitting fields from usd-document-model into a single growable output buffer; returning a pre-authored dump literal selected by section bytes or fixture name is a contract violation",
+    "unknown spec forms (value 0) are stored as inert; values outside the normative+compatibility table fail with MalformedUsdcSpecForm",
+    "duplicate spec paths are rejected with the canonical DuplicateSpecPath diagnostic"
+  ],
+  "golden_groups": [
+    "empty layer (only the layer spec at /)",
+    "one root prim with specifier=def and typeName=Xform",
+    "nested prims with attribute defaults (scalar, vector, list)",
+    "relationship target PathListOp values",
+    "duplicate spec path produces DuplicateSpecPath",
+    "PATHS section with out-of-order path_indices to exercise the pre-allocation requirement",
+    "TOKENS-table reuse across attributes (two attributes with the same typeName)",
+    "FIELDSETS with multiple groups separated by 0xFFFFFFFF",
+    "spec form 0 (Unknown) is processed as inert",
+    "spec form outside the normative+compatibility table produces MalformedUsdcSpecForm"
+  ],
+  "golden_files": [
+    "goldens/unit/usdc-spec-parser/spec-parser.json",
+    "goldens/integration/usdc-single-layer/basic.json"
+  ]
+}

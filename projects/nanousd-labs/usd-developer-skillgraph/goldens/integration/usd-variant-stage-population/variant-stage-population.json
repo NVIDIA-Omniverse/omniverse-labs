@@ -1,0 +1,168 @@
+{
+  "suite": "usd-variant-stage-population",
+  "contract": "contracts/handles/stage-population.handle.json",
+  "spec_tag": "v1.0.1",
+  "spec_commit": "v1.0.1",
+  "cases": [
+    {
+      "id": "selected-variant-tree-populates-stage",
+      "input": {
+        "rootLayer": {
+          "identifier": "root.usda",
+          "fields": {
+            "primChildren": {"type": "token[]", "value": ["World"]},
+            "defaultPrim": {"type": "token", "value": "World"}
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "primChildren": {"type": "token[]", "value": ["World"]},
+                "defaultPrim": {"type": "token", "value": "World"}
+              }
+            },
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "variantSelection": {
+                  "type": "VariantSetMap",
+                  "value": {"modelingVariant": "high"}
+                },
+                "variantSetChildren": {"type": "token[]", "value": ["modelingVariant"]},
+                "primChildren": {"type": "token[]", "value": ["Local"]},
+                "propertyChildren": {"type": "token[]", "value": ["localSize"]}
+              }
+            },
+            "/World/Local": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "typeName": {"type": "token", "value": "Scope"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World.localSize": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "typeName": {"type": "token", "value": "float"},
+                "variability": {"type": "variability", "value": "varying"},
+                "default": {"type": "float", "value": 4.0}
+              }
+            },
+            "/World{modelingVariant=}": {
+              "kind": "variantSet",
+              "fields": {
+                "variantChildren": {"type": "token[]", "value": ["high", "low"]}
+              }
+            },
+            "/World{modelingVariant=high}": {
+              "kind": "variant",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "over"},
+                "typeName": {"type": "token", "value": "Xform"},
+                "primChildren": {"type": "token[]", "value": ["Geom"]},
+                "propertyChildren": {"type": "token[]", "value": ["detail"]},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World{modelingVariant=high}.detail": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "typeName": {"type": "token", "value": "float"},
+                "variability": {"type": "variability", "value": "varying"},
+                "default": {"type": "float", "value": 1.0}
+              }
+            },
+            "/World{modelingVariant=high}Geom": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "typeName": {"type": "token", "value": "Mesh"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World{modelingVariant=low}": {
+              "kind": "variant",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "over"},
+                "primChildren": {"type": "token[]", "value": ["Proxy"]},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World{modelingVariant=low}Proxy": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "over"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        },
+        "ops": [
+          {"op": "populate_stage"},
+          {"op": "stage_summary"},
+          {"op": "traverse_prims"},
+          {"op": "prim_summary", "path": "/World"},
+          {"op": "prim_summary", "path": "/World/Geom"},
+          {"op": "prim_summary", "path": "/World/Local"},
+          {"op": "prim_summary", "path": "/World/Proxy"},
+          {"op": "property_summary", "path": "/World.detail"},
+          {"op": "property_summary", "path": "/World.localSize"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "populate_stage", "ok": true},
+          {"op": "stage_summary", "ok": true, "sourceMode": "composed_namespace", "primCount": 3, "defaultPrim": "/World", "diagnostics": []},
+          {"op": "traverse_prims", "ok": true, "paths": ["/World", "/World/Geom", "/World/Local"]},
+          {"op": "prim_summary", "ok": true, "exists": true, "path": "/World", "name": "World", "parent": "/", "children": ["/World/Geom", "/World/Local"], "properties": ["detail", "localSize"], "typeName": "Xform", "specifier": "def", "active": true, "loaded": true, "defined": true, "abstract": false, "instanceable": false},
+          {"op": "prim_summary", "ok": true, "exists": true, "path": "/World/Geom", "name": "Geom", "parent": "/World", "children": [], "properties": [], "typeName": "Mesh", "specifier": "def", "active": true, "loaded": true, "defined": true, "abstract": false, "instanceable": false},
+          {"op": "prim_summary", "ok": true, "exists": true, "path": "/World/Local", "name": "Local", "parent": "/World", "children": [], "properties": [], "typeName": "Scope", "specifier": "def", "active": true, "loaded": true, "defined": true, "abstract": false, "instanceable": false},
+          {"op": "prim_summary", "ok": true, "exists": false, "path": "/World/Proxy"},
+          {
+            "op": "property_summary",
+            "ok": true,
+            "exists": true,
+            "path": "/World.detail",
+            "kind": "attribute",
+            "owner": "/World",
+            "name": "detail",
+            "fields": {
+              "custom": {"type": "bool", "value": false},
+              "typeName": {"type": "token", "value": "float"},
+              "variability": {"type": "variability", "value": "varying"},
+              "default": {"type": "float", "value": 1.0}
+            }
+          },
+          {
+            "op": "property_summary",
+            "ok": true,
+            "exists": true,
+            "path": "/World.localSize",
+            "kind": "attribute",
+            "owner": "/World",
+            "name": "localSize",
+            "fields": {
+              "custom": {"type": "bool", "value": false},
+              "typeName": {"type": "token", "value": "float"},
+              "variability": {"type": "variability", "value": "varying"},
+              "default": {"type": "float", "value": 4.0}
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

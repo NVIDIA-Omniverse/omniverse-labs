@@ -1,0 +1,193 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/stage-population.handle.json",
+  "title": "USD Stage Population Contract",
+  "version": "0.1",
+  "spec_commit": "v1.0.1",
+  "capability_contracts": [
+    "contracts/capabilities/namespace-source.json",
+    "contracts/capabilities/semantic-runtime-types.json"
+  ],
+  "dependency_contracts": [
+    "contracts/handles/composition-arbitrator.handle.json",
+    "contracts/handles/path.handle.json",
+    "contracts/handles/token.handle.json",
+    "contracts/handles/foundational-values.handle.json"
+  ],
+  "performance_contracts": [
+    "contracts/performance/stage-population.performance.json"
+  ],
+  "scope": {
+    "included": [
+      "populate a stage hierarchy from a NamespaceSource",
+      "absolute root scene object",
+      "optional population mask with ancestor inclusion",
+      "active=false pruning of descendants",
+      "prim traversal order using primOrder over source child names",
+      "property traversal order using strongest/source propertyOrder over source property names",
+      "preservation of provider-composed child/property ordering when declared by the NamespaceSource",
+      "path-to-prim lookup index",
+      "parent and child prim queries",
+      "default prim lookup from the root layer field",
+      "prim query flags for active, loaded, defined, abstract, and instanceable when source opinions are available",
+      "portable model hierarchy query and traversal for kind values group, assembly, component, and subcomponent",
+      "instance summaries for instanceable prims with composition-arc provenance supplied by the consumed namespace source",
+      "shared representation identifiers for matching instanceable prims with identical supported composition-arc provenance and compatible population-mask context",
+      "arc-only descendant population for supported non-local composition opinions below instanceable prims when the consumed composed namespace source supplies instance-filtered inputs",
+      "authored attribute and relationship enumeration with typed source-visible field values from the namespace source",
+      "schema-defined property enumeration when the consumed namespace source declares schema_fallbacks present",
+      "diagnostics passthrough from the namespace source"
+    ],
+    "deferred": [
+      "composition arc evaluation when the namespace source declares composition absent",
+      "value resolution across multiple opinions",
+      "computing schema fallback properties locally instead of consuming them from a namespace source",
+      "portable custom aliases and validation diagnostics for model hierarchy kind values",
+      "implementation-specific prototype query APIs not required by the pinned AOUSD instancing text",
+      "payload load/unload policy when the namespace source declares payload loading absent",
+      "nanousd C API backend compatibility"
+    ]
+  },
+  "model": {
+    "Stage": "Target-native composed scene graph view populated from a NamespaceSource. It is an immutable query surface after construction, not a document-model Layer and not a JSON object.",
+    "SceneObject": "Populated prim-like stage node at / or at an absolute prim path.",
+    "PopulationMask": "Optional set of absolute prim paths. Matching paths and their ancestors are included; unrelated paths are not populated.",
+    "PrimIndex": "Implementation-owned lookup/index data for populated prims. This contract does not require the OpenUSD PCP data structure.",
+    "PopulationSource": "The NamespaceSource consumed by this skill. Source capability declarations determine which composition/value-resolution features the populated stage may claim.",
+    "ModelHierarchyState": "A query predicate and traversal subset derived from resolved kind tokens. Portable values are group, assembly, component, and subcomponent only.",
+    "InstanceState": "A query record for a populated prim marked instanceable, including whether a composition-backed instance arc signature was available and whether a shared representation was assigned.",
+    "SharedRepresentation": "Implementation-modeled identity for a populated instance subtree. This contract uses stable IDs for matching supported composition-arc provenance under compatible population masks.",
+    "FallbackPolicy": "Stage population applies population-query fallbacks for active=true, loaded=true when payload loading is absent, instanceable=false, empty kind/typeName/defaultPrim, specifier=over when missing."
+  },
+  "operations": {
+    "populate_stage": {
+      "input": {
+        "source": "target-native NamespaceSource",
+        "populationMask": "optional list of absolute prim paths",
+        "payloadInclusion": "optional adapter-only payload inclusion scenario; ignored only when source declares payload loading absent"
+      },
+      "output": {
+        "stage": "target-native Stage or diagnostics"
+      }
+    },
+    "stage_summary": {
+      "input": {
+        "stage": "target-native Stage"
+      },
+      "output": {
+        "sourceMode": "source capability mode",
+        "primCount": "number of populated non-root prims",
+        "defaultPrim": "populated default prim path or empty string",
+        "diagnostics": "population and source diagnostics"
+      }
+    },
+    "traverse_prims": {
+      "input": {
+        "stage": "target-native Stage"
+      },
+      "output": {
+        "paths": "ordered populated prim paths, excluding /"
+      }
+    },
+    "traverse_model_hierarchy": {
+      "input": {
+        "stage": "target-native Stage"
+      },
+      "output": {
+        "paths": "ordered populated prim paths that are part of the portable contiguous model hierarchy, excluding / and excluding descendants of component prims"
+      }
+    },
+    "prim_summary": {
+      "input": {
+        "stage": "target-native Stage",
+        "path": "absolute prim path"
+      },
+      "output": {
+        "exists": "whether the prim is populated",
+        "path": "canonical prim path",
+        "name": "final prim name",
+        "parent": "parent prim path or /",
+        "children": "ordered child prim paths",
+        "properties": "ordered property names",
+        "typeName": "resolved/population field token spelling or empty string",
+        "specifier": "def, over, or class with fallback policy applied",
+        "active": "stage query flag including ancestor activity",
+        "loaded": "stage query flag",
+        "defined": "stage query flag",
+        "abstract": "stage query flag",
+        "instanceable": "stage query flag"
+      }
+    },
+    "model_hierarchy_summary": {
+      "input": {
+        "stage": "target-native Stage",
+        "path": "absolute prim path"
+      },
+      "output": {
+        "exists": "whether the prim is populated",
+        "kind": "resolved/population kind token spelling or empty string",
+        "modelHierarchy": "whether the prim is part of the portable contiguous model hierarchy",
+        "modelHierarchyContinuity": "whether descendants may continue the model hierarchy through this prim",
+        "modelHierarchyTerminal": "whether this prim is a component that is included but terminates model hierarchy traversal"
+      }
+    },
+    "instance_summary": {
+      "input": {
+        "stage": "target-native Stage",
+        "path": "absolute prim path"
+      },
+      "output": {
+        "exists": "whether the prim is populated",
+        "instanceable": "source-visible instanceable opinion with fallback false",
+        "instance": "true only when instanceable is true and the consumed composed namespace source supplies supported composition-arc provenance for the prim",
+        "hasInstanceArcs": "whether supported instance-source composition arcs contributed to the prim",
+        "sharedRepresentationId": "implementation-owned shared representation identifier, empty when none is assigned",
+        "sharedRepresentationFirstUse": "whether this prim populated the shared representation in this stage"
+      }
+    },
+    "property_summary": {
+      "input": {
+        "stage": "target-native Stage",
+        "path": "property path"
+      },
+      "output": {
+        "exists": "whether the property is authored/populated",
+        "kind": "attribute or relationship",
+        "owner": "owning prim path",
+        "name": "property name",
+        "fields": "authored or source-visible typed field map"
+      }
+    }
+  },
+  "laws": [
+    "stage population must consume a NamespaceSource rather than reading parser-local USDA structures",
+    "stage population must not claim composition semantics beyond the source capability declaration",
+    "the populated Stage is target-native and must not be represented internally as canonical dump JSON",
+    "stage query indexes must retain paths, property names, child names, typeName/kind tokens, and field keys as semantic runtime types rather than raw strings",
+    "public Stage APIs must not expose mutable owned population indexes, path-to-prim maps, path-to-property maps, traversal arrays, or ordering caches; any mutation needed during construction must be private to the population builder",
+    "the absolute root path is always the root scene object, but traversal results exposed to user-facing prim iteration exclude / unless an adapter explicitly asks for root",
+    "active=false on a prim excludes that prim's descendants from population; an inactive prim itself is not included in the traversable stage unless a future contract explicitly adds inactive querying",
+    "population masks include requested prims and ancestors of requested prims, and exclude unrelated branches",
+    "a population mask path under an inactive ancestor does not force inactive descendants to populate",
+    "prim traversal uses source child names reordered by primOrder; names not listed in primOrder retain source child order for a single-layer source",
+    "property traversal sorts source property names by path element ordering, then applies the strongest/source propertyOrder sparse ordering",
+    "when a namespace source declares child_ordering=composed or property_ordering=composed, stage population preserves the provider order and must not reapply single-layer ordering rules",
+    "defaultPrim resolves to a populated root child with the named token; missing, empty, or masked-out default prim returns an empty defaultPrim result",
+    "defined is true when the prim and all populated ancestors have specifier def or class; abstract is true when the prim or any populated ancestor has specifier class",
+    "loaded is true for populated prims when the source declares payload loading absent; future payload-aware sources must expose load state",
+    "instanceable is the source-visible instanceable opinion with fallback false",
+    "an instance summary may claim instance=true only when the prim is marked instanceable and the consumed composed namespace source supplies supported composition-arc provenance for the prim",
+    "supported shared instance representations use the strongest-to-weakest non-local composition-arc provenance supplied by the composition source plus the relative population-mask context as their matching key",
+    "two instanceable prims with matching arc provenance must not share a representation when the population mask affects their subtrees differently",
+    "when a supported shared representation has already been populated in the stage, later matching instance prims keep their own root prim but do not repopulate duplicate descendants into the stage traversal",
+    "when the consumed composed namespace source supplies instance-filtered descendant inputs, local descendant opinions under an instanceable prim are excluded from populated descendants unless they came from supported composition arcs authored on the instanceable prim or recursively from the source of such arcs",
+    "model hierarchy traversal uses only portable kind values: group and assembly are included and continue traversal, component is included and terminates traversal, and subcomponent, empty, or unknown kind values are excluded and terminate continuity",
+    "custom kind aliases and validation diagnostics are implementation-dependent and are not portable in this contract",
+    "attribute and relationship field maps exposed through property_summary are source-visible fields with preserved typed-read semantics; when the consumed source declares schema_fallbacks present, these maps may include schema-defined fallback fields that must remain distinguishable at the source boundary from authored opinions",
+    "diagnostics from layer opening or source construction are preserved and exposed through the stage summary"
+  ],
+  "adapter_protocol": {
+    "input": "A JSON file containing one case with a canonical layer object, optional populationMask, and ops array. The adapter must build target-native document-model and namespace-source objects before calling stage population.",
+    "output": "A JSON object with ok, diagnostics, and results."
+  }
+}

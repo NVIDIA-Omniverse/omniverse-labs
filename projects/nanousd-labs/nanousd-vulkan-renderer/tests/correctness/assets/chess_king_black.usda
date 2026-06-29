@@ -1,0 +1,67 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    metersPerUnit = 1.0
+    upAxis = "Y"
+    doc = "Correctness test: King · Black close-up. Crops to the King to keep the image bounded and the comparison signal high. References the OpenChessSet asset directly."
+)
+
+def Xform "World"
+{
+    def Xform "ChessSet" (
+        prepend references = @OpenChessSet/chess_set.usda@</ChessSet>
+    )
+    {
+    }
+
+    def DomeLight "DomeLight"
+    {
+        float inputs:intensity = 1000
+        asset inputs:texture:file = @./photo_studio_london_hall_1k.hdr@
+        token inputs:texture:format = "latlong"
+    }
+
+    def Camera "Camera"
+    {
+        float2 clippingRange = (0.001, 100)
+        float focalLength = 35.0
+        float horizontalAperture = 36.0
+        float verticalAperture = 24.0
+        token projection = "perspective"
+        # ChessSet center (0, 0.085, 0). Look down at it from eye=(0, 0.30, 0.45),
+        # target=(0, 0.05, 0.10). ~36° downward angle frames the whole set
+        # without exposing the bright HDR sky.
+        matrix4d xformOp:transform = ( (1.000000, 0.000000, 0.000000, 0), (0.000000, 0.813733, -0.581238, 0), (0.000000, 0.581238, 0.813733, 0), (0.0, 0.30, 0.45, 1) )
+        uniform token[] xformOpOrder = ["xformOp:transform"]
+    }
+}
+
+def "Render"
+{
+    def "OmniverseKit"
+    {
+        def "HydraTextures"
+        {
+            def RenderProduct "ViewportTexture0"
+            {
+                rel camera = </World/Camera>
+                rel orderedVars = </Render/Vars/LdrColor>
+                uniform int2 resolution = (640, 480)
+                token omni:rtx:rendermode = "RealTimePathTracing"
+                token omni:rtx:background:source:type = "domeLight"
+                bool omni:rtx:rt:ecoMode:enabled = 0
+                int omni:rtx:pt:maxSamplesPerLaunch = 65536
+                bool omni:rtx:indirectDiffuse:denoiser:enabled = 0
+                bool omni:rtx:reflections:denoiser:enabled = 0
+                token[] omni:rtx:waitForEvents = ["AllLoadingFinished", "OnlyOnFirstRequest"]
+            }
+        }
+    }
+    def "Vars"
+    {
+        def RenderVar "LdrColor"
+        {
+            string sourceName = "LdrColor"
+        }
+    }
+}

@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/nanousd-readonly-backend.performance.json",
+  "title": "nanousd Read-Only Backend Performance Contract",
+  "version": "0.1",
+  "spec_commit": "v1.0.1",
+  "scope": {
+    "included": [
+      "stage open through nanousdapi and NANOUSD_BACKEND",
+      "C API prim traversal through NanousdBackend_v1",
+      "attribute-count queries during traversal",
+      "diagnostic collection through the backend vtable",
+      "stage-load RSS measurement"
+    ],
+    "excluded": [
+      "nanousd core-only phase probes that bypass nanousdapi",
+      "OpenUSD-only backend internals",
+      "file-format writer benchmarks",
+      "full value-resolution, interpolation, clip, and xform benchmarks",
+      "absolute machine-independent timing thresholds"
+    ]
+  },
+  "model": {
+    "backend_comparison": "The primary signal is comparative behavior across backends running the same nanousd C API benchmark and fixture set.",
+    "baseline_policy": "Baselines are selected by benchmark invocation. Common baselines are nanousd default backend and OpenUSD backend when available.",
+    "gating_policy": "The generated backend must be able to complete the supported fixture runs. Concrete generated-vs-baseline timing ratios remain optional until separate performance contracts set machine-independent expectations.",
+    "correctness_gate": "A backend performance result is not meaningful unless the corresponding C API behavior passes the relevant correctness contracts for the fixture shape."
+  },
+  "operations": {
+    "stage_open": {
+      "signal": "open_ms",
+      "expected_direction": "The generated read-only backend should converge toward nanousd default backend open cost for supported USDA fixtures."
+    },
+    "traversal": {
+      "signals": [
+        "traverse_ms",
+        "traverse_ns_per_prim",
+        "prim_handle_ns_per_prim",
+        "nattribs_ns_per_prim",
+        "freeprim_ns_per_prim"
+      ],
+      "expected_direction": "Traversal should scale with populated prim and property counts, not with reparsing or full-stage scans per query."
+    },
+    "memory": {
+      "signals": [
+        "rss_delta_bytes",
+        "rss_delta_bytes_per_prim",
+        "rss_peak_bytes"
+      ],
+      "expected_direction": "Retained memory should reflect target-native stage, path, token, and value storage rather than adapter JSON duplication."
+    }
+  },
+  "measurement": {
+    "benchmark_tool": "nanousd tests/benchmark_stage_load",
+    "runner": "harness/nanousd_backend_benchmark.py",
+    "reporter": "harness/nanousd_backend_report.py",
+    "targets": "benchmarks/nanousd-backend/stage-load.json",
+    "primary_signals": [
+      "open_ms",
+      "total_ms",
+      "traverse_ns_per_prim",
+      "nattribs_ns_per_prim",
+      "rss_delta_bytes_per_prim"
+    ],
+    "comparison_signals": [
+      "generated/backend baseline ratios",
+      "before/after generated backend ratios for the same fixture",
+      "RSS-per-prim ratios"
+    ],
+    "reporting_outputs": [
+      "Markdown best-run and comparison tables",
+      "optional SVG metric charts"
+    ],
+    "contract_pressure": [
+      "slow open points at layer-open, composition, and stage-population contracts",
+      "slow traversal points at stage indexing and handle lifetime contracts",
+      "slow attribute counts point at document-model property storage contracts",
+      "high RSS points at value, path, token, or adapter JSON retention contracts"
+    ]
+  }
+}

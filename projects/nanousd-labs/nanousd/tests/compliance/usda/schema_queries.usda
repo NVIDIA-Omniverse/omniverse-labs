@@ -1,0 +1,23 @@
+#usda 1.0
+(
+    dictionary fallbackPrimTypes = {
+        token[] FutureMesh = ["NoSuchFallback", "Gprim", "Mesh"]
+    }
+)
+
+def Mesh "MeshPrim" {
+    int[] faceVertexCounts = [3, 4]
+    int[] faceVertexIndices = [0, 1, 2, 0, 1, 2, 3]
+}
+
+def Xform "XformPrim" {
+}
+
+def Scope "ScopePrim" {
+}
+
+def Gprim "AbstractGprimPrim" {
+}
+
+def FutureMesh "FallbackMeshPrim" {
+}

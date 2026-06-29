@@ -1,0 +1,227 @@
+{
+  "generated_at": "2026-06-07T23:58:07.254437+00:00",
+  "set": "chess",
+  "reference": "OVRTX 0.3 (reused reference images; path-traced)",
+  "resolution": [
+    768,
+    768
+  ],
+  "lighting": "shared authored rig: constant-color DomeLight + bbox-positioned Key/Fill SphereLights (identical to the wrapper that produced the reused OVRTX references)",
+  "assets": [
+    {
+      "label": "chess_set",
+      "note": "MaterialX OpenChessSet (SideFX/ASWF)",
+      "wrapper": "wrappers/chess_set.usda",
+      "up_axis": "Y",
+      "cams": [
+        {
+          "cam": "camA",
+          "ovrtx_png": "frames/chess_set_camA_ovrtx.png",
+          "rt_png": "frames/chess_set_camA_metal_rt.png",
+          "raster_png": "frames/chess_set_camA_metal_raster.png",
+          "diff_rt_png": "frames/chess_set_camA_diff_rt.png",
+          "diff_raster_png": "frames/chess_set_camA_diff_raster.png",
+          "compare_png": "chess_set_camA_compare.png",
+          "camera": {
+            "eye": [
+              1.216235902953179,
+              0.7283875019487379,
+              1.4308657681802108
+            ],
+            "target": [
+              0.0,
+              0.09463765501976013,
+              0.0
+            ],
+            "up": [
+              0.0,
+              1.0,
+              0.0
+            ],
+            "fov_degrees": 35.0,
+            "near_clip": 0.4675129114617198,
+            "far_clip": 4.008889382932051,
+            "horizontal_aperture": 31.52987888789835,
+            "vertical_aperture": 31.52987888789835,
+            "focal_length": 50.0,
+            "bounds_min": [
+              -0.3527080714702606,
+              0.0,
+              -0.3527080714702606
+            ],
+            "bounds_max": [
+              0.3527080714702606,
+              0.16899581253528595,
+              0.3527080714702606
+            ]
+          },
+          "metrics_rt": {
+            "rms": 19.914445877075195,
+            "mae": 5.663303375244141,
+            "silhouette_iou": 0.9767674769405772,
+            "mean_ref_rgb": [
+              166.90350341796875,
+              170.1318359375,
+              175.43414306640625
+            ],
+            "mean_test_rgb": [
+              163.82115173339844,
+              167.18113708496094,
+              171.68829345703125
+            ]
+          },
+          "metrics_raster": {
+            "rms": 28.748798370361328,
+            "mae": 23.580224990844727,
+            "silhouette_iou": 0.9792605951307484,
+            "mean_ref_rgb": [
+              166.90350341796875,
+              170.1318359375,
+              175.43414306640625
+            ],
+            "mean_test_rgb": [
+              171.72235107421875,
+              182.72747802734375,
+              203.7495880126953
+            ]
+          },
+          "mean_rgb": {
+            "ovrtx": [
+              166.90350341796875,
+              170.1318359375,
+              175.43414306640625
+            ],
+            "metal_rt": [
+              163.82115173339844,
+              167.18113708496094,
+              171.68829345703125
+            ],
+            "metal_raster": [
+              171.72235107421875,
+              182.72747802734375,
+              203.7495880126953
+            ]
+          },
+          "timings": {
+            "rt": {
+              "meshes": 17,
+              "load_seconds": 1.3571545421145856,
+              "render_seconds": 3.1925629167817533,
+              "gpu_memory_gib": 0.01577058434486389
+            },
+            "raster": {
+              "meshes": 17,
+              "load_seconds": 1.0132623750250787,
+              "render_seconds": 0.047999000176787376,
+              "gpu_memory_gib": 0.01592317223548889
+            }
+          }
+        },
+        {
+          "cam": "camB",
+          "ovrtx_png": "frames/chess_set_camB_ovrtx.png",
+          "rt_png": "frames/chess_set_camB_metal_rt.png",
+          "raster_png": "frames/chess_set_camB_metal_raster.png",
+          "diff_rt_png": "frames/chess_set_camB_diff_rt.png",
+          "diff_raster_png": "frames/chess_set_camB_diff_raster.png",
+          "compare_png": "chess_set_camB_compare.png",
+          "camera": {
+            "eye": [
+              -1.2705572383673631,
+              1.2756453172370459,
+              0.9529179287755223
+            ],
+            "target": [
+              0.0,
+              0.09463765501976013,
+              0.0
+            ],
+            "up": [
+              0.0,
+              1.0,
+              0.0
+            ],
+            "fov_degrees": 35.0,
+            "near_clip": 0.4675129114617198,
+            "far_clip": 4.008889382932051,
+            "horizontal_aperture": 31.52987888789835,
+            "vertical_aperture": 31.52987888789835,
+            "focal_length": 50.0,
+            "bounds_min": [
+              -0.3527080714702606,
+              0.0,
+              -0.3527080714702606
+            ],
+            "bounds_max": [
+              0.3527080714702606,
+              0.16899581253528595,
+              0.3527080714702606
+            ]
+          },
+          "metrics_rt": {
+            "rms": 14.4944486618042,
+            "mae": 4.0903143882751465,
+            "silhouette_iou": 0.9933889449379496,
+            "mean_ref_rgb": [
+              155.59283447265625,
+              158.8807830810547,
+              163.1400604248047
+            ],
+            "mean_test_rgb": [
+              155.23385620117188,
+              158.8542938232422,
+              162.402099609375
+            ]
+          },
+          "metrics_raster": {
+            "rms": 25.259218215942383,
+            "mae": 20.373205184936523,
+            "silhouette_iou": 0.9934299564457787,
+            "mean_ref_rgb": [
+              155.59283447265625,
+              158.8807830810547,
+              163.1400604248047
+            ],
+            "mean_test_rgb": [
+              163.95269775390625,
+              174.520751953125,
+              193.46627807617188
+            ]
+          },
+          "mean_rgb": {
+            "ovrtx": [
+              155.59283447265625,
+              158.8807830810547,
+              163.1400604248047
+            ],
+            "metal_rt": [
+              155.23385620117188,
+              158.8542938232422,
+              162.402099609375
+            ],
+            "metal_raster": [
+              163.95269775390625,
+              174.520751953125,
+              193.46627807617188
+            ]
+          },
+          "timings": {
+            "rt": {
+              "meshes": 17,
+              "load_seconds": 1.0147235409822315,
+              "render_seconds": 0.049477041931822896,
+              "gpu_memory_gib": 0.01577058434486389
+            },
+            "raster": {
+              "meshes": 17,
+              "load_seconds": 1.0051021669059992,
+              "render_seconds": 0.05825712508521974,
+              "gpu_memory_gib": 0.01592317223548889
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "contact_sheet": "contact_sheet.png"
+}

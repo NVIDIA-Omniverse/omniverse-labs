@@ -1,0 +1,126 @@
+#usda 1.0
+(
+    customLayerData = {}
+    defaultPrim = "Articulation"
+    endTimeCode = 100
+    metersPerUnit = 1
+    startTimeCode = 0
+    timeCodesPerSecond = 60
+    upAxis = "Z"
+)
+
+def Xform "World"
+{
+}
+
+def Xform "Articulation" (
+    apiSchemas = ["PhysicsArticulationRootAPI", "PhysxArticulationAPI"]
+)
+{
+    bool physxArticulation:enabledSelfCollisions = 0
+    int physxArticulation:solverPositionIterationCount = 64
+    int physxArticulation:solverVelocityIterationCount = 64
+    double3 xformOp:rotateXYZ = (0, 0, 0)
+    double3 xformOp:scale = (1, 1, 1)
+    double3 xformOp:translate = (0, 0, 0)
+    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+
+    def Sphere "CenterPivot" (
+        apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+    )
+    {
+        float3[] extent = [(-50, -50, -50), (50, 50, 50)]
+        vector3f physics:angularVelocity = (0, 0, 0)
+        point3f physics:centerOfMass = (0, 0, 0)
+        float3 physics:diagonalInertia = (0.0001, 0.0001, 0.0001)
+        bool physics:kinematicEnabled = 0
+        float physics:mass = 2
+        bool physics:rigidBodyEnabled = 1
+        vector3f physics:velocity = (0, 0, 0)
+        float physxRigidBody:maxDepenetrationVelocity = 0.049999997
+        float physxRigidBody:maxLinearVelocity = inf
+        float physxRigidBody:sleepThreshold = 5e-7
+        float physxRigidBody:stabilizationThreshold = 1e-9
+        double radius = 0.4999999888241291
+        custom bool refinementEnableOverride = 1
+        custom int refinementLevel = 2
+        quatf xformOp:orient = (1, 0, 0, 0)
+        double3 xformOp:scale = (0.2, 0.2, 0.2)
+        double3 xformOp:translate = (0, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+
+        def PhysicsFixedJoint "FixedJoint"
+        {
+            rel physics:body0 = </Articulation/CenterPivot>
+            float physics:breakForce = inf
+            float physics:breakTorque = inf
+            point3f physics:localPos0 = (0, 0, 0)
+            point3f physics:localPos1 = (0, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (0.6324555, 0, 0, 0)
+        }
+    }
+
+    def Cube "Arm" (
+        apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsCollisionAPI", "PhysxCollisionAPI", "PhysicsMassAPI"]
+    )
+    {
+        float3[] extent = [(-50, -50, -50), (50, 50, 50)]
+        vector3f physics:angularVelocity = (0, 0, 0)
+        point3f physics:centerOfMass = (0, 0, 0)
+        bool physics:collisionEnabled = 1
+        float3 physics:diagonalInertia = (0.0001, 0.0001, 0.0001)
+        bool physics:kinematicEnabled = 0
+        float physics:mass = 2
+        bool physics:rigidBodyEnabled = 1
+        vector3f physics:velocity = (0, 0, 0)
+        float physxCollision:contactOffset = -inf
+        float physxCollision:restOffset = -inf
+        float physxRigidBody:angularDamping = 0
+        float physxRigidBody:maxDepenetrationVelocity = 0.049999997
+        float physxRigidBody:maxLinearVelocity = inf
+        float physxRigidBody:sleepThreshold = 5e-7
+        float physxRigidBody:stabilizationThreshold = 1e-9
+        double size = 0.9999999776482582
+        quatf xformOp:orient = (1, 0, 0, 0)
+        double3 xformOp:scale = (2, 0.1, 0.1)
+        double3 xformOp:translate = (0.9999999776482582, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+
+        def PhysicsRevoluteJoint "RevoluteJoint" (
+            apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            float drive:angular:physics:damping = 100000
+            float drive:angular:physics:maxForce = inf
+            float drive:angular:physics:stiffness = 100000
+            float drive:angular:physics:targetPosition = 0
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </Articulation/CenterPivot>
+            rel physics:body1 = </Articulation/Arm>
+            float physics:breakForce = inf
+            float physics:breakTorque = inf
+            point3f physics:localPos0 = (0, 0, 0)
+            point3f physics:localPos1 = (-0.5, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+        }
+    }
+}
+
+def PhysicsScene "physicsScene" (
+    apiSchemas = ["PhysxSceneAPI"]
+)
+{
+    vector3f physics:gravityDirection = (0, 0, -1)
+    float physics:gravityMagnitude = 10
+    uniform token physxScene:broadphaseType = "MBP"
+    bool physxScene:enableCCD = 1
+    bool physxScene:enableGPUDynamics = 0 (
+        allowedTokens = []
+    )
+    bool physxScene:enableStabilization = 1
+    float physxScene:frictionCorrelationDistance = 0.00025
+    float physxScene:frictionOffsetThreshold = 0.0004
+    uniform token physxScene:solverType = "TGS"
+}

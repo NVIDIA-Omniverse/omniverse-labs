@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/foundational-values.handle.json",
+  "title": "USD Foundational Values Unit Contract",
+  "version": "0.1",
+  "spec_commit": "v1.0.1",
+  "capability_contracts": [
+    "contracts/capabilities/foundational-data-types.json"
+  ],
+  "dependency_contracts": [
+    "contracts/handles/token.handle.json"
+  ],
+  "scope": {
+    "included": [
+      "type catalog queries",
+      "semantic role catalog queries",
+      "semantic alias agreement",
+      "array type validation",
+      "scalar and dimensioned value canonicalization",
+      "asset control-code rejection",
+      "value block sentinel canonicalization",
+      "recursive dictionary combining",
+      "native storage policy inspection",
+      "stored type identity inspection",
+      "checked typed reads"
+    ],
+    "deferred": [
+      "full list operation algebra",
+      "specialized path/spline/reference/payload values",
+      "binary half conversion precision",
+      "value resolution and interpolation"
+    ]
+  },
+  "operations": {
+    "inspect_storage": {
+      "input": {},
+      "output": {
+        "jsonStorageModel": "on_demand_only",
+        "dictionaryStorageModel": "typed_raw_entries",
+        "rawValueStorageModel": "typed_value_container",
+        "storageShapePolicy": "implementation_defined",
+        "typedReadModel": "inspect_then_checked_read",
+        "numericStorageModel": "native_numeric_payloads",
+        "typedPayloadCatalogModel": "complete_foundational_catalog",
+        "scalarPayloadModel": "typed_scalar_domains",
+        "shapePayloadModel": "typed_dimensioned_quat_matrix_shapes",
+        "semanticAliasPayloadModel": "alias_role_plus_underlying_type",
+        "dimensionedStorageModel": "native_numeric_element_payloads",
+        "arrayStorageModel": "typed_element_sequences",
+        "adapterNumberModel": "json_number_text_on_output",
+        "adapterJsonAsBackingStorage": false,
+        "numericStringStorage": false
+      }
+    },
+    "describe_type": {
+      "input": {
+        "type": "foundational type name, semantic alias, array type, dictionary, or opaque"
+      },
+      "output": {
+        "description": "normalized type description"
+      }
+    },
+    "describe_semantic_role": {
+      "input": {
+        "role": "semantic role name from the foundational data types role catalog"
+      },
+      "output": {
+        "description": "normalized role description with aliases and underlying types"
+      }
+    },
+    "type_agreement": {
+      "input": {
+        "lhs": "type name or alias",
+        "rhs": "type name or alias"
+      },
+      "output": {
+        "agrees": "boolean when agreement is defined"
+      }
+    },
+    "make_value": {
+      "input": {
+        "type": "target type name",
+        "value": "JSON value to canonicalize"
+      },
+      "output": {
+        "value": "canonical tagged value matching contracts/value.schema.json"
+      }
+    },
+    "inspect_value": {
+      "input": {
+        "value": "canonical tagged value converted by the adapter into the target-native value model before inspection"
+      },
+      "output": {
+        "type": "stored USD value type",
+        "payloadKind": "scalar, dimensioned, matrix, quaternion, semanticAlias, array, dictionary, opaque, or valueBlock",
+        "storageType": "underlying storage/read type used for agreement checks",
+        "scalarDomain": "boolean, signedInteger, unsignedInteger, floating, text, token, or omitted when not scalar-like",
+        "numericPrecision": "u8, i32, u32, i64, u64, f16, f32, f64, or omitted for non-numeric values",
+        "elementType": "element type for dimensioned, matrix, quaternion, and array payloads",
+        "shape": "dimensioned, matrix, or quaternion shape when applicable",
+        "componentOrder": "quaternion component order when applicable",
+        "order": "matrix storage order when applicable",
+        "semanticRole": "semantic role when inspecting a semantic alias or alias array",
+        "underlyingType": "underlying type for semantic aliases and alias arrays",
+        "arrayElementType": "element type when inspecting an array payload",
+        "arrayElementKind": "element payload kind when inspecting an array payload",
+        "isArray": "boolean",
+        "isValueBlock": "boolean"
+      }
+    },
+    "read_value_as": {
+      "input": {
+        "value": "canonical tagged value converted by the adapter into the target-native value model before reading",
+        "as": "requested USD value type"
+      },
+      "output": {
+        "type": "requested type when the checked read succeeds",
+        "value": "adapter serialization of the requested typed payload, or a TypeMismatch diagnostic when the requested type does not agree with the stored type"
+      }
+    },
+    "make_value_block": {
+      "input": {},
+      "output": {
+        "value": "canonical valueBlock tagged value"
+      }
+    },
+    "combine_dictionaries": {
+      "input": {
+        "stronger": "dictionary object whose leaves are canonical tagged values",
+        "weaker": "dictionary object whose leaves are canonical tagged values"
+      },
+      "output": {
+        "value": "canonical dictionary tagged value"
+      }
+    }
+  },
+  "adapter_protocol": {
+    "input": "A JSON file containing one case with an ops array.",
+    "output": "A JSON object with ok, diagnostics, and results. This uses the same adapter shape as handle tests but does not require persistent handles."
+  }
+}

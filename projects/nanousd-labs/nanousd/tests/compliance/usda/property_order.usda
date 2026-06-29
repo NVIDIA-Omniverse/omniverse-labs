@@ -1,0 +1,14 @@
+#usda 1.0
+
+def Xform "Ordered" {
+    reorder properties = ["charlie", "alpha", "bravo"]
+    float alpha = 1.0
+    float bravo = 2.0
+    float charlie = 3.0
+}
+
+def Xform "Unordered" {
+    float charlie = 3.0
+    float alpha = 1.0
+    float bravo = 2.0
+}

@@ -1,0 +1,58 @@
+#usda 1.0
+(
+    '''
+    Ported from OpenUSD PCP test fixture
+    testPcpMuseum_BasicNestedPayload.testenv/BasicNestedPayload/root.usda
+    (Pixar OpenUSD release branch).
+
+    Demonstrates nested-payload behavior per spec §10.4 + §10.5 LIVRPS:
+
+      /Set   — references set.usda (which internally payloads
+               set_payload.usda). set_payload has a direct opinion on
+               /Set/Prop/PropScope.x ("from set_payload"); prop_payload,
+               reached transitively via /Set/Prop's reference, also
+               writes the same attribute ("from prop_payload"). The
+               direct opinion in set_payload must win over the
+               descendant payload chain.
+
+      /Set2  — payload to set_payload.usda directly AND a local
+               override on /Set2/Prop adding a payload to
+               prop_payload.usda. The descendant payload opinion on
+               /Set2/Prop/PropScope.x must win over the ancestor's
+               payload opinion.
+
+      /Set3  — references set.usda, then locally overrides
+               /Set3/Prop/PropScope.x = "from root". The local opinion
+               must win over any payload-introduced opinion per LIVRPS.
+    '''
+)
+
+def Scope "Set" (
+    references = @./pcp_BasicNestedPayload_set.usda@</Set>
+)
+{
+}
+
+def Scope "Set2" (
+    payload = @./pcp_BasicNestedPayload_set_payload.usda@</Set>
+)
+{
+    def Scope "Prop" (
+        payload = @./pcp_BasicNestedPayload_prop_payload.usda@</Prop>
+    )
+    {
+    }
+}
+
+def Scope "Set3" (
+    references = @./pcp_BasicNestedPayload_set.usda@</Set>
+)
+{
+    over "Prop"
+    {
+        over "PropScope"
+        {
+            string x = "from root"
+        }
+    }
+}

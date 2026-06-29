@@ -1,0 +1,302 @@
+{
+  "suite": "usda-single-layer-basic",
+  "contract": "contracts/handles/layer-open.handle.json",
+  "spec_commit": "v1.0.1",
+  "cases": [
+    {
+      "id": "empty-layer",
+      "spec_refs": [
+        "file_formats/README.md:1555 LayerHeader",
+        "document_data_model/README.md:89 Layer Specs"
+      ],
+      "input": {
+        "usda": "#usda 1.0\n"
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "layer": {
+          "fields": {
+            "primChildren": {"type": "token[]", "value": []}
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "primChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "one-root-prim",
+      "spec_refs": [
+        "file_formats/README.md:1182 Prim Specs",
+        "file_formats/README.md:1329 Prim Declaration Components",
+        "document_data_model/README.md:637 Prim Spec"
+      ],
+      "input": {
+        "usda": "#usda 1.0\n\ndef Xform \"World\"\n{\n}\n"
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "layer": {
+          "fields": {
+            "primChildren": {"type": "token[]", "value": ["World"]}
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "primChildren": {"type": "token[]", "value": ["World"]}
+              }
+            },
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "typeName": {"type": "token", "value": "Xform"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "nested-prims-and-attributes",
+      "spec_refs": [
+        "file_formats/README.md:868 Attribute Specs",
+        "file_formats/README.md:932 Attribute Declarations",
+        "file_formats/README.md:958 Attribute Values",
+        "file_formats/README.md:1088 Attribute Types and Value Validation"
+      ],
+      "input": {
+        "usda": "#usda 1.0\n\ndef Xform \"World\"\n{\n    def Scope \"Geom\"\n    {\n        float size = 1.5\n        int count = 3\n        double3 translate = (1, 2, 3)\n    }\n}\n"
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "layer": {
+          "fields": {
+            "primChildren": {"type": "token[]", "value": ["World"]}
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "primChildren": {"type": "token[]", "value": ["World"]}
+              }
+            },
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "typeName": {"type": "token", "value": "Xform"},
+                "primChildren": {"type": "token[]", "value": ["Geom"]},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World/Geom": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "typeName": {"type": "token", "value": "Scope"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": ["size", "count", "translate"]},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World/Geom.size": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "variability": {"type": "variability", "value": "varying"},
+                "typeName": {"type": "token", "value": "float"},
+                "default": {"type": "float", "value": 1.5}
+              }
+            },
+            "/World/Geom.count": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "variability": {"type": "variability", "value": "varying"},
+                "typeName": {"type": "token", "value": "int"},
+                "default": {"type": "int", "value": 3}
+              }
+            },
+            "/World/Geom.translate": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "variability": {"type": "variability", "value": "varying"},
+                "typeName": {"type": "token", "value": "double3"},
+                "default": {"type": "double3", "value": [1.0, 2.0, 3.0]}
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "relationship-targets",
+      "spec_refs": [
+        "file_formats/README.md:1120 Relationship Specs",
+        "file_formats/README.md:1163 Relationship Types",
+        "file_formats/README.md:1171 Relationship Values"
+      ],
+      "input": {
+        "usda": "#usda 1.0\n\ndef \"World\"\n{\n    rel material:binding = </Materials/Default>\n}\n"
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "layer": {
+          "fields": {
+            "primChildren": {"type": "token[]", "value": ["World"]}
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "primChildren": {"type": "token[]", "value": ["World"]}
+              }
+            },
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": ["material:binding"]},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World.material:binding": {
+              "kind": "relationship",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "targetPaths": {
+                  "type": "listop<ObjectPath>",
+                  "value": {
+                    "explicit": ["/Materials/Default"],
+                    "prepend": [],
+                    "append": [],
+                    "delete": []
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "metadata-and-ordering",
+      "spec_refs": [
+        "file_formats/README.md:818 Common Metadata",
+        "file_formats/README.md:1412 Child Ordering",
+        "file_formats/README.md:1615 Root Prim Reordering",
+        "document_data_model/README.md:477 Layer Spec Fields"
+      ],
+      "input": {
+        "usda": "#usda 1.0\n(\n    defaultPrim = \"World\"\n    customLayerData = {\n        string owner = \"skillgraph\"\n    }\n)\n\nreorder rootPrims = [\"Other\", \"World\"]\n\ndef \"World\"\n{\n    string a = \"x\"\n    string b = \"y\"\n    reorder properties = [\"b\"]\n}\n\ndef \"Other\"\n{\n}\n"
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "layer": {
+          "fields": {
+            "defaultPrim": {"type": "token", "value": "World"},
+            "customLayerData": {
+              "type": "dictionary",
+              "value": {
+                "owner": {"type": "string", "value": "skillgraph"}
+              }
+            },
+            "primChildren": {"type": "token[]", "value": ["World", "Other"]},
+            "primOrder": {"type": "token[]", "value": ["Other", "World"]}
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "defaultPrim": {"type": "token", "value": "World"},
+                "customLayerData": {
+                  "type": "dictionary",
+                  "value": {
+                    "owner": {"type": "string", "value": "skillgraph"}
+                  }
+                },
+                "primChildren": {"type": "token[]", "value": ["World", "Other"]},
+                "primOrder": {"type": "token[]", "value": ["Other", "World"]}
+              }
+            },
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": ["a", "b"]},
+                "propertyOrder": {"type": "token[]", "value": ["b"]},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World.a": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "variability": {"type": "variability", "value": "varying"},
+                "typeName": {"type": "token", "value": "string"},
+                "default": {"type": "string", "value": "x"}
+              }
+            },
+            "/World.b": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "variability": {"type": "variability", "value": "varying"},
+                "typeName": {"type": "token", "value": "string"},
+                "default": {"type": "string", "value": "y"}
+              }
+            },
+            "/Other": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "duplicate-spec-path-error",
+      "spec_refs": [
+        "file_formats/README.md:1565 Layer Content"
+      ],
+      "input": {
+        "usda": "#usda 1.0\n\ndef \"Foo\"\n{\n}\n\nover \"Foo\"\n{\n}\n"
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {
+            "severity": "error",
+            "code": "DuplicateSpecPath",
+            "message": "duplicate spec path",
+            "path": "/Foo"
+          }
+        ]
+      }
+    }
+  ]
+}

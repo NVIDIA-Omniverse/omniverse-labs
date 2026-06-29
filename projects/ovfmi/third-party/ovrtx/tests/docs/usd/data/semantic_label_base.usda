@@ -1,0 +1,19 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+)
+
+def Xform "World"
+{
+    def Xform "warehouse"
+    {
+    }
+
+    def Xform "robot_alpha"
+    {
+    }
+
+    def Xform "robot_beta"
+    {
+    }
+}

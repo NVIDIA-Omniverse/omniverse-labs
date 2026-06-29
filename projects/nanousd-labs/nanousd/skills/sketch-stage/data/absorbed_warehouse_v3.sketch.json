@@ -1,0 +1,3415 @@
+{
+  "schemaVersion": 1,
+  "seed": 42,
+  "assetPack": "<asset-pack-root>",
+  "absorbedFrom": "<absorbed-from-source-usd>",
+  "scenario": "warehouse",
+  "semantics": {
+    "rack": {
+      "description": "Industrial pallet rack",
+      "preferredNear": [
+        "rack",
+        "pallet",
+        "forklift"
+      ],
+      "avoidNear": [
+        "packing_table"
+      ],
+      "sourceDerived": {
+        "usdSemanticsLabels": {
+          "wikidata_qcode": [
+            "Q47107"
+          ]
+        }
+      }
+    },
+    "pallet": {
+      "description": "Loading pallet",
+      "preferredNear": [
+        "rack",
+        "forklift",
+        "pallet"
+      ],
+      "avoidNear": [
+        "fire_ext"
+      ],
+      "sourceDerived": {
+        "usdSemanticsLabels": {
+          "wikidata_qcode": [
+            "Q505996"
+          ]
+        }
+      }
+    },
+    "forklift": {
+      "description": "Industrial forklift",
+      "preferredNear": [
+        "pallet",
+        "rack"
+      ],
+      "avoidNear": [
+        "fire_ext",
+        "ladder",
+        "packing_table"
+      ],
+      "sourceDerived": {
+        "usdSemanticsLabels": {
+          "wikidata_qcode": [
+            "Q41577"
+          ]
+        }
+      }
+    },
+    "packing_table": {
+      "description": "Packing/sorting table",
+      "preferredNear": [
+        "conveyor",
+        "trolley"
+      ],
+      "avoidNear": [
+        "rack",
+        "forklift"
+      ],
+      "sourceDerived": {
+        "kind": "subcomponent"
+      }
+    },
+    "container": {
+      "description": "Storage container",
+      "preferredNear": [],
+      "avoidNear": [],
+      "sourceDerived": {
+        "usdSemanticsLabels": {
+          "wikidata_qcode": [
+            "Q4743886"
+          ]
+        }
+      }
+    },
+    "fire_ext": {
+      "description": "Fire extinguisher",
+      "preferredNear": [
+        "wall"
+      ],
+      "avoidNear": [
+        "forklift",
+        "trolley",
+        "pallet",
+        "rack"
+      ],
+      "sourceDerived": {
+        "usdSemanticsLabels": {
+          "wikidata_qcode": [
+            "Q190672"
+          ]
+        }
+      }
+    },
+    "trolley": {
+      "description": "Service trolley",
+      "preferredNear": [
+        "packing_table",
+        "pallet"
+      ],
+      "avoidNear": [
+        "fire_ext"
+      ],
+      "sourceDerived": {
+        "usdSemanticsLabels": {
+          "wikidata_qcode": [
+            "Q234668"
+          ]
+        }
+      }
+    },
+    "ladder": {
+      "description": "Step / rolling ladder",
+      "preferredNear": [
+        "wall",
+        "rack"
+      ],
+      "avoidNear": [
+        "forklift"
+      ],
+      "sourceDerived": {
+        "usdSemanticsLabels": {
+          "wikidata_qcode": [
+            "Q168639"
+          ]
+        }
+      }
+    }
+  },
+  "templateZones": [
+    {
+      "id": "Loading_Zone",
+      "purpose": "loading",
+      "allowedArchetypes": [
+        "forklift",
+        "pallet",
+        "conveyor",
+        "trolley"
+      ],
+      "observedArchetypes": {
+        "pallet": 8,
+        "rack": 28,
+        "forklift": 1
+      }
+    },
+    {
+      "id": "Sorting_Area",
+      "purpose": "sorting",
+      "allowedArchetypes": [
+        "packing_table",
+        "conveyor",
+        "trolley"
+      ],
+      "observedArchetypes": {
+        "rack": 2,
+        "packing_table": 12,
+        "pallet": 4,
+        "container": 1
+      }
+    },
+    {
+      "id": "Unloading_Staging_Zone",
+      "purpose": "loading",
+      "allowedArchetypes": [
+        "forklift",
+        "pallet",
+        "conveyor",
+        "trolley"
+      ],
+      "observedArchetypes": {
+        "pallet": 84,
+        "forklift": 7,
+        "rack": 47,
+        "fire_ext": 1,
+        "container": 24,
+        "trolley": 8,
+        "ladder": 2,
+        "packing_table": 8
+      }
+    },
+    {
+      "id": "Warehouse_Metro_Racks",
+      "purpose": "warehouse_general",
+      "allowedArchetypes": [],
+      "observedArchetypes": {}
+    },
+    {
+      "id": "warehouse_floorplan",
+      "purpose": "warehouse_general",
+      "allowedArchetypes": [
+        "fire_ext",
+        "packing_table"
+      ],
+      "observedArchetypes": {
+        "fire_ext": 32,
+        "packing_table": 5
+      }
+    },
+    {
+      "id": "Transporter_Area",
+      "purpose": "transport",
+      "allowedArchetypes": [
+        "conveyor",
+        "forklift",
+        "rack"
+      ],
+      "observedArchetypes": {
+        "pallet": 3,
+        "rack": 4,
+        "packing_table": 7,
+        "ladder": 1
+      }
+    }
+  ],
+  "defaults": {
+    "marginFactor": 1.05,
+    "defaultOnMiss": "skip",
+    "pickStrategy": "best-fit"
+  },
+  "tree": {
+    "type": "site",
+    "id": "absorbed_warehouse",
+    "shell": {
+      "boundsM": {
+        "widthM": 71.21533483970641,
+        "depthM": 103.61968384639135,
+        "heightM": 8.0
+      }
+    },
+    "children": [
+      {
+        "type": "zone",
+        "id": "scene",
+        "transform": {
+          "translateM": [
+            2.0,
+            2.0,
+            0.0
+          ],
+          "yawDeg": 0.0
+        },
+        "boundsM": {
+          "widthM": 71.21533483970641,
+          "depthM": 103.61968384639135,
+          "heightM": 8.0
+        },
+        "children": [
+          {
+            "type": "placement",
+            "id": "World_Loading_Zone_sm_warehousecomposition_c01_02_composition_01_SM_SolidTopRackablePallet_A02_BlueA_02",
+            "archetype": "rack",
+            "slotM": {
+              "widthM": 3.5,
+              "depthM": 1.2,
+              "heightM": 3.0
+            },
+            "transform": {
+              "translateM": [
+                34.1985514959697,
+                58.42523181689062,
+                3.892672586075505e-09
+              ],
+              "yawDeg": -119.6697503447724
+            },
+            "parentZoneId": "Loading_Zone",
+            "originalAssetUrl": "../../general/SM_SolidTopRackablePallet_A02_BlueA_01/SM_SolidTopRackablePallet_A02_BlueA_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Loading_Zone_sm_warehousecomposition_c01_02_composition_07_SM_SolidTopRackablePallet_A02_BlueA_04",
+            "archetype": "rack",
+            "slotM": {
+              "widthM": 3.5,
+              "depthM": 1.2,
+              "heightM": 3.0
+            },
+            "transform": {
+              "translateM": [
+                35.43028269413548,
+                56.368744559776545,
+                3.892672479494097e-09
+              ],
+              "yawDeg": -119.6697503447724
+            },
+            "parentZoneId": "Loading_Zone",
+            "originalAssetUrl": "../../general/SM_SolidTopRackablePallet_A02_BlueA_01/SM_SolidTopRackablePallet_A02_BlueA_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Loading_Zone_sm_rackcomposition_s58_02",
+            "archetype": "rack",
+            "slotM": {
+              "widthM": 3.5,
+              "depthM": 1.2,
+              "heightM": 3.0
+            },
+            "transform": {
+              "translateM": [
+                20.21916924469022,
+                47.52054523823876,
+                -3.70047994024958e-08
+              ],
+              "yawDeg": -0.0
+            },
+            "parentZoneId": "Loading_Zone",
+            "originalAssetUrl": "../Props/assembly/sm_rackcomposition_s58_01/sm_rackcomposition_s58_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Loading_Zone_sm_palletcomposition_a47_04",
+            "archetype": "pallet",
+            "slotM": {
+              "widthM": 1.22,
+              "depthM": 1.02,
+              "heightM": 0.15
+            },
+            "transform": {
+              "translateM": [
+                27.911095014286403,
+                58.47683884914899,
+                0.00010944432910778157
+              ],
+              "yawDeg": -119.0139727819496
+            },
+            "parentZoneId": "Loading_Zone",
+            "originalAssetUrl": "../Props/assembly/sm_palletcomposition_a47_01/sm_palletcomposition_a47_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Loading_Zone_sm_warehousecomposition_m14_02_composition_02_SM_BlockPallet_A06_WoodNewA_03",
+            "archetype": "pallet",
+            "slotM": {
+              "widthM": 1.22,
+              "depthM": 1.02,
+              "heightM": 0.15
+            },
+            "transform": {
+              "translateM": [
+                43.82984838676771,
+                49.11095014444334,
+                2.881250676187353e-14
+              ],
+              "yawDeg": 180.0
+            },
+            "parentZoneId": "Loading_Zone",
+            "originalAssetUrl": "../../general/SM_BlockPallet_A06_WoodNewA_01/SM_BlockPallet_A06_WoodNewA_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Loading_Zone_sm_warehousecomposition_m14_02_composition_03_SM_BlockPallet_A01_WoodNewA_03",
+            "archetype": "pallet",
+            "slotM": {
+              "widthM": 1.22,
+              "depthM": 1.02,
+              "heightM": 0.15
+            },
+            "transform": {
+              "translateM": [
+                42.21460293246853,
+                49.138681865216164,
+                0.30210549633000905
+              ],
+              "yawDeg": -178.8597525797171
+            },
+            "parentZoneId": "Loading_Zone",
+            "originalAssetUrl": "../../general/SM_BlockPallet_A01_WoodNewA_01/SM_BlockPallet_A01_WoodNewA_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Loading_Zone_sm_warehousecomposition_m14_02_Forklift_Orange_Transform",
+            "archetype": "forklift",
+            "slotM": {
+              "widthM": 1.36,
+              "depthM": 3.73,
+              "heightM": 2.17
+            },
+            "transform": {
+              "translateM": [
+                43.957789778477625,
+                49.04152400481455,
+                -2.4868995751603535e-14
+              ],
+              "yawDeg": 179.06439110612922
+            },
+            "parentZoneId": "Loading_Zone",
+            "originalAssetUrl": null
+          },
+          {
+            "type": "placement",
+            "id": "World_Loading_Zone_sm_rackcomposition_a16_03",
+            "archetype": "rack",
+            "slotM": {
+              "widthM": 3.5,
+              "depthM": 1.2,
+              "heightM": 3.0
+            },
+            "transform": {
+              "translateM": [
+                43.48498278143806,
+                41.86441212743131,
+                -2.398081733190339e-14
+              ],
+              "yawDeg": -0.0
+            },
+            "parentZoneId": "Loading_Zone",
+            "originalAssetUrl": "../Props/assembly/sm_rackcomposition_a16_01/sm_rackcomposition_a16_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Sorting_Area_Warehouse_A_AdditionalStorage_B_01_Xform_sm_rackcomposition_a16_02",
+            "archetype": "rack",
+            "slotM": {
+              "widthM": 3.5,
+              "depthM": 1.2,
+              "heightM": 3.0
+            },
+            "transform": {
+              "translateM": [
+                9.896712593312564,
+                48.25122535545384,
+                -1.145750161413161e-13
+              ],
+              "yawDeg": -179.99077135823387
+            },
+            "parentZoneId": "Sorting_Area",
+            "originalAssetUrl": "../Props/assembly/sm_rackcomposition_a16_01/sm_rackcomposition_a16_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Sorting_Area_Warehouse_A_AdditionalStorage_B_01_Xform_sm_scanningtablecomposition_a03_01",
+            "archetype": "packing_table",
+            "slotM": {
+              "widthM": 2.44,
+              "depthM": 0.97,
+              "heightM": 1.93
+            },
+            "transform": {
+              "translateM": [
+                0.7230482278471015,
+                51.778137815792554,
+                4.638067707674055e-13
+              ],
+              "yawDeg": 179.28014124056514
+            },
+            "parentZoneId": "Sorting_Area",
+            "originalAssetUrl": "../Props/assembly/sm_scanningtablecomposition_a03_01/sm_scanningtablecomposition_a03_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Sorting_Area_Warehouse_A_AdditionalStorage_B_01_Xform_sm_packingtablecomposition_a07_01",
+            "archetype": "packing_table",
+            "slotM": {
+              "widthM": 2.44,
+              "depthM": 0.97,
+              "heightM": 1.93
+            },
+            "transform": {
+              "translateM": [
+                0.46035612977620133,
+                53.916296464822786,
+                1.838529328779212e-13
+              ],
+              "yawDeg": 119.6697503447724
+            },
+            "parentZoneId": "Sorting_Area",
+            "originalAssetUrl": "../Props/assembly/sm_packingtablecomposition_a07_01/sm_packingtablecomposition_a07_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Sorting_Area_Warehouse_A_AdditionalStorage_B_01_Xform_sm_rackcomposition_s60_01",
+            "archetype": "rack",
+            "slotM": {
+              "widthM": 3.5,
+              "depthM": 1.2,
+              "heightM": 3.0
+            },
+            "transform": {
+              "translateM": [
+                5.925769602821816,
+                49.28656005187158,
+                2.036733063235375e-06
+              ],
+              "yawDeg": 119.6697503447724
+            },
+            "parentZoneId": "Sorting_Area",
+            "originalAssetUrl": "../Props/assembly/sm_rackcomposition_s60_01/sm_rackcomposition_s60_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Sorting_Area_Warehouse_A_AdditionalStorage_B_01_Xform_sm_warehousecomposition_m06_01_SM_RecyclingContainer_B04_Blue_02",
+            "archetype": "container",
+            "slotM": {
+              "widthM": 0.8,
+              "depthM": 0.8,
+              "heightM": 0.8
+            },
+            "transform": {
+              "translateM": [
+                2.834210088146648,
+                16.93287447741109,
+                -2.4833469707488016e-14
+              ],
+              "yawDeg": 178.8597525797171
+            },
+            "parentZoneId": "Sorting_Area",
+            "originalAssetUrl": "../../general/SM_RecyclingContainer_B04_Blue_01/SM_RecyclingContainer_B04_Blue_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Sorting_Area_Warehouse_A_AdditionalStorage_B_01_Xform_sm_warehousecomposition_m06_01_composition_01_SM_BlockPallet_A01_WoodNewA_07",
+            "archetype": "pallet",
+            "slotM": {
+              "widthM": 1.22,
+              "depthM": 1.02,
+              "heightM": 0.15
+            },
+            "transform": {
+              "translateM": [
+                4.713168155772578,
+                48.276002511244165,
+                -1.1152678818273496e-12
+              ],
+              "yawDeg": 119.03364846094094
+            },
+            "parentZoneId": "Sorting_Area",
+            "originalAssetUrl": "../../general/SM_BlockPallet_A01_WoodNewA_01/SM_BlockPallet_A01_WoodNewA_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Sorting_Area_Warehouse_A_AdditionalStorage_B_01_Xform_sm_warehousecomposition_m06_01_composition_01_SM_BlockPallet_A02_WoodNewA_07",
+            "archetype": "pallet",
+            "slotM": {
+              "widthM": 1.22,
+              "depthM": 1.02,
+              "heightM": 0.15
+            },
+            "transform": {
+              "translateM": [
+                4.29272621630701,
+                51.19751825801735,
+                0.12010236471673195
+              ],
+              "yawDeg": 119.01985340444081
+            },
+            "parentZoneId": "Sorting_Area",
+            "originalAssetUrl": "../../general/SM_BlockPallet_A02_WoodNewA_01/SM_BlockPallet_A02_WoodNewA_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Sorting_Area_Warehouse_A_AdditionalStorage_B_01_Xform_sm_warehousecomposition_m06_01_composition_02_SM_HeavyDutyPackingTable_C02_02",
+            "archetype": "packing_table",
+            "slotM": {
+              "widthM": 2.44,
+              "depthM": 0.97,
+              "heightM": 1.93
+            },
+            "transform": {
+              "translateM": [
+                6.208856145109408,
+                43.541834150064965,
+                -7.644729575935484e-13
+              ],
+              "yawDeg": -119.6697503447724
+            },
+            "parentZoneId": "Sorting_Area",
+            "originalAssetUrl": "../../general/SM_HeavyDutyPackingTable_C02_01/SM_HeavyDutyPackingTable_C02_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Sorting_Area_Warehouse_A_AdditionalStorage_B_01_Xform_sm_warehousecomposition_m06_01_composition_04_SM_HeavyDutyPackingTable_C02_03",
+            "archetype": "packing_table",
+            "slotM": {
+              "widthM": 2.44,
+              "depthM": 0.97,
+              "heightM": 1.93
+            },
+            "transform": {
+              "translateM": [
+                3.584052749290798,
+                43.59509377059673,
+                -6.323830348264892e-13
+              ],
+              "yawDeg": 119.6697503447724
+            },
+            "parentZoneId": "Sorting_Area",
+            "originalAssetUrl": "../../general/SM_HeavyDutyPackingTable_C02_01/SM_HeavyDutyPackingTable_C02_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Sorting_Area_Warehouse_A_SortingArea_B_Group_06_sm_packingtablecomposition_a01_01",
+            "archetype": "packing_table",
+            "slotM": {
+              "widthM": 2.44,
+              "depthM": 0.97,
+              "heightM": 1.93
+            },
+            "transform": {
+              "translateM": [
+                13.720345195333351,
+                50.27194897206765,
+                1.2885336938742553e-12
+              ],
+              "yawDeg": -119.66175121327575
+            },
+            "parentZoneId": "Sorting_Area",
+            "originalAssetUrl": "../Props/assembly/sm_packingtablecomposition_a01_01/sm_packingtablecomposition_a01_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Sorting_Area_Warehouse_A_SortingArea_B_Group_06_sm_packingtablecomposition_a04_01",
+            "archetype": "packing_table",
+            "slotM": {
+              "widthM": 2.44,
+              "depthM": 0.97,
+              "heightM": 1.93
+            },
+            "transform": {
+              "translateM": [
+                9.838624036537126,
+                52.579636635233214,
+                1.5853984791647192e-13
+              ],
+              "yawDeg": 178.86206008303162
+            },
+            "parentZoneId": "Sorting_Area",
+            "originalAssetUrl": "../Props/assembly/sm_packingtablecomposition_a04_01/sm_packingtablecomposition_a04_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Sorting_Area_SM_CratePacking_Table_A1_02",
+            "archetype": "packing_table",
+            "slotM": {
+              "widthM": 2.44,
+              "depthM": 0.97,
+              "heightM": 1.93
+            },
+            "transform": {
+              "translateM": [
+                7.790946502919184,
+                57.24330130234963,
+                1.7754013406090507e-06
+              ],
+              "yawDeg": 180.0
+            },
+            "parentZoneId": "Sorting_Area",
+            "originalAssetUrl": "../Props/assembly/SM_CratePacking_Table_A1/SM_CratePacking_Table_A1_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Sorting_Area_SM_CratePacking_Table_A1_03",
+            "archetype": "packing_table",
+            "slotM": {
+              "widthM": 2.44,
+              "depthM": 0.97,
+              "heightM": 1.93
+            },
+            "transform": {
+              "translateM": [
+                11.719637351114407,
+                57.24330130234818,
+                1.7754013406090507e-06
+              ],
+              "yawDeg": 180.0
+            },
+            "parentZoneId": "Sorting_Area",
+            "originalAssetUrl": "../Props/assembly/SM_CratePacking_Table_A1/SM_CratePacking_Table_A1_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Sorting_Area_SM_Unpacking_Table_A1_02",
+            "archetype": "packing_table",
+            "slotM": {
+              "widthM": 2.44,
+              "depthM": 0.97,
+              "heightM": 1.93
+            },
+            "transform": {
+              "translateM": [
+                6.966946502919107,
+                54.35930130234986,
+                1.7754013406090507e-06
+              ],
+              "yawDeg": -89.99999999999999
+            },
+            "parentZoneId": "Sorting_Area",
+            "originalAssetUrl": "../Props/assembly/SM_Unpacking_Table_A1/SM_Unpacking_Table_A1_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Sorting_Area_SM_Unpacking_Table_A1_03",
+            "archetype": "packing_table",
+            "slotM": {
+              "widthM": 2.44,
+              "depthM": 0.97,
+              "heightM": 1.93
+            },
+            "transform": {
+              "translateM": [
+                12.73494650291665,
+                54.35930130234814,
+                1.7754013406090507e-06
+              ],
+              "yawDeg": 89.99999999999999
+            },
+            "parentZoneId": "Sorting_Area",
+            "originalAssetUrl": "../Props/assembly/SM_Unpacking_Table_A1/SM_Unpacking_Table_A1_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_Xform_sm_warehousecomposition_m14_01_composition_02_SM_BlockPallet_A06_WoodNewA_03",
+            "archetype": "pallet",
+            "slotM": {
+              "widthM": 1.22,
+              "depthM": 1.02,
+              "heightM": 0.15
+            },
+            "transform": {
+              "translateM": [
+                39.80434044090379,
+                26.893661741441818,
+                2.4619417025676236e-13
+              ],
+              "yawDeg": -0.0
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../../general/SM_BlockPallet_A06_WoodNewA_01/SM_BlockPallet_A06_WoodNewA_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_Xform_sm_warehousecomposition_m14_01_Forklift_Orange_Transform",
+            "archetype": "forklift",
+            "slotM": {
+              "widthM": 1.36,
+              "depthM": 3.73,
+              "heightM": 2.17
+            },
+            "transform": {
+              "translateM": [
+                51.841073354744275,
+                13.098066129567385,
+                -9.725553518037978e-14
+              ],
+              "yawDeg": -179.84126121665773
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": null
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_Xform_sm_palletcomposition_a94_01",
+            "archetype": "pallet",
+            "slotM": {
+              "widthM": 1.22,
+              "depthM": 1.02,
+              "heightM": 0.15
+            },
+            "transform": {
+              "translateM": [
+                39.26063664427707,
+                2.0934047505905085,
+                9.677679909358973e-07
+              ],
+              "yawDeg": 179.80390409933372
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../Props/assembly/sm_palletcomposition_a94_01/sm_palletcomposition_a94_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_Xform_sm_rackcomposition_s57_01",
+            "archetype": "rack",
+            "slotM": {
+              "widthM": 3.5,
+              "depthM": 1.2,
+              "heightM": 3.0
+            },
+            "transform": {
+              "translateM": [
+                40.08134121313178,
+                10.44344781030577,
+                -9.927991050062702e-07
+              ],
+              "yawDeg": 180.0
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../Props/assembly/sm_rackcomposition_s57_01/sm_rackcomposition_s57_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_Xform_sm_warehousecomposition_m01_01_SM_Forklift_C01_Red_02",
+            "archetype": "forklift",
+            "slotM": {
+              "widthM": 1.36,
+              "depthM": 3.73,
+              "heightM": 2.17
+            },
+            "transform": {
+              "translateM": [
+                43.39166180877021,
+                20.826186149583933,
+                -0.005371283869767176
+              ],
+              "yawDeg": 180.0
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../../general/SM_Forklift_C01_Red_01/SM_Forklift_C01_Red_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_Xform_sm_warehousecomposition_m01_01_composition_01_SM_BlockPallet_A02_WoodNewA_02",
+            "archetype": "pallet",
+            "slotM": {
+              "widthM": 1.22,
+              "depthM": 1.02,
+              "heightM": 0.15
+            },
+            "transform": {
+              "translateM": [
+                39.83216663001565,
+                19.99235965853066,
+                4.789085998410965e-10
+              ],
+              "yawDeg": 178.8597525797171
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../../general/SM_BlockPallet_A02_WoodNewA_01/SM_BlockPallet_A02_WoodNewA_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_Xform_sm_rackcomposition_s58_01",
+            "archetype": "rack",
+            "slotM": {
+              "widthM": 3.5,
+              "depthM": 1.2,
+              "heightM": 3.0
+            },
+            "transform": {
+              "translateM": [
+                27.311557360440673,
+                1.5050484375711335,
+                -3.700479940249581e-08
+              ],
+              "yawDeg": 180.0
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../Props/assembly/sm_rackcomposition_s58_01/sm_rackcomposition_s58_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_Xform_sm_palletcomposition_a108_03",
+            "archetype": "pallet",
+            "slotM": {
+              "widthM": 1.22,
+              "depthM": 1.02,
+              "heightM": 0.15
+            },
+            "transform": {
+              "translateM": [
+                31.884330014039065,
+                23.95283693230739,
+                -3.4664373426807034e-07
+              ],
+              "yawDeg": 178.87900178629474
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../Props/assembly/sm_palletcomposition_a108_01/sm_palletcomposition_a108_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_Xform_SM_ABCFireExtinguisher_A03_03",
+            "archetype": "fire_ext",
+            "slotM": {
+              "widthM": 0.14,
+              "depthM": 0.19,
+              "heightM": 0.54
+            },
+            "transform": {
+              "translateM": [
+                50.181808016720844,
+                0.24335306806847257,
+                0.8943840258837437
+              ],
+              "yawDeg": 178.8597525797171
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../Props/general/SM_ABCFireExtinguisher_A03_01/SM_ABCFireExtinguisher_A03_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_Xform_sm_warehousecomposition_m03_02_composition_02_SM_RecyclingContainer_B02_Blue_02",
+            "archetype": "container",
+            "slotM": {
+              "widthM": 0.8,
+              "depthM": 0.8,
+              "heightM": 0.8
+            },
+            "transform": {
+              "translateM": [
+                55.151019736010255,
+                2.994272024595233,
+                0.0
+              ],
+              "yawDeg": -179.37289229754217
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../../general/SM_RecyclingContainer_B02_Blue_01/SM_RecyclingContainer_B02_Blue_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_Xform_sm_warehousecomposition_m03_02_composition_02_SM_RecyclingContainer_B04_Blue_02",
+            "archetype": "container",
+            "slotM": {
+              "widthM": 0.8,
+              "depthM": 0.8,
+              "heightM": 0.8
+            },
+            "transform": {
+              "translateM": [
+                55.00283910196273,
+                1.8719707572611952,
+                0.0
+              ],
+              "yawDeg": 180.0
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../../general/SM_RecyclingContainer_B04_Blue_01/SM_RecyclingContainer_B04_Blue_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_Xform_sm_warehousecomposition_m03_02_composition_02_SM_SquareRecyclingContainer_A02_Blue_02",
+            "archetype": "container",
+            "slotM": {
+              "widthM": 0.8,
+              "depthM": 0.8,
+              "heightM": 0.8
+            },
+            "transform": {
+              "translateM": [
+                54.016153466515654,
+                2.9931555390244853,
+                0.0
+              ],
+              "yawDeg": -0.0
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../../general/SM_SquareRecyclingContainer_A02_Blue_01/SM_SquareRecyclingContainer_A02_Blue_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_Xform_sm_warehousecomposition_m03_02_composition_04_SM_CleaningTrolley_B01_02",
+            "archetype": "trolley",
+            "slotM": {
+              "widthM": 0.86,
+              "depthM": 1.23,
+              "heightM": 0.48
+            },
+            "transform": {
+              "translateM": [
+                52.25060708874236,
+                2.644173989997796,
+                0.0
+              ],
+              "yawDeg": -179.49439060748108
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../../general/SM_CleaningTrolley_B01_01/SM_CleaningTrolley_B01_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_Xform_sm_warehousecomposition_m18_01_SM_AluminumStepLadder_C03_02",
+            "archetype": "ladder",
+            "slotM": {
+              "widthM": 0.95,
+              "depthM": 0.19,
+              "heightM": 1.76
+            },
+            "transform": {
+              "translateM": [
+                57.674252629574035,
+                4.390166556994501,
+                0.0
+              ],
+              "yawDeg": 119.05369415800942
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../../general/SM_AluminumStepLadder_C03_01_1/SM_AluminumStepLadder_C03_01_1_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_Xform_sm_warehousecomposition_m18_01_SM_LowProfilePalletTruck_A01_02",
+            "archetype": "pallet",
+            "slotM": {
+              "widthM": 1.22,
+              "depthM": 1.02,
+              "heightM": 0.15
+            },
+            "transform": {
+              "translateM": [
+                56.96956176774564,
+                6.689655606252131,
+                -4.440891999238953e-18
+              ],
+              "yawDeg": 119.65367973259814
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../../general/SM_LowProfilePalletTruck_A01_01/SM_LowProfilePalletTruck_A01_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_Xform_sm_warehousecomposition_m23_01_composition_02_SM_OfficeRecyclingContainer_A03_Green_02",
+            "archetype": "container",
+            "slotM": {
+              "widthM": 0.8,
+              "depthM": 0.8,
+              "heightM": 0.8
+            },
+            "transform": {
+              "translateM": [
+                56.52605011013952,
+                1.5157685613587688,
+                4.632738533606075e-13
+              ],
+              "yawDeg": -119.07474695695764
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../../general/SM_OfficeRecyclingContainer_A03_Green_01/SM_OfficeRecyclingContainer_A03_Green_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_Xform_sm_warehousecomposition_m03_01_composition_02_SM_RecyclingContainer_B02_Blue_02",
+            "archetype": "container",
+            "slotM": {
+              "widthM": 0.8,
+              "depthM": 0.8,
+              "heightM": 0.8
+            },
+            "transform": {
+              "translateM": [
+                47.603506440909705,
+                2.1812930464891025,
+                -1.1173284519827568e-14
+              ],
+              "yawDeg": -179.37289229754217
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../../general/SM_RecyclingContainer_B02_Blue_01/SM_RecyclingContainer_B02_Blue_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_Xform_sm_warehousecomposition_m03_01_composition_02_SM_RecyclingContainer_B04_Blue_02",
+            "archetype": "container",
+            "slotM": {
+              "widthM": 0.8,
+              "depthM": 0.8,
+              "heightM": 0.8
+            },
+            "transform": {
+              "translateM": [
+                46.211275169579004,
+                2.038834443172661,
+                -9.84101689027702e-15
+              ],
+              "yawDeg": 180.0
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../../general/SM_RecyclingContainer_B04_Blue_01/SM_RecyclingContainer_B04_Blue_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_Xform_sm_warehousecomposition_m03_01_composition_02_SM_RecyclingContainer_B04_Green_02",
+            "archetype": "container",
+            "slotM": {
+              "widthM": 0.8,
+              "depthM": 0.8,
+              "heightM": 0.8
+            },
+            "transform": {
+              "translateM": [
+                46.25904954913155,
+                0.637147472757178,
+                0.25999999806280805
+              ],
+              "yawDeg": 180.0
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../../general/SM_RecyclingContainer_B04_Green_01/SM_RecyclingContainer_B04_Green_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_Xform_sm_warehousecomposition_m03_01_composition_02_SM_SquareRecyclingContainer_A02_Blue_02",
+            "archetype": "container",
+            "slotM": {
+              "widthM": 0.8,
+              "depthM": 0.8,
+              "heightM": 0.8
+            },
+            "transform": {
+              "translateM": [
+                44.69234778717746,
+                2.0909398590291772,
+                -1.9166890833141735e-14
+              ],
+              "yawDeg": -0.0
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../../general/SM_SquareRecyclingContainer_A02_Blue_01/SM_SquareRecyclingContainer_A02_Blue_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_Xform_sm_warehousecomposition_m03_01_composition_04_SM_CleaningTrolley_A01_02",
+            "archetype": "trolley",
+            "slotM": {
+              "widthM": 0.86,
+              "depthM": 1.23,
+              "heightM": 0.48
+            },
+            "transform": {
+              "translateM": [
+                43.07708345515087,
+                1.4751979800409458,
+                -4.2703618419182026e-14
+              ],
+              "yawDeg": -179.945771328543
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../../general/SM_CleaningTrolley_A01_01/SM_CleaningTrolley_A01_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_Xform_sm_warehousecomposition_m06_01_SM_BlockPallet_A02_WoodNewA_08",
+            "archetype": "pallet",
+            "slotM": {
+              "widthM": 1.22,
+              "depthM": 1.02,
+              "heightM": 0.15
+            },
+            "transform": {
+              "translateM": [
+                40.64772818194605,
+                2.452058931689976,
+                -7.37188088351104e-14
+              ],
+              "yawDeg": 178.8597525797171
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../../general/SM_BlockPallet_A02_WoodNewA_01/SM_BlockPallet_A02_WoodNewA_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_Xform_sm_warehousecomposition_m06_01_SM_RecyclingContainer_B04_Blue_02",
+            "archetype": "container",
+            "slotM": {
+              "widthM": 0.8,
+              "depthM": 0.8,
+              "heightM": 0.8
+            },
+            "transform": {
+              "translateM": [
+                44.274984860135,
+                2.9013167701363045,
+                -2.4833469707488067e-14
+              ],
+              "yawDeg": -178.8597525797171
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../../general/SM_RecyclingContainer_B04_Blue_01/SM_RecyclingContainer_B04_Blue_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_Xform_sm_warehousecomposition_m06_01_composition_04_SM_HeavyDutyPackingTable_C02_03",
+            "archetype": "packing_table",
+            "slotM": {
+              "widthM": 2.44,
+              "depthM": 0.97,
+              "heightM": 1.93
+            },
+            "transform": {
+              "translateM": [
+                43.800798895020854,
+                0.49681326196717635,
+                -7.262812427712791e-13
+              ],
+              "yawDeg": 180.0
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../../general/SM_HeavyDutyPackingTable_C02_01/SM_HeavyDutyPackingTable_C02_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_Xform_sm_rackcomposition_f08_01",
+            "archetype": "rack",
+            "slotM": {
+              "widthM": 3.5,
+              "depthM": 1.2,
+              "heightM": 3.0
+            },
+            "transform": {
+              "translateM": [
+                54.775447449695264,
+                8.547363968852522,
+                0.0
+              ],
+              "yawDeg": -0.0
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../Props/assembly/sm_rackcomposition_f08_01/sm_rackcomposition_f08_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_Xform_sm_rackcomposition_a16_01",
+            "archetype": "rack",
+            "slotM": {
+              "widthM": 3.5,
+              "depthM": 1.2,
+              "heightM": 3.0
+            },
+            "transform": {
+              "translateM": [
+                52.23874714131293,
+                0.7670625251065388,
+                0.0
+              ],
+              "yawDeg": 180.0
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../Props/assembly/sm_rackcomposition_a16_01/sm_rackcomposition_a16_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_Xform_sm_rackcomposition_f19_01",
+            "archetype": "rack",
+            "slotM": {
+              "widthM": 3.5,
+              "depthM": 1.2,
+              "heightM": 3.0
+            },
+            "transform": {
+              "translateM": [
+                54.69914355075508,
+                11.078879791108875,
+                0.0
+              ],
+              "yawDeg": 180.0
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../Props/assembly/sm_rackcomposition_f19_01/sm_rackcomposition_f19_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_Xform_sm_rackcomposition_s63_01",
+            "archetype": "rack",
+            "slotM": {
+              "widthM": 3.5,
+              "depthM": 1.2,
+              "heightM": 3.0
+            },
+            "transform": {
+              "translateM": [
+                36.822842506161294,
+                3.035376345296129,
+                2.0567858882714066e-07
+              ],
+              "yawDeg": -178.8597525797171
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../Props/assembly/sm_rackcomposition_s63_01/sm_rackcomposition_s63_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_Xform_sm_rackcomposition_s60_01",
+            "archetype": "rack",
+            "slotM": {
+              "widthM": 3.5,
+              "depthM": 1.2,
+              "heightM": 3.0
+            },
+            "transform": {
+              "translateM": [
+                39.75474556576026,
+                0.023009034040626375,
+                2.0367332035675648e-06
+              ],
+              "yawDeg": 180.0
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../Props/assembly/sm_rackcomposition_s60_01/sm_rackcomposition_s60_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_Xform_sm_palletcomposition_a108_01",
+            "archetype": "pallet",
+            "slotM": {
+              "widthM": 1.22,
+              "depthM": 1.02,
+              "heightM": 0.15
+            },
+            "transform": {
+              "translateM": [
+                56.86056396131728,
+                19.239775930541725,
+                1.5298950799547133e-08
+              ],
+              "yawDeg": 179.37833023399654
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../Props/assembly/sm_palletcomposition_a108_01/sm_palletcomposition_a108_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_Xform_sm_palletcomposition_a108_02",
+            "archetype": "pallet",
+            "slotM": {
+              "widthM": 1.22,
+              "depthM": 1.02,
+              "heightM": 0.15
+            },
+            "transform": {
+              "translateM": [
+                51.833215800200946,
+                20.153138264511696,
+                -3.4664378311788364e-07
+              ],
+              "yawDeg": 178.87900178629474
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../Props/assembly/sm_palletcomposition_a108_01/sm_palletcomposition_a108_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_Xform_sm_palletcomposition_a102_01",
+            "archetype": "pallet",
+            "slotM": {
+              "widthM": 1.22,
+              "depthM": 1.02,
+              "heightM": 0.15
+            },
+            "transform": {
+              "translateM": [
+                35.952876685848786,
+                0.6881930630893294,
+                -2.2038901079213252e-07
+              ],
+              "yawDeg": 180.0
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../Props/assembly/sm_palletcomposition_a102_01/sm_palletcomposition_a102_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_Xform_sm_palletcomposition_a104_01",
+            "archetype": "pallet",
+            "slotM": {
+              "widthM": 1.22,
+              "depthM": 1.02,
+              "heightM": 0.15
+            },
+            "transform": {
+              "translateM": [
+                34.65014638452267,
+                1.1403952115268225,
+                6.138194294180722e-07
+              ],
+              "yawDeg": -179.9015884406519
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../Props/assembly/sm_palletcomposition_a104_01/sm_palletcomposition_a104_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_Xform_sm_palletcomposition_a110_01",
+            "archetype": "pallet",
+            "slotM": {
+              "widthM": 1.22,
+              "depthM": 1.02,
+              "heightM": 0.15
+            },
+            "transform": {
+              "translateM": [
+                38.550887292298384,
+                9.752918085723849,
+                2.6065876749680217
+              ],
+              "yawDeg": -119.60084668909522
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../Props/assembly/sm_palletcomposition_a110_01/sm_palletcomposition_a110_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_Xform_sm_warehousecomposition_a03_01_SM_RackablePallet_A01_BlueA_02",
+            "archetype": "rack",
+            "slotM": {
+              "widthM": 3.5,
+              "depthM": 1.2,
+              "heightM": 3.0
+            },
+            "transform": {
+              "translateM": [
+                47.34849540538199,
+                11.733964703011068,
+                0.3170565442526652
+              ],
+              "yawDeg": 179.46337730384278
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../../general/SM_RackablePallet_A01_BlueA_01/SM_RackablePallet_A01_BlueA_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_Xform_composition_04_SM_BlockPallet_A04_WoodNewA_03",
+            "archetype": "pallet",
+            "slotM": {
+              "widthM": 1.22,
+              "depthM": 1.02,
+              "heightM": 0.15
+            },
+            "transform": {
+              "translateM": [
+                39.71240322965316,
+                28.57504800577746,
+                6.500328142422519e-10
+              ],
+              "yawDeg": 178.85984522153342
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../Props/general/SM_BlockPallet_A04_WoodNewA_01/SM_BlockPallet_A04_WoodNewA_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_Xform_composition_05_SM_BlockPallet_A04_WoodNewA_03",
+            "archetype": "pallet",
+            "slotM": {
+              "widthM": 1.22,
+              "depthM": 1.02,
+              "heightM": 0.15
+            },
+            "transform": {
+              "translateM": [
+                39.71378792610149,
+                17.44955957824439,
+                6.500233773465427e-10
+              ],
+              "yawDeg": 179.28460389047927
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../Props/general/SM_BlockPallet_A04_WoodNewA_01/SM_BlockPallet_A04_WoodNewA_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_Xform_SM_Forklift_B01_Red_01",
+            "archetype": "forklift",
+            "slotM": {
+              "widthM": 1.36,
+              "depthM": 3.73,
+              "heightM": 2.17
+            },
+            "transform": {
+              "translateM": [
+                49.52524358803769,
+                2.661031049991891,
+                6.497913318526115e-14
+              ],
+              "yawDeg": -179.28563081875802
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../Props/general/SM_Forklift_B01_Red_01/SM_Forklift_B01_Red_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_sm_warehousecomposition_j02_03_composition_01_SM_WoodDrumPallet_A07_WoodRecycledA_02",
+            "archetype": "pallet",
+            "slotM": {
+              "widthM": 1.22,
+              "depthM": 1.02,
+              "heightM": 0.15
+            },
+            "transform": {
+              "translateM": [
+                38.053232051508346,
+                15.044552465918528,
+                0.00010967361667210313
+              ],
+              "yawDeg": 119.6697503447724
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../../general/SM_WoodDrumPallet_A07_WoodRecycledA_01/SM_WoodDrumPallet_A07_WoodRecycledA_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_sm_warehousecomposition_j02_03_composition_02_SM_WoodDrumPallet_A07_WoodRecycledA_02",
+            "archetype": "pallet",
+            "slotM": {
+              "widthM": 1.22,
+              "depthM": 1.02,
+              "heightM": 0.15
+            },
+            "transform": {
+              "translateM": [
+                38.25993440222433,
+                16.928072186064227,
+                0.00010967361666655202
+              ],
+              "yawDeg": -178.8597525797171
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../../general/SM_WoodDrumPallet_A07_WoodRecycledA_01/SM_WoodDrumPallet_A07_WoodRecycledA_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_sm_warehousecomposition_j02_03_composition_03_SM_WoodDrumPallet_A07_WoodRecycledA_02",
+            "archetype": "pallet",
+            "slotM": {
+              "widthM": 1.22,
+              "depthM": 1.02,
+              "heightM": 0.15
+            },
+            "transform": {
+              "translateM": [
+                37.915420179877906,
+                22.51976516091696,
+                0.00010967361649757606
+              ],
+              "yawDeg": 180.0
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../../general/SM_WoodDrumPallet_A07_WoodRecycledA_01/SM_WoodDrumPallet_A07_WoodRecycledA_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_sm_warehousecomposition_j02_03_composition_05_SM_WoodDrumPallet_A07_WoodRecycledA_02",
+            "archetype": "pallet",
+            "slotM": {
+              "widthM": 1.22,
+              "depthM": 1.02,
+              "heightM": 0.15
+            },
+            "transform": {
+              "translateM": [
+                38.21726989598017,
+                28.605245186429812,
+                0.00010967361667232518
+              ],
+              "yawDeg": -178.8597525797171
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../../general/SM_WoodDrumPallet_A07_WoodRecycledA_01/SM_WoodDrumPallet_A07_WoodRecycledA_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_sm_warehousecomposition_j02_03_composition_06_SM_WoodDrumPallet_A07_WoodRecycledA_02",
+            "archetype": "pallet",
+            "slotM": {
+              "widthM": 1.22,
+              "depthM": 1.02,
+              "heightM": 0.15
+            },
+            "transform": {
+              "translateM": [
+                38.07091267213155,
+                18.892261529780995,
+                0.00010967361660637791
+              ],
+              "yawDeg": -178.8597525797171
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../../general/SM_WoodDrumPallet_A07_WoodRecycledA_01/SM_WoodDrumPallet_A07_WoodRecycledA_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_sm_warehousecomposition_j02_03_composition_08_SM_WoodDrumPallet_A07_WoodRecycledA_02",
+            "archetype": "pallet",
+            "slotM": {
+              "widthM": 1.22,
+              "depthM": 1.02,
+              "heightM": 0.15
+            },
+            "transform": {
+              "translateM": [
+                37.95626871617635,
+                29.8566886735574,
+                0.00010967361658150892
+              ],
+              "yawDeg": 180.0
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../../general/SM_WoodDrumPallet_A07_WoodRecycledA_01/SM_WoodDrumPallet_A07_WoodRecycledA_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_sm_warehousecomposition_j02_03_composition_09_SM_WoodDrumPallet_A07_WoodRecycledA_02",
+            "archetype": "pallet",
+            "slotM": {
+              "widthM": 1.22,
+              "depthM": 1.02,
+              "heightM": 0.15
+            },
+            "transform": {
+              "translateM": [
+                37.843332878228125,
+                32.50437152028033,
+                0.00010967361667210313
+              ],
+              "yawDeg": 119.6697503447724
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../../general/SM_WoodDrumPallet_A07_WoodRecycledA_01/SM_WoodDrumPallet_A07_WoodRecycledA_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_sm_warehousecomposition_j02_03_composition_11_SM_WoodDrumPallet_A07_WoodRecycledA_02",
+            "archetype": "pallet",
+            "slotM": {
+              "widthM": 1.22,
+              "depthM": 1.02,
+              "heightM": 0.15
+            },
+            "transform": {
+              "translateM": [
+                38.27032796198971,
+                34.52696930630185,
+                0.00010967361673427562
+              ],
+              "yawDeg": 119.6697503447724
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../../general/SM_WoodDrumPallet_A07_WoodRecycledA_01/SM_WoodDrumPallet_A07_WoodRecycledA_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_03_Xform_sm_warehousecomposition_m01_01_SM_Forklift_C01_Red_02",
+            "archetype": "forklift",
+            "slotM": {
+              "widthM": 1.36,
+              "depthM": 3.73,
+              "heightM": 2.17
+            },
+            "transform": {
+              "translateM": [
+                31.00908209934324,
+                49.540441958903244,
+                -0.005371283869784138
+              ],
+              "yawDeg": 119.6697503447724
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../../general/SM_Forklift_C01_Red_01/SM_Forklift_C01_Red_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_03_Xform_sm_warehousecomposition_m01_01_composition_01_SM_BlockPallet_A02_WoodNewA_02",
+            "archetype": "pallet",
+            "slotM": {
+              "widthM": 1.22,
+              "depthM": 1.02,
+              "heightM": 0.15
+            },
+            "transform": {
+              "translateM": [
+                22.63339101198835,
+                33.27573233560297,
+                4.789068234842174e-10
+              ],
+              "yawDeg": -0.0
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../../general/SM_BlockPallet_A02_WoodNewA_01/SM_BlockPallet_A02_WoodNewA_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_03_Xform_sm_warehousecomposition_m18_01_SM_AluminumStepLadder_C03_02",
+            "archetype": "ladder",
+            "slotM": {
+              "widthM": 0.95,
+              "depthM": 0.19,
+              "heightM": 1.76
+            },
+            "transform": {
+              "translateM": [
+                39.51296306755229,
+                38.50667123993536,
+                -5.329070518200753e-15
+              ],
+              "yawDeg": -119.43982930949116
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../../general/SM_AluminumStepLadder_C03_01_1/SM_AluminumStepLadder_C03_01_1_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_03_Xform_sm_warehousecomposition_m18_01_SM_LowProfilePalletTruck_A01_02",
+            "archetype": "pallet",
+            "slotM": {
+              "widthM": 1.22,
+              "depthM": 1.02,
+              "heightM": 0.15
+            },
+            "transform": {
+              "translateM": [
+                40.805624862793444,
+                38.88104866193785,
+                -5.329070518200753e-15
+              ],
+              "yawDeg": 179.99925141082474
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../../general/SM_LowProfilePalletTruck_A01_01/SM_LowProfilePalletTruck_A01_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_03_Xform_sm_warehousecomposition_m03_02_composition_02_SM_RecyclingContainer_B02_Blue_02",
+            "archetype": "container",
+            "slotM": {
+              "widthM": 0.8,
+              "depthM": 0.8,
+              "heightM": 0.8
+            },
+            "transform": {
+              "translateM": [
+                58.0772061369769,
+                33.76984827364248,
+                1.1457501614131696e-13
+              ],
+              "yawDeg": 179.05627236114526
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../../general/SM_RecyclingContainer_B02_Blue_01/SM_RecyclingContainer_B02_Blue_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_03_Xform_sm_warehousecomposition_m03_02_composition_02_SM_RecyclingContainer_B04_Blue_02",
+            "archetype": "container",
+            "slotM": {
+              "widthM": 0.8,
+              "depthM": 0.8,
+              "heightM": 0.8
+            },
+            "transform": {
+              "translateM": [
+                56.954904869642846,
+                33.91802890769,
+                1.1457501614131696e-13
+              ],
+              "yawDeg": 119.6697503447724
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../../general/SM_RecyclingContainer_B04_Blue_01/SM_RecyclingContainer_B04_Blue_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_03_Xform_sm_warehousecomposition_m03_02_composition_02_SM_SquareRecyclingContainer_A02_Blue_02",
+            "archetype": "container",
+            "slotM": {
+              "widthM": 0.8,
+              "depthM": 0.8,
+              "heightM": 0.8
+            },
+            "transform": {
+              "translateM": [
+                58.07608965140615,
+                34.904714543137075,
+                1.1457501614131696e-13
+              ],
+              "yawDeg": -178.8597525797171
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../../general/SM_SquareRecyclingContainer_A02_Blue_01/SM_SquareRecyclingContainer_A02_Blue_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_03_Xform_sm_warehousecomposition_m23_01_composition_02_SM_OfficeRecyclingContainer_A03_Green_02",
+            "archetype": "container",
+            "slotM": {
+              "widthM": 0.8,
+              "depthM": 0.8,
+              "heightM": 0.8
+            },
+            "transform": {
+              "translateM": [
+                55.191907771267935,
+                43.48726677269205,
+                4.561684260030072e-13
+              ],
+              "yawDeg": -178.97242378180695
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../../general/SM_OfficeRecyclingContainer_A03_Green_01/SM_OfficeRecyclingContainer_A03_Green_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_03_Xform_sm_warehousecomposition_m03_01_composition_02_SM_RecyclingContainer_B02_Blue_02",
+            "archetype": "container",
+            "slotM": {
+              "widthM": 0.8,
+              "depthM": 0.8,
+              "heightM": 0.8
+            },
+            "transform": {
+              "translateM": [
+                55.01452753804327,
+                37.65289739057279,
+                -4.447997537769633e-14
+              ],
+              "yawDeg": 179.05627236114526
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../../general/SM_RecyclingContainer_B02_Blue_01/SM_RecyclingContainer_B02_Blue_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_03_Xform_sm_warehousecomposition_m03_01_composition_02_SM_RecyclingContainer_B04_Blue_02",
+            "archetype": "container",
+            "slotM": {
+              "widthM": 0.8,
+              "depthM": 0.8,
+              "heightM": 0.8
+            },
+            "transform": {
+              "translateM": [
+                53.89222627070922,
+                37.80107802462031,
+                -4.447997537769633e-14
+              ],
+              "yawDeg": 119.6697503447724
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../../general/SM_RecyclingContainer_B04_Blue_01/SM_RecyclingContainer_B04_Blue_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_03_Xform_sm_warehousecomposition_m03_01_composition_02_SM_SquareRecyclingContainer_A02_Blue_02",
+            "archetype": "container",
+            "slotM": {
+              "widthM": 0.8,
+              "depthM": 0.8,
+              "heightM": 0.8
+            },
+            "transform": {
+              "translateM": [
+                55.01341105247252,
+                38.78776366006739,
+                -4.447997537769633e-14
+              ],
+              "yawDeg": -178.8597525797171
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../../general/SM_SquareRecyclingContainer_A02_Blue_01/SM_SquareRecyclingContainer_A02_Blue_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_03_Xform_sm_warehousecomposition_m03_01_composition_04_SM_CleaningTrolley_A01_02",
+            "archetype": "trolley",
+            "slotM": {
+              "widthM": 0.86,
+              "depthM": 1.23,
+              "heightM": 0.48
+            },
+            "transform": {
+              "translateM": [
+                46.83888618354018,
+                44.852290634322756,
+                -4.980904577678305e-14
+              ],
+              "yawDeg": 178.86160966988902
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../../general/SM_CleaningTrolley_A01_01/SM_CleaningTrolley_A01_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_03_Xform_sm_warehousecomposition_m06_01_SM_BlockPallet_A02_WoodNewA_08",
+            "archetype": "pallet",
+            "slotM": {
+              "widthM": 1.22,
+              "depthM": 1.02,
+              "heightM": 0.15
+            },
+            "transform": {
+              "translateM": [
+                24.81649932945969,
+                1.0306815771198359,
+                0.25888312548056147
+              ],
+              "yawDeg": 178.86000738811097
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../../general/SM_BlockPallet_A02_WoodNewA_01/SM_BlockPallet_A02_WoodNewA_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_03_Xform_sm_warehousecomposition_m06_01_SM_RecyclingContainer_B04_Blue_02",
+            "archetype": "container",
+            "slotM": {
+              "widthM": 0.8,
+              "depthM": 0.8,
+              "heightM": 0.8
+            },
+            "transform": {
+              "translateM": [
+                23.102447690997195,
+                3.1791475282787474,
+                -9.588774328349908e-14
+              ],
+              "yawDeg": -178.85989866713555
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../../general/SM_RecyclingContainer_B04_Blue_01/SM_RecyclingContainer_B04_Blue_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_03_Xform_sm_warehousecomposition_m06_01_composition_04_SM_HeavyDutyPackingTable_C02_03",
+            "archetype": "packing_table",
+            "slotM": {
+              "widthM": 2.44,
+              "depthM": 0.97,
+              "heightM": 1.93
+            },
+            "transform": {
+              "translateM": [
+                22.18531381252029,
+                0.782730905893871,
+                -7.973355163472901e-13
+              ],
+              "yawDeg": 179.98992663415194
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../../general/SM_HeavyDutyPackingTable_C02_01/SM_HeavyDutyPackingTable_C02_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_03_Xform_sm_rackcomposition_f08_01",
+            "archetype": "rack",
+            "slotM": {
+              "widthM": 3.5,
+              "depthM": 1.2,
+              "heightM": 3.0
+            },
+            "transform": {
+              "translateM": [
+                18.019475183907915,
+                0.3514220060550315,
+                -2.0428103653102928e-14
+              ],
+              "yawDeg": 180.0
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../Props/assembly/sm_rackcomposition_f08_01/sm_rackcomposition_f08_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_03_Xform_sm_rackcomposition_f19_01",
+            "archetype": "rack",
+            "slotM": {
+              "widthM": 3.5,
+              "depthM": 1.2,
+              "heightM": 3.0
+            },
+            "transform": {
+              "translateM": [
+                55.022280796002605,
+                30.419581897381292,
+                -5.5955240441107883e-14
+              ],
+              "yawDeg": -0.0
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../Props/assembly/sm_rackcomposition_f19_01/sm_rackcomposition_f19_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_03_Xform_sm_rackcomposition_s58_01",
+            "archetype": "rack",
+            "slotM": {
+              "widthM": 3.5,
+              "depthM": 1.2,
+              "heightM": 3.0
+            },
+            "transform": {
+              "translateM": [
+                45.33668411969008,
+                39.265499350635736,
+                -3.7004767428072745e-08
+              ],
+              "yawDeg": 119.6697503447724
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../Props/assembly/sm_rackcomposition_s58_01/sm_rackcomposition_s58_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_03_Xform_sm_warehousecomposition_m14_01_composition_02_SM_BlockPallet_A06_WoodNewA_03",
+            "archetype": "pallet",
+            "slotM": {
+              "widthM": 1.22,
+              "depthM": 1.02,
+              "heightM": 0.15
+            },
+            "transform": {
+              "translateM": [
+                47.10639491866045,
+                36.5894186621974,
+                6.43396430477799e-14
+              ],
+              "yawDeg": -178.8597525797171
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../../general/SM_BlockPallet_A06_WoodNewA_01/SM_BlockPallet_A06_WoodNewA_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_03_Xform_sm_warehousecomposition_m14_01_composition_03_SM_BlockPallet_A01_WoodNewA_03",
+            "archetype": "pallet",
+            "slotM": {
+              "widthM": 1.22,
+              "depthM": 1.02,
+              "heightM": 0.15
+            },
+            "transform": {
+              "translateM": [
+                53.03444487067023,
+                28.690368451495758,
+                0.3021054963295534
+              ],
+              "yawDeg": -119.65048917010458
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../../general/SM_BlockPallet_A01_WoodNewA_01/SM_BlockPallet_A01_WoodNewA_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_03_Xform_sm_warehousecomposition_m14_01_Forklift_Orange_Transform",
+            "archetype": "forklift",
+            "slotM": {
+              "widthM": 1.36,
+              "depthM": 3.73,
+              "heightM": 2.17
+            },
+            "transform": {
+              "translateM": [
+                16.12557530310511,
+                26.443960047627726,
+                -8.063238787560688e-13
+              ],
+              "yawDeg": 179.64392370087504
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": null
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_03_Xform_sm_warehousecomposition_a03_01_SM_RackablePallet_A01_BlueA_02",
+            "archetype": "rack",
+            "slotM": {
+              "widthM": 3.5,
+              "depthM": 1.2,
+              "heightM": 3.0
+            },
+            "transform": {
+              "translateM": [
+                58.216365596401786,
+                44.97489813403449,
+                0.3170565442528082
+              ],
+              "yawDeg": -119.66594946770138
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../../general/SM_RackablePallet_A01_BlueA_01/SM_RackablePallet_A01_BlueA_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_03_Xform_sm_palletcomposition_a102_02",
+            "archetype": "pallet",
+            "slotM": {
+              "widthM": 1.22,
+              "depthM": 1.02,
+              "heightM": 0.15
+            },
+            "transform": {
+              "translateM": [
+                52.88737687809687,
+                39.93573600958011,
+                1.0865625746703251e-07
+              ],
+              "yawDeg": 178.86507068008427
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../Props/assembly/sm_palletcomposition_a102_01/sm_palletcomposition_a102_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_03_Xform_sm_palletcomposition_a100_02",
+            "archetype": "pallet",
+            "slotM": {
+              "widthM": 1.22,
+              "depthM": 1.02,
+              "heightM": 0.15
+            },
+            "transform": {
+              "translateM": [
+                58.00195611702027,
+                39.85019993762504,
+                -4.562900167393029e-07
+              ],
+              "yawDeg": 119.6697503447724
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../Props/assembly/sm_palletcomposition_a100_01/sm_palletcomposition_a100_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_03_Xform_sm_rackcomposition_s57_01",
+            "archetype": "rack",
+            "slotM": {
+              "widthM": 3.5,
+              "depthM": 1.2,
+              "heightM": 3.0
+            },
+            "transform": {
+              "translateM": [
+                16.177253303494552,
+                41.05740744667455,
+                -9.927988882907358e-07
+              ],
+              "yawDeg": 119.6697503447724
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../Props/assembly/sm_rackcomposition_s57_01/sm_rackcomposition_s57_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_03_Xform_sm_palletcomposition_a104_01",
+            "archetype": "pallet",
+            "slotM": {
+              "widthM": 1.22,
+              "depthM": 1.02,
+              "heightM": 0.15
+            },
+            "transform": {
+              "translateM": [
+                55.44824150326578,
+                44.75682254710249,
+                6.138193494820144e-07
+              ],
+              "yawDeg": 178.86507068008427
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../Props/assembly/sm_palletcomposition_a104_01/sm_palletcomposition_a104_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_03_Xform_sm_palletcomposition_a110_01",
+            "archetype": "pallet",
+            "slotM": {
+              "widthM": 1.22,
+              "depthM": 1.02,
+              "heightM": 0.15
+            },
+            "transform": {
+              "translateM": [
+                56.983849246548544,
+                59.97730392151395,
+                -3.730349362740528e-13
+              ],
+              "yawDeg": -179.6135142206806
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../Props/assembly/sm_palletcomposition_a110_01/sm_palletcomposition_a110_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_03_Xform_sm_palletcomposition_a100_01",
+            "archetype": "pallet",
+            "slotM": {
+              "widthM": 1.22,
+              "depthM": 1.02,
+              "heightM": 0.15
+            },
+            "transform": {
+              "translateM": [
+                37.31197794387094,
+                41.79391862206095,
+                -6.439125606050178e-08
+              ],
+              "yawDeg": -119.03479931179872
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../Props/assembly/sm_palletcomposition_a100_01/sm_palletcomposition_a100_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_03_Xform_sm_palletcomposition_a94_01",
+            "archetype": "pallet",
+            "slotM": {
+              "widthM": 1.22,
+              "depthM": 1.02,
+              "heightM": 0.15
+            },
+            "transform": {
+              "translateM": [
+                50.43633470045245,
+                33.287901859817595,
+                9.677677662267571e-07
+              ],
+              "yawDeg": 119.55530982042677
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../Props/assembly/sm_palletcomposition_a94_01/sm_palletcomposition_a94_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_03_Xform_sm_packingtablecomposition_a07_01",
+            "archetype": "packing_table",
+            "slotM": {
+              "widthM": 2.44,
+              "depthM": 0.97,
+              "heightM": 1.93
+            },
+            "transform": {
+              "translateM": [
+                48.44218491057954,
+                35.32284259391659,
+                8.881784197001261e-14
+              ],
+              "yawDeg": -178.8597525797171
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../Props/assembly/sm_packingtablecomposition_a07_01/sm_packingtablecomposition_a07_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_03_Xform_sm_rackcomposition_s60_01",
+            "archetype": "rack",
+            "slotM": {
+              "widthM": 3.5,
+              "depthM": 1.2,
+              "heightM": 3.0
+            },
+            "transform": {
+              "translateM": [
+                48.50012667148435,
+                32.13504452552938,
+                2.0367333563342542e-06
+              ],
+              "yawDeg": 119.6697503447724
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../Props/assembly/sm_rackcomposition_s60_01/sm_rackcomposition_s60_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_03_Xform_sm_palletcomposition_a107_01",
+            "archetype": "pallet",
+            "slotM": {
+              "widthM": 1.22,
+              "depthM": 1.02,
+              "heightM": 0.15
+            },
+            "transform": {
+              "translateM": [
+                46.755095003920665,
+                31.846201578335382,
+                1.5298774584948666e-08
+              ],
+              "yawDeg": 179.63582655803827
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../Props/assembly/sm_palletcomposition_a107_01/sm_palletcomposition_a107_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_03_Xform_sm_palletcomposition_a108_01",
+            "archetype": "pallet",
+            "slotM": {
+              "widthM": 1.22,
+              "depthM": 1.02,
+              "heightM": 0.15
+            },
+            "transform": {
+              "translateM": [
+                51.51472650439763,
+                28.54847593147703,
+                1.5298951687725563e-08
+              ],
+              "yawDeg": 119.30791832432928
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../Props/assembly/sm_palletcomposition_a108_01/sm_palletcomposition_a108_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_Warehouse_A_AdditionalStorage_B_03_Xform_sm_palletcomposition_a108_02",
+            "archetype": "pallet",
+            "slotM": {
+              "widthM": 1.22,
+              "depthM": 1.02,
+              "heightM": 0.15
+            },
+            "transform": {
+              "translateM": [
+                47.98853477648216,
+                51.770715590363274,
+                -3.4664379288784625e-07
+              ],
+              "yawDeg": 119.02242645566682
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../Props/assembly/sm_palletcomposition_a108_01/sm_palletcomposition_a108_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_sm_rackcomposition_s57_02",
+            "archetype": "rack",
+            "slotM": {
+              "widthM": 3.5,
+              "depthM": 1.2,
+              "heightM": 3.0
+            },
+            "transform": {
+              "translateM": [
+                28.488571201726376,
+                38.94398707976163,
+                -9.927990979008427e-07
+              ],
+              "yawDeg": -0.0
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../Props/assembly/sm_rackcomposition_s57_01/sm_rackcomposition_s57_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_SM_Forklift_B01_Red_02",
+            "archetype": "forklift",
+            "slotM": {
+              "widthM": 1.36,
+              "depthM": 3.73,
+              "heightM": 2.17
+            },
+            "transform": {
+              "translateM": [
+                28.01421435351846,
+                47.366800289773124,
+                -6.636358129696877e-14
+              ],
+              "yawDeg": 178.88281074766874
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../Props/general/SM_Forklift_B01_Red_01/SM_Forklift_B01_Red_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_sm_warehousecomposition_m12_02_SM_LowProfilePalletTruck_A01_01",
+            "archetype": "pallet",
+            "slotM": {
+              "widthM": 1.22,
+              "depthM": 1.02,
+              "heightM": 0.15
+            },
+            "transform": {
+              "translateM": [
+                23.643013669656575,
+                20.40655689077542,
+                -0.0013161912117919707
+              ],
+              "yawDeg": 178.8597525797171
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../../general/SM_LowProfilePalletTruck_A01_01/SM_LowProfilePalletTruck_A01_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_composition_Truck_01_SM_WoodDrumPallet_A07_WoodRecycledA_02",
+            "archetype": "pallet",
+            "slotM": {
+              "widthM": 1.22,
+              "depthM": 1.02,
+              "heightM": 0.15
+            },
+            "transform": {
+              "translateM": [
+                65.06335853954367,
+                16.775831300989893,
+                0.00010967361667790779
+              ],
+              "yawDeg": 179.9766667977734
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../Props/general/SM_WoodDrumPallet_A07_WoodRecycledA_01/SM_WoodDrumPallet_A07_WoodRecycledA_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_composition_Truck_01_SM_WoodDrumPallet_A07_WoodRecycledA_02_0",
+            "archetype": "pallet",
+            "slotM": {
+              "widthM": 1.22,
+              "depthM": 1.02,
+              "heightM": 0.15
+            },
+            "transform": {
+              "translateM": [
+                66.094532352148,
+                16.018092176752546,
+                0.9796914961887766
+              ],
+              "yawDeg": 179.97712977954987
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../Props/general/SM_WoodDrumPallet_A07_WoodRecycledA_01/SM_WoodDrumPallet_A07_WoodRecycledA_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_composition_Truck_02_SM_WoodDrumPallet_A07_WoodRecycledA_02",
+            "archetype": "pallet",
+            "slotM": {
+              "widthM": 1.22,
+              "depthM": 1.02,
+              "heightM": 0.15
+            },
+            "transform": {
+              "translateM": [
+                67.21533483970641,
+                26.104018283462977,
+                0.00010967361665412236
+              ],
+              "yawDeg": 119.01542238310627
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../Props/general/SM_WoodDrumPallet_A07_WoodRecycledA_01/SM_WoodDrumPallet_A07_WoodRecycledA_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_composition_Truck_04_SM_WoodDrumPallet_A07_WoodRecycledA_02_0",
+            "archetype": "pallet",
+            "slotM": {
+              "widthM": 1.22,
+              "depthM": 1.02,
+              "heightM": 0.15
+            },
+            "transform": {
+              "translateM": [
+                64.76794139331393,
+                26.05002400273777,
+                0.006491431652078332
+              ],
+              "yawDeg": 119.01542238310627
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../Props/general/SM_WoodDrumPallet_A07_WoodRecycledA_01/SM_WoodDrumPallet_A07_WoodRecycledA_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_composition_Truck_06_SM_Forklift_C01_Red_02",
+            "archetype": "forklift",
+            "slotM": {
+              "widthM": 1.36,
+              "depthM": 3.73,
+              "heightM": 2.17
+            },
+            "transform": {
+              "translateM": [
+                63.3286451030111,
+                13.290888509185436,
+                -0.005371283869768952
+              ],
+              "yawDeg": 180.0
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../../general/SM_Forklift_C01_Red_01/SM_Forklift_C01_Red_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_composition_Truck_06_composition_01_SM_BlockPallet_A02_WoodNewA_02",
+            "archetype": "pallet",
+            "slotM": {
+              "widthM": 1.22,
+              "depthM": 1.02,
+              "heightM": 0.15
+            },
+            "transform": {
+              "translateM": [
+                65.60208133983384,
+                13.256069866932066,
+                0.7020000016747366
+              ],
+              "yawDeg": 180.0
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../../general/SM_BlockPallet_A02_WoodNewA_01/SM_BlockPallet_A02_WoodNewA_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Unloading_Staging_Zone_composition_Truck_07_SM_BlockPallet_A04_WoodNewA_03",
+            "archetype": "pallet",
+            "slotM": {
+              "widthM": 1.22,
+              "depthM": 1.02,
+              "heightM": 0.15
+            },
+            "transform": {
+              "translateM": [
+                62.71887144412022,
+                26.683723177350842,
+                6.499509762755371e-10
+              ],
+              "yawDeg": 179.28460389047927
+            },
+            "parentZoneId": "Unloading_Staging_Zone",
+            "originalAssetUrl": "../Props/general/SM_BlockPallet_A04_WoodNewA_01/SM_BlockPallet_A04_WoodNewA_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Warehouse_Metro_Racks",
+            "archetype": "rack",
+            "slotM": {
+              "widthM": 3.5,
+              "depthM": 1.2,
+              "heightM": 3.0
+            },
+            "transform": {
+              "translateM": [
+                59.619683846391354,
+                99.61968384639135,
+                0.0
+              ],
+              "yawDeg": -0.0
+            },
+            "parentZoneId": null,
+            "originalAssetUrl": null
+          },
+          {
+            "type": "placement",
+            "id": "World_warehouse_floorplan_wall_straight_22_sm_column_a02_01_sm_fireextinguisher_a01_01",
+            "archetype": "fire_ext",
+            "slotM": {
+              "widthM": 0.14,
+              "depthM": 0.19,
+              "heightM": 0.54
+            },
+            "transform": {
+              "translateM": [
+                10.072318337135357,
+                9.406283359089116,
+                0.5470004150196814
+              ],
+              "yawDeg": -90.00000000000001
+            },
+            "parentZoneId": "warehouse_floorplan",
+            "originalAssetUrl": null
+          },
+          {
+            "type": "placement",
+            "id": "World_warehouse_floorplan_wall_straight_23_sm_fireextinguisher_a02_01",
+            "archetype": "fire_ext",
+            "slotM": {
+              "widthM": 0.14,
+              "depthM": 0.19,
+              "heightM": 0.54
+            },
+            "transform": {
+              "translateM": [
+                29.347646498956237,
+                0.0,
+                0.9010232342550921
+              ],
+              "yawDeg": -90.00000000000001
+            },
+            "parentZoneId": "warehouse_floorplan",
+            "originalAssetUrl": null
+          },
+          {
+            "type": "placement",
+            "id": "World_warehouse_floorplan_wall_straight_25_sm_fireextinguisher_a02_01",
+            "archetype": "fire_ext",
+            "slotM": {
+              "widthM": 0.14,
+              "depthM": 0.19,
+              "heightM": 0.54
+            },
+            "transform": {
+              "translateM": [
+                49.34764649895624,
+                0.0,
+                0.9010232342550921
+              ],
+              "yawDeg": -90.00000000000001
+            },
+            "parentZoneId": "warehouse_floorplan",
+            "originalAssetUrl": null
+          },
+          {
+            "type": "placement",
+            "id": "World_warehouse_floorplan_wallcornerin_26_sm_fireextinguisher_a01_01",
+            "archetype": "fire_ext",
+            "slotM": {
+              "widthM": 0.14,
+              "depthM": 0.19,
+              "heightM": 0.54
+            },
+            "transform": {
+              "translateM": [
+                59.1834338561423,
+                9.347609654345888,
+                0.901022471315656
+              ],
+              "yawDeg": -90.00000000000001
+            },
+            "parentZoneId": "warehouse_floorplan",
+            "originalAssetUrl": null
+          },
+          {
+            "type": "placement",
+            "id": "World_warehouse_floorplan_wallcornerin_26_sm_column_a01_01_sm_fireextinguisher_a02_01",
+            "archetype": "fire_ext",
+            "slotM": {
+              "widthM": 0.14,
+              "depthM": 0.19,
+              "heightM": 0.54
+            },
+            "transform": {
+              "translateM": [
+                50.072340309791116,
+                9.406320590533596,
+                0.547000109843907
+              ],
+              "yawDeg": -90.00000000000001
+            },
+            "parentZoneId": "warehouse_floorplan",
+            "originalAssetUrl": null
+          },
+          {
+            "type": "placement",
+            "id": "World_warehouse_floorplan_wall_straight_27_sm_column_a02_01_sm_columnmain_a02_01_sm_columnmain_a02_tables_01",
+            "archetype": "packing_table",
+            "slotM": {
+              "widthM": 2.44,
+              "depthM": 0.97,
+              "heightM": 1.93
+            },
+            "transform": {
+              "translateM": [
+                49.80261386776089,
+                10.000235595697859,
+                2.8096441022386216
+              ],
+              "yawDeg": 179.99999969930138
+            },
+            "parentZoneId": "warehouse_floorplan",
+            "originalAssetUrl": null
+          },
+          {
+            "type": "placement",
+            "id": "World_warehouse_floorplan_wall_straight_27_sm_fireextinguisher_a03_01",
+            "archetype": "fire_ext",
+            "slotM": {
+              "widthM": 0.14,
+              "depthM": 0.19,
+              "heightM": 0.54
+            },
+            "transform": {
+              "translateM": [
+                59.23931276114331,
+                19.347783604537312,
+                0.901022471315656
+              ],
+              "yawDeg": -90.00000000000001
+            },
+            "parentZoneId": "warehouse_floorplan",
+            "originalAssetUrl": null
+          },
+          {
+            "type": "placement",
+            "id": "World_warehouse_floorplan_wall_straight_28_sm_column_a01_01_sm_fireextinguisher_a01_01",
+            "archetype": "fire_ext",
+            "slotM": {
+              "widthM": 0.14,
+              "depthM": 0.19,
+              "heightM": 0.54
+            },
+            "transform": {
+              "translateM": [
+                50.07226218479286,
+                29.40656351045004,
+                0.5470007201954559
+              ],
+              "yawDeg": -90.00000000000001
+            },
+            "parentZoneId": "warehouse_floorplan",
+            "originalAssetUrl": null
+          },
+          {
+            "type": "placement",
+            "id": "World_warehouse_floorplan_wall_straight_28_sm_fireextinguisher_a03_01",
+            "archetype": "fire_ext",
+            "slotM": {
+              "widthM": 0.14,
+              "depthM": 0.19,
+              "heightM": 0.54
+            },
+            "transform": {
+              "translateM": [
+                59.23931276114331,
+                29.347783604537312,
+                0.901022471315656
+              ],
+              "yawDeg": -90.00000000000001
+            },
+            "parentZoneId": "warehouse_floorplan",
+            "originalAssetUrl": null
+          },
+          {
+            "type": "placement",
+            "id": "World_warehouse_floorplan_wall_straight_29_sm_column_a02_01_sm_columnmain_a02_01_sm_columnmain_a02_tables_01",
+            "archetype": "packing_table",
+            "slotM": {
+              "widthM": 2.44,
+              "depthM": 0.97,
+              "heightM": 1.93
+            },
+            "transform": {
+              "translateM": [
+                49.80261386776089,
+                30.00012817382526,
+                2.8096441022386216
+              ],
+              "yawDeg": 179.99999969930138
+            },
+            "parentZoneId": "warehouse_floorplan",
+            "originalAssetUrl": null
+          },
+          {
+            "type": "placement",
+            "id": "World_warehouse_floorplan_wall_straight_29_sm_fireextinguisher_a03_01",
+            "archetype": "fire_ext",
+            "slotM": {
+              "widthM": 0.14,
+              "depthM": 0.19,
+              "heightM": 0.54
+            },
+            "transform": {
+              "translateM": [
+                59.23931276114331,
+                39.34767618266471,
+                0.901022471315656
+              ],
+              "yawDeg": -90.00000000000001
+            },
+            "parentZoneId": "warehouse_floorplan",
+            "originalAssetUrl": null
+          },
+          {
+            "type": "placement",
+            "id": "World_warehouse_floorplan_wall_straight_30_sm_column_a01_01_sm_fireextinguisher_a01_01",
+            "archetype": "fire_ext",
+            "slotM": {
+              "widthM": 0.14,
+              "depthM": 0.19,
+              "heightM": 0.54
+            },
+            "transform": {
+              "translateM": [
+                50.07226218479286,
+                49.40645608857744,
+                0.5470007201954559
+              ],
+              "yawDeg": -90.00000000000001
+            },
+            "parentZoneId": "warehouse_floorplan",
+            "originalAssetUrl": null
+          },
+          {
+            "type": "placement",
+            "id": "World_warehouse_floorplan_wall_straight_30_sm_fireextinguisher_a03_01",
+            "archetype": "fire_ext",
+            "slotM": {
+              "widthM": 0.14,
+              "depthM": 0.19,
+              "heightM": 0.54
+            },
+            "transform": {
+              "translateM": [
+                59.23931276114331,
+                49.34767618266471,
+                0.901022471315656
+              ],
+              "yawDeg": -90.00000000000001
+            },
+            "parentZoneId": "warehouse_floorplan",
+            "originalAssetUrl": null
+          },
+          {
+            "type": "placement",
+            "id": "World_warehouse_floorplan_inside_tile_79_sm_column_a02_01_sm_columnmain_a02_01_sm_columnmain_a02_tables_01",
+            "archetype": "packing_table",
+            "slotM": {
+              "widthM": 2.44,
+              "depthM": 0.97,
+              "heightM": 1.93
+            },
+            "transform": {
+              "translateM": [
+                29.436910100190776,
+                49.23926335932574,
+                2.8096441022386216
+              ],
+              "yawDeg": -119.01247243086402
+            },
+            "parentZoneId": "warehouse_floorplan",
+            "originalAssetUrl": null
+          },
+          {
+            "type": "placement",
+            "id": "World_warehouse_floorplan_inside_tile_79_sm_column_a02_01_sm_fireextinguisher_a02_01",
+            "archetype": "fire_ext",
+            "slotM": {
+              "widthM": 0.14,
+              "depthM": 0.19,
+              "heightM": 0.54
+            },
+            "transform": {
+              "translateM": [
+                29.167183595193563,
+                49.432544714985056,
+                0.547000109843907
+              ],
+              "yawDeg": 89.99998474121092
+            },
+            "parentZoneId": "warehouse_floorplan",
+            "originalAssetUrl": null
+          },
+          {
+            "type": "placement",
+            "id": "World_warehouse_floorplan_inside_tile_92_sm_column_a01_01_sm_fireextinguisher_a01_01",
+            "archetype": "fire_ext",
+            "slotM": {
+              "widthM": 0.14,
+              "depthM": 0.19,
+              "heightM": 0.54
+            },
+            "transform": {
+              "translateM": [
+                49.167085907072874,
+                9.833067848235672,
+                0.547000109843907
+              ],
+              "yawDeg": 89.99998474121092
+            },
+            "parentZoneId": "warehouse_floorplan",
+            "originalAssetUrl": null
+          },
+          {
+            "type": "placement",
+            "id": "World_warehouse_floorplan_inside_tile_93_sm_column_a02_01_sm_fireextinguisher_a02_01",
+            "archetype": "fire_ext",
+            "slotM": {
+              "widthM": 0.14,
+              "depthM": 0.19,
+              "heightM": 0.54
+            },
+            "transform": {
+              "translateM": [
+                49.16718359519356,
+                29.43254471498507,
+                0.547000109843907
+              ],
+              "yawDeg": 89.99998474121092
+            },
+            "parentZoneId": "warehouse_floorplan",
+            "originalAssetUrl": null
+          },
+          {
+            "type": "placement",
+            "id": "World_warehouse_floorplan_inside_tile_95_sm_column_a02_01_sm_columnmain_a02_01_sm_columnmain_a02_tables_01",
+            "archetype": "packing_table",
+            "slotM": {
+              "widthM": 2.44,
+              "depthM": 0.97,
+              "heightM": 1.93
+            },
+            "transform": {
+              "translateM": [
+                49.43691010019078,
+                49.23926335932574,
+                2.8096441022386216
+              ],
+              "yawDeg": -119.01247243086402
+            },
+            "parentZoneId": "warehouse_floorplan",
+            "originalAssetUrl": null
+          },
+          {
+            "type": "placement",
+            "id": "World_warehouse_floorplan_inside_tile_95_sm_column_a02_01_sm_fireextinguisher_a02_01",
+            "archetype": "fire_ext",
+            "slotM": {
+              "widthM": 0.14,
+              "depthM": 0.19,
+              "heightM": 0.54
+            },
+            "transform": {
+              "translateM": [
+                49.16718359519356,
+                49.432544714985056,
+                0.547000109843907
+              ],
+              "yawDeg": 89.99998474121092
+            },
+            "parentZoneId": "warehouse_floorplan",
+            "originalAssetUrl": null
+          },
+          {
+            "type": "placement",
+            "id": "World_warehouse_floorplan_wall_straight_0_sm_fireextinguisher_a02_01",
+            "archetype": "fire_ext",
+            "slotM": {
+              "widthM": 0.14,
+              "depthM": 0.19,
+              "heightM": 0.54
+            },
+            "transform": {
+              "translateM": [
+                0.0,
+                39.89172119382647,
+                0.9010232342532589
+              ],
+              "yawDeg": 179.99999999999997
+            },
+            "parentZoneId": "warehouse_floorplan",
+            "originalAssetUrl": null
+          },
+          {
+            "type": "placement",
+            "id": "World_warehouse_floorplan_wall_straight_1_sm_fireextinguisher_a02_01",
+            "archetype": "fire_ext",
+            "slotM": {
+              "widthM": 0.14,
+              "depthM": 0.19,
+              "heightM": 0.54
+            },
+            "transform": {
+              "translateM": [
+                7.105427357601002e-15,
+                29.89172119382647,
+                0.9010232342532589
+              ],
+              "yawDeg": 179.99999999999997
+            },
+            "parentZoneId": "warehouse_floorplan",
+            "originalAssetUrl": null
+          },
+          {
+            "type": "placement",
+            "id": "World_warehouse_floorplan_wall_straight_2_sm_fireextinguisher_a02_01",
+            "archetype": "fire_ext",
+            "slotM": {
+              "widthM": 0.14,
+              "depthM": 0.19,
+              "heightM": 0.54
+            },
+            "transform": {
+              "translateM": [
+                7.105427357601002e-15,
+                19.89172119382647,
+                0.9010232342532589
+              ],
+              "yawDeg": 179.99999999999997
+            },
+            "parentZoneId": "warehouse_floorplan",
+            "originalAssetUrl": null
+          },
+          {
+            "type": "placement",
+            "id": "World_warehouse_floorplan_wall_straight_3_sm_fireextinguisher_a02_01",
+            "archetype": "fire_ext",
+            "slotM": {
+              "widthM": 0.14,
+              "depthM": 0.19,
+              "heightM": 0.54
+            },
+            "transform": {
+              "translateM": [
+                7.105427357601002e-15,
+                9.89172119382647,
+                0.9010232342532589
+              ],
+              "yawDeg": 179.99999999999997
+            },
+            "parentZoneId": "warehouse_floorplan",
+            "originalAssetUrl": null
+          },
+          {
+            "type": "placement",
+            "id": "World_warehouse_floorplan_wallcornerin_35_sm_fireextinguisher_a01_01",
+            "archetype": "fire_ext",
+            "slotM": {
+              "widthM": 0.14,
+              "depthM": 0.19,
+              "heightM": 0.54
+            },
+            "transform": {
+              "translateM": [
+                0.0559338366404063,
+                49.89175803843682,
+                0.9010224713138228
+              ],
+              "yawDeg": 89.99999999999999
+            },
+            "parentZoneId": "warehouse_floorplan",
+            "originalAssetUrl": null
+          },
+          {
+            "type": "placement",
+            "id": "World_warehouse_floorplan_wallcornerin_09_sm_fireextinguisher_a01_01",
+            "archetype": "fire_ext",
+            "slotM": {
+              "widthM": 0.14,
+              "depthM": 0.19,
+              "heightM": 0.54
+            },
+            "transform": {
+              "translateM": [
+                9.347609654345902,
+                0.05593383664039209,
+                0.9010224713138228
+              ],
+              "yawDeg": 179.99999999999997
+            },
+            "parentZoneId": "warehouse_floorplan",
+            "originalAssetUrl": null
+          },
+          {
+            "type": "placement",
+            "id": "World_warehouse_floorplan_wallcornerin_09_sm_column_a01_01_sm_fireextinguisher_a02_01",
+            "archetype": "fire_ext",
+            "slotM": {
+              "widthM": 0.14,
+              "depthM": 0.19,
+              "heightM": 0.54
+            },
+            "transform": {
+              "translateM": [
+                9.40632059053361,
+                9.167027382991577,
+                0.5470001098420738
+              ],
+              "yawDeg": 179.99999999999997
+            },
+            "parentZoneId": "warehouse_floorplan",
+            "originalAssetUrl": null
+          },
+          {
+            "type": "placement",
+            "id": "World_warehouse_floorplan_wall_straight_01_sm_fireextinguisher_a02_01",
+            "archetype": "fire_ext",
+            "slotM": {
+              "widthM": 0.14,
+              "depthM": 0.19,
+              "heightM": 0.54
+            },
+            "transform": {
+              "translateM": [
+                39.89172119382647,
+                59.23936709673626,
+                0.9010232342550921
+              ],
+              "yawDeg": 89.99999999999999
+            },
+            "parentZoneId": "warehouse_floorplan",
+            "originalAssetUrl": null
+          },
+          {
+            "type": "placement",
+            "id": "World_warehouse_floorplan_wall_straight_02_sm_fireextinguisher_a02_01",
+            "archetype": "fire_ext",
+            "slotM": {
+              "widthM": 0.14,
+              "depthM": 0.19,
+              "heightM": 0.54
+            },
+            "transform": {
+              "translateM": [
+                29.89172119382647,
+                59.23936709673626,
+                0.9010232342550921
+              ],
+              "yawDeg": 89.99999999999999
+            },
+            "parentZoneId": "warehouse_floorplan",
+            "originalAssetUrl": null
+          },
+          {
+            "type": "placement",
+            "id": "World_warehouse_floorplan_wall_straight_03_sm_fireextinguisher_a02_01",
+            "archetype": "fire_ext",
+            "slotM": {
+              "widthM": 0.14,
+              "depthM": 0.19,
+              "heightM": 0.54
+            },
+            "transform": {
+              "translateM": [
+                19.89172119382647,
+                59.23936709673626,
+                0.9010232342550921
+              ],
+              "yawDeg": 89.99999999999999
+            },
+            "parentZoneId": "warehouse_floorplan",
+            "originalAssetUrl": null
+          },
+          {
+            "type": "placement",
+            "id": "World_warehouse_floorplan_wall_straight_04_sm_fireextinguisher_a02_01",
+            "archetype": "fire_ext",
+            "slotM": {
+              "widthM": 0.14,
+              "depthM": 0.19,
+              "heightM": 0.54
+            },
+            "transform": {
+              "translateM": [
+                9.89172119382647,
+                59.23936709673626,
+                0.9010232342550921
+              ],
+              "yawDeg": 89.99999999999999
+            },
+            "parentZoneId": "warehouse_floorplan",
+            "originalAssetUrl": null
+          },
+          {
+            "type": "placement",
+            "id": "World_warehouse_floorplan_wallcornerin_36_sm_fireextinguisher_a01_01",
+            "archetype": "fire_ext",
+            "slotM": {
+              "widthM": 0.14,
+              "depthM": 0.19,
+              "heightM": 0.54
+            },
+            "transform": {
+              "translateM": [
+                49.89175803843682,
+                59.18343326009585,
+                0.901022471315656
+              ],
+              "yawDeg": -0.0
+            },
+            "parentZoneId": "warehouse_floorplan",
+            "originalAssetUrl": null
+          },
+          {
+            "type": "placement",
+            "id": "World_Transporter_Area_sm_palletcomposition_a102_03",
+            "archetype": "pallet",
+            "slotM": {
+              "widthM": 1.22,
+              "depthM": 1.02,
+              "heightM": 0.15
+            },
+            "transform": {
+              "translateM": [
+                8.49523267813835,
+                1.9512768503632856,
+                -2.203887976559571e-07
+              ],
+              "yawDeg": 179.57013969397877
+            },
+            "parentZoneId": "Transporter_Area",
+            "originalAssetUrl": "./Props/assembly/sm_palletcomposition_a102_01/sm_palletcomposition_a102_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Transporter_Area_Transporter_Racks_A1",
+            "archetype": "rack",
+            "slotM": {
+              "widthM": 3.5,
+              "depthM": 1.2,
+              "heightM": 3.0
+            },
+            "transform": {
+              "translateM": [
+                9.742136325931298,
+                21.396223039720326,
+                1.7753995464886038e-06
+              ],
+              "yawDeg": 89.99999999999999
+            },
+            "parentZoneId": "Transporter_Area",
+            "originalAssetUrl": "./Props/assembly/Transporter_Racks_A1_NP/Transporter_Racks_A1_NP_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Transporter_Area_sm_scanningtablecomposition_a01_01",
+            "archetype": "packing_table",
+            "slotM": {
+              "widthM": 2.44,
+              "depthM": 0.97,
+              "heightM": 1.93
+            },
+            "transform": {
+              "translateM": [
+                3.6840020286002186,
+                2.634774859308635,
+                1.8540928534705528e-06
+              ],
+              "yawDeg": -178.92306369906035
+            },
+            "parentZoneId": "Transporter_Area",
+            "originalAssetUrl": "../Props/assembly/sm_scanningtablecomposition_a01_01/sm_scanningtablecomposition_a01_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Transporter_Area_sm_scanningtablecomposition_a01_02",
+            "archetype": "packing_table",
+            "slotM": {
+              "widthM": 2.44,
+              "depthM": 0.97,
+              "heightM": 1.93
+            },
+            "transform": {
+              "translateM": [
+                7.491983308838769,
+                2.7767474656720026,
+                1.130147351702288e-06
+              ],
+              "yawDeg": -119.34217747188761
+            },
+            "parentZoneId": "Transporter_Area",
+            "originalAssetUrl": "../Props/assembly/sm_scanningtablecomposition_a01_01/sm_scanningtablecomposition_a01_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Transporter_Area_sm_rackcomposition_l02_03",
+            "archetype": "rack",
+            "slotM": {
+              "widthM": 3.5,
+              "depthM": 1.2,
+              "heightM": 3.0
+            },
+            "transform": {
+              "translateM": [
+                6.854586972963304,
+                9.443048870528472,
+                3.445538157906996e-06
+              ],
+              "yawDeg": -0.0
+            },
+            "parentZoneId": "Transporter_Area",
+            "originalAssetUrl": "../Props/assembly/sm_rackcomposition_l02_01/sm_rackcomposition_l02_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Transporter_Area_sm_palletcomposition_a100_03",
+            "archetype": "pallet",
+            "slotM": {
+              "widthM": 1.22,
+              "depthM": 1.02,
+              "heightM": 0.15
+            },
+            "transform": {
+              "translateM": [
+                2.4992051730995826,
+                2.034007590187585,
+                -6.439102513411255e-08
+              ],
+              "yawDeg": -0.0
+            },
+            "parentZoneId": "Transporter_Area",
+            "originalAssetUrl": "../Props/assembly/sm_palletcomposition_a100_01/sm_palletcomposition_a100_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Transporter_Area_sm_palletcomposition_a101_02",
+            "archetype": "pallet",
+            "slotM": {
+              "widthM": 1.22,
+              "depthM": 1.02,
+              "heightM": 0.15
+            },
+            "transform": {
+              "translateM": [
+                1.5635039158486137,
+                6.625453877205771,
+                1.2417585422142e-07
+              ],
+              "yawDeg": -178.87458856645827
+            },
+            "parentZoneId": "Transporter_Area",
+            "originalAssetUrl": "../Props/assembly/sm_palletcomposition_a101_01/sm_palletcomposition_a101_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Transporter_Area_sm_AluminumStepLadder_B05_02",
+            "archetype": "ladder",
+            "slotM": {
+              "widthM": 0.95,
+              "depthM": 0.19,
+              "heightM": 1.76
+            },
+            "transform": {
+              "translateM": [
+                8.152429130850535,
+                41.451997847002175,
+                3.134289855071704e-06
+              ],
+              "yawDeg": -119.31437868403466
+            },
+            "parentZoneId": "Transporter_Area",
+            "originalAssetUrl": "../Props/general/SM_AluminumStepLadder_B05_01/SM_AluminumStepLadder_B05_01_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Transporter_Area_sm_CratePacking_Table_A1",
+            "archetype": "packing_table",
+            "slotM": {
+              "widthM": 2.44,
+              "depthM": 0.97,
+              "heightM": 1.93
+            },
+            "transform": {
+              "translateM": [
+                3.48899508645124,
+                6.8658250981852404,
+                1.775399546488643e-06
+              ],
+              "yawDeg": 180.0
+            },
+            "parentZoneId": "Transporter_Area",
+            "originalAssetUrl": "../Props/assembly/SM_CratePacking_Table_A1/SM_CratePacking_Table_A1_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Transporter_Area_sm_BoxPicking_Table_B1",
+            "archetype": "packing_table",
+            "slotM": {
+              "widthM": 2.44,
+              "depthM": 0.97,
+              "heightM": 1.93
+            },
+            "transform": {
+              "translateM": [
+                14.512335994319713,
+                3.9936529835830896,
+                1.775399601555705e-06
+              ],
+              "yawDeg": -89.99999999999999
+            },
+            "parentZoneId": "Transporter_Area",
+            "originalAssetUrl": "../Props/assembly/SM_BoxPicking_Table_B1/SM_BoxPicking_Table_B1_physics.usd"
+          },
+          {
+            "type": "placement",
+            "id": "World_Transporter_Area_sm_CratePacking_Table_A1_01",
+            "archetype": "packing_table",
+            "slotM": {
+              "widthM": 2.44,
+              "depthM": 0.97,
+              "heightM": 1.93
+            },
+            "transform": {
+              "translateM": [
+                7.3185733925781875,
+                6.8658250981852404,
+                1.775399546488643e-06
+              ],
+              "yawDeg": -0.0
+            },
+            "parentZoneId": "Transporter_Area",
+            "originalAssetUrl": "../Props/assembly/SM_CratePacking_Table_A1/SM_CratePacking_Table_A1_physics.usd"
+          }
+        ]
+      }
+    ]
+  },
+  "absorbStats": {
+    "sourcePrimsScanned": 17130,
+    "placementsKept": 156,
+    "skippedNested": 860,
+    "footprintM": {
+      "widthM": 71.21533483970641,
+      "depthM": 103.61968384639135,
+      "heightM": 8.0
+    },
+    "byArchetype": {
+      "rack": 24,
+      "pallet": 50,
+      "forklift": 8,
+      "packing_table": 22,
+      "container": 18,
+      "fire_ext": 28,
+      "trolley": 3,
+      "ladder": 3
+    },
+    "archetypesWithSourceSemantics": [
+      "pallet",
+      "rack",
+      "packing_table",
+      "container",
+      "forklift",
+      "fire_ext",
+      "trolley",
+      "ladder"
+    ]
+  }
+}

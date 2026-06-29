@@ -1,0 +1,67 @@
+{
+  "suite": "usdc-single-layer-property-listop-dispatch",
+  "spec_commit": "6b4f01f2d6d46b01507481524eb516b4ef358c31",
+  "production_contracts": [
+    "contracts/document-model-productions/attribute-spec.contract.json",
+    "contracts/usdc-productions/attribute-spec-mapping.contract.json",
+    "contracts/usdc-productions/crate-value-representations.contract.json"
+  ],
+  "notes": "Exercises integer-array attribute defaults (int[] and int64[]). Mirrors goldens/integration/usda-single-layer/property-listop-dispatch.json. The fixture authors no IntListOp/Int64ListOp metadata directly — those are metadata-channel listOps not commonly used as attribute defaults; this suite focuses on the integer-array default-value path, which exercises the type-3 (int) and type-5 (int64) value reps with the Array flag.",
+  "cases": [
+    {
+      "id": "int-and-int64-array-defaults",
+      "spec_refs": [
+        "contracts/document-model-productions/attribute-spec.contract.json#fields.default",
+        "contracts/usdc-productions/attribute-spec-mapping.contract.json#storage_mapping.default_field_type_table_reference"
+      ],
+      "input": {
+        "fixture": "benchmarks/fixtures/property_listop_dispatch.usdc"
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "layer": {
+          "fields": {
+            "primChildren": {"type": "token[]", "value": ["World"]}
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "primChildren": {"type": "token[]", "value": ["World"]}
+              }
+            },
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "typeName": {"type": "token", "value": "Xform"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": ["ids", "big_ids"]},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World.ids": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "variability": {"type": "variability", "value": "varying"},
+                "typeName": {"type": "token", "value": "int[]"},
+                "default": {"type": "int[]", "value": [10, 20, 30]}
+              }
+            },
+            "/World.big_ids": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "variability": {"type": "variability", "value": "varying"},
+                "typeName": {"type": "token", "value": "int64[]"},
+                "default": {"type": "int64[]", "value": [8589934592, 17179869184, 34359738368]}
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

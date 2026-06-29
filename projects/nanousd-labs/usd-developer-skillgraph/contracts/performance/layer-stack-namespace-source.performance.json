@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/layer-stack-namespace-source.performance.json",
+  "title": "USD Layer-Stack Namespace Source Performance Contract",
+  "version": "0.1",
+  "spec_commit": "v1.0.1",
+  "scope": {
+    "included": [
+      "direct layer-stack construction from already-opened document-model Layers",
+      "contributing-spec lookup by prim or property path",
+      "field lookup across contributing specs",
+      "same-typed authored listOp field composition across contributing specs",
+      "composed child-name queries",
+      "composed property-name queries",
+      "stack diagnostics and summary reporting"
+    ],
+    "excluded": [
+      "asset resolution",
+      "resource opening and file I/O",
+      "recursive sublayer discovery",
+      "reference, payload, inherits, specializes, variant, and relocate evaluation",
+      "attribute value resolution",
+      "schema fallback property injection",
+      "stage population"
+    ]
+  },
+  "model": {
+    "construction_budget": "Source construction should build path-to-contributing-spec indexes or equivalent structures over supplied stack layers once, rather than scanning every layer for every query.",
+    "lookup_budget": "Prim/property lookup should scale with the number of contributing specs at the queried path, not total specs in the layer stack.",
+    "child_ordering_budget": "Composed child ordering should be cached per queried prim or computed from indexed contributing specs, not recomputed by scanning unrelated paths.",
+    "property_ordering_budget": "Composed property ordering should be cached per queried prim or computed from indexed contributing specs and usd-paths ordering, not resorted from adapter JSON on every query.",
+    "memory_budget": "The provider should retain references/handles to document-model layers, paths, tokens, and fields where possible and avoid duplicating canonical JSON layer dumps."
+  },
+  "operations": {
+    "build_source": {
+      "expected_complexity": "O(L + S) where L is stack layer count and S is total supplied specs indexed from direct stack entries."
+    },
+    "prim_input": {
+      "expected_complexity": "O(K + C) where K is contributing prim specs at the path and C is composed child count."
+    },
+    "property_input": {
+      "expected_complexity": "O(K + F) where K is contributing property specs at the path and F is distinct exposed field count."
+    },
+    "child_names": {
+      "expected_complexity": "O(K + C) after path lookup, where K is contributing prim specs and C is distinct child names."
+    },
+    "property_names": {
+      "expected_complexity": "O(K + P log P) or better after path lookup, where P is distinct property names and path-element ordering is provided by usd-paths."
+    }
+  },
+  "measurement": {
+    "primary_signals": [
+      "build_ms_per_1k_specs_per_layer",
+      "prim_input_ns_per_contributing_spec",
+      "property_input_ns_per_contributing_spec",
+      "child_names_ns_per_child",
+      "property_names_ns_per_property",
+      "retained_bytes_per_indexed_spec"
+    ],
+    "shape_gates": [
+      "queries against one path should not rescan all specs in all layers",
+      "adding unrelated specs to weak layers should not materially change prim_input timing for a hot path",
+      "repeated child/property queries should use cached or bounded ordering work"
+    ],
+    "note": "Concrete machine-specific thresholds should live in benchmark target files once adapters exist. This contract defines the first composition provider's measurement model."
+  }
+}

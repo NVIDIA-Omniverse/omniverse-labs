@@ -1,0 +1,76 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    metersPerUnit = 1.0
+    upAxis = "Y"
+)
+
+def Xform "World"
+{
+    def Mesh "TexturedCube"
+    {
+        int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+        int[] faceVertexIndices = [
+            0, 1, 2, 3,
+            4, 5, 6, 7,
+            0, 4, 5, 1,
+            1, 5, 6, 2,
+            2, 6, 7, 3,
+            3, 7, 4, 0
+        ]
+        normal3f[] normals = [
+            (0,0,-1),(0,0,-1),(0,0,-1),(0,0,-1),
+            (0,0, 1),(0,0, 1),(0,0, 1),(0,0, 1),
+            (0,-1,0),(0,-1,0),(0,-1,0),(0,-1,0),
+            (1, 0,0),(1, 0,0),(1, 0,0),(1, 0,0),
+            (0, 1,0),(0, 1,0),(0, 1,0),(0, 1,0),
+            (-1,0,0),(-1,0,0),(-1,0,0),(-1,0,0)
+        ] (interpolation = "faceVarying")
+        point3f[] points = [
+            (-1,-1,-1),( 1,-1,-1),( 1, 1,-1),(-1, 1,-1),
+            (-1,-1, 1),( 1,-1, 1),( 1, 1, 1),(-1, 1, 1)
+        ]
+        texCoord2f[] primvars:st = [
+            (0,0),(1,0),(1,1),(0,1),
+            (0,0),(1,0),(1,1),(0,1),
+            (0,0),(1,0),(1,1),(0,1),
+            (0,0),(1,0),(1,1),(0,1),
+            (0,0),(1,0),(1,1),(0,1),
+            (0,0),(1,0),(1,1),(0,1)
+        ] (interpolation = "faceVarying")
+
+        rel material:binding = </World/Materials/CardboardMat>
+    }
+
+    def Scope "Materials"
+    {
+        def Material "CardboardMat"
+        {
+            token outputs:surface.connect = </World/Materials/CardboardMat/Surface.outputs:surface>
+
+            def Shader "Surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor.connect = </World/Materials/CardboardMat/DiffuseTex.outputs:rgb>
+                float inputs:roughness = 0.7
+                float inputs:metallic = 0.0
+                token outputs:surface
+            }
+
+            def Shader "DiffuseTex"
+            {
+                uniform token info:id = "UsdUVTexture"
+                asset inputs:file = @./cardboard.png@
+                float2 inputs:st.connect = </World/Materials/CardboardMat/UVReader.outputs:result>
+                float3 outputs:rgb
+            }
+
+            def Shader "UVReader"
+            {
+                uniform token info:id = "UsdPrimvarReader_float2"
+                token inputs:varname = "st"
+                float2 outputs:result
+            }
+        }
+    }
+}

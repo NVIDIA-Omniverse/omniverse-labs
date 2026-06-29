@@ -1,0 +1,15 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    metersPerUnit = 1
+    upAxis = "Y"
+)
+
+def Xform "World"
+{
+    def Xform "Asset" (
+        prepend references = @./reference_asset.usda@</Referenced>
+    )
+    {
+    }
+}

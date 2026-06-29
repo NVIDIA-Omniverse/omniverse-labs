@@ -1,0 +1,1010 @@
+{
+  "generated_at": "2026-06-08T11:38:46.642248+00:00",
+  "set": "apple",
+  "reference": "OVRTX 0.3 (nanousdview _backend, path-traced)",
+  "test_backend": "OpenGL GLES raster (nusd_renderer_opengl.NuRenderer)",
+  "resolution": [
+    768,
+    768
+  ],
+  "lighting": "shared authored rig: constant-color DomeLight + bbox-positioned Key/Fill SphereLights (NUVIEW_OVRTX_DEFAULT_LIGHTING=0 so OVRTX uses it too)",
+  "assets": [
+    {
+      "label": "teapot",
+      "note": "Apple AR Quick Look: teapot.usdz",
+      "wrapper": "wrappers/teapot.usda",
+      "up_axis": "Y",
+      "materials": 1,
+      "textures": 5,
+      "cams": [
+        {
+          "cam": "camA",
+          "ovrtx_png": "frames/teapot_camA_ovrtx.png",
+          "opengl_png": "frames/teapot_camA_opengl.png",
+          "compare_png": "teapot_camA_compare.png",
+          "camera": {
+            "eye": [
+              65.97389056936066,
+              50.42789487321015,
+              75.12306213677118
+            ],
+            "target": [
+              2.11928653717041,
+              18.619351486191153,
+              -1.430511474609375e-06
+            ],
+            "up": [
+              0.0,
+              1.0,
+              0.0
+            ],
+            "fov_degrees": 35.0,
+            "near_clip": 24.545280869309906,
+            "far_clip": 210.4740071678613,
+            "horizontal_aperture": 31.52987888789835,
+            "vertical_aperture": 31.52987888789835,
+            "focal_length": 50.0,
+            "bounds_min": [
+              -14.573888778686523,
+              -0.01777721755206585,
+              -12.244933128356934
+            ],
+            "bounds_max": [
+              18.812461853027344,
+              33.26280975341797,
+              12.244930267333984
+            ]
+          },
+          "metrics": {
+            "rms": 19.324432373046875,
+            "mae": 11.539831161499023,
+            "silhouette_iou": 0.9156898563962044,
+            "mean_ref_rgb": [
+              179.980712890625,
+              181.97821044921875,
+              186.2803497314453
+            ],
+            "mean_test_rgb": [
+              186.41384887695312,
+              188.64149475097656,
+              192.5801544189453
+            ]
+          },
+          "mean_rgb": {
+            "ovrtx": [
+              179.980712890625,
+              181.97821044921875,
+              186.2803497314453
+            ],
+            "opengl": [
+              186.41384887695312,
+              188.64149475097656,
+              192.5801544189453
+            ]
+          },
+          "timings": {
+            "ovrtx_seconds": 5.324856902938336,
+            "opengl": {
+              "load_ret": 1,
+              "mesh_count": 1,
+              "materials": 1,
+              "textures": 5,
+              "load_seconds": 0.4560035620816052,
+              "render_seconds": 0.010207728948444128,
+              "gpu_memory_gib": 0.010893583297729492
+            }
+          }
+        },
+        {
+          "cam": "camB",
+          "ovrtx_png": "frames/teapot_camB_ovrtx.png",
+          "opengl_png": "frames/teapot_camB_opengl.png",
+          "compare_png": "teapot_camB_compare.png",
+          "camera": {
+            "eye": [
+              -64.58728671821916,
+              79.15992869486067,
+              50.029928511030704
+            ],
+            "target": [
+              2.11928653717041,
+              18.619351486191153,
+              -1.430511474609375e-06
+            ],
+            "up": [
+              0.0,
+              1.0,
+              0.0
+            ],
+            "fov_degrees": 35.0,
+            "near_clip": 24.545280869309906,
+            "far_clip": 210.4740071678613,
+            "horizontal_aperture": 31.52987888789835,
+            "vertical_aperture": 31.52987888789835,
+            "focal_length": 50.0,
+            "bounds_min": [
+              -14.573888778686523,
+              -0.01777721755206585,
+              -12.244933128356934
+            ],
+            "bounds_max": [
+              18.812461853027344,
+              33.26280975341797,
+              12.244930267333984
+            ]
+          },
+          "metrics": {
+            "rms": 24.49369239807129,
+            "mae": 12.679755210876465,
+            "silhouette_iou": 0.8470515495787928,
+            "mean_ref_rgb": [
+              180.11102294921875,
+              182.23287963867188,
+              186.9221954345703
+            ],
+            "mean_test_rgb": [
+              184.46881103515625,
+              186.79257202148438,
+              190.7345428466797
+            ]
+          },
+          "mean_rgb": {
+            "ovrtx": [
+              180.11102294921875,
+              182.23287963867188,
+              186.9221954345703
+            ],
+            "opengl": [
+              184.46881103515625,
+              186.79257202148438,
+              190.7345428466797
+            ]
+          },
+          "timings": {
+            "ovrtx_seconds": 5.275762057164684,
+            "opengl": {
+              "load_ret": 1,
+              "mesh_count": 1,
+              "materials": 1,
+              "textures": 5,
+              "load_seconds": 0.4035742220003158,
+              "render_seconds": 0.009818827034905553,
+              "gpu_memory_gib": 0.010893583297729492
+            }
+          }
+        }
+      ]
+    },
+    {
+      "label": "toy_drummer",
+      "note": "Apple AR Quick Look: toy_drummer.usdz",
+      "wrapper": "wrappers/toy_drummer.usda",
+      "up_axis": "Y",
+      "materials": 2,
+      "textures": 9,
+      "cams": [
+        {
+          "cam": "camA",
+          "ovrtx_png": "frames/toy_drummer_camA_ovrtx.png",
+          "opengl_png": "frames/toy_drummer_camA_opengl.png",
+          "compare_png": "toy_drummer_camA_compare.png",
+          "camera": {
+            "eye": [
+              21.59674390926765,
+              18.736315335113197,
+              26.504334664517838
+            ],
+            "target": [
+              -0.9319405555725098,
+              7.626488518714905,
+              0.0
+            ],
+            "up": [
+              0.0,
+              1.0,
+              0.0
+            ],
+            "fov_degrees": 35.0,
+            "near_clip": 8.659874979833827,
+            "far_clip": 74.25780125650573,
+            "horizontal_aperture": 31.52987888789835,
+            "vertical_aperture": 31.52987888789835,
+            "focal_length": 50.0,
+            "bounds_min": [
+              -5.793338775634766,
+              -1.1920928955078125e-07,
+              -4.221075534820557
+            ],
+            "bounds_max": [
+              3.929457664489746,
+              13.618729591369629,
+              4.221075534820557
+            ]
+          },
+          "metrics": {
+            "rms": 22.287588119506836,
+            "mae": 13.166431427001953,
+            "silhouette_iou": 0.9773768944359956,
+            "mean_ref_rgb": [
+              166.34170532226562,
+              165.75233459472656,
+              172.3629608154297
+            ],
+            "mean_test_rgb": [
+              173.53280639648438,
+              174.62762451171875,
+              180.1143341064453
+            ]
+          },
+          "mean_rgb": {
+            "ovrtx": [
+              166.34170532226562,
+              165.75233459472656,
+              172.3629608154297
+            ],
+            "opengl": [
+              173.53280639648438,
+              174.62762451171875,
+              180.1143341064453
+            ]
+          },
+          "timings": {
+            "ovrtx_seconds": 10.377442712895572,
+            "opengl": {
+              "load_ret": 1,
+              "mesh_count": 41,
+              "materials": 2,
+              "textures": 9,
+              "load_seconds": 0.6846617709379643,
+              "render_seconds": 0.008951714960858226,
+              "gpu_memory_gib": 0.010413963347673416
+            }
+          }
+        },
+        {
+          "cam": "camB",
+          "ovrtx_png": "frames/toy_drummer_camB_ovrtx.png",
+          "opengl_png": "frames/toy_drummer_camB_opengl.png",
+          "compare_png": "toy_drummer_camB_compare.png",
+          "camera": {
+            "eye": [
+              -24.46683460712474,
+              28.87332790941038,
+              17.65117053866417
+            ],
+            "target": [
+              -0.9319405555725098,
+              7.626488518714905,
+              0.0
+            ],
+            "up": [
+              0.0,
+              1.0,
+              0.0
+            ],
+            "fov_degrees": 35.0,
+            "near_clip": 8.659874979833827,
+            "far_clip": 74.25780125650573,
+            "horizontal_aperture": 31.52987888789835,
+            "vertical_aperture": 31.52987888789835,
+            "focal_length": 50.0,
+            "bounds_min": [
+              -5.793338775634766,
+              -1.1920928955078125e-07,
+              -4.221075534820557
+            ],
+            "bounds_max": [
+              3.929457664489746,
+              13.618729591369629,
+              4.221075534820557
+            ]
+          },
+          "metrics": {
+            "rms": 23.164840698242188,
+            "mae": 13.636383056640625,
+            "silhouette_iou": 0.9792547274749722,
+            "mean_ref_rgb": [
+              165.63461303710938,
+              166.00965881347656,
+              173.73394775390625
+            ],
+            "mean_test_rgb": [
+              171.89532470703125,
+              173.35911560058594,
+              178.84783935546875
+            ]
+          },
+          "mean_rgb": {
+            "ovrtx": [
+              165.63461303710938,
+              166.00965881347656,
+              173.73394775390625
+            ],
+            "opengl": [
+              171.89532470703125,
+              173.35911560058594,
+              178.84783935546875
+            ]
+          },
+          "timings": {
+            "ovrtx_seconds": 10.395811354042962,
+            "opengl": {
+              "load_ret": 1,
+              "mesh_count": 41,
+              "materials": 2,
+              "textures": 9,
+              "load_seconds": 0.6536567199509591,
+              "render_seconds": 0.00878785690292716,
+              "gpu_memory_gib": 0.010413963347673416
+            }
+          }
+        }
+      ]
+    },
+    {
+      "label": "robot",
+      "note": "Apple AR Quick Look: robot.usdz",
+      "wrapper": "wrappers/robot.usda",
+      "up_axis": "Y",
+      "materials": 1,
+      "textures": 5,
+      "cams": [
+        {
+          "cam": "camA",
+          "ovrtx_png": "frames/robot_camA_ovrtx.png",
+          "opengl_png": "frames/robot_camA_opengl.png",
+          "compare_png": "robot_camA_compare.png",
+          "camera": {
+            "eye": [
+              42.26187808573299,
+              36.072272058177255,
+              48.73494656015907
+            ],
+            "target": [
+              0.0,
+              15.341612167153507,
+              -0.9849100112915039
+            ],
+            "up": [
+              0.0,
+              1.0,
+              0.0
+            ],
+            "fov_degrees": 35.0,
+            "near_clip": 16.24518205697295,
+            "far_clip": 139.3012605114535,
+            "horizontal_aperture": 31.52987888789835,
+            "vertical_aperture": 31.52987888789835,
+            "focal_length": 50.0,
+            "bounds_min": [
+              -7.130899906158447,
+              0.004373549949377775,
+              -9.390999794006348
+            ],
+            "bounds_max": [
+              7.130899906158447,
+              27.39229965209961,
+              7.42117977142334
+            ]
+          },
+          "metrics": {
+            "rms": 19.73126792907715,
+            "mae": 12.625163078308105,
+            "silhouette_iou": 0.9872163070888204,
+            "mean_ref_rgb": [
+              165.9124755859375,
+              164.15322875976562,
+              169.55702209472656
+            ],
+            "mean_test_rgb": [
+              173.2822723388672,
+              173.21934509277344,
+              178.23483276367188
+            ]
+          },
+          "mean_rgb": {
+            "ovrtx": [
+              165.9124755859375,
+              164.15322875976562,
+              169.55702209472656
+            ],
+            "opengl": [
+              173.2822723388672,
+              173.21934509277344,
+              178.23483276367188
+            ]
+          },
+          "timings": {
+            "ovrtx_seconds": 5.342202092055231,
+            "opengl": {
+              "load_ret": 1,
+              "mesh_count": 12,
+              "materials": 1,
+              "textures": 5,
+              "load_seconds": 0.5590392779558897,
+              "render_seconds": 0.007909444160759449,
+              "gpu_memory_gib": 0.007992908358573914
+            }
+          }
+        },
+        {
+          "cam": "camB",
+          "ovrtx_png": "frames/robot_camB_ovrtx.png",
+          "opengl_png": "frames/robot_camB_opengl.png",
+          "compare_png": "robot_camB_compare.png",
+          "camera": {
+            "eye": [
+              -44.14944089254878,
+              55.088437437788976,
+              32.12717065812008
+            ],
+            "target": [
+              0.0,
+              15.341612167153507,
+              -0.9849100112915039
+            ],
+            "up": [
+              0.0,
+              1.0,
+              0.0
+            ],
+            "fov_degrees": 35.0,
+            "near_clip": 16.24518205697295,
+            "far_clip": 139.3012605114535,
+            "horizontal_aperture": 31.52987888789835,
+            "vertical_aperture": 31.52987888789835,
+            "focal_length": 50.0,
+            "bounds_min": [
+              -7.130899906158447,
+              0.004373549949377775,
+              -9.390999794006348
+            ],
+            "bounds_max": [
+              7.130899906158447,
+              27.39229965209961,
+              7.42117977142334
+            ]
+          },
+          "metrics": {
+            "rms": 20.636777877807617,
+            "mae": 12.580464363098145,
+            "silhouette_iou": 0.9915252030826911,
+            "mean_ref_rgb": [
+              167.53225708007812,
+              167.30125427246094,
+              173.22702026367188
+            ],
+            "mean_test_rgb": [
+              173.28416442871094,
+              174.35780334472656,
+              179.3163299560547
+            ]
+          },
+          "mean_rgb": {
+            "ovrtx": [
+              167.53225708007812,
+              167.30125427246094,
+              173.22702026367188
+            ],
+            "opengl": [
+              173.28416442871094,
+              174.35780334472656,
+              179.3163299560547
+            ]
+          },
+          "timings": {
+            "ovrtx_seconds": 5.342258538119495,
+            "opengl": {
+              "load_ret": 1,
+              "mesh_count": 12,
+              "materials": 1,
+              "textures": 5,
+              "load_seconds": 0.5094609619118273,
+              "render_seconds": 0.007875471143051982,
+              "gpu_memory_gib": 0.007992908358573914
+            }
+          }
+        }
+      ]
+    },
+    {
+      "label": "fender_stratocaster",
+      "note": "Apple AR Quick Look: fender_stratocaster.usdz",
+      "wrapper": "wrappers/fender_stratocaster.usda",
+      "up_axis": "Y",
+      "materials": 19,
+      "textures": 8,
+      "cams": [
+        {
+          "cam": "camA",
+          "ovrtx_png": "frames/fender_stratocaster_camA_ovrtx.png",
+          "opengl_png": "frames/fender_stratocaster_camA_opengl.png",
+          "compare_png": "fender_stratocaster_camA_compare.png",
+          "camera": {
+            "eye": [
+              154.59001743636597,
+              135.96792728677605,
+              175.47115463184457
+            ],
+            "target": [
+              0.0,
+              60.62618218421936,
+              -6.399454116821289
+            ],
+            "up": [
+              0.0,
+              1.0,
+              0.0
+            ],
+            "fov_degrees": 35.0,
+            "near_clip": 59.423364298904204,
+            "far_clip": 509.551048528606,
+            "horizontal_aperture": 31.52987888789835,
+            "vertical_aperture": 31.52987888789835,
+            "focal_length": 50.0,
+            "bounds_min": [
+              -26.22034454345703,
+              -0.04075360298156738,
+              -29.058631896972656
+            ],
+            "bounds_max": [
+              26.22034454345703,
+              108.29306030273438,
+              16.259723663330078
+            ]
+          },
+          "metrics": {
+            "rms": 13.806832313537598,
+            "mae": 9.6630859375,
+            "silhouette_iou": 0.8864138653018495,
+            "mean_ref_rgb": [
+              176.82879638671875,
+              176.8242950439453,
+              182.02682495117188
+            ],
+            "mean_test_rgb": [
+              185.4213104248047,
+              186.0314178466797,
+              190.47129821777344
+            ]
+          },
+          "mean_rgb": {
+            "ovrtx": [
+              176.82879638671875,
+              176.8242950439453,
+              182.02682495117188
+            ],
+            "opengl": [
+              185.4213104248047,
+              186.0314178466797,
+              190.47129821777344
+            ]
+          },
+          "timings": {
+            "ovrtx_seconds": 5.31406615418382,
+            "opengl": {
+              "load_ret": 1,
+              "mesh_count": 20,
+              "materials": 19,
+              "textures": 8,
+              "load_seconds": 0.8985972970258445,
+              "render_seconds": 0.006923689041286707,
+              "gpu_memory_gib": 0.16928845271468163
+            }
+          }
+        },
+        {
+          "cam": "camB",
+          "ovrtx_png": "frames/fender_stratocaster_camB_ovrtx.png",
+          "opengl_png": "frames/fender_stratocaster_camB_opengl.png",
+          "compare_png": "fender_stratocaster_camB_compare.png",
+          "camera": {
+            "eye": [
+              -161.4945465400169,
+              205.52729073114224,
+              114.72145578819138
+            ],
+            "target": [
+              0.0,
+              60.62618218421936,
+              -6.399454116821289
+            ],
+            "up": [
+              0.0,
+              1.0,
+              0.0
+            ],
+            "fov_degrees": 35.0,
+            "near_clip": 59.423364298904204,
+            "far_clip": 509.551048528606,
+            "horizontal_aperture": 31.52987888789835,
+            "vertical_aperture": 31.52987888789835,
+            "focal_length": 50.0,
+            "bounds_min": [
+              -26.22034454345703,
+              -0.04075360298156738,
+              -29.058631896972656
+            ],
+            "bounds_max": [
+              26.22034454345703,
+              108.29306030273438,
+              16.259723663330078
+            ]
+          },
+          "metrics": {
+            "rms": 14.351668357849121,
+            "mae": 9.487794876098633,
+            "silhouette_iou": 0.9071863754587237,
+            "mean_ref_rgb": [
+              177.24798583984375,
+              178.0894317626953,
+              183.50856018066406
+            ],
+            "mean_test_rgb": [
+              185.1929931640625,
+              186.55364990234375,
+              191.1549530029297
+            ]
+          },
+          "mean_rgb": {
+            "ovrtx": [
+              177.24798583984375,
+              178.0894317626953,
+              183.50856018066406
+            ],
+            "opengl": [
+              185.1929931640625,
+              186.55364990234375,
+              191.1549530029297
+            ]
+          },
+          "timings": {
+            "ovrtx_seconds": 5.3450091949198395,
+            "opengl": {
+              "load_ret": 1,
+              "mesh_count": 20,
+              "materials": 19,
+              "textures": 8,
+              "load_seconds": 0.7223857380449772,
+              "render_seconds": 0.006808161968365312,
+              "gpu_memory_gib": 0.16928845271468163
+            }
+          }
+        }
+      ]
+    },
+    {
+      "label": "ball_soccerball",
+      "note": "Apple AR Quick Look: ball_soccerball_realistic.usdz",
+      "wrapper": "wrappers/ball_soccerball.usda",
+      "up_axis": "Y",
+      "materials": 1,
+      "textures": 4,
+      "cams": [
+        {
+          "cam": "camA",
+          "ovrtx_png": "frames/ball_soccerball_camA_ovrtx.png",
+          "opengl_png": "frames/ball_soccerball_camA_opengl.png",
+          "compare_png": "ball_soccerball_camA_compare.png",
+          "camera": {
+            "eye": [
+              0.4558022907292415,
+              0.24130709509195142,
+              0.5362379890932253
+            ],
+            "target": [
+              0.0,
+              0.013163580000400544,
+              0.0
+            ],
+            "up": [
+              0.0,
+              1.0,
+              0.0
+            ],
+            "fov_degrees": 35.0,
+            "near_clip": 0.17520733886602935,
+            "far_clip": 1.5023902514172924,
+            "horizontal_aperture": 31.52987888789835,
+            "vertical_aperture": 31.52987888789835,
+            "focal_length": 50.0,
+            "bounds_min": [
+              -0.10930123925209045,
+              -0.10969650000333786,
+              -0.10939447581768036
+            ],
+            "bounds_max": [
+              0.10930123925209045,
+              0.10969650000333786,
+              0.10939447581768036
+            ]
+          },
+          "metrics": {
+            "rms": 15.65869426727295,
+            "mae": 10.844361305236816,
+            "silhouette_iou": 0.9016961123809337,
+            "mean_ref_rgb": [
+              174.49864196777344,
+              177.02272033691406,
+              182.21592712402344
+            ],
+            "mean_test_rgb": [
+              184.92507934570312,
+              187.58566284179688,
+              192.0297393798828
+            ]
+          },
+          "mean_rgb": {
+            "ovrtx": [
+              174.49864196777344,
+              177.02272033691406,
+              182.21592712402344
+            ],
+            "opengl": [
+              184.92507934570312,
+              187.58566284179688,
+              192.0297393798828
+            ]
+          },
+          "timings": {
+            "ovrtx_seconds": 10.345014740945771,
+            "opengl": {
+              "load_ret": 1,
+              "mesh_count": 1,
+              "materials": 1,
+              "textures": 4,
+              "load_seconds": 0.5682878820225596,
+              "render_seconds": 0.023883996065706015,
+              "gpu_memory_gib": 0.0041567981243133545
+            }
+          }
+        },
+        {
+          "cam": "camB",
+          "ovrtx_png": "frames/ball_soccerball_camB_ovrtx.png",
+          "opengl_png": "frames/ball_soccerball_camB_opengl.png",
+          "compare_png": "ball_soccerball_camB_compare.png",
+          "camera": {
+            "eye": [
+              -0.4761600100311767,
+              0.44640000940422814,
+              0.35712000752338247
+            ],
+            "target": [
+              0.0,
+              0.013163580000400544,
+              0.0
+            ],
+            "up": [
+              0.0,
+              1.0,
+              0.0
+            ],
+            "fov_degrees": 35.0,
+            "near_clip": 0.17520733886602935,
+            "far_clip": 1.5023902514172924,
+            "horizontal_aperture": 31.52987888789835,
+            "vertical_aperture": 31.52987888789835,
+            "focal_length": 50.0,
+            "bounds_min": [
+              -0.10930123925209045,
+              -0.10969650000333786,
+              -0.10939447581768036
+            ],
+            "bounds_max": [
+              0.10930123925209045,
+              0.10969650000333786,
+              0.10939447581768036
+            ]
+          },
+          "metrics": {
+            "rms": 15.986612319946289,
+            "mae": 11.161442756652832,
+            "silhouette_iou": 0.8145255224391915,
+            "mean_ref_rgb": [
+              173.94601440429688,
+              176.76806640625,
+              182.59771728515625
+            ],
+            "mean_test_rgb": [
+              182.61544799804688,
+              185.45672607421875,
+              190.302978515625
+            ]
+          },
+          "mean_rgb": {
+            "ovrtx": [
+              173.94601440429688,
+              176.76806640625,
+              182.59771728515625
+            ],
+            "opengl": [
+              182.61544799804688,
+              185.45672607421875,
+              190.302978515625
+            ]
+          },
+          "timings": {
+            "ovrtx_seconds": 10.283714148914441,
+            "opengl": {
+              "load_ret": 1,
+              "mesh_count": 1,
+              "materials": 1,
+              "textures": 4,
+              "load_seconds": 0.5627903919667006,
+              "render_seconds": 0.007724275812506676,
+              "gpu_memory_gib": 0.0041567981243133545
+            }
+          }
+        }
+      ]
+    },
+    {
+      "label": "pancakes",
+      "note": "Apple AR Quick Look: pancakes_photogrammetry.usdz",
+      "wrapper": "wrappers/pancakes.usda",
+      "up_axis": "Y",
+      "materials": 5,
+      "textures": 10,
+      "cams": [
+        {
+          "cam": "camA",
+          "ovrtx_png": "frames/pancakes_camA_ovrtx.png",
+          "opengl_png": "frames/pancakes_camA_opengl.png",
+          "compare_png": "pancakes_camA_compare.png",
+          "camera": {
+            "eye": [
+              45.35584837804091,
+              30.20837231673661,
+              51.7193815779435
+            ],
+            "target": [
+              -2.2069320678710938,
+              5.639676558673382,
+              -4.236830711364746
+            ],
+            "up": [
+              0.0,
+              1.0,
+              0.0
+            ],
+            "fov_degrees": 35.0,
+            "near_clip": 18.282813317293503,
+            "far_clip": 156.77380110993573,
+            "horizontal_aperture": 31.52987888789835,
+            "vertical_aperture": 31.52987888789835,
+            "focal_length": 50.0,
+            "bounds_min": [
+              -14.73456859588623,
+              -0.06858798116445541,
+              -18.676563262939453
+            ],
+            "bounds_max": [
+              10.320704460144043,
+              10.124741554260254,
+              10.202901840209961
+            ]
+          },
+          "metrics": {
+            "rms": 19.466875076293945,
+            "mae": 11.18191909790039,
+            "silhouette_iou": 0.9469151845458601,
+            "mean_ref_rgb": [
+              176.69032287597656,
+              176.6883544921875,
+              179.5353240966797
+            ],
+            "mean_test_rgb": [
+              180.91409301757812,
+              182.42979431152344,
+              185.91818237304688
+            ]
+          },
+          "mean_rgb": {
+            "ovrtx": [
+              176.69032287597656,
+              176.6883544921875,
+              179.5353240966797
+            ],
+            "opengl": [
+              180.91409301757812,
+              182.42979431152344,
+              185.91818237304688
+            ]
+          },
+          "timings": {
+            "ovrtx_seconds": 10.419650095980614,
+            "opengl": {
+              "load_ret": 1,
+              "mesh_count": 26,
+              "materials": 5,
+              "textures": 10,
+              "load_seconds": 0.8790010497905314,
+              "render_seconds": 0.007484915899112821,
+              "gpu_memory_gib": 0.014932405203580856
+            }
+          }
+        },
+        {
+          "cam": "camB",
+          "ovrtx_png": "frames/pancakes_camB_ovrtx.png",
+          "opengl_png": "frames/pancakes_camB_opengl.png",
+          "compare_png": "pancakes_camB_compare.png",
+          "camera": {
+            "eye": [
+              -51.89403209977795,
+              51.60973306646058,
+              33.02849431256539
+            ],
+            "target": [
+              -2.2069320678710938,
+              5.639676558673382,
+              -4.236830711364746
+            ],
+            "up": [
+              0.0,
+              1.0,
+              0.0
+            ],
+            "fov_degrees": 35.0,
+            "near_clip": 18.282813317293503,
+            "far_clip": 156.77380110993573,
+            "horizontal_aperture": 31.52987888789835,
+            "vertical_aperture": 31.52987888789835,
+            "focal_length": 50.0,
+            "bounds_min": [
+              -14.73456859588623,
+              -0.06858798116445541,
+              -18.676563262939453
+            ],
+            "bounds_max": [
+              10.320704460144043,
+              10.124741554260254,
+              10.202901840209961
+            ]
+          },
+          "metrics": {
+            "rms": 17.01993179321289,
+            "mae": 10.608077049255371,
+            "silhouette_iou": 0.8598346051702692,
+            "mean_ref_rgb": [
+              174.8060760498047,
+              174.98768615722656,
+              178.43170166015625
+            ],
+            "mean_test_rgb": [
+              178.91937255859375,
+              180.75289916992188,
+              184.81399536132812
+            ]
+          },
+          "mean_rgb": {
+            "ovrtx": [
+              174.8060760498047,
+              174.98768615722656,
+              178.43170166015625
+            ],
+            "opengl": [
+              178.91937255859375,
+              180.75289916992188,
+              184.81399536132812
+            ]
+          },
+          "timings": {
+            "ovrtx_seconds": 10.389112566132098,
+            "opengl": {
+              "load_ret": 1,
+              "mesh_count": 26,
+              "materials": 5,
+              "textures": 10,
+              "load_seconds": 0.7341181049123406,
+              "render_seconds": 0.006660554092377424,
+              "gpu_memory_gib": 0.014932405203580856
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "contact_sheet": "contact_sheet.png"
+}

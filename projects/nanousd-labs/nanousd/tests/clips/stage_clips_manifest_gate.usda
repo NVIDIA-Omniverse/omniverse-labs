@@ -1,0 +1,23 @@
+#usda 1.0
+(
+    defaultPrim = "Geo"
+)
+
+# Stage exercising §12.3.4.3 manifest gating. The manifest declares
+# only /Geo.radius, so queries for /Geo.color skip the clip set even
+# though clip_multi.usda authors the color attribute.
+
+def Scope "Geo" (
+    clips = {
+        dictionary default = {
+            string primPath = "/Geo"
+            asset manifestAssetPath = @./manifest_radius_only.usda@
+            asset[] assetPaths = [@./clip_multi.usda@]
+            double2[] active = [(0, 0)]
+        }
+    }
+)
+{
+    float radius
+    color3f color
+}

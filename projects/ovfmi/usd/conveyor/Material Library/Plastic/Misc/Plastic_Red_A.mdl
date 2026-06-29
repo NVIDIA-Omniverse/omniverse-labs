@@ -1,0 +1,20 @@
+mdl 1.4;
+
+using ::OmniPBR import OmniPBR;
+import ::tex::gamma_mode;
+import ::state::normal;
+import ::base::mono_mode;
+
+export material Plastic_Red_A(*)
+ = OmniPBR(
+	albedo_add: 0.4099999964237213,
+	albedo_brightness: 0.9099999666213989,
+	diffuse_texture: texture_2d("../Textures/T_Plastic_Red_A_Albedo.png", ::tex::gamma_srgb),
+	diffuse_tint: color(0.2680115, 0.053293347, 0.053293347),
+	enable_ORM_texture: true,
+	metallic_constant: 0.0,
+	metallic_texture_influence: 1.0,
+	normalmap_texture: texture_2d("../Textures/T_Plastic_Red_A_Normal.png", ::tex::gamma_linear),
+	ORM_texture: texture_2d("../Textures/T_Plastic_Red_A_ORM.png", ::tex::gamma_linear),
+	reflection_roughness_texture_influence: 1.0,
+	texture_scale: float2(3, 3));

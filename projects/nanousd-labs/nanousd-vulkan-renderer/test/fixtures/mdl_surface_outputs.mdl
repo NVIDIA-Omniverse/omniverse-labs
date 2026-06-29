@@ -1,0 +1,17 @@
+mdl 1.8;
+import ::df::*;
+
+export material generic_pbr(
+    color base_color = color(0.18, 0.62, 0.28),
+    color specular_color = color(0.02, 0.03, 0.04),
+    float roughness = 0.37,
+    float metallic = 0.12,
+    float opacity = 0.91
+) = material(
+    surface: material_surface(
+        scattering: df::diffuse_reflection_bsdf(
+            tint: base_color,
+            roughness: roughness)
+    ),
+    geometry: material_geometry(cutout_opacity: opacity)
+);

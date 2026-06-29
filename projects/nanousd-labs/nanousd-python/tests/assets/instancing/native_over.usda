@@ -1,0 +1,40 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    upAxis = "Y"
+)
+
+def Xform "World"
+{
+    def Xform "Proto"
+    {
+        def Mesh "Geom"
+        {
+            point3f[] points = [(0, 0, 0), (1, 0, 0), (1, 1, 0), (0, 1, 0)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+            color3f[] primvars:displayColor = [(1, 0, 0)]
+        }
+    }
+    def Xform "A" (
+        instanceable = true
+        prepend references = </World/Proto>
+    )
+    {
+        double3 xformOp:translate = (5, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+
+        over "Geom"
+        {
+            color3f[] primvars:displayColor = [(0, 1, 0)]
+        }
+    }
+    def Xform "B" (
+        instanceable = true
+        prepend references = </World/Proto>
+    )
+    {
+        double3 xformOp:translate = (-5, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+}

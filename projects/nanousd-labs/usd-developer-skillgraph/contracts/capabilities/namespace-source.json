@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/namespace-source.json",
+  "title": "USD Namespace Source Capability",
+  "version": "0.1",
+  "spec_commit": "v1.0.1",
+  "dependency_contracts": [
+    "contracts/capabilities/semantic-runtime-types.json",
+    "contracts/capabilities/composition-provenance.json"
+  ],
+  "purpose": "Define the reusable boundary consumed by stage population. A namespace source supplies composed or degenerate-composed prim/property opinions by path without requiring the stage-population skill to know whether the data came from one layer, sublayers, references, payloads, variants, or usd-composition-arbitrator machinery.",
+  "scope": {
+    "included": [
+      "absolute root path as the root scene object",
+      "enumeration of candidate child prim names for a prim path",
+      "enumeration of candidate property names for a prim path",
+      "typed field opinion lookup for prims and properties",
+      "strength-ordered contributing opinions for downstream composition providers",
+      "defaultPrim and layer-level population field access",
+      "diagnostics produced before stage population",
+      "source capability level declaration",
+      "provider declaration for raw or composed child/property ordering",
+      "schema-defined property injection when supplied by a schema-aware namespace source",
+      "instance-filtered descendant inputs when supplied by a composed namespace source that declares instancing partial or full"
+    ],
+    "deferred": [
+      "composition arc evaluation unless supplied by usd-composition-arbitrator or another composed namespace source",
+      "value resolution beyond the strongest or only opinion exposed by the namespace source",
+      "schema fallback property injection unless supplied by a schema-aware namespace source",
+      "payload load policy beyond reporting whether the source supports it",
+      "complete scene graph instancing unless a composed namespace source declares instancing full"
+    ]
+  },
+  "model": {
+    "NamespaceSource": "Target-native provider consumed by usd-stage-population. It exposes scene-object inputs by path and hides whether those inputs come from a single layer or a composed namespace.",
+    "NamespaceSourceMode": "Capability descriptor such as single_layer, layer_stack, composed_namespace, or full_composition.",
+    "SceneObjectInput": "The provider's path-addressed input for one prim-like scene object. It can expose field opinions, child names, property names, and source diagnostics.",
+    "FieldOpinion": "A target-native typed field value exposed to stage population. For a single-layer provider this is the authored field value; for usd-composition-arbitrator this is the composed strongest field or a value-resolution-ready opinion stack. It preserves stored type identity and checked typed-read semantics from the document-model/value contracts.",
+    "ContributingOpinion": "A strength-ordered typed provenance record containing a source identifier and semantic spec path, never a composite source:path string in domain storage.",
+    "CapabilityLevel": "Structured declaration of whether composition, value resolution, payload load state, instancing, schema fallbacks, and population masks are complete, partial, or absent.",
+    "OrderingDeclaration": "Structured declaration of whether childNames and propertyNames are raw source lists that require consumer ordering or already composition-ordered lists that consumers must preserve."
+  },
+  "operations": {
+    "source_capabilities": {
+      "input": {},
+      "output": {
+        "mode": "single_layer, layer_stack, composed_namespace, or full_composition",
+        "composition": "absent, partial, or full",
+        "value_resolution": "absent, partial, or full",
+        "payload_loading": "absent, partial, or full",
+        "instancing": "absent, partial, or full",
+        "schema_fallbacks": "absent, partial, or full",
+        "child_ordering": "raw_single_layer or composed",
+        "property_ordering": "raw_single_layer or composed"
+      }
+    },
+    "layer_field": {
+      "input": {
+        "field": "field token"
+      },
+      "output": {
+        "value": "target-native field value or missing"
+      }
+    },
+    "prim_input": {
+      "input": {
+        "path": "absolute scene prim path, variant-selection prim path, or /"
+      },
+      "output": {
+        "exists": "whether the source has a scene-object input at this path",
+        "fields": "field opinions visible for this path",
+        "childNames": "candidate child prim names before stage mask/active filtering, either raw or composed according to source_capabilities.child_ordering",
+        "propertyNames": "candidate property names before schema fallback injection, either raw or composed according to source_capabilities.property_ordering"
+      }
+    },
+    "property_input": {
+      "input": {
+        "path": "property path"
+      },
+      "output": {
+        "exists": "whether the source has an attribute or relationship input at this path",
+        "kind": "attribute or relationship",
+        "fields": "field opinions visible for this property"
+      }
+    },
+    "prim_opinions": {
+      "input": {
+        "path": "absolute scene prim path, variant-selection prim path, or /"
+      },
+      "output": {
+        "opinions": "strong-to-weak contributing scene-object opinions with origin, composition arc class, spec path, fields, child names, and property names sufficient for later composition providers"
+      }
+    },
+    "diagnostics": {
+      "input": {},
+      "output": {
+        "diagnostics": "diagnostics produced by the source before population"
+      }
+    }
+  },
+  "laws": [
+    "namespace-source paths are path handles or equivalent target-native path references, not parser-local strings",
+    "long-lived namespace-source records that carry source paths, target paths, mapped paths, variant-selection paths, child names, property names, variant set names, or selected variant names must follow the semantic-runtime-types contract",
+    "field names are token/field-token identity values, not parser-local string keys",
+    "field opinions preserve target-native typed value identity and checked typed reads; adapter JSON may be materialized only at conformance or serialization boundaries",
+    "a namespace source must declare its capability level so stage population does not silently assume full composition",
+    "stage population may consume ordered child and property names from the namespace source, but must own population-mask filtering and active-descendant pruning",
+    "field maps alone are not sufficient when a downstream composition provider must insert opinions at a specific LIVERPS strength position; providers that feed later composition providers must expose strength-ordered contributing opinions or an equivalent target-native opinion stack",
+    "strength-ordered contributing opinions must use typed composition provenance records; adapter strings such as source.usda:/Prim must be rendered only at diagnostics, reports, ABI, or conformance boundaries",
+    "a raw_single_layer child/property ordering declaration means stage population applies single-layer primOrder/propertyOrder rules over raw source child/property lists",
+    "a composed child/property ordering declaration means the provider has already applied composition ordering and stage population must preserve the order while applying only population-mask and active filtering",
+    "composition providers may query source-visible variant-selection paths validated by usd-paths, but stage population must receive only composed scene paths",
+    "a single-layer namespace source must not perform sublayer, reference, payload, inherits, specializes, variant, relocates, value-clip, or schema fallback evaluation",
+    "usd-composition-arbitrator or another composed namespace source may provide the same capability with stronger composition and value-resolution guarantees without changing the stage population contract",
+    "a schema-aware namespace source may provide schema-defined property names and schema fallback fields without requiring stage population to compute prim definitions",
+    "adapter JSON may seed or inspect a namespace source in conformance tests, but domain APIs must exchange target-native layer, path, token, and field value objects"
+  ]
+}

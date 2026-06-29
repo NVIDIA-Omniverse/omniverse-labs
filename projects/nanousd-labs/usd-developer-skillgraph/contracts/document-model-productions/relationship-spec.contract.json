@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/document-model-productions/relationship-spec.contract.json",
+  "title": "Document-Model Relationship Spec Production Contract",
+  "version": "0.1",
+  "spec_commit": "6b4f01f2d6d46b01507481524eb516b4ef358c31",
+  "derives_from": "contracts/capabilities/document-data-model.json#spec_forms.relationship",
+  "spec_refs": [
+    "specification/document_data_model/README.md#relationship-spec",
+    "specification/file_formats/README.md#relationship-types",
+    "specification/file_formats/README.md#relationship-values"
+  ],
+  "summary": "Format-neutral rules a relationship spec must satisfy after parsing. Both USDA and USDC mapping productions cite this contract.",
+  "fields": {
+    "custom": {
+      "type": "bool",
+      "required": "always emitted; true only when the source authored a custom rel declaration",
+      "default_when_unauthored": "false"
+    },
+    "targetPaths": {
+      "type": "listOp<ObjectPath>",
+      "required": "only when authored; explicit/prepend/append/delete subfields. Target paths are stored as authored layer data; target resolution is not performed by the parser."
+    },
+    "displayName": {
+      "type": "string",
+      "required": "only when authored"
+    },
+    "displayGroup": {
+      "type": "string",
+      "required": "only when authored"
+    },
+    "documentation": {
+      "type": "string",
+      "required": "only when authored"
+    },
+    "comment": {
+      "type": "string",
+      "required": "only when authored"
+    },
+    "customData": {
+      "type": "dictionary",
+      "required": "only when authored"
+    },
+    "hidden": {
+      "type": "bool",
+      "required": "only when authored"
+    }
+  },
+  "excluded_fields": {
+    "policy": "Strict AOUSD §7.6 conformance. Relationship/property fields the spec marks Deprecated are NOT in the live field set: they are recognized as reserved spec tokens and rejected (ForbiddenFieldOnSpecKind), never admitted as live fields and never reinterpreted as generic extension fields. permission and noLoadHint were carried only to match OpenUSD's SdfFieldKeys.",
+    "deprecated": {
+      "spec_ref": "specification/document_data_model/README.md#deprecated-fields (§7.6.5.2 relationship, §7.6.3.4 property)",
+      "fields": ["relationshipTargetChildren", "noLoadHint", "permission", "prefix", "suffix", "symmetricPeer", "symmetryArguments", "symmetryFunction"]
+    }
+  },
+  "listop_subfield_rules": {
+    "subfields": ["explicit", "prepend", "append", "delete", "reorder"],
+    "single_item_is_explicit": "A single target path authored without an explicit listOp prefix produces an explicit listOp containing that one path.",
+    "none_is_empty_explicit": "A None authored target produces an empty listOp on the named subfield.",
+    "applies_to_fields": ["targetPaths"]
+  },
+  "laws": [
+    "relationship specs must carry custom as the format-neutral required field (default: false)",
+    "relationship specs reject the variability field even when the source format encodes one; emitting variability on a relationship is a contract violation",
+    "a relationship spec admits only its admitted field set (common-metadata#spec_kind_field_admission: shared + relationship_only + custom); a field belonging to another spec kind (e.g. variability, default, payload) is rejected and must not be interned as an extension field (common-metadata#extension_field_rule)",
+    "targetPaths are authored listOp<ObjectPath> values; target resolution is composition behavior and not evaluated by the parser",
+    "a single target path authored without an explicit listOp prefix is stored as an explicit listOp containing that one path",
+    "None authored target produces an empty listOp on the named subfield",
+    "variant selections in target paths are either stripped according to a declared policy or produce a parse diagnostic; format-specific contracts pin the policy"
+  ],
+  "golden_groups": [
+    "rel and custom rel declarations",
+    "single, list, and None targets",
+    "explicit/prepend/append/delete target listOps",
+    "repeated listOp subfields last-one-wins within a layer",
+    "relationship metadata (documentation, displayName, customData)",
+    "rejection of variability and other attribute-only fields on relationship specs",
+    "rejection of deprecated relationship/property fields (noLoadHint, permission) as ForbiddenFieldOnSpecKind"
+  ]
+}

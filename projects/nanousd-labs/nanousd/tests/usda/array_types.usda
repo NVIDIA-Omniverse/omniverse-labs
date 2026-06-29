@@ -1,0 +1,57 @@
+#usda 1.0
+
+def Scope "ArrayTypes"
+{
+    # Scalar arrays
+    bool[] bools = [true, false, True, False]
+    int[] ints = [1, -2, 3, 0, 2147483647, -2147483648]
+    uint[] uints = [0, 1, 4294967295]
+    int64[] int64s = [0, -1, 9223372036854775807, -9223372036854775808]
+    uint64[] uint64s = [0, 1, 18446744073709551615]
+    half[] halves = [0.5, 1.0, -1.5]
+    float[] floats = [1.0, 2.5, -3.14, 0.0]
+    double[] doubles = [1.0, 2.718281828, -1e10]
+    string[] strings = ["hello", "world", ""]
+    token[] tokens = ["tok1", "tok2", "tok3"]
+    asset[] assets = [@./a.usd@, @./b.usd@]
+
+    # Vec arrays
+    float2[] f2s = [(0, 0), (1, 1)]
+    float3[] f3s = [(1, 0, 0), (0, 1, 0), (0, 0, 1)]
+    float4[] f4s = [(1, 0, 0, 0), (0, 1, 0, 1)]
+    double2[] d2s = [(0, 0), (1, 1)]
+    double3[] d3s = [(1.0, 2.0, 3.0)]
+    double4[] d4s = [(1, 0, 0, 0)]
+    int2[] i2s = [(1, 2), (3, 4)]
+    int3[] i3s = [(1, 2, 3)]
+    int4[] i4s = [(1, 2, 3, 4)]
+    half2[] h2s = [(0.5, 1.0)]
+    half3[] h3s = [(0.5, 1.0, 1.5)]
+    half4[] h4s = [(0.5, 1.0, 1.5, 2.0)]
+
+    # Role-typed arrays
+    point3f[] points = [(0, 0, 0), (1, 2, 3)]
+    normal3f[] normals = [(0, 1, 0), (1, 0, 0)]
+    vector3f[] vectors = [(1, 0, 0)]
+    color3f[] colors = [(1, 0, 0), (0, 1, 0), (0, 0, 1)]
+    color4f[] colorsAlpha = [(1, 0, 0, 1)]
+    texCoord2f[] uvs = [(0, 0), (1, 0), (0, 1), (1, 1)]
+    point3d[] pointsd = [(0, 0, 0)]
+    normal3d[] normalsd = [(0, 1, 0)]
+    color3d[] colorsd = [(1, 0.5, 0)]
+    texCoord2d[] uvsd = [(0, 0)]
+
+    # Quaternion arrays
+    quatf[] quats = [(0, 0, 0, 1), (1, 0, 0, 0)]
+    quatd[] quatds = [(0, 0, 0, 1)]
+    quath[] qaths = [(0, 0, 0, 1)]
+
+    # Matrix arrays
+    matrix4d[] matrices = [((1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1))]
+
+    # Empty arrays
+    float[] emptyFloats = []
+    int[] emptyInts = []
+    string[] emptyStrings = []
+    point3f[] emptyPoints = []
+}

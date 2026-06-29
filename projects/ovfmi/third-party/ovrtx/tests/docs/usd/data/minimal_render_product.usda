@@ -1,0 +1,15 @@
+#usda 1.0
+
+# [snippet:doc-minimal-render-product]
+def "Render" {
+    def RenderProduct "Camera" {
+        int2 resolution = (1920, 1080)
+        rel camera = </World/Camera>
+        rel orderedVars = [<LdrColor>]
+
+        def RenderVar "LdrColor" {
+            string sourceName = "LdrColor"
+        }
+    }
+}
+# [/snippet:doc-minimal-render-product]

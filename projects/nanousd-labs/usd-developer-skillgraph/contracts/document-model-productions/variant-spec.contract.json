@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/document-model-productions/variant-spec.contract.json",
+  "title": "Document-Model Variant and VariantSet Spec Production Contract",
+  "version": "0.1",
+  "spec_commit": "6b4f01f2d6d46b01507481524eb516b4ef358c31",
+  "derives_from": "contracts/capabilities/document-data-model.json#spec_forms",
+  "spec_refs": [
+    "specification/document_data_model/README.md#variant-and-variant-set-specs",
+    "specification/file_formats/README.md#specifier-and-typename-for-variants"
+  ],
+  "summary": "Format-neutral rules variant and variantSet specs must satisfy after parsing. Both USDA and USDC mapping productions cite this contract.",
+  "spec_kinds": {
+    "variantSet": {
+      "parent_kind": "prim",
+      "child_kinds": ["variant"],
+      "name_rule": "variantSet spec name matches the authored variant set name. The name is added to the parent prim's variantSetChildren list.",
+      "fields": {
+        "variantChildren": {
+          "type": "token[]",
+          "required": "every variantSet spec carries this field; the value is the ordered list of authored variant spec names under this variantSet. Maintained by usd-document-model.",
+          "default_when_unauthored": "[]"
+        }
+      }
+    },
+    "variant": {
+      "parent_kind": "variantSet",
+      "child_kinds": ["prim", "attribute", "relationship", "variantSet"],
+      "name_rule": "variant spec name matches the authored variant name. The name is added to the parent variantSet's variantChildren list.",
+      "specifier_rule": "variant specs report specifier=over.",
+      "typeName_rule": "variant specs leave typeName unauthored.",
+      "fields": {
+        "specifier": {
+          "type": "EnumSpecifier",
+          "required": "always emitted on every variant spec; value is over",
+          "value": "over"
+        },
+        "primChildren": {
+          "type": "token[]",
+          "required": "every variant spec carries this field; the value is the ordered list of child prim spec names declared inside the variant.",
+          "default_when_unauthored": "[]"
+        },
+        "propertyChildren": {
+          "type": "token[]",
+          "required": "every variant spec carries this field; the value is the ordered list of child property names declared inside the variant.",
+          "default_when_unauthored": "[]"
+        },
+        "variantSetChildren": {
+          "type": "token[]",
+          "required": "every variant spec carries this field; the value is the ordered list of nested variantSet spec names.",
+          "default_when_unauthored": "[]"
+        },
+        "documentation": {
+          "type": "string",
+          "required": "only when authored"
+        },
+        "customData": {
+          "type": "dictionary",
+          "required": "only when authored"
+        }
+      }
+    }
+  },
+  "nesting_rules": {
+    "variantSet_must_have_prim_parent": "A variantSet spec must be a child of a prim or variant spec; emitting a variantSet under a layer or under an attribute/relationship is a violation.",
+    "variant_must_have_variantSet_parent": "A variant spec must be a child of a variantSet spec.",
+    "nested_variantSets_allowed": "A variant spec may contain nested variantSet specs as children, with the same naming and child-list invariants.",
+    "variantSetChildren_vs_variantSetNames": "variantSetChildren on a prim or variant spec is the spec-storage list (which variantSet specs actually exist under this prim/variant). variantSetNames is authored composition metadata (a listOp<token> declaring which variant sets should compose). They must be maintained independently; the two sets may differ."
+  },
+  "laws": [
+    "variant set and variant specs are authored layer storage, not composition evaluation",
+    "variant contents (child prims, properties, nested variantSets) use the same document-model storage APIs as prim contents",
+    "variant specs must report specifier=over and leave typeName unauthored unless a future spec revision changes the storage rule",
+    "variant set specs maintain variantChildren in agreement with stored variant specs",
+    "containing prim specs maintain variantSetChildren in agreement with stored variantSet specs",
+    "variantSetChildren (spec storage) is distinct from variantSetNames (authored listOp metadata); the two lists are maintained independently",
+    "nested variantSets inside variants follow the same parent-child and child-list invariants"
+  ],
+  "golden_groups": [
+    "single variantSet with one variant",
+    "multiple variants under one variantSet, variantChildren maintenance",
+    "prim and property specs inside variants",
+    "nested variantSet inside a variant",
+    "variantSetChildren storage on the containing prim",
+    "variant specifier=over and unauthored typeName invariants"
+  ]
+}

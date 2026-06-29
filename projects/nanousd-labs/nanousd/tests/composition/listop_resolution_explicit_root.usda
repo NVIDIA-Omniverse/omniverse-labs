@@ -1,0 +1,25 @@
+#usda 1.0
+(
+    defaultPrim = "Source"
+    subLayers = [
+        @./listop_resolution_base.usda@
+    ]
+)
+
+# Spec §6.6.3.6 / §12.2.6: when the stronger opinion is an EXPLICIT
+# list op, ListOp::Combine returns the stronger value verbatim —
+# weaker contributions are pruned. This fixture authors explicit
+# listops on the stronger layer; weaker base prepends must NOT
+# appear in the resolved result.
+
+over "Source" (
+    apiSchemas = ["OnlyRoot"]
+)
+{
+    rel relTargets = [</Source/OnlyProp>]
+
+    def Scope "OnlyProp"
+    {
+        int v = 0
+    }
+}

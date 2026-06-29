@@ -1,0 +1,172 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/spec-coverage/relocates-composition.coverage.json",
+  "title": "USD Relocates Composition Spec Coverage Ledger",
+  "version": "0.1",
+  "spec_tag": "v1.0.1",
+  "spec_commit": "v1.0.1",
+  "normative_source": {
+    "repo": "aousd/specifications-public",
+    "tag": "v1.0.1",
+    "commit": "v1.0.1",
+    "rule": "Only the AOUSD core specification at aousd/specifications-public v1.0.1 is normative for this ledger. This ledger covers only direct layerRelocates namespace composition."
+  },
+  "status_values": {
+    "implemented": "In scope for the relocates-namespace-source contract and covered by goldens.",
+    "partial": "A bounded subset is included and later contracts must extend it.",
+    "deferred": "Specified behavior intentionally not included in this first relocates contract.",
+    "out_of_scope": "Belongs to another subsystem or future skill."
+  },
+  "coverage_rules": [
+    "The provider composes direct layerRelocates and delegates stage traversal to usd-stage-population.",
+    "The first provider consumes a base namespace source, not parser-local USDA syntax.",
+    "A generated target must not claim automatic ancestral relocate source rewriting or full value resolution from this provider."
+  ],
+  "items": [
+    {
+      "id": "relocates.direct-source-to-target-map",
+      "owner": "usd-relocates-namespace-source",
+      "status": "partial",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:670 Relocates",
+        "aousd/specifications-public@v1.0.1:specification/document_data_model/README.md:508 layerRelocates",
+        "aousd/specifications-public@v1.0.1:specification/file_formats/README.md:1604 Layer Relocates Metadata"
+      ],
+      "obligations": [
+        "Read source-visible layerRelocates entries as source path to optional target path mappings.",
+        "Map source prim and property opinions to the target subtree by path-prefix replacement.",
+        "Preserve target-local opinions as stronger than relocated source opinions."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-relocates-namespace-source/relocates-namespace-source.json#relocates-referenced-child"
+      ],
+      "deferred_reason": "This provider diagnoses invalid ancestral relocate source paths and leaves automatic source-path rewriting out of scope."
+    },
+    {
+      "id": "relocates.empty-target-deletes-source",
+      "owner": "usd-relocates-namespace-source",
+      "status": "implemented",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:specification/document_data_model/README.md:516 layerRelocates speculative fields",
+        "aousd/specifications-public@v1.0.1:specification/document_data_model/README.md:518 empty target"
+      ],
+      "obligations": [
+        "Treat an empty authored target as a delete/removal mapping.",
+        "Hide the source prim subtree from composed namespace queries.",
+        "Report the entry as deleted in relocates_summary."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-relocates-namespace-source/relocates-namespace-source.json#empty-target-removes-source"
+      ]
+    },
+    {
+      "id": "relocates.validation",
+      "owner": "usd-relocates-namespace-source",
+      "status": "partial",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:693 relocate restrictions"
+      ],
+      "obligations": [
+        "Reject pseudo-root and root path relocates.",
+        "Reject non-prim source and non-empty target paths.",
+        "Reject duplicate source paths and duplicate non-empty target paths.",
+        "Reject target-equals-source and target-below-source mappings.",
+        "Reject mappings that place a prim at the path of an existing ancestor of the source."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-relocates-namespace-source/relocates-namespace-source.json#invalid-target-below-source"
+      ],
+      "deferred_reason": "Ancestral relocate source-path normalization is covered by a future contract."
+    },
+    {
+      "id": "relocates.source-opinion-error",
+      "owner": "usd-relocates-namespace-source",
+      "status": "implemented",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:689 source path opinions"
+      ],
+      "obligations": [
+        "Diagnose authored local-layer-stack opinions at a relocate source path as recoverable composition errors.",
+        "Do not let source-local opinions contribute through the relocated source path.",
+        "Retain and apply the otherwise-valid relocate entry instead of ignoring it because source-local opinions were present.",
+        "Preserve the ability for non-local source opinions to be relocated when the input source can expose them separately.",
+        "Require the consumed reference base source to expose reference-family-only source opinions or equivalent per-family provenance when local and referenced opinions coexist at the relocate source path."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-relocates-namespace-source/relocates-namespace-source.json#relocates-referenced-child"
+      ]
+    },
+    {
+      "id": "relocates.ancestral-source-diagnostic",
+      "owner": "usd-relocates-namespace-source",
+      "status": "implemented",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:705 ancestral relocated path"
+      ],
+      "obligations": [
+        "Diagnose a relocate source authored beneath an already-relocated source path as a recoverable composition error.",
+        "Ignore the invalid nested relocate entry while continuing to apply other valid relocate entries.",
+        "Keep generated implementations total and non-crashing when invalid nested relocate metadata is present."
+      ],
+      "positive_goldens": [
+        "nanousd compliance tests/composition/relocates_nested_root.usda#ancestral-relocated-path-diagnostic"
+      ]
+    },
+    {
+      "id": "relocates.namespace-mapping-for-arcs",
+      "owner": "usd-reference-namespace-source and usd-payload-namespace-source",
+      "status": "partial",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:713 Namespace Mapping"
+      ],
+      "obligations": [
+        "Apply layer-stack relocate mappings to references authored inside referenced layer stacks.",
+        "Apply layer-stack relocate mappings to references authored inside loaded payload layer stacks.",
+        "Remap child names, property names, and path-valued fields through the accumulated reference/payload namespace mapping plus the arc-local relocate mapping."
+      ],
+      "positive_goldens": [
+        "nanousd compliance tests/composition/relocates_nested_root.usda#RootRef",
+        "nanousd compliance tests/composition/relocates_nested_root.usda#RootPayload"
+      ],
+      "deferred_reason": "The current implementation covers references and loaded payload nested-reference mappings; inherit and specialize arc-local mappings remain future work."
+    },
+    {
+      "id": "relocates.liverps-strength",
+      "owner": "usd-relocates-namespace-source",
+      "status": "partial",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:802 Strength Ordering",
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:820 composition arc order",
+        "aousd/specifications-public@v1.0.1:specification/glossary/README.md:85 LIVERPS"
+      ],
+      "obligations": [
+        "Treat target-local opinions as stronger than relocated source opinions in this bounded source.",
+        "Place the concrete generated graph so relocates feeds any stronger non-variant providers, including inherits and specializes, before selected variants; variants may consume relocates directly only when no stronger non-variant provider is in scope.",
+        "Document that evaluation order is distinct from LIVERPS field-strength order."
+      ],
+      "positive_goldens": [
+        "graph/skillgraph.json#usd-relocates-namespace-source",
+        "graph/skillgraph.json#usd-inherits-namespace-source",
+        "graph/skillgraph.json#usd-specializes-namespace-source",
+        "graph/skillgraph.json#usd-variant-namespace-source"
+      ]
+    },
+    {
+      "id": "relocates.stage-population-consumption",
+      "owner": "usd-relocates-namespace-source",
+      "status": "implemented",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:specification/stage_population/README.md:17 stage population",
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:670 Relocates"
+      ],
+      "obligations": [
+        "Expose relocated composed prims and properties through the namespace-source boundary.",
+        "Allow usd-stage-population to populate relocated prims and properties without evaluating relocates itself.",
+        "Preserve composed child and property ordering when consumed by stage population."
+      ],
+      "positive_goldens": [
+        "goldens/integration/usd-relocates-stage-population/relocates-stage-population.json#relocated-tree-populates-stage"
+      ]
+    }
+  ]
+}

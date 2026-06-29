@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/usdc-value-decoder.handle.json",
+  "title": "USDC Value Decoder Unit Contract",
+  "version": "0.1",
+  "spec_commit": "6b4f01f2d6d46b01507481524eb516b4ef358c31",
+  "dependency_contracts": [
+    "contracts/handles/usdc-binary-format.handle.json",
+    "contracts/handles/token.handle.json",
+    "contracts/handles/foundational-values.handle.json",
+    "contracts/handles/path.handle.json",
+    "contracts/handles/listops-authored.handle.json",
+    "contracts/value.schema.json"
+  ],
+  "performance_contracts": [
+    "contracts/performance/usdc.performance.json"
+  ],
+  "scope": {
+    "included": [
+      "Crate value representation payload, type, and flag decoding",
+      "token index resolution through the token capability",
+      "string index resolution",
+      "path index resolution through the path capability",
+      "inlined scalar values",
+      "offset-backed scalar and array values",
+      "dictionaries used by initial fixtures",
+      "double3 vector values used by initial fixtures",
+      "specifier and variability enum values",
+      "relationship target PathListOp values"
+    ],
+    "deferred": [
+      "time samples",
+      "splines",
+      "references, payloads, relocates, inherits, and specializes",
+      "all Crate value types not used by the first fixture set",
+      "Crate value types introduced at minor version 10 or later (Splines, Relocates, PathExpression)",
+      "value resolution or schema fallback semantics"
+    ]
+  },
+  "model": {
+    "ValueRepresentationWord": "Single 8-byte little-endian word containing payload[0..6), type at byte 6, and flags at byte 7. Decoders must read this word once per representation and dispatch by type and flags. Multiple per-byte reads, per-field-name dispatch, or section byte string scans are contract violations.",
+    "ValueRepresentation": "Decoded Crate value representation record containing payload, type, and representation flags.",
+    "OffsetValueView": "Offset-backed scalar and array values are returned as non-owning byte views into the opened resource byte view. The decoder must not materialize parser-local copies of the offset data before canonicalization.",
+    "ValueTables": "Decoded token, string, and path tables supplied by the section parser.",
+    "DecodedFieldValue": "Target-native value supplied to the document model, with canonical JSON materialized only at adapter/dump boundaries.",
+    "CanonicalJsonValue": "Tagged JSON value matching contracts/value.schema.json."
+  },
+  "operations": {
+    "decode_value_representation": {
+      "input": {
+        "representation": "raw Crate value representation bytes or integer payload",
+        "tables": "token, string, and path table handles"
+      },
+      "output": {
+        "value": "canonical tagged field value"
+      }
+    },
+    "decode_scalar": {
+      "input": {
+        "type": "token, string, bool, int, float, double, specifier, or variability",
+        "payload": "inlined or offset-backed payload"
+      },
+      "output": {
+        "value": "canonical tagged scalar value"
+      }
+    },
+    "decode_vector": {
+      "input": {
+        "type": "dimensioned type name such as double3",
+        "payload": "offset-backed vector payload"
+      },
+      "output": {
+        "value": "canonical tagged vector value"
+      }
+    },
+    "decode_dictionary": {
+      "input": {
+        "payload": "dictionary entry payload"
+      },
+      "output": {
+        "value": "canonical tagged dictionary value"
+      }
+    },
+    "decode_path_listop": {
+      "input": {
+        "payload": "Crate path list operation payload"
+      },
+      "output": {
+        "value": "canonical tagged listop<ObjectPath> value"
+      }
+    }
+  },
+  "laws": [
+    "value type dispatch is driven by the 1-byte type code and 1-byte flags read from the 8-byte value representation word; field-name substring matches and section byte text scans are contract violations",
+    "offset-backed scalar and array values must be returned by view into the opened resource byte view until value canonicalization runs",
+    "inlined and offset-backed scalars of the same value type must share a single decoded value shape",
+    "token values must use the token identity capability before canonical JSON output",
+    "path values must use the path capability before canonical JSON output",
+    "foundational scalar and vector values must conform to contracts/value.schema.json",
+    "PathListOp values must be supplied by the authored listOp boundary",
+    "unknown required value types fail clearly rather than producing placeholder JSON",
+    "value types introduced at Crate 0.10.0 or later (Splines, Relocates, PathExpression) must emit a clear UnsupportedUsdcFeature diagnostic; they must not produce placeholder JSON or be silently dropped",
+    "this contract does not traverse Crate sections or create document-model specs",
+    "this contract must not call USDA text value parsing"
+  ],
+  "adapter_protocol": {
+    "input": "A JSON file containing one case with an ops array. Cases provide decoded tables and representation payloads.",
+    "output": "A JSON object with ok, diagnostics, and results."
+  }
+}

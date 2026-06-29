@@ -1,0 +1,11 @@
+#usda 1.0
+(
+    subLayers = [
+        @./composition_apischemas_weak.usda@
+    ]
+)
+
+def Xform "Root" (
+    prepend apiSchemas = ["CollectionAPI:lights"]
+) {
+}

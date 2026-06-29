@@ -1,0 +1,18 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+)
+
+# Root references a library layer that declares multiple instanceable prims
+# (each at its own path) pointing at the same shared template. All should
+# share ONE prototype — the per-instance opinion authored in the library
+# layer is a local override, not a per-instance composition arc.
+
+def Xform "World"
+{
+    def "Env" (
+        prepend references = @./instancing_nested_children.usda@
+    )
+    {
+    }
+}

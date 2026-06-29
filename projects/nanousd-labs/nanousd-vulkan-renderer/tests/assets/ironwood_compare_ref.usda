@@ -1,0 +1,47 @@
+#usda 1.0
+(
+    defaultPrim = "isIronwoodA1"
+    metersPerUnit = 0.0254
+    upAxis = "Y"
+)
+
+def Xform "isIronwoodA1" (
+    kind = "group"
+    prepend references = @$HOME/moana-island-scene-usd/island/usd/elements/isIronwoodA1/element.usda@</isIronwoodA1>
+)
+{
+}
+
+def Camera "CloseCam"
+{
+    token projection = "perspective"
+    float focalLength = 50
+    float horizontalAperture = 73.6379666441
+    float verticalAperture = 41.4213562373
+    float2 clippingRange = (1, 10000)
+    matrix4d xformOp:transform = ( (-1, 0, 0, 0), (0, 0.995307161767, 0.0967659740607, 0), (0, 0.0967659740607, -0.995307161767, 0), (-58, 600, -1800, 1) )
+    uniform token[] xformOpOrder = ["xformOp:transform"]
+}
+
+def Camera "FullCam"
+{
+    token projection = "perspective"
+    float focalLength = 50
+    float horizontalAperture = 61.2137979182
+    float verticalAperture = 34.432761329
+    float2 clippingRange = (1, 12000)
+    matrix4d xformOp:transform = ( (-1, 0, 0, 0), (0, 0.998177686554, 0.0603432354592, 0), (0, 0.0603432354592, -0.998177686554, 0), (650, 680, -3050, 1) )
+    uniform token[] xformOpOrder = ["xformOp:transform"]
+}
+
+def Camera "BranchCam"
+{
+    token projection = "perspective"
+    float focalLength = 50
+    float horizontalAperture = 50.9769574682
+    float verticalAperture = 28.6745385759
+    float2 clippingRange = (1, 8000)
+    matrix4d xformOp:transform = ( (-0.913301886076, 0, -0.40728327352, 0), (0.0350560128484, 0.99628885, -0.0786104530541, 0), (0.4057717842, -0.0860728027091, -0.909912485782, 0), (105, 520, -1450, 1) )
+    uniform token[] xformOpOrder = ["xformOp:transform"]
+}
+

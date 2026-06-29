@@ -1,0 +1,25 @@
+#usda 1.0
+(
+    relocates = {
+        </Mid/Child>: </Mid/RenamedChild>,
+        </Mid/RemoveMe>: None,
+        </Mid/Child/GrandChild>: </Mid/InvalidGrandChild>,
+        </Mid/RenamedChild/ValidNested>: </Mid/RenamedChild/ValidNestedMoved>
+    }
+)
+
+def "Mid" (
+    references = @./relocates_nested_leaf.usda@</Leaf>
+)
+{
+    over "Child"
+    {
+        string ignoredMidSourceLabel = "from_mid_source"
+    }
+
+    over "RenamedChild"
+    {
+        string midLabel = "from_mid_target"
+        string winner = "mid"
+    }
+}

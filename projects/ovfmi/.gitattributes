@@ -1,0 +1,2 @@
+usd/conveyor/**/*.png filter=lfs diff=lfs merge=lfs -text
+usd/conveyor/**/*.usd filter=lfs diff=lfs merge=lfs -text

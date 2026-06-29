@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<fmiModelDescription
+    fmiVersion="2.0"
+    modelName="TrajectoryGenerator"
+    guid="a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+    generationTool="NVIDIA ovx-USD-FMI"
+    description="Circular orbit trajectory generator (FMI 2.0)">
+
+  <CoSimulation modelIdentifier="TrajectoryGenerator" canHandleVariableCommunicationStepSize="true"/>
+
+  <ModelVariables>
+    <ScalarVariable name="target_x" valueReference="0" causality="output" variability="continuous" initial="calculated">
+      <Real/>
+    </ScalarVariable>
+    <ScalarVariable name="target_y" valueReference="1" causality="output" variability="continuous" initial="calculated">
+      <Real/>
+    </ScalarVariable>
+    <ScalarVariable name="target_z" valueReference="2" causality="output" variability="continuous" initial="calculated">
+      <Real/>
+    </ScalarVariable>
+    <ScalarVariable name="radius" valueReference="3" causality="parameter" variability="fixed">
+      <Real start="1.5"/>
+    </ScalarVariable>
+    <ScalarVariable name="height" valueReference="4" causality="parameter" variability="fixed">
+      <Real start="2.0"/>
+    </ScalarVariable>
+    <ScalarVariable name="omega" valueReference="5" causality="parameter" variability="fixed">
+      <Real start="1.0"/>
+    </ScalarVariable>
+    <ScalarVariable name="phase" valueReference="6" causality="parameter" variability="fixed">
+      <Real start="0.0"/>
+    </ScalarVariable>
+    <ScalarVariable name="center_x" valueReference="7" causality="parameter" variability="fixed">
+      <Real start="0.0"/>
+    </ScalarVariable>
+    <ScalarVariable name="center_z" valueReference="8" causality="parameter" variability="fixed">
+      <Real start="0.0"/>
+    </ScalarVariable>
+    <ScalarVariable name="time" valueReference="9" causality="independent" variability="continuous">
+      <Real/>
+    </ScalarVariable>
+  </ModelVariables>
+
+  <ModelStructure>
+    <Outputs>
+      <Unknown index="1"/>
+      <Unknown index="2"/>
+      <Unknown index="3"/>
+    </Outputs>
+  </ModelStructure>
+
+</fmiModelDescription>

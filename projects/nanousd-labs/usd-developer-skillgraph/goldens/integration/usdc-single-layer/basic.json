@@ -1,0 +1,195 @@
+{
+  "suite": "usdc-single-layer-basic",
+  "spec_commit": "6b4f01f2d6d46b01507481524eb516b4ef358c31",
+  "cases": [
+    {
+      "id": "minimal-empty-usdc",
+      "spec_refs": [
+        "core_file_formats/Binary",
+        "document_data_model/Layer Specs"
+      ],
+      "input": {
+        "fixture": "benchmarks/fixtures/minimal_empty.usdc"
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "layer": {
+          "fields": {
+            "primChildren": {"type": "token[]", "value": []}
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "primChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "one-root-prim-usdc",
+      "spec_refs": [
+        "core_file_formats/Binary",
+        "document_data_model/Prim Spec"
+      ],
+      "input": {
+        "fixture": "benchmarks/fixtures/one_root_prim.usdc"
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "layer": {
+          "fields": {
+            "primChildren": {"type": "token[]", "value": ["World"]}
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "primChildren": {"type": "token[]", "value": ["World"]}
+              }
+            },
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "typeName": {"type": "token", "value": "Xform"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "nested-prims-attributes-usdc",
+      "spec_refs": [
+        "core_file_formats/Binary",
+        "document_data_model/Attribute Spec"
+      ],
+      "input": {
+        "fixture": "benchmarks/fixtures/nested_prims_attributes.usdc"
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "layer": {
+          "fields": {
+            "primChildren": {"type": "token[]", "value": ["World"]}
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "primChildren": {"type": "token[]", "value": ["World"]}
+              }
+            },
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "typeName": {"type": "token", "value": "Xform"},
+                "primChildren": {"type": "token[]", "value": ["Geom"]},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World/Geom": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "typeName": {"type": "token", "value": "Scope"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": ["size", "count", "translate"]},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World/Geom.size": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "variability": {"type": "variability", "value": "varying"},
+                "typeName": {"type": "token", "value": "float"},
+                "default": {"type": "float", "value": 1.5}
+              }
+            },
+            "/World/Geom.count": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "variability": {"type": "variability", "value": "varying"},
+                "typeName": {"type": "token", "value": "int"},
+                "default": {"type": "int", "value": 3}
+              }
+            },
+            "/World/Geom.translate": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "variability": {"type": "variability", "value": "varying"},
+                "typeName": {"type": "token", "value": "double3"},
+                "default": {"type": "double3", "value": [1.0, 2.0, 3.0]}
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "relationship-targets-usdc",
+      "spec_refs": [
+        "core_file_formats/Binary",
+        "document_data_model/Relationship Spec"
+      ],
+      "input": {
+        "fixture": "benchmarks/fixtures/relationship_targets.usdc"
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "layer": {
+          "fields": {
+            "primChildren": {"type": "token[]", "value": ["World"]}
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "primChildren": {"type": "token[]", "value": ["World"]}
+              }
+            },
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": ["material:binding"]},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World.material:binding": {
+              "kind": "relationship",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "targetPaths": {
+                  "type": "listop<ObjectPath>",
+                  "value": {
+                    "explicit": ["/Materials/Default"],
+                    "prepend": [],
+                    "append": [],
+                    "delete": []
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

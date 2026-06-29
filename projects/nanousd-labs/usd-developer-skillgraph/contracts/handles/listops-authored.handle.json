@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/listops-authored.handle.json",
+  "title": "USD Authored ListOps Unit Contract",
+  "version": "0.1",
+  "spec_commit": "v1.0.1",
+  "dependency_contracts": [
+    "contracts/handles/token.handle.json",
+    "contracts/handles/foundational-values.handle.json",
+    "contracts/handles/path.handle.json"
+  ],
+  "scope": {
+    "included": [
+      "native authored list operation storage",
+      "typed native list operation item storage",
+      "JSON adapter coercion as a boundary concern",
+      "empty list operation from authored None",
+      "explicit list operation items",
+      "prepend, append, and delete item lists",
+      "last-one-wins behavior for repeated authored subfields",
+      "ObjectPath item validation through usd-paths",
+      "specialized Reference and Payload item storage as native composition-arc records",
+      "foundational item validation for token, string, int, int64, uint, and uint64"
+    ],
+    "deferred": [
+      "cross-layer list operation composition",
+      "value resolution",
+      "schema fallback evaluation",
+      "relationship target path remapping",
+      "USDA text syntax parsing, owned by USDA parser skills"
+    ]
+  },
+  "core_model": {
+    "element_types": {
+      "ObjectPath": "path handle/reference from usd-paths",
+      "Reference": "native reference arc record with optional asset reference, optional prim path handle, layer offset, and scale",
+      "Payload": "native payload arc record with optional asset reference, optional prim path handle, layer offset, and scale",
+      "token": "token handle/reference from usd-tokens",
+      "string": "native string value",
+      "int": "signed 32-bit integer",
+      "int64": "signed 64-bit integer",
+      "uint": "unsigned 32-bit integer",
+      "uint64": "unsigned 64-bit integer"
+    },
+    "storage_rule": "Core authored listOps store typed native items, not parsed JSON strings. Strings are the native item type only for listOp<string>. listOp<Reference> and listOp<Payload> items must be native arc records, not dictionaries, bare asset strings, or path strings.",
+    "json_rule": "Tagged JSON is materialized on demand for adapter/dump output and is not durable listOp storage.",
+    "syntax_rule": "USDA text syntax and JSON test input coercion are boundary adapter concerns, not part of the core authored listOp value model."
+  },
+  "operations": {
+    "inspect_storage": {
+      "input": {},
+      "output": {
+        "jsonStorageModel": "on_demand_only",
+        "listOpStorageModel": "native_authored_lists",
+        "itemStorageModel": "typed_native_items",
+        "jsonCoercionModel": "adapter_boundary_only",
+        "usdaParsingModel": "external_to_capability",
+        "lastOneWinsModel": "per_subfield"
+      }
+    },
+    "make_empty": {
+      "input": {
+        "elementType": "ObjectPath, Reference, Payload, token, string, int, int64, uint, or uint64"
+      },
+      "output": {
+        "value": "canonical tagged empty listOp value"
+      }
+    },
+    "make_none": {
+      "input": {
+        "elementType": "ObjectPath, Reference, Payload, token, string, int, int64, uint, or uint64"
+      },
+      "output": {
+        "value": "canonical tagged empty listOp value"
+      }
+    },
+    "make_explicit": {
+      "input": {
+        "elementType": "ObjectPath, Reference, Payload, token, string, int, int64, uint, or uint64",
+        "items": "array of element values"
+      },
+      "output": {
+        "value": "canonical tagged listOp with explicit items"
+      }
+    },
+    "make_authored": {
+      "input": {
+        "elementType": "ObjectPath, Reference, Payload, token, string, int, int64, uint, or uint64",
+        "edits": "array of objects with field in explicit/prepend/append/delete and items array"
+      },
+      "output": {
+        "value": "canonical tagged listOp after applying authored subfields in order"
+      }
+    }
+  },
+  "adapter_protocol": {
+    "input": "A JSON file containing one case with an ops array. The JSON adapter coerces JSON strings/numbers into typed native listOp items before calling the core model. For Reference and Payload elements, JSON objects are adapter input only and must be converted into native composition-arc records before entering the core listOp model.",
+    "output": "A JSON object with ok, diagnostics, and results. Each operation reports ok false with a diagnostic for local validation failures."
+  }
+}

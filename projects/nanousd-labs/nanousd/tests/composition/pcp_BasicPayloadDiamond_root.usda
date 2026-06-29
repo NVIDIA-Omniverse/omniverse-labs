@@ -1,0 +1,27 @@
+#usda 1.0
+(
+    '''
+    Ported from OpenUSD PCP test fixture
+    testPcpMuseum_BasicPayloadDiamond.testenv/BasicPayloadDiamond/root.usda
+    (Pixar OpenUSD release branch).
+
+    Exercises the "payload diamond" configuration — /Root has payloads to
+    both A and B, and A and B each payload C. Per spec §10.4 the four
+    payload arcs compose without a cycle because no layer stack appears
+    more than once along any single chain of includes; the diamond must
+    not produce a cycle diagnostic, and C's opinions must be visible on
+    /Root.
+
+    Adaptation from upstream: the upstream fixture also defines a
+    RootUnloaded prim exercising per-prim payload load state. nanousd
+    has no notion of deferred payload loading (payloads compose eagerly),
+    so only Root is ported.
+    '''
+)
+
+def "Root" (
+    payload = [ @./pcp_BasicPayloadDiamond_A.usda@</A>,
+                @./pcp_BasicPayloadDiamond_B.usda@</B> ]
+)
+{
+}

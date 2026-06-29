@@ -1,0 +1,88 @@
+{
+  "suite": "usd-identifier-scanner-basic",
+  "contract": "contracts/handles/identifier.handle.json",
+  "spec_commit": "v1.0.1",
+  "cases": [
+    {
+      "id": "validate-identifiers-with-utf8",
+      "input": {
+        "ops": [
+          {"op": "validate", "text": "World"},
+          {"op": "validate", "text": "_prim2"},
+          {"op": "validate", "text": "München"},
+          {"op": "validate", "text": "東京"},
+          {"op": "validate", "text": "Δelta"},
+          {"op": "validate", "text": ""},
+          {"op": "validate", "text": "123abc"},
+          {"op": "validate", "text": "with-hyphen"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "validate", "ok": true, "canonical": "World"},
+          {"op": "validate", "ok": true, "canonical": "_prim2"},
+          {"op": "validate", "ok": true, "canonical": "München"},
+          {"op": "validate", "ok": true, "canonical": "東京"},
+          {"op": "validate", "ok": true, "canonical": "Δelta"},
+          {"op": "validate", "ok": false, "diagnostic": {"code": "InvalidIdentifier", "message": "invalid identifier"}},
+          {"op": "validate", "ok": false, "diagnostic": {"code": "InvalidIdentifier", "message": "invalid identifier"}},
+          {"op": "validate", "ok": false, "diagnostic": {"code": "InvalidIdentifier", "message": "invalid identifier"}}
+        ]
+      }
+    },
+    {
+      "id": "namespaced-and-keywordless-identifiers",
+      "input": {
+        "ops": [
+          {"op": "validate_namespaced", "text": "material:binding:collection"},
+          {"op": "validate_namespaced", "text": "métrique:longueur"},
+          {"op": "validate_namespaced", "text": "namespace:"},
+          {"op": "validate_namespaced", "text": ":property"},
+          {"op": "validate_namespaced", "text": "namespace::property"},
+          {"op": "validate_keywordless", "text": "customName"},
+          {"op": "validate_keywordless", "text": "def"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "validate_namespaced", "ok": true, "canonical": "material:binding:collection"},
+          {"op": "validate_namespaced", "ok": true, "canonical": "métrique:longueur"},
+          {"op": "validate_namespaced", "ok": false, "diagnostic": {"code": "InvalidIdentifier", "message": "invalid identifier"}},
+          {"op": "validate_namespaced", "ok": false, "diagnostic": {"code": "InvalidIdentifier", "message": "invalid identifier"}},
+          {"op": "validate_namespaced", "ok": false, "diagnostic": {"code": "InvalidIdentifier", "message": "invalid identifier"}},
+          {"op": "validate_keywordless", "ok": true, "canonical": "customName"},
+          {"op": "validate_keywordless", "ok": false, "diagnostic": {"code": "InvalidIdentifier", "message": "invalid identifier"}}
+        ]
+      }
+    },
+    {
+      "id": "scan-embedded-identifiers-with-utf8",
+      "input": {
+        "ops": [
+          {"op": "scan_identifier", "text": "prefix_Ωmega.suffix", "prefix": "prefix_"},
+          {"op": "scan_identifier", "text": "東京/子", "prefix": ""},
+          {"op": "scan_identifier", "text": "München{variant=hoch}", "prefix": ""},
+          {"op": "scan_identifier", "text": "123abc", "prefix": ""},
+          {"op": "scan_continue", "text": "é/rest", "prefix": ""},
+          {"op": "scan_continue", "text": "-rest", "prefix": ""}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "scan_identifier", "ok": true, "span": "Ωmega", "remaining": ".suffix"},
+          {"op": "scan_identifier", "ok": true, "span": "東京", "remaining": "/子"},
+          {"op": "scan_identifier", "ok": true, "span": "München", "remaining": "{variant=hoch}"},
+          {"op": "scan_identifier", "ok": false, "diagnostic": {"code": "InvalidIdentifier", "message": "invalid identifier"}},
+          {"op": "scan_continue", "ok": true, "span": "é", "remaining": "/rest"},
+          {"op": "scan_continue", "ok": false, "diagnostic": {"code": "InvalidIdentifier", "message": "invalid identifier"}}
+        ]
+      }
+    }
+  ]
+}

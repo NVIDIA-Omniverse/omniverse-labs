@@ -1,0 +1,63 @@
+{
+  "suite": "usdc-single-layer-common-metadata",
+  "spec_commit": "6b4f01f2d6d46b01507481524eb516b4ef358c31",
+  "production_contracts": [
+    "contracts/document-model-productions/common-metadata.contract.json",
+    "contracts/document-model-productions/prim-spec.contract.json",
+    "contracts/document-model-productions/attribute-spec.contract.json",
+    "contracts/usdc-productions/prim-spec-mapping.contract.json",
+    "contracts/usdc-productions/attribute-spec-mapping.contract.json"
+  ],
+  "notes": "Exercises generic metadata fields (comment, documentation, displayName) on multiple spec kinds. The format-neutral common-metadata contract pins per-spec-kind admission; the prim and attribute mapping contracts bind these to Crate FIELDS token names. Mirrors goldens/integration/usda-single-layer/common-metadata.json.",
+  "cases": [
+    {
+      "id": "comment-documentation-displayname-on-prim-and-attribute",
+      "spec_refs": [
+        "contracts/document-model-productions/common-metadata.contract.json#field_categories.shared_across_all_spec_kinds",
+        "contracts/document-model-productions/common-metadata.contract.json#alias_mapping"
+      ],
+      "input": {
+        "fixture": "benchmarks/fixtures/common_metadata.usdc"
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "layer": {
+          "fields": {
+            "primChildren": {"type": "token[]", "value": ["World"]}
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "primChildren": {"type": "token[]", "value": ["World"]}
+              }
+            },
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "typeName": {"type": "token", "value": "Xform"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": ["extent"]},
+                "variantSetChildren": {"type": "token[]", "value": []},
+                "comment": {"type": "string", "value": "World prim comment"},
+                "documentation": {"type": "string", "value": "World prim documentation"}
+              }
+            },
+            "/World.extent": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "variability": {"type": "variability", "value": "varying"},
+                "typeName": {"type": "token", "value": "float3[]"},
+                "documentation": {"type": "string", "value": "attribute docstring"},
+                "displayName": {"type": "string", "value": "Extent"}
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

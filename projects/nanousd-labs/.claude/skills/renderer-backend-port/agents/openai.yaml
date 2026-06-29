@@ -1,0 +1,4 @@
+interface:
+  display_name: "Renderer Backend Port"
+  short_description: "Port a renderer to a new GPU API"
+  default_prompt: "Use $renderer-backend-port to port a renderer to a new GPU backend behind the shared RHI seam: keep the core, reimplement only RHI and shaders, stub by capability, and prove parity on fixtures."

@@ -1,0 +1,7 @@
+.assets/
+# Regenerable FLIP pipeline outputs. The committed artifacts are the stable
+# regression reference flip/baseline.json and the human summary flip/REPORT.md;
+# the per-run scores (results.json) and heatmap strips (*.png) are reproduced by
+# `flip_pipeline.py`.
+flip/*.png
+flip/results.json

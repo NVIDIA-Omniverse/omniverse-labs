@@ -1,0 +1,51 @@
+#usda 1.0
+(
+    defaultPrim = "Root"
+    startTimeCode = 0
+    endTimeCode = 100
+    framesPerSecond = 24
+    timeCodesPerSecond = 24
+)
+
+def Xform "Root" {
+    float scalarF = 1.5
+    double scalarD = 2.75
+    int scalarI = -99
+    string scalarS = "comprehensive"
+
+    float2 f2 = (1.5, 2.5)
+    float3 f3 = (1.0, 2.0, 3.0)
+    float4 f4 = (1.0, 2.0, 3.0, 4.0)
+    double2 d2 = (10.5, 20.5)
+    double3 d3 = (100.0, 200.0, 300.0)
+    double4 d4 = (1.0, 2.0, 3.0, 4.0)
+    int2 i2 = (10, 20)
+    int3 i3 = (1, 2, 3)
+    int4 i4 = (10, 20, 30, 40)
+
+    matrix4d mat4 = ((2, 0, 0, 0), (0, 3, 0, 0), (0, 0, 4, 0), (1, 2, 3, 1))
+
+    float[] floatArr = [1.0, 2.0, 3.0, 4.0, 5.0]
+    int[] intArr = [10, 20, 30]
+
+    float anim.timeSamples = { 0: 0.0, 50: 0.5, 100: 1.0 }
+    float3 motion.timeSamples = { 0: (0, 0, 0), 50: (5, 5, 5), 100: (10, 10, 10) }
+    double3 orbit.timeSamples = { 0: (1, 0, 0), 100: (0, 1, 0) }
+    float2 uv.timeSamples = { 0: (0.0, 0.0), 100: (1.0, 0.5) }
+    float[] weights.timeSamples = { 0: [1.0, 0.0, 0.0], 100: [0.0, 1.0, 0.0] }
+    double[] scales.timeSamples = { 0: [1.0, 1.0], 100: [2.0, 3.0] }
+    int[] flags.timeSamples = { 0: [0, 1, 2], 100: [3, 4, 5] }
+    point3d[] dpts.timeSamples = { 0: [(1.5, 2.5, 3.5), (4.5, 5.5, 6.5)], 100: [(7.0, 8.0, 9.0), (10.0, 11.0, 12.0)] }
+    matrix4d[] dmats.timeSamples = { 0: [( (2, 0, 0, 0), (0, 3, 0, 0), (0, 0, 4, 0), (5, 6, 7, 1) )] }
+    matrix3d[] dm3.timeSamples = { 0: [( (1, 2, 3), (4, 5, 6), (7, 8, 9) )] }
+    quatd[] dquats.timeSamples = { 0: [(0.1, 0.2, 0.3, 0.4)] }
+
+    rel target = </Root/Child>
+
+    def Mesh "Child" {
+        int vertexCount = 100
+    }
+
+    def Scope "Empty" {
+    }
+}

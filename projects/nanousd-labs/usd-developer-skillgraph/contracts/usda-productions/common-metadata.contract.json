@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/usda-productions/common-metadata.contract.json",
+  "title": "USDA Common Metadata Production Contract",
+  "version": "0.1",
+  "spec_commit": "v1.0.1",
+  "owned_by": "usda-spec-parser",
+  "derives_from": "contracts/document-model-productions/common-metadata.contract.json",
+  "format_neutral_rules": "contracts/document-model-productions/common-metadata.contract.json#laws — field categories per spec kind, spec_kind_field_admission matrix, listOp subfield semantics, repeated-field semantics, and extension-field rule are pinned in the format-neutral production. This contract adds USDA-specific grammar dispatch: metadata_contexts, metadata_key_classification, and the keyword production list per context.",
+  "spec_refs": [
+    "specification/file_formats/README.md#common-metadata",
+    "specification/document_data_model/README.md#spec-form"
+  ],
+  "scope": {
+    "included": [
+      "MetadataBlock<T>",
+      "KeyValueMetadata",
+      "DocMetadata",
+      "standalone layer documentation string metadata",
+      "ListOpMetadata",
+      "last-authored value wins for repeated non-listOp metadata fields",
+      "last-authored subfield wins for repeated listOp metadata subfields",
+      "storage of metadata on layer, prim, attribute, relationship, and variant specs"
+    ],
+    "deferred": [
+      "composition of listOps across layers",
+      "schema fallback metadata",
+      "semantic interpretation of composition metadata"
+    ]
+  },
+  "storage_mapping": {
+    "generic_key_value": "store under the authored field token using the value parser result",
+    "doc": "store as the document-model documentation field",
+    "standalone_doc_string": "store a valid standalone layer doc string as the document-model documentation field",
+    "known_core_field": "store under the matching document-model core field token only when the spelling is valid for the current metadata production context",
+    "listOp_metadata": "store as an authored listOp value of the element type implied by the field"
+  },
+  "metadata_key_classification": {
+    "rule": "Classify the authored metadata spelling exactly once at the parser boundary with the current metadata context before selecting field storage or value typing.",
+    "aliases": {
+      "doc": "documentation",
+      "inherits": "inheritPaths",
+      "variantSets": "variantSetNames",
+      "variants": "variantSelection",
+      "relocates": "layerRelocates"
+    },
+    "generic_identifier_fields": "KeyValueMetadata and ListOpMetadata use Identifier, which is a KeywordlessIdentifier. Reserved USDA keywords are not legal generic metadata keys.",
+    "known_core_fields": "Authored spellings matching document-model core field names resolve to core field tokens only if they are accepted by the grammar production for the current spec form. A core field token is not evidence that the spelling is legal in every metadata block.",
+    "extension_fields": "Only spellings that are neither aliases, known context-specific productions, nor reserved USDA keywords may use document-model extension field-token lookup."
+  },
+  "metadata_contexts": {
+    "layer": {
+      "productions": ["SharedMetadata", "DocMetadata", "ListOpMetadata", "SublayerMetadata", "RelocatesMetadata"],
+      "keyword_productions": ["doc", "subLayers", "relocates"]
+    },
+    "prim": {
+      "productions": ["SharedMetadata", "ListOpMetadata", "KindMetadata", "PayloadMetadata", "InheritsMetadata", "SpecializesMetadata", "ReferencesMetadata", "VariantsMetadata", "VariantSetsMetadata"],
+      "keyword_productions": ["doc", "kind", "payload", "inherits", "specializes", "references", "variants", "variantSets"]
+    },
+    "attribute": {
+      "productions": ["SharedMetadata", "ListOpMetadata"],
+      "keyword_productions": ["doc"],
+      "forbidden_keywords": ["payload", "references", "inherits", "specializes", "variants", "variantSets", "subLayers", "relocates"]
+    },
+    "relationship": {
+      "productions": ["SharedMetadata", "ListOpMetadata"],
+      "keyword_productions": ["doc"],
+      "forbidden_keywords": ["payload", "references", "inherits", "specializes", "variants", "variantSets", "subLayers", "relocates"]
+    },
+    "variant": {
+      "productions": ["PrimMetadata"],
+      "keyword_productions": ["doc", "kind", "payload", "inherits", "specializes", "references", "variants", "variantSets"]
+    }
+  },
+  "laws": [
+    "common metadata parsing must be available to all spec forms that accept SharedMetadata",
+    "standalone layer doc strings inside the layer metadata block must parse as documentation metadata rather than requiring a key-value metadata identifier",
+    "metadata keyword productions must be context-sensitive; a keyword accepted in prim metadata must not be accepted as generic KeyValueMetadata on attributes or relationships",
+    "metadata parser implementations must carry the full metadata context through dispatch; collapsing all non-layer specs into one context is non-conformant",
+    "variant statement metadata uses the same production family as prim metadata and must not be treated as generic non-layer metadata",
+    "reserved USDA keywords must not be routed through extension-field token lookup when the current metadata context has no matching keyword production",
+    "metadata value typing for known fields must be selected from the classified metadata key rather than by repeated string comparisons",
+    "metadata parsing must not drop composition-related fields merely because composition semantics are deferred",
+    "JSON materialization is allowed only for validation adapters and diagnostics",
+    "alias spellings (doc→documentation, inherits→inheritPaths, variantSets→variantSetNames, variants→variantSelection, relocates→layerRelocates) are USDA grammar keywords resolved to their canonical document-model field tokens at the parser boundary, never through extension-field token lookup"
+  ],
+  "format_neutral_laws_hoisted": [
+    "metadata field-name identity is via token, not raw string keys (document-model-productions/common-metadata.contract.json#laws)",
+    "each spec kind admits only the union of shared and kind-specific fields; emitting a non-admitted field on a spec kind is a violation (document-model-productions/common-metadata.contract.json#spec_kind_field_admission)",
+    "listOp metadata uses {explicit, prepend, append, delete, reorder} subfields stored independently (document-model-productions/common-metadata.contract.json#listop_subfields)",
+    "a single item authored where a listOp is allowed becomes an explicit listOp (document-model-productions/common-metadata.contract.json#listop_subfields)",
+    "None authored where a listOp is allowed becomes an empty listOp on the named subfield (document-model-productions/common-metadata.contract.json#listop_subfields)",
+    "within a single source layer, repeated non-listOp metadata fields use last-one-wins; repeated listOp subfields use last-one-wins per subfield (document-model-productions/common-metadata.contract.json#repeated_field_semantics)"
+  ],
+  "golden_groups": [
+    "generic metadata on each spec kind",
+    "doc alias mapping",
+    "repeated metadata last-one-wins",
+    "listOp metadata subfield replacement",
+    "None listOp metadata"
+  ],
+  "golden_files": [
+    "goldens/integration/usda-single-layer/common-metadata.json",
+    "goldens/integration/usda-single-layer/metadata-grammar-contexts.json",
+    "goldens/integration/usda-single-layer/prim-metadata-composition.json",
+    "goldens/integration/usda-single-layer/parser-diagnostics.json"
+  ]
+}

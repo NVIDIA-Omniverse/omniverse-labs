@@ -1,0 +1,68 @@
+#usda 1.0
+(
+    customLayerData = {
+        dictionary cameraSettings = {
+            dictionary Front = {
+                double3 position = (0, 0, 50000)
+                double radius = 500
+            }
+            dictionary Perspective = {
+                double3 position = (0.7058424906197288, 515.565064499718, 64.27987079002156)
+                double3 target = (-0.000015003313989736533, 0.000005882659593225981, -0.00005227858758871662)
+            }
+            dictionary Right = {
+                double3 position = (-50000, 0, 0)
+                double radius = 500
+            }
+            dictionary Top = {
+                double3 position = (0, 50000, 0)
+                double radius = 500
+            }
+            string boundCamera = "/World/Camera"
+        }
+        dictionary omni_layer = {
+            string authoring_layer = "./ovrtx-test-base.usd"
+            dictionary locked = {
+            }
+            dictionary muteness = {
+            }
+        }
+        dictionary renderSettings = {
+            double "rtx:directLighting:sampledLighting:maxRayUnexposedIntensity" = 6399.9990234375
+            double "rtx:indirectDiffuse:maxRayUnexposedIntensity" = 6399.9990234375
+            bool "rtx:pathtracing:cached:enabled" = 0
+            double "rtx:pathtracing:fireflyFilter:maxPerEmissiveUnexposedIntensity" = 3199.99951171875
+            double "rtx:pathtracing:fireflyFilter:maxUnexposedIntensityPerSample" = 3199.99951171875
+            double "rtx:pathtracing:fireflyFilter:maxUnexposedIntensityPerSampleDiffuse" = 3199.99951171875
+            int "rtx:pathtracing:maxBounces" = 23
+            int "rtx:pathtracing:maxSpecularAndTransmissionBounces" = 23
+            double "rtx:raytracing:inscattering:maxRTSampleUnexposedIntensity" = 204799.96875
+            double "rtx:translucency:maxRayUnexposedIntensity" = 19199.998046875
+        }
+    }
+    defaultPrim = "World"
+    endTimeCode = 100
+    metersPerUnit = 0.01
+    startTimeCode = 0
+    subLayers = [
+        @./ovrtx-test-base-light.usda@,
+        @./ovrtx-test-base-camera.usda@,
+        @./ovrtx-test-base-materials.usda@,
+        @./ovrtx-test-base-geometry.usda@
+    ]
+    timeCodesPerSecond = 60
+    upAxis = "Y"
+)
+
+def Scope "Render"
+{
+    def RenderProduct "Camera" (prepend apiSchemas = ["OmniRtxDebugSettingsAPI_1"]) {
+        rel camera = </World/Camera>
+        int2 resolution = (512, 512)
+        rel orderedVars = <LdrColor>
+
+        def RenderVar "LdrColor" {
+            string sourceName = "LdrColor"
+        }
+    }
+}

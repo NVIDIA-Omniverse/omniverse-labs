@@ -1,0 +1,9 @@
+[project]
+name = "ovrtx-docs-tests"
+version = "0.1.0"
+description = "Meta-project for ovrtx documentation tests"
+requires-python = ">=3.10,<3.14"
+
+# Future: enable uv workspace once subprojects stabilize
+# [tool.uv.workspace]
+# members = ["python", "c", "usd"]

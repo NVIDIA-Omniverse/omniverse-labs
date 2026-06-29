@@ -1,0 +1,72 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    upAxis = "Y"
+    metersPerUnit = 1
+)
+
+def Xform "World"
+{
+    def Scope "Materials"
+    {
+        def Material "SurfaceOutputMDL"
+        {
+            token outputs:surface.connect = </World/Shaders/SurfaceShader.outputs:surface>
+        }
+
+        def Material "MdlSurfaceOutputMDL"
+        {
+            rel outputs:mdl:surface = </World/Shaders/MdlSurfaceShader.outputs:surface>
+        }
+
+        def Material "MtlxSurfaceOutputMDL"
+        {
+            token outputs:mtlx:surface.connect = </World/Shaders/MtlxSurfaceShader.outputs:surface>
+        }
+    }
+
+    def Scope "Shaders"
+    {
+        def Shader "SurfaceShader"
+        {
+            uniform token info:implementationSource = "sourceAsset"
+            asset info:mdl:sourceAsset = @mdl_surface_outputs.mdl@
+            token info:mdl:sourceAsset:subIdentifier = "generic_pbr"
+            color3f inputs:base_color = (0.21, 0.32, 0.43)
+            color3f inputs:specular_color = (0.11, 0.22, 0.33)
+            float inputs:roughness = 0.73
+            float inputs:metallic = 0.17
+            float inputs:opacity = 0.66
+            float inputs:normal_scale = 0.44
+            token outputs:surface
+        }
+
+        def Shader "MdlSurfaceShader"
+        {
+            uniform token info:implementationSource = "sourceAsset"
+            asset info:mdl:sourceAsset = @mdl_surface_outputs.mdl@
+            token info:mdl:sourceAsset:subIdentifier = "generic_pbr"
+            color3f inputs:base_color = (0.24, 0.35, 0.46)
+            color3f inputs:specular_color = (0.14, 0.25, 0.36)
+            float inputs:roughness = 0.63
+            float inputs:metallic = 0.27
+            float inputs:opacity = 0.76
+            float inputs:normal_scale = 0.54
+            token outputs:surface
+        }
+
+        def Shader "MtlxSurfaceShader"
+        {
+            uniform token info:implementationSource = "sourceAsset"
+            asset info:mdl:sourceAsset = @mdl_surface_outputs.mdl@
+            token info:mdl:sourceAsset:subIdentifier = "generic_pbr"
+            color3f inputs:base_color = (0.27, 0.38, 0.49)
+            color3f inputs:specular_color = (0.17, 0.28, 0.39)
+            float inputs:roughness = 0.53
+            float inputs:metallic = 0.37
+            float inputs:opacity = 0.86
+            float inputs:normal_scale = 0.64
+            token outputs:surface
+        }
+    }
+}

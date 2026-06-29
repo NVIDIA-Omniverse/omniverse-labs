@@ -1,0 +1,72 @@
+{
+  "suite": "tutorial-hello",
+  "contract": "contracts/handles/layer-open.handle.json",
+  "spec_commit": "v1.0.1",
+  "cases": [
+    {
+      "id": "empty-layer",
+      "spec_refs": [
+        "file_formats/README.md:1555 LayerHeader",
+        "document_data_model/README.md:89 Layer Specs"
+      ],
+      "input": {
+        "usda": "#usda 1.0\n"
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "layer": {
+          "fields": {
+            "primChildren": {"type": "token[]", "value": []}
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "primChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "one-root-prim",
+      "spec_refs": [
+        "file_formats/README.md:1182 Prim Specs",
+        "file_formats/README.md:1329 Prim Declaration Components",
+        "document_data_model/README.md:637 Prim Spec"
+      ],
+      "input": {
+        "usda": "#usda 1.0\n\ndef Xform \"World\"\n{\n}\n"
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "layer": {
+          "fields": {
+            "primChildren": {"type": "token[]", "value": ["World"]}
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "primChildren": {"type": "token[]", "value": ["World"]}
+              }
+            },
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "typeName": {"type": "token", "value": "Xform"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

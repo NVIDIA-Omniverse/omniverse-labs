@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/usda-productions/attribute-specs.contract.json",
+  "title": "USDA Attribute Specs Production Contract",
+  "version": "0.1",
+  "spec_commit": "v1.0.1",
+  "owned_by": "usda-spec-parser",
+  "derives_from": "contracts/document-model-productions/attribute-spec.contract.json",
+  "format_neutral_rules": "contracts/document-model-productions/attribute-spec.contract.json#laws — field set (custom/variability/typeName required, plus optional default/timeSamples/spline/connectionPaths/allowedTokens/...), listOp subfield rules, and value-shape rules are pinned in the format-neutral production. This contract adds USDA-specific grammar dispatch and storage mapping.",
+  "spec_refs": [
+    "specification/file_formats/README.md#attribute-specs",
+    "specification/file_formats/README.md#attribute-declarations",
+    "specification/file_formats/README.md#attribute-values",
+    "specification/file_formats/README.md#time-samples",
+    "specification/file_formats/README.md#connections",
+    "specification/file_formats/README.md#splines-1",
+    "specification/document_data_model/README.md#attribute-spec"
+  ],
+  "scope": {
+    "included": [
+      "custom attribute declarations",
+      "uniform and default varying variability",
+      "declared typeName including array suffix",
+      "namespaced attribute names",
+      "default value assignment",
+      "None default value block",
+      "attribute metadata blocks",
+      "timeSamples special attribute value",
+      "connect special attribute value",
+      "spline special attribute value",
+      "listOp connect syntax"
+    ],
+    "deferred": [
+      "connection resolution",
+      "time sample interpolation",
+      "spline evaluation",
+      "schema fallback values"
+    ]
+  },
+  "storage_mapping": {
+    "custom": "custom field",
+    "variability": "native variability enum field, defaulting to varying when absent",
+    "AttributeType": "typeName field",
+    "NamespacedName": "property path component and parent propertyChildren entry",
+    "AttributeAssignment": "default field",
+    "timeSamples": "native TimeSamples field",
+    "connect": "connectionPaths field as authored listOp<ObjectPath>",
+    "spline": "native Spline field"
+  },
+  "special_attribute_forms": {
+    "timeSamples": {
+      "production": "AttributeDeclaration '.' 'timeSamples' '=' TimeSampleMap",
+      "storage": "timeSamples field as a native TimeSamples value",
+      "requirements": [
+        "time sample map parsing is delegated to the value-syntax time_sample_map obligation",
+        "an attribute may author both default and timeSamples fields",
+        "None inside a sample stores a value-block sentinel",
+        "time samples are not interpolated or resolved by this parser",
+        "time samples must not be stored as string-keyed JSON/dictionary payloads"
+      ]
+    },
+    "connect": {
+      "productions": [
+        "AttributeDeclaration '.' 'connect' '=' ConnectValue",
+        "ListOp AttributeDeclaration '.' 'connect' '=' ConnectValue"
+      ],
+      "value_forms": [
+        "None",
+        "PathRef",
+        "PathRef[]"
+      ],
+      "storage": "connectionPaths field as listOp<ObjectPath>",
+      "requirements": [
+        "a missing ListOp token authors the explicit subfield",
+        "prepend, append, and delete author only their named subfield",
+        "None authors an empty listOp value for the selected subfield",
+        "ListOpConnect shares the leading ListOp token with ListOpRelationship and must be selected by property dispatch after reading the attribute declaration and .connect suffix",
+        "connections are stored as authored targets and are not resolved"
+      ]
+    },
+    "spline": {
+      "production": "AttributeDeclaration '.' 'spline' '=' SplineMap",
+      "storage": "spline field as a native Spline value",
+      "requirements": [
+        "spline map parsing is delegated to the value-syntax spline_map obligation",
+        "spline data is stored but not evaluated",
+        "spline value type must agree with the containing attribute typeName where the type is known",
+        "spline storage must not be a JSON/dictionary payload"
+      ]
+    }
+  },
+  "laws": [
+    "attribute specs must be stored through usd-document-model",
+    "attribute names must be parsed through the graph identifier/name rules",
+    "right-hand side values must be delegated to usda-value-parser",
+    "known declared types must be validated or coerced according to foundational type rules",
+    "a property-level ListOp prefix must not cause an attribute .connect production to be rejected as a relationship-only form",
+    "attribute metadata accepts SharedMetadata/ListOpMetadata only; prim-only metadata keywords such as payload, references, inherits, specializes, variants, and variantSets are invalid in attribute metadata"
+  ],
+  "format_neutral_laws_hoisted": [
+    "variability is a native EnumVariability value, not a durable string (document-model-productions/attribute-spec.contract.json#laws)",
+    "default value type must agree with typeName when typeName names a known foundational type; mismatch is a diagnostic (document-model-productions/attribute-spec.contract.json#laws)",
+    "None authored default stores a value-block sentinel (document-model-productions/attribute-spec.contract.json#laws)",
+    "spline data is parsed and stored but never evaluated by this layer (document-model-productions/attribute-spec.contract.json#laws)",
+    "connectionPaths are authored listOps; resolution is not performed by the parser (document-model-productions/attribute-spec.contract.json#laws)",
+    "attribute specs admit only shared + attribute_only + custom; a field belonging to another spec kind is rejected and not interned as an extension field (document-model-productions/common-metadata.contract.json#spec_kind_field_admission)"
+  ],
+  "golden_groups": [
+    "custom and uniform declarations",
+    "scalar, tuple, array, matrix, and semantic alias defaults",
+    "None default value blocks",
+    "type mismatch diagnostics",
+    "timeSamples with blocked and numeric samples",
+    "connect explicit/prepend/append/delete forms",
+    "spline map storage and duplicate item last-one-wins"
+  ],
+  "golden_files": [
+    "goldens/integration/usda-single-layer/attribute-time-samples.json",
+    "goldens/integration/usda-single-layer/value-syntax.json",
+    "goldens/integration/usda-single-layer/parser-diagnostics.json"
+  ]
+}

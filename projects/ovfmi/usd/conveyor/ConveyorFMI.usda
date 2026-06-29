@@ -1,0 +1,491 @@
+#usda 1.0
+(
+    customLayerData = {
+        dictionary cameraSettings = {
+            dictionary Front = {
+                double3 position = (5, 0, 0)
+                double radius = 5
+            }
+            dictionary Perspective = {
+                double3 position = (2.0855425316533367, -4.591002945337837, 1.624458874021889)
+                double3 target = (3.12922956969697, -1.128057210378958, 0.7205655018820418)
+            }
+            dictionary Right = {
+                double3 position = (3.497753243256092, -50001.88761007911, 0.40656829460712846)
+                double radius = 4.725069046020508
+            }
+            dictionary Top = {
+                double3 position = (4.582975894771114, -2.154596875098918, 50000.740355441085)
+                double radius = 4.189394760131836
+            }
+            string boundCamera = "/OmniverseKit_Persp"
+        }
+        dictionary omni_layer = {
+            string authoring_layer = "./ConveyorFMI.usda"
+        }
+        dictionary renderSettings = {
+        }
+    }
+    defaultPrim = "World"
+    metersPerUnit = 1
+    subLayers = [
+        @./Conveyor.usda@
+    ]
+    timeCodesPerSecond = 60
+    upAxis = "Z"
+)
+
+over "World"
+{
+    def Xform "FMI"
+    {
+        def Xform "ConveyorControls"
+        {
+            double3 xformOp:scale = (1, 1, 1)
+            double3 xformOp:translate = (16, 16, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def SspInstance "ConveyorDemo"
+        {
+            bool fmi:enabled = 1
+            asset fmi:ssp = @../ov-fmi/conveyor_demo.ssp@
+
+            def FmuConnection "OverlapInputs"
+            {
+                rel fmi:targets = </World/Sensor>
+
+                def FmuMapping "PresenceRead"
+                {
+                    token fmi:direction = "input"
+                    token fmi:fmuAttribute = "rawPresence"
+                    token fmi:usdAttribute = "physx:overlap"
+                    int2 fmi:usdMapping = (0, 1)
+                }
+            }
+
+            def FmuConnection "OperatorInputs"
+            {
+                rel fmi:targets = </World/FMI/ConveyorControls>
+
+                def FmuMapping "OperatorSpeedRead"
+                {
+                    token fmi:direction = "input"
+                    token fmi:fmuAttribute = "operatorSpeed"
+                    token fmi:usdAttribute = "xformOp:translate"
+                    int2 fmi:usdMapping = (0, 1)
+                }
+
+                def FmuMapping "RejectSpeedRead"
+                {
+                    token fmi:direction = "input"
+                    token fmi:fmuAttribute = "rejectSpeed"
+                    token fmi:usdAttribute = "xformOp:translate"
+                    int2 fmi:usdMapping = (1, 1)
+                }
+
+                def FmuMapping "EStopRead"
+                {
+                    token fmi:direction = "input"
+                    token fmi:fmuAttribute = "eStop"
+                    token fmi:usdAttribute = "xformOp:translate"
+                    int2 fmi:usdMapping = (2, 1)
+                }
+
+                def FmuMapping "EnableRead"
+                {
+                    token fmi:direction = "input"
+                    token fmi:fmuAttribute = "enable"
+                    token fmi:usdAttribute = "xformOp:scale"
+                    int2 fmi:usdMapping = (0, 1)
+                }
+            }
+
+            def FmuConnection "Zone00Drive"
+            {
+                rel fmi:targets = </World/ConveyorBelt_A08/RollerGroup/Roller_00/DriveJoint_Zone00>
+
+                def FmuMapping "TargetVelocity0Write"
+                {
+                    token fmi:direction = "output"
+                    token fmi:fmuAttribute = "targetVelocity0"
+                    token fmi:usdAttribute = "drive:angular:physics:targetVelocity"
+                    int2 fmi:usdMapping = (0, 0)
+                }
+            }
+
+            def FmuConnection "Zone01Drive"
+            {
+                rel fmi:targets = </World/ConveyorBelt_A08/RollerGroup_01/Roller_00/DriveJoint_Zone01>
+
+                def FmuMapping "TargetVelocity1Write"
+                {
+                    token fmi:direction = "output"
+                    token fmi:fmuAttribute = "targetVelocity1"
+                    token fmi:usdAttribute = "drive:angular:physics:targetVelocity"
+                    int2 fmi:usdMapping = (0, 0)
+                }
+            }
+
+            def FmuConnection "Zone02Drive"
+            {
+                rel fmi:targets = </World/ConveyorBelt_A08/RollerGroup_02/Roller_00/DriveJoint_Zone02>
+
+                def FmuMapping "TargetVelocity2Write"
+                {
+                    token fmi:direction = "output"
+                    token fmi:fmuAttribute = "targetVelocity2"
+                    token fmi:usdAttribute = "drive:angular:physics:targetVelocity"
+                    int2 fmi:usdMapping = (0, 0)
+                }
+            }
+
+            def FmuConnection "Zone03Drive"
+            {
+                rel fmi:targets = </World/ConveyorBelt_A08/RollerGroup_03/Roller_00/DriveJoint_Zone03>
+
+                def FmuMapping "TargetVelocity3Write"
+                {
+                    token fmi:direction = "output"
+                    token fmi:fmuAttribute = "targetVelocity3"
+                    token fmi:usdAttribute = "drive:angular:physics:targetVelocity"
+                    int2 fmi:usdMapping = (0, 0)
+                }
+            }
+
+            def FmuConnection "Zone04Drive"
+            {
+                rel fmi:targets = </World/ConveyorBelt_A08/RollerGroup_04/Roller_00/DriveJoint_Zone04>
+
+                def FmuMapping "TargetVelocity4Write"
+                {
+                    token fmi:direction = "output"
+                    token fmi:fmuAttribute = "targetVelocity4"
+                    token fmi:usdAttribute = "drive:angular:physics:targetVelocity"
+                    int2 fmi:usdMapping = (0, 0)
+                }
+            }
+        }
+    }
+
+    over "PhysicsScene" (
+        prepend apiSchemas = ["PhysxSceneAPI"]
+    )
+    {
+    }
+
+    over "ConveyorBelt_A08"
+    {
+        over "FakeDynArticRootHack"
+        {
+        }
+
+        over "RollerGroup"
+        {
+            over "Roller_00"
+            {
+            }
+
+            over "Roller_01"
+            {
+            }
+
+            over "Roller_02"
+            {
+            }
+
+            over "Roller_03"
+            {
+            }
+
+            over "Roller_04"
+            {
+            }
+
+            over "Roller_05"
+            {
+            }
+
+            over "Roller_06"
+            {
+            }
+
+            over "Roller_07"
+            {
+            }
+        }
+
+        over "RollerGroup_01"
+        {
+            over "Roller_00"
+            {
+            }
+
+            over "Roller_01"
+            {
+            }
+
+            over "Roller_02"
+            {
+            }
+
+            over "Roller_03"
+            {
+            }
+
+            over "Roller_04"
+            {
+            }
+
+            over "Roller_05"
+            {
+            }
+
+            over "Roller_06"
+            {
+            }
+
+            over "Roller_07"
+            {
+            }
+        }
+
+        over "RollerGroup_02"
+        {
+            over "Roller_00"
+            {
+            }
+
+            over "Roller_01"
+            {
+            }
+
+            over "Roller_02"
+            {
+            }
+
+            over "Roller_03"
+            {
+            }
+
+            over "Roller_04"
+            {
+            }
+
+            over "Roller_05"
+            {
+            }
+
+            over "Roller_06"
+            {
+            }
+
+            over "Roller_07"
+            {
+            }
+        }
+
+        over "RollerGroup_03"
+        {
+            over "Roller_00"
+            {
+            }
+
+            over "Roller_01"
+            {
+            }
+
+            over "Roller_02"
+            {
+            }
+
+            over "Roller_03"
+            {
+            }
+
+            over "Roller_04"
+            {
+            }
+
+            over "Roller_05"
+            {
+            }
+
+            over "Roller_06"
+            {
+            }
+
+            over "Roller_07"
+            {
+            }
+        }
+
+        over "RollerGroup_04"
+        {
+            over "Roller_00"
+            {
+            }
+
+            over "Roller_01"
+            {
+            }
+
+            over "Roller_02"
+            {
+            }
+
+            over "Roller_03"
+            {
+            }
+
+            over "Roller_04"
+            {
+            }
+
+            over "Roller_05"
+            {
+            }
+
+            over "Roller_06"
+            {
+            }
+        }
+    }
+
+    over "TestParcel"
+    {
+    }
+}
+
+over "Render"
+{
+    over "OmniverseKit"
+    {
+        over "HydraTextures"
+        {
+            over "omni_kit_widget_viewport_ViewportTexture_0"
+            {
+                rel camera = </OmniverseKit_Persp>
+                bool omni:rtx:rt:ecoMode:enabled
+                rel orderedVars = </Render/Vars/LdrColor>
+                custom bool overrideClipRange = 0
+                uniform int2 resolution = (1280, 720)
+            }
+        }
+    }
+}
+
+over "OmniverseKit_Persp" (
+    prepend apiSchemas = ["OmniRtxCameraAutoExposureAPI_1", "OmniRtxCameraExposureAPI_1"]
+    customData = {
+        dictionary omni = {
+            dictionary kit = {
+                bool hide_in_stage_window = 1
+                bool no_delete = 1
+            }
+        }
+    }
+    hide_in_stage_window = true
+    kind = "component"
+    no_delete = true
+)
+{
+    float2 clippingRange = (0.01, 10000000)
+    float exposure:fStop = 5
+    float exposure:responsivity = 1.1026709
+    float exposure:time = 0.02
+    float focalLength = 18.147562
+    float focusDistance = 400
+    custom uniform vector3d omni:kit:centerOfInterest = (0, 0, -3.7280422509473428)
+    float3 xformOp:rotateXYZ = (75.968346, -4.898054e-13, -16.772127)
+    float3 xformOp:scale = (1, 1, 1)
+    double3 xformOp:translate = (2.0855425316533367, -4.591002945337837, 1.624458874021889)
+    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+}
+
+over "OmniverseKit_Front" (
+    prepend apiSchemas = ["OmniRtxCameraAutoExposureAPI_1", "OmniRtxCameraExposureAPI_1"]
+    customData = {
+        dictionary omni = {
+            dictionary kit = {
+                bool hide_in_stage_window = 1
+                bool no_delete = 1
+            }
+        }
+    }
+    hide_in_stage_window = true
+    kind = "component"
+    no_delete = true
+)
+{
+    float2 clippingRange = (1, 10000000)
+    float exposure:fStop = 5
+    float exposure:responsivity = 1.1026709
+    float exposure:time = 0.02
+    float horizontalAperture = 50
+    custom uniform vector3d omni:kit:centerOfInterest = (0, 0, -5)
+    token projection = "orthographic"
+    float verticalAperture = 50
+    float3 xformOp:rotateXYZ = (90, -1.2722219e-14, 90)
+    float3 xformOp:scale = (1, 1, 1)
+    double3 xformOp:translate = (5, 0, 0)
+    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+}
+
+over "OmniverseKit_Right" (
+    prepend apiSchemas = ["OmniRtxCameraAutoExposureAPI_1", "OmniRtxCameraExposureAPI_1"]
+    customData = {
+        dictionary omni = {
+            dictionary kit = {
+                bool hide_in_stage_window = 1
+                bool no_delete = 1
+            }
+        }
+    }
+    hide_in_stage_window = true
+    kind = "component"
+    no_delete = true
+)
+{
+    float2 clippingRange = (1, 10000000)
+    float exposure:fStop = 5
+    float exposure:responsivity = 1.1026709
+    float exposure:time = 0.02
+    float horizontalAperture = 47.25069
+    custom uniform vector3d omni:kit:centerOfInterest = (0, 0, -50000.000000000015)
+    token projection = "orthographic"
+    float verticalAperture = 47.25069
+    float3 xformOp:rotateXYZ = (90, -0, -1.2722219e-14)
+    float3 xformOp:scale = (1, 1, 1)
+    double3 xformOp:translate = (3.497753243256092, -50001.88761007911, 0.40656829460712846)
+    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+}
+
+over "OmniverseKit_Top" (
+    prepend apiSchemas = ["OmniRtxCameraAutoExposureAPI_1", "OmniRtxCameraExposureAPI_1"]
+    customData = {
+        dictionary omni = {
+            dictionary kit = {
+                bool hide_in_stage_window = 1
+                bool no_delete = 1
+            }
+        }
+    }
+    hide_in_stage_window = true
+    kind = "component"
+    no_delete = true
+)
+{
+    float2 clippingRange = (1, 10000000)
+    float exposure:fStop = 5
+    float exposure:responsivity = 1.1026709
+    float exposure:time = 0.02
+    float horizontalAperture = 41.893948
+    custom uniform vector3d omni:kit:centerOfInterest = (0, 0, -50000)
+    token projection = "orthographic"
+    float verticalAperture = 41.893948
+    float3 xformOp:rotateXYZ = (1.2722219e-14, -7.016709e-15, -90)
+    float3 xformOp:scale = (1, 1, 1)
+    double3 xformOp:translate = (4.582975894771114, -2.154596875098918, 50000.740355441085)
+    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+}

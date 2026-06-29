@@ -1,0 +1,129 @@
+#usda 1.0
+(
+    subLayers = [
+        @./render_setup.usda@
+    ]
+    customLayerData = {
+        dictionary cameraSettings = {
+            dictionary Front = {
+                double3 position = (0, 0, 50000)
+                double radius = 500
+            }
+            dictionary Perspective = {
+                double3 position = (3.5367874246254116, 0.9023848592108943, 0.9189180448528872)
+                double3 target = (-1.337056495141467, 1.1518754247553509, 0.4719457887650824)
+            }
+            dictionary Right = {
+                double3 position = (-50000, 0, 0)
+                double radius = 500
+            }
+            dictionary Top = {
+                double3 position = (0, 50000, 0)
+                double radius = 500
+            }
+            string boundCamera = "/OmniverseKit_Persp"
+        }
+        dictionary omni_layer = {
+            string authoring_layer = "./fmi_parser_test.usda"
+            dictionary locked = {
+            }
+            dictionary muteness = {
+            }
+        }
+        int refinementOverrideImplVersion = 0
+        dictionary renderSettings = {
+        }
+    }
+    defaultPrim = "World"
+    endTimeCode = 1000.0000000000001
+    metersPerUnit = 0.01
+    startTimeCode = 0
+    timeCodesPerSecond = 60
+    upAxis = "Y"
+)
+
+def Xform "World"
+{
+    def Sphere "Sphere"
+    {
+        float3[] extent = [(-0.05, -0.05, -0.05), (0.05, 0.05, 0.05)]
+        double radius = 0.05
+        custom bool refinementEnableOverride = 1
+        custom int refinementLevel = 2
+        double3 xformOp:rotateXYZ = (0, 0, 0)
+        double3 xformOp:scale = (1, 1, 1)
+        double3 xformOp:translate = (0, 1.0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+    }
+
+    def FmuInstance "FmuInstance"
+    {
+        bool fmi:enabled = 1
+        asset fmi:fmu = @./BouncingBall.fmu3@
+
+        def FmuConnection "HeightConnection"
+        {
+            rel fmi:targets = </World/Sphere>
+
+            def FmuMapping "HeightWrite"
+            {
+                token fmi:direction = "output"
+                token fmi:fmuAttribute = "h"
+                int2 fmi:usdMapping = (1, 1) # (index, length)
+                token fmi:usdAttribute = "xformOp:translate"
+            }
+
+            def FmuMapping "HeightRead"
+            {
+                token fmi:direction = "input"
+                token fmi:fmuAttribute = "h"
+                int2 fmi:usdMapping = (1, 1) # (index, length)
+                token fmi:usdAttribute = "xformOp:translate"
+            }
+        }
+    }
+}
+
+def Xform "Environment"
+{
+    double3 xformOp:rotateXYZ = (0, 0, 0)
+    double3 xformOp:scale = (1, 1, 1)
+    double3 xformOp:translate = (0, 0, 0)
+    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+
+    def DistantLight "defaultLight" (
+        prepend apiSchemas = ["ShapingAPI"]
+    )
+    {
+        float inputs:angle = 1
+        float inputs:intensity = 3000
+        float inputs:shaping:cone:angle = 180
+        float inputs:shaping:cone:softness
+        float inputs:shaping:focus
+        color3f inputs:shaping:focusTint
+        asset inputs:shaping:ies:file
+        double3 xformOp:rotateXYZ = (315, 0, 0)
+        double3 xformOp:scale = (1, 1, 1)
+        double3 xformOp:translate = (0, 0, -3.4228102449430997)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+    }
+
+    def Mesh "Plane"
+    {
+        float3[] extent = [(-50, 0, -50), (50, 0, 50)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 2, 3, 1]
+        normal3f[] normals = [(0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0)] (
+            interpolation = "faceVarying"
+        )
+        point3f[] points = [(-50, 0, -50), (50, 0, -50), (-50, 0, 50), (50, 0, 50)]
+        texCoord2f[] primvars:st = [(0, 1), (0, 0), (1, 0), (1, 1)] (
+            interpolation = "faceVarying"
+        )
+        uniform token subdivisionScheme = "none"
+        double3 xformOp:rotateXYZ = (0, 0, 0)
+        double3 xformOp:scale = (1, 1, 1)
+        double3 xformOp:translate = (0, -0.05, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+    }
+}

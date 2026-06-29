@@ -1,0 +1,446 @@
+{
+  "suite": "usd-relocates-namespace-source",
+  "contract": "contracts/handles/relocates-namespace-source.handle.json",
+  "spec_tag": "v1.0.1",
+  "spec_commit": "v1.0.1",
+  "cases": [
+    {
+      "id": "relocates-referenced-child",
+      "input": {
+        "rootLayer": {
+          "identifier": "root.usda",
+          "fields": {
+            "primChildren": {"type": "token[]", "value": ["Root"]},
+            "layerRelocates": {
+              "type": "Relocates",
+              "value": {"/Root/Child": "/Root/Renamed"}
+            }
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "primChildren": {"type": "token[]", "value": ["Root"]},
+                "layerRelocates": {
+                  "type": "Relocates",
+                  "value": {"/Root/Child": "/Root/Renamed"}
+                }
+              }
+            },
+            "/Root": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "over"},
+                "references": {
+                  "type": "listop<Reference>",
+                  "value": {
+                    "explicit": [{"asset": "asset.usda", "path": "/Ref", "offset": 0.0, "scale": 1.0}],
+                    "prepend": [],
+                    "append": [],
+                    "delete": []
+                  }
+                },
+                "primChildren": {"type": "token[]", "value": ["Renamed"]},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/Root/Child": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "over"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": ["ignoredSourceLabel"]},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/Root/Child.ignoredSourceLabel": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "typeName": {"type": "token", "value": "string"},
+                "variability": {"type": "variability", "value": "uniform"},
+                "default": {"type": "string", "value": "from_source_path"}
+              }
+            },
+            "/Root/Renamed": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "over"},
+                "kind": {"type": "token", "value": "component"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": ["localFlag"]},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/Root/Renamed.localFlag": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "typeName": {"type": "token", "value": "bool"},
+                "variability": {"type": "variability", "value": "uniform"},
+                "default": {"type": "bool", "value": true}
+              }
+            }
+          }
+        },
+        "referenceLayers": {
+          "asset.usda": {
+            "identifier": "asset.usda",
+            "fields": {"primChildren": {"type": "token[]", "value": ["Ref"]}},
+            "specs": {
+              "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["Ref"]}}},
+              "/Ref": {
+                "kind": "prim",
+                "fields": {
+                  "specifier": {"type": "specifier", "value": "def"},
+                  "primChildren": {"type": "token[]", "value": ["Child"]},
+                  "propertyChildren": {"type": "token[]", "value": []},
+                  "variantSetChildren": {"type": "token[]", "value": []}
+                }
+              },
+              "/Ref/Child": {
+                "kind": "prim",
+                "fields": {
+                  "specifier": {"type": "specifier", "value": "def"},
+                  "typeName": {"type": "token", "value": "Mesh"},
+                  "primChildren": {"type": "token[]", "value": []},
+                  "propertyChildren": {"type": "token[]", "value": ["points"]},
+                  "variantSetChildren": {"type": "token[]", "value": []}
+                }
+              },
+              "/Ref/Child.points": {
+                "kind": "attribute",
+                "fields": {
+                  "custom": {"type": "bool", "value": false},
+                  "typeName": {"type": "token", "value": "point3f[]"},
+                  "variability": {"type": "variability", "value": "varying"},
+                  "default": {"type": "array", "value": []}
+                }
+              }
+            }
+          }
+        },
+        "ops": [
+          {"op": "build_source"},
+          {"op": "inspect_source"},
+          {"op": "relocates_summary"},
+          {"op": "prim_input", "path": "/Root"},
+          {"op": "prim_input", "path": "/Root/Renamed"},
+          {"op": "prim_input", "path": "/Root/Child"},
+          {"op": "property_input", "path": "/Root/Renamed.points"},
+          {"op": "property_input", "path": "/Root/Renamed.localFlag"},
+          {"op": "property_input", "path": "/Root/Child.points"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [
+          {
+            "code": "RelocateSourceOpinionAtSourcePath",
+            "message": "Opinions authored at relocate source path /Root/Child are a composition error and are ignored"
+          }
+        ],
+        "results": [
+          {"op": "build_source", "ok": true},
+          {
+            "op": "inspect_source",
+            "ok": true,
+            "mode": "composed_namespace",
+            "composition": "partial",
+            "value_resolution": "partial",
+            "payload_loading": "absent",
+            "instancing": "absent",
+            "schema_fallbacks": "absent",
+            "child_ordering": "composed",
+            "property_ordering": "composed"
+          },
+          {
+            "op": "relocates_summary",
+            "ok": true,
+            "relocates": [
+              {"sourcePath": "/Root/Child", "targetPath": "/Root/Renamed", "deleted": false}
+            ],
+            "diagnostics": [
+              {
+                "code": "RelocateSourceOpinionAtSourcePath",
+                "message": "Opinions authored at relocate source path /Root/Child are a composition error and are ignored"
+              }
+            ]
+          },
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/Root",
+            "exists": true,
+            "kind": "prim",
+            "fields": {
+              "specifier": {"type": "specifier", "value": "def"},
+              "references": {
+                "type": "listop<Reference>",
+                "value": {
+                  "append": [],
+                  "delete": [],
+                  "explicit": [{"asset": "asset.usda", "offset": 0.0, "path": "/Ref", "scale": 1.0}],
+                  "prepend": []
+                }
+              },
+              "primChildren": {"type": "token[]", "value": ["Renamed"]},
+              "propertyChildren": {"type": "token[]", "value": []},
+              "variantSetChildren": {"type": "token[]", "value": []}
+            },
+            "childNames": ["Renamed"],
+            "propertyNames": [],
+            "contributingSources": ["root.usda:/Root", "asset.usda:/Ref"]
+          },
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/Root/Renamed",
+            "exists": true,
+            "kind": "prim",
+            "fields": {
+              "specifier": {"type": "specifier", "value": "def"},
+              "kind": {"type": "token", "value": "component"},
+              "primChildren": {"type": "token[]", "value": []},
+              "propertyChildren": {"type": "token[]", "value": ["localFlag"]},
+              "variantSetChildren": {"type": "token[]", "value": []},
+              "typeName": {"type": "token", "value": "Mesh"}
+            },
+            "childNames": [],
+            "propertyNames": ["localFlag", "points"],
+            "contributingSources": ["root.usda:/Root/Renamed", "asset.usda:/Ref/Child"]
+          },
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/Root/Child",
+            "exists": false,
+            "kind": "missing",
+            "fields": {},
+            "childNames": [],
+            "propertyNames": [],
+            "contributingSources": []
+          },
+          {
+            "op": "property_input",
+            "ok": true,
+            "path": "/Root/Renamed.points",
+            "exists": true,
+            "kind": "attribute",
+            "fields": {
+              "custom": {"type": "bool", "value": false},
+              "typeName": {"type": "token", "value": "point3f[]"},
+              "variability": {"type": "variability", "value": "varying"},
+              "default": {"type": "array", "value": []}
+            },
+            "contributingSources": ["asset.usda:/Ref/Child.points"]
+          },
+          {
+            "op": "property_input",
+            "ok": true,
+            "path": "/Root/Renamed.localFlag",
+            "exists": true,
+            "kind": "attribute",
+            "fields": {
+              "custom": {"type": "bool", "value": false},
+              "typeName": {"type": "token", "value": "bool"},
+              "variability": {"type": "variability", "value": "uniform"},
+              "default": {"type": "bool", "value": true}
+            },
+            "contributingSources": ["root.usda:/Root/Renamed.localFlag"]
+          },
+          {
+            "op": "property_input",
+            "ok": true,
+            "path": "/Root/Child.points",
+            "exists": false,
+            "kind": "missing",
+            "fields": {},
+            "contributingSources": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "empty-target-removes-source",
+      "input": {
+        "rootLayer": {
+          "identifier": "root.usda",
+          "fields": {
+            "primChildren": {"type": "token[]", "value": ["Root"]},
+            "layerRelocates": {
+              "type": "Relocates",
+              "value": {"/Root/Child": ""}
+            }
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "primChildren": {"type": "token[]", "value": ["Root"]},
+                "layerRelocates": {
+                  "type": "Relocates",
+                  "value": {"/Root/Child": ""}
+                }
+              }
+            },
+            "/Root": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "over"},
+                "references": {
+                  "type": "listop<Reference>",
+                  "value": {
+                    "explicit": [{"asset": "asset.usda", "path": "/Ref", "offset": 0.0, "scale": 1.0}],
+                    "prepend": [],
+                    "append": [],
+                    "delete": []
+                  }
+                },
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        },
+        "referenceLayers": {
+          "asset.usda": {
+            "identifier": "asset.usda",
+            "fields": {"primChildren": {"type": "token[]", "value": ["Ref"]}},
+            "specs": {
+              "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["Ref"]}}},
+              "/Ref": {
+                "kind": "prim",
+                "fields": {
+                  "specifier": {"type": "specifier", "value": "def"},
+                  "primChildren": {"type": "token[]", "value": ["Child"]},
+                  "propertyChildren": {"type": "token[]", "value": []},
+                  "variantSetChildren": {"type": "token[]", "value": []}
+                }
+              },
+              "/Ref/Child": {
+                "kind": "prim",
+                "fields": {
+                  "specifier": {"type": "specifier", "value": "def"},
+                  "primChildren": {"type": "token[]", "value": []},
+                  "propertyChildren": {"type": "token[]", "value": []},
+                  "variantSetChildren": {"type": "token[]", "value": []}
+                }
+              }
+            }
+          }
+        },
+        "ops": [
+          {"op": "build_source"},
+          {"op": "relocates_summary"},
+          {"op": "prim_input", "path": "/Root"},
+          {"op": "prim_input", "path": "/Root/Child"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "build_source", "ok": true},
+          {
+            "op": "relocates_summary",
+            "ok": true,
+            "relocates": [
+              {"sourcePath": "/Root/Child", "targetPath": "", "deleted": true}
+            ],
+            "diagnostics": []
+          },
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/Root",
+            "exists": true,
+            "kind": "prim",
+            "fields": {
+              "specifier": {"type": "specifier", "value": "def"},
+              "references": {
+                "type": "listop<Reference>",
+                "value": {
+                  "append": [],
+                  "delete": [],
+                  "explicit": [{"asset": "asset.usda", "offset": 0.0, "path": "/Ref", "scale": 1.0}],
+                  "prepend": []
+                }
+              },
+              "primChildren": {"type": "token[]", "value": []},
+              "propertyChildren": {"type": "token[]", "value": []},
+              "variantSetChildren": {"type": "token[]", "value": []}
+            },
+            "childNames": [],
+            "propertyNames": [],
+            "contributingSources": ["root.usda:/Root", "asset.usda:/Ref"]
+          },
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/Root/Child",
+            "exists": false,
+            "kind": "missing",
+            "fields": {},
+            "childNames": [],
+            "propertyNames": [],
+            "contributingSources": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "invalid-target-below-source",
+      "input": {
+        "rootLayer": {
+          "identifier": "root.usda",
+          "fields": {
+            "primChildren": {"type": "token[]", "value": ["Root"]},
+            "layerRelocates": {
+              "type": "Relocates",
+              "value": {"/Root/Child": "/Root/Child/GrandChild"}
+            }
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "primChildren": {"type": "token[]", "value": ["Root"]},
+                "layerRelocates": {
+                  "type": "Relocates",
+                  "value": {"/Root/Child": "/Root/Child/GrandChild"}
+                }
+              }
+            },
+            "/Root": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        },
+        "ops": [
+          {"op": "build_source"}
+        ]
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {
+            "code": "InvalidRelocateTargetBelowSource",
+            "message": "Relocate target /Root/Child/GrandChild cannot be below source /Root/Child"
+          }
+        ],
+        "results": [
+          {"op": "build_source", "ok": false}
+        ]
+      }
+    }
+  ]
+}

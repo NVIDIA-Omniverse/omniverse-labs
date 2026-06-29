@@ -1,0 +1,4 @@
+interface:
+  display_name: "Contract First Ffi"
+  short_description: "Keep C APIs and bindings aligned"
+  default_prompt: "Evolve this C ABI and its Python/native bindings without layout drift, stale compatibility paths, or untested contract changes."

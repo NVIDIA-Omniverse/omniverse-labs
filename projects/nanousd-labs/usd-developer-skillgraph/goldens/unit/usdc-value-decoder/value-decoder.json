@@ -1,0 +1,408 @@
+{
+  "suite": "usdc-value-decoder-basic",
+  "contract": "contracts/handles/usdc-value-decoder.handle.json",
+  "production_contracts": [
+    "contracts/usdc-productions/crate-value-representations.contract.json",
+    "contracts/usdc-productions/crate-reader-diagnostics.contract.json"
+  ],
+  "spec_commit": "6b4f01f2d6d46b01507481524eb516b4ef358c31",
+  "notes": "Value representation words are supplied inline as 16-hex-char strings (8 bytes, little-endian). The adapter parses the word into payload[0..6], type=byte 6, flags=byte 7 and dispatches by type+flags. The Array / Inlined / Compressed flag bits live in the HIGH bits of byte 7 (masks 0x80 / 0x40 / 0x20) per docs/usdc-spec-errata.md#1; the low-bit layout in earlier drafts of the AOUSD prose is not used. Tables (tokens, strings, paths) are supplied inline so the unit can test value decoding without driving usdc-spec-parser.",
+  "cases": [
+    {
+      "id": "inlined-scalar-bool-true",
+      "spec_refs": ["specification/file_formats/README.md#bool", "specification/file_formats/README.md#inlined-value-representation"],
+      "input": {
+        "ops": [
+          {"op": "decode_value_representation", "word_hex": "0100000000000140", "notes": "payload byte 0 = 0x01 (true); type = 1 (bool); flags = 0x40 (Inlined, high-bit layout)"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "decode_value_representation", "ok": true, "value": {"type": "bool", "value": true}}
+        ]
+      }
+    },
+    {
+      "id": "inlined-scalar-int-and-float",
+      "spec_refs": ["specification/file_formats/README.md#int", "specification/file_formats/README.md#float"],
+      "input": {
+        "ops": [
+          {"op": "decode_value_representation", "word_hex": "2a00000000000340", "notes": "payload=42 as int32; type=3 (int); flags=Inlined (0x40)"},
+          {"op": "decode_value_representation", "word_hex": "0000c03f00000840", "notes": "payload=1.5f (0x3FC00000) little-endian; type=8 (float); flags=Inlined (0x40)"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "decode_value_representation", "ok": true, "value": {"type": "int", "value": 42}},
+          {"op": "decode_value_representation", "ok": true, "value": {"type": "float", "value": 1.5}}
+        ]
+      }
+    },
+    {
+      "id": "inlined-token-by-index",
+      "spec_refs": ["specification/file_formats/README.md#token"],
+      "input": {
+        "ops": [
+          {
+            "op": "decode_value_representation",
+            "word_hex": "0200000000000b40",
+            "tables": {"tokens": ["", "Xform", "World"]},
+            "notes": "payload=2 as uint32 token index; type=11 (token); flags=Inlined (0x40)"
+          }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "decode_value_representation", "ok": true, "value": {"type": "token", "value": "World"}}
+        ]
+      }
+    },
+    {
+      "id": "specifier-and-variability-inlined",
+      "spec_refs": ["specification/file_formats/README.md#type-table"],
+      "input": {
+        "ops": [
+          {"op": "decode_value_representation", "word_hex": "0100000000002a40", "notes": "payload=1 (def); type=42 (Specifier); flags=Inlined (0x40)"},
+          {"op": "decode_value_representation", "word_hex": "0100000000002c40", "notes": "payload=1 (uniform); type=44 (Variability); flags=Inlined (0x40)"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "decode_value_representation", "ok": true, "value": {"type": "specifier", "value": "def"}},
+          {"op": "decode_value_representation", "ok": true, "value": {"type": "variability", "value": "uniform"}}
+        ]
+      }
+    },
+    {
+      "id": "offset-backed-double",
+      "spec_refs": ["specification/file_formats/README.md#offset-value-representation", "specification/file_formats/README.md#double"],
+      "input": {
+        "ops": [
+          {
+            "op": "decode_value_representation",
+            "word_hex": "1000000000000900",
+            "payload_bytes_at_offset_hex": "9a9999999999f13f",
+            "payload_offset": 16,
+            "notes": "payload=offset 16; type=9 (double); flags=0 (offset-backed). At offset 16: IEEE 754 double for 1.1"
+          }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "decode_value_representation", "ok": true, "value": {"type": "double", "value": 1.1}}
+        ]
+      }
+    },
+    {
+      "id": "offset-backed-double3-vector",
+      "spec_refs": ["specification/file_formats/README.md#vectors-mathematical"],
+      "input": {
+        "ops": [
+          {
+            "op": "decode_value_representation",
+            "word_hex": "1000000000001700",
+            "payload_bytes_at_offset_hex": "000000000000f03f00000000000000400000000000000840",
+            "payload_offset": 16,
+            "notes": "payload=offset 16; type=23 (double3); flags=0 (offset-backed). At offset: three doubles 1.0, 2.0, 3.0"
+          }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "decode_value_representation", "ok": true, "value": {"type": "double3", "value": [1.0, 2.0, 3.0]}}
+        ]
+      }
+    },
+    {
+      "id": "offset-backed-token-array",
+      "spec_refs": ["specification/file_formats/README.md#array-value-representations"],
+      "input": {
+        "ops": [
+          {
+            "op": "decode_value_representation",
+            "word_hex": "1000000000000b80",
+            "payload_bytes_at_offset_hex": "030000000000000001000000020000000300000000000000",
+            "payload_offset": 16,
+            "tables": {"tokens": ["", "size", "count", "translate"]},
+            "notes": "payload=offset 16; type=11 (token); flags=Array (0x80, high-bit layout). At offset: uint64 count=3, then 3 uint32 token indices [1,2,3] padded to 4-byte boundary"
+          }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "decode_value_representation", "ok": true, "value": {"type": "token[]", "value": ["size", "count", "translate"]}}
+        ]
+      }
+    },
+    {
+      "id": "dictionary-with-negative-offset",
+      "spec_refs": ["specification/file_formats/README.md#dictionary"],
+      "input": {
+        "ops": [
+          {
+            "op": "decode_value_representation",
+            "word_hex": "2800000000001f00",
+            "payload_bytes_at_offset_hex": "010000000000000001000000f8ffffffffffffff",
+            "payload_offset": 40,
+            "tables": {"tokens": ["", "owner"]},
+            "preceding_string_value": {"offset": 32, "type": "string", "token_index": 0, "tokens_override": ["skillgraph"]},
+            "notes": "payload=offset 40; type=31 (dictionary). At offset 40: count=1, key token index=1 ('owner'), value offset=-8 (signed int64). Value at offset 32 is a string value representation pointing into tokens with value 'skillgraph'"
+          }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "decode_value_representation", "ok": true, "value": {"type": "dictionary", "value": {"owner": {"type": "string", "value": "skillgraph"}}}}
+        ]
+      }
+    },
+    {
+      "id": "inlined-plus-array-flag-rejected",
+      "spec_refs": ["specification/file_formats/README.md#inlined-value-representation", "specification/file_formats/README.md#array-value-representations"],
+      "input": {
+        "ops": [
+          {"op": "decode_value_representation", "word_hex": "01000000000003c0", "notes": "flags = 0xC0 = Inlined (0x40) | Array (0x80); spec forbids this combination"}
+        ]
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {"severity": "error", "code": "MalformedUsdcValueRepresentation", "message": "Inlined and Array flags cannot be combined"}
+        ],
+        "results": [
+          {"op": "decode_value_representation", "ok": false, "code": "MalformedUsdcValueRepresentation"}
+        ]
+      }
+    },
+    {
+      "id": "inlined-plus-compressed-rejected",
+      "spec_refs": ["specification/file_formats/README.md#inlined-value-representation"],
+      "input": {
+        "ops": [
+          {"op": "decode_value_representation", "word_hex": "0100000000000360", "notes": "flags = 0x60 = Inlined (0x40) | Compressed (0x20); spec forbids this combination"}
+        ]
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {"severity": "error", "code": "MalformedUsdcValueRepresentation", "message": "Inlined and Compressed flags cannot be combined"}
+        ],
+        "results": [
+          {"op": "decode_value_representation", "ok": false, "code": "MalformedUsdcValueRepresentation"}
+        ]
+      }
+    },
+    {
+      "id": "compressed-flag-on-quaternion-rejected",
+      "spec_refs": ["specification/file_formats/README.md#array-value-representations"],
+      "input": {
+        "ops": [
+          {"op": "decode_value_representation", "word_hex": "10000000000011a0", "notes": "type=17 (quatf); flags=0xA0 = Array (0x80) | Compressed (0x20). Quaternions may not be compressed."}
+        ]
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {"severity": "error", "code": "MalformedUsdcValueRepresentation", "message": "Compressed flag not allowed on non-simple type quatf"}
+        ],
+        "results": [
+          {"op": "decode_value_representation", "ok": false, "code": "MalformedUsdcValueRepresentation"}
+        ]
+      }
+    },
+    {
+      "id": "path-list-op-relationship-targets",
+      "spec_refs": ["specification/file_formats/README.md#list-operations"],
+      "input": {
+        "ops": [
+          {
+            "op": "decode_value_representation",
+            "word_hex": "1000000000002200",
+            "payload_bytes_at_offset_hex": "0201000000000000000100000000000000",
+            "payload_offset": 16,
+            "tables": {"paths": ["", "/Materials/Default"]},
+            "notes": "type=34 (PathListOp); flags=0 (offset). Header byte=0x02 (Add Explicit), then one path Index"
+          }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "decode_value_representation",
+            "ok": true,
+            "value": {
+              "type": "listop<ObjectPath>",
+              "value": {"explicit": ["/Materials/Default"], "prepend": [], "append": [], "delete": []}
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "value-block-sentinel-inlined",
+      "spec_refs": ["specification/file_formats/README.md#valueblock"],
+      "input": {
+        "ops": [
+          {"op": "decode_value_representation", "word_hex": "0000000000003340", "notes": "type=51 (ValueBlock); flags=Inlined (0x40); payload is zero"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "decode_value_representation", "ok": true, "value": {"type": "valueBlock", "value": null}}
+        ]
+      }
+    },
+    {
+      "id": "half-vec2h-inlined",
+      "spec_refs": ["specification/file_formats/README.md#half", "specification/file_formats/README.md#vectors-mathematical"],
+      "input": {
+        "ops": [
+          {"op": "decode_value_representation", "word_hex": "003c004000001540", "notes": "type=21 (half2); flags=Inlined (0x40). payload bytes 0-3 hold two halfs: 0x3c00 (=1.0h), 0x4000 (=2.0h)"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "decode_value_representation", "ok": true, "value": {"type": "half2", "value": [1.0, 2.0]}}
+        ]
+      }
+    },
+    {
+      "id": "path-expression-deferred-v0.10",
+      "spec_refs": ["specification/file_formats/README.md#path-expression", "specification/file_formats/README.md#crate-versions"],
+      "input": {
+        "ops": [
+          {
+            "op": "decode_value_representation",
+            "word_hex": "1000000000003900",
+            "version": {"major": 0, "minor": 8, "patch": 0},
+            "notes": "type=57 (PathExpression); first introduced at Crate 0.10.0. Under a v0.8.0 reader version, this type must emit UnsupportedUsdcFeature, not produce a placeholder."
+          }
+        ]
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {"severity": "error", "code": "UnsupportedUsdcFeature", "message": "PathExpression value type requires Crate version >= 0.10.0"}
+        ],
+        "results": [
+          {"op": "decode_value_representation", "ok": false, "code": "UnsupportedUsdcFeature"}
+        ]
+      }
+    },
+    {
+      "id": "splines-deferred-v0.12",
+      "spec_refs": ["specification/file_formats/README.md#crate-versions"],
+      "input": {
+        "ops": [
+          {
+            "op": "decode_value_representation",
+            "word_hex": "1000000000003b00",
+            "version": {"major": 0, "minor": 8, "patch": 0},
+            "notes": "type=59 (Splines); first introduced at Crate 0.12.0. Under a v0.8.0 reader version, must emit UnsupportedUsdcFeature."
+          }
+        ]
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {"severity": "error", "code": "UnsupportedUsdcFeature", "message": "Splines value type requires Crate version >= 0.12.0"}
+        ],
+        "results": [
+          {"op": "decode_value_representation", "ok": false, "code": "UnsupportedUsdcFeature"}
+        ]
+      }
+    },
+    {
+      "id": "offset-backed-variant-selection-map",
+      "spec_refs": [
+        "specification/file_formats/README.md#variant-selection-map",
+        "contracts/usdc-productions/variant-spec-mapping.contract.json#storage_mapping.variantSelection_decoding",
+        "contracts/document-model-productions/prim-spec.contract.json#fields.variantSelection"
+      ],
+      "input": {
+        "ops": [
+          {
+            "op": "decode_value_representation",
+            "word_hex": "1000000000002d00",
+            "payload_bytes_at_offset_hex": "01000000000000000100000002000000",
+            "payload_offset": 16,
+            "tables": {"tokens": ["", "style", "red"]},
+            "notes": "payload=offset 16; type=45 (VariantSelectionMap); flags=0 (offset-backed). At offset: uint64 count=1, then alternating uint32 string-index key=1 ('style') + uint32 string-index value=2 ('red'). Empty-string variant selections must be preserved, not dropped, per document-model-productions/prim-spec.contract.json#fields.variantSelection."
+          }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "decode_value_representation",
+            "ok": true,
+            "value": {
+              "type": "VariantSelectionMap",
+              "value": {"style": "red"}
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "offset-backed-layer-offset-vector",
+      "spec_refs": [
+        "specification/file_formats/README.md#layer-offset",
+        "contracts/usdc-productions/layer-spec-mapping.contract.json#storage_mapping.field_resolution.subLayerOffsets",
+        "contracts/document-model-productions/layer-spec.contract.json#fields.subLayerOffsets"
+      ],
+      "input": {
+        "ops": [
+          {
+            "op": "decode_value_representation",
+            "word_hex": "1000000000003100",
+            "payload_bytes_at_offset_hex": "02000000000000000000000000000000000000000000f03f00000000000024400000000000000040",
+            "payload_offset": 16,
+            "notes": "payload=offset 16; type=49 (LayerOffsetVector); flags=0 (offset-backed). At offset: uint64 count=2, then two records of (double offset, double scale): (0.0, 1.0) and (10.0, 2.0). Storage must be native Retiming records; raw dictionaries or JSON payloads are forbidden per document-model-productions/layer-spec.contract.json#fields.subLayerOffsets."
+          }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "decode_value_representation",
+            "ok": true,
+            "value": {
+              "type": "Retiming[]",
+              "value": [
+                {"offset": 0.0, "scale": 1.0},
+                {"offset": 10.0, "scale": 2.0}
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

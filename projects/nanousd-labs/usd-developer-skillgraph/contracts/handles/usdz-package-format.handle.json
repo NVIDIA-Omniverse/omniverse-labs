@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/usdz-package-format.handle.json",
+  "title": "USDZ Package Format Contract",
+  "version": "0.1",
+  "spec_commit": "6b4f01f2d6d46b01507481524eb516b4ef358c31",
+  "production_contracts": [
+    "contracts/usdz-productions/package-layout.contract.json",
+    "contracts/usdz-productions/package-diagnostics.contract.json"
+  ],
+  "scope": {
+    "included": [
+      "non-Zip64 ZIP end-of-central-directory and central-directory parsing",
+      "local file header validation for indexed entries",
+      "stored-method, unencrypted entry enforcement",
+      "64-byte file data alignment checks",
+      "normalized package entry names",
+      "duplicate-entry diagnostics",
+      "default layer selection from the first physical package entry",
+      "explicit package entry lookup",
+      "non-owning byte views into the already-opened outer package"
+    ],
+    "deferred": [
+      "Zip64",
+      "temporary extraction",
+      "package mutation or writing",
+      "nested package opening",
+      "format-specific USDA or USDC parsing"
+    ]
+  },
+  "model": {
+    "UsdzArchiveIndex": "Validated ordered ZIP/USDZ entries plus package diagnostics.",
+    "UsdzEntry": "Normalized entry name, local-header offset, data offset, byte size, and compression/encryption flags.",
+    "PackageEntryByteView": "A non-owning byte span into the opened outer package plus package and entry names for diagnostics."
+  },
+  "operations": {
+    "index_usdz_archive": {
+      "input": {"opened_package_bytes": "already-opened outer package bytes"},
+      "output": {"index": "UsdzArchiveIndex or diagnostics"}
+    },
+    "select_default_layer": {
+      "input": {"index": "UsdzArchiveIndex"},
+      "output": {"entry": "first physical package entry or MissingUsdzDefaultLayer diagnostic"}
+    },
+    "find_entry": {
+      "input": {"index": "UsdzArchiveIndex", "entry": "explicit normalized package path"},
+      "output": {"entry": "matching UsdzEntry or MissingUsdzEntry diagnostic"}
+    },
+    "entry_byte_view": {
+      "input": {"opened_package_bytes": "outer package bytes", "entry": "UsdzEntry"},
+      "output": {"view": "PackageEntryByteView over the same outer package storage"}
+    }
+  },
+  "laws": [
+    "USDZ parsing consumes already-opened package bytes; it must not open files or extract entries to temporary paths",
+    "the archive must be a ZIP archive with uncompressed, unencrypted entries",
+    "each selected file's data offset must be 64-byte aligned",
+    "entry names must reject absolute paths, backslashes, empty path segments, dot segments, and drive-like prefixes",
+    "duplicate normalized entry names must be diagnosed before layer opening",
+    "opening a whole package selects the first physical file entry and must not scan later entries for a USD file",
+    "entry_byte_view must not copy the selected entry into an owned byte buffer when the outer package bytes are still available",
+    "this skill does not parse USDA text or USDC Crate contents"
+  ],
+  "adapter_protocol": {
+    "input": "A JSON file containing one case with package-format ops and an opened_resource object.",
+    "output": "A JSON object with ok, diagnostics, and results."
+  }
+}

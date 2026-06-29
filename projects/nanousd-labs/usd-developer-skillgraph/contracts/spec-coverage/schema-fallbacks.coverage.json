@@ -1,0 +1,153 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/spec-coverage/schema-fallbacks.coverage.json",
+  "title": "USD Schema and Schema Fallback Spec Coverage Ledger",
+  "version": "0.1",
+  "spec_tag": "v1.0.1",
+  "spec_commit": "v1.0.1",
+  "normative_source": {
+    "repo": "aousd/specifications-public",
+    "tag": "v1.0.1",
+    "commit": "v1.0.1",
+    "rule": "Only the AOUSD core specification at aousd/specifications-public v1.0.1 is normative for this ledger. OpenUSD behavior is not a source for these requirements."
+  },
+  "status_values": {
+    "implemented": "In scope for this schema namespace-source contract and covered by goldens.",
+    "partial": "A bounded spec-backed subset is covered; remaining subfeatures are explicitly deferred.",
+    "deferred": "Not implemented in this PR."
+  },
+  "coverage_rules": [
+    "Schema claims require an explicit schema-registry input because AOUSD v1.0.1 leaves schema definition ingestion implementation-defined.",
+    "Schema fallback defaults must remain schema-defined fallback data, not authored layer opinions.",
+    "Stage population may consume schema-injected properties from a namespace source but must not implement schema lookup locally."
+  ],
+  "items": [
+    {
+      "id": "schemas.runtime-registry-boundary",
+      "owner": "usd-schema-namespace-source",
+      "status": "implemented",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:specification/schemas/README.md:5 Scope",
+        "aousd/specifications-public@v1.0.1:specification/schemas/README.md:68 Schema Types"
+      ],
+      "obligations": [
+        "Treat schema definition registration as an explicit implementation boundary.",
+        "Do not infer registry content from OpenUSD or parser-local syntax."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-schema-namespace-source/schema-namespace-source.json#typed-schema-property-injection"
+      ]
+    },
+    {
+      "id": "schemas.typed-schema-prim-definition",
+      "owner": "usd-schema-namespace-source",
+      "status": "implemented",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:specification/schemas/README.md:124 Typed Schemas",
+        "aousd/specifications-public@v1.0.1:specification/schemas/README.md:392 The Prim Definition"
+      ],
+      "obligations": [
+        "Use composed typeName to select a registered concrete typed schema.",
+        "Compose base typed schema properties as weaker prim-definition properties.",
+        "Leave prims typeless when no registered concrete type applies and no fallbackPrimTypes substitute is available."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-schema-namespace-source/schema-namespace-source.json#typed-schema-property-injection",
+        "goldens/unit/usd-schema-namespace-source/schema-namespace-source.json#fallback-prim-type-substitution"
+      ]
+    },
+    {
+      "id": "schemas.applied-schema-properties",
+      "owner": "usd-schema-namespace-source",
+      "status": "implemented",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:specification/schemas/README.md:39 apiSchemas",
+        "aousd/specifications-public@v1.0.1:specification/schemas/README.md:211 Applied Schemas"
+      ],
+      "obligations": [
+        "Read composed apiSchemas field data as applied schema tokens.",
+        "Inject single applied schema properties.",
+        "Substitute recorded instance names into multiple applied schema property names.",
+        "Preserve transitive applied schema presence through schema inclusions."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-schema-namespace-source/schema-namespace-source.json#multiple-applied-schema-instance-property",
+        "goldens/unit/usd-schema-namespace-source/schema-namespace-source.json#schema-inclusions-builtins-auto-applies-and-instance-propagation"
+      ]
+    },
+    {
+      "id": "schemas.property-child-enumeration",
+      "owner": "usd-schema-namespace-source",
+      "status": "implemented",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:specification/stage_population/README.md:151 Ordered Property Children",
+        "aousd/specifications-public@v1.0.1:specification/schemas/README.md:457 final prim definition"
+      ],
+      "obligations": [
+        "Merge schema-defined prim-definition properties with authored property children.",
+        "Sort the merged property set by path element ordering.",
+        "Apply strongest propertyOrder over the merged property set."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-schema-namespace-source/schema-namespace-source.json#typed-schema-property-injection",
+        "goldens/unit/usd-schema-namespace-source/schema-namespace-source.json#authored-property-overrides-schema-fields",
+        "goldens/integration/usd-schema-stage-population/schema-stage-population.json#schema-properties-populate-stage"
+      ]
+    },
+    {
+      "id": "schemas.fallback-value-acquisition",
+      "owner": "usd-schema-namespace-source",
+      "status": "implemented",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:specification/schemas/README.md:525 Fallback Value Resolution for Attributes",
+        "aousd/specifications-public@v1.0.1:specification/value_resolution/README.md:863 Fallback Values"
+      ],
+      "obligations": [
+        "Provide typed-schema fallback fields stronger than applied-schema fallback fields.",
+        "Provide applied-schema fallback fields in composed applied schema order.",
+        "Preserve default metadata empty-sentinel fallback as the weaker value-resolution fallback when no schema default exists."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-schema-namespace-source/schema-namespace-source.json#typed-schema-property-injection",
+        "goldens/unit/usd-schema-namespace-source/schema-namespace-source.json#authored-property-overrides-schema-fields"
+      ]
+    },
+    {
+      "id": "schemas.fallback-prim-types",
+      "owner": "usd-schema-namespace-source",
+      "status": "implemented",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:specification/schemas/README.md:19 fallbackPrimTypes"
+      ],
+      "obligations": [
+        "Read fallbackPrimTypes from composed layer metadata made visible through the namespace source.",
+        "Use the preference-ordered fallback type list to select a registered concrete typed schema for an otherwise unregistered typed prim.",
+        "Do not reinterpret fallbackPrimTypes as layer-level schema semantics."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-schema-namespace-source/schema-namespace-source.json#fallback-prim-type-substitution"
+      ]
+    },
+    {
+      "id": "schemas.inclusions-and-overrides",
+      "owner": "usd-schema-namespace-source",
+      "status": "implemented",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:specification/schemas/README.md:303 Schema Inclusions",
+        "aousd/specifications-public@v1.0.1:specification/schemas/README.md:382 Override Properties"
+      ],
+      "obligations": [
+        "Compose registered built-in schemas and registered auto-applies as weaker schema inclusions in the owning schema's prim definition.",
+        "Propagate multiple applied schema instance names through unqualified built-ins and prefix owner instances for named multiple applied built-ins.",
+        "Apply override properties as sparse stronger metadata opinions over included properties while ignoring typeName and variability override fields.",
+        "Emit diagnostics when an override property does not target an included property or violates the included property kind or typeName."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-schema-namespace-source/schema-namespace-source.json#schema-inclusions-builtins-auto-applies-and-instance-propagation",
+        "goldens/unit/usd-schema-namespace-source/schema-namespace-source.json#override-properties-sparsely-strengthen-included-property",
+        "goldens/unit/usd-schema-namespace-source/schema-namespace-source.json#invalid-override-property-diagnostic",
+        "goldens/integration/usd-schema-stage-population/schema-stage-population.json#schema-inclusions-and-overrides-populate-stage"
+      ]
+    }
+  ]
+}

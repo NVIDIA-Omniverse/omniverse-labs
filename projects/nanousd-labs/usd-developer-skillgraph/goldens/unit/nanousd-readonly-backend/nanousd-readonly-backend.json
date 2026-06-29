@@ -1,0 +1,182 @@
+{
+  "suite": "nanousd-readonly-backend",
+  "contract": "contracts/handles/nanousd-readonly-backend.handle.json",
+  "spec_commit": "v1.0.1",
+  "cases": [
+    {
+      "id": "backend-surface-partition",
+      "input": {
+        "ops": [
+          {"op": "inspect_backend_contract"},
+          {"op": "describe_vtable_entrypoint"},
+          {"op": "describe_diagnostics_reader"},
+          {"op": "describe_vtable_slot", "function": "nanousd_open"},
+          {"op": "describe_vtable_slot", "function": "nanousd_attribqf"},
+          {"op": "describe_vtable_slot", "function": "nanousd_set_attribf"},
+          {"op": "describe_vtable_slot", "function": "nanousd_write_usdc"},
+          {"op": "describe_vtable_slot", "function": "nanousd_get_local_transform"},
+          {"op": "classify_function", "name": "nanousd_open"},
+          {"op": "classify_function", "name": "nanousd_nprims"},
+          {"op": "classify_function", "name": "nanousd_attribqf"},
+          {"op": "classify_function", "name": "nanousd_attribm4d"},
+          {"op": "classify_function", "name": "nanousd_attribarrayv3f"},
+          {"op": "classify_function", "name": "nanousd_samplev3f"},
+          {"op": "classify_function", "name": "nanousd_reltarget"},
+          {"op": "classify_function", "name": "nanousd_path_parse"},
+          {"op": "classify_function", "name": "nanousd_set_attribf"},
+          {"op": "classify_function", "name": "nanousd_write_usdc"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "inspect_backend_contract",
+            "ok": true,
+            "abi": "NanousdBackend_v1",
+            "entryPoint": "nanousd_create_backend_v1",
+            "linkage": "extern_C",
+            "buildSystem": "generated_cmake",
+            "mode": "read_only",
+            "vtableModel": "complete_vtable_with_unsupported_write_stubs",
+            "vtablePopulation": "all_slots_non_null",
+            "crashSafety": "all_slots_total_for_null_invalid_malformed_missing_and_unsupported_inputs",
+            "cStringFailurePolicy": "stable_empty_string_for_non_owning_string_results",
+            "ownedStringPolicy": "owning_string_results_are_null_or_nanousd_free_string_compatible",
+            "exceptionBoundary": "no_exceptions_cross_c_abi",
+            "unsupportedSlotPolicy": "mutating_or_deferred_slots_use_deterministic_stubs",
+            "stageModel": "generated_composed_stage_open_stage_population_handles",
+            "fieldReadModel": "document_model_checked_reads",
+            "valueReadModel": "foundational_typed_payload_metadata",
+            "stringLifetime": "owned_by_stage_or_handle",
+            "quaternionApiOrder": "w,i,j,k",
+            "quaternionStorageOrder": "i,j,k,w",
+            "matrixOrder": "row_major",
+            "zeroCopyArrayData": "optional_null_until_contiguous_storage_contract",
+            "readOnlyMutatesStage": false
+          },
+          {
+            "op": "describe_vtable_entrypoint",
+            "ok": true,
+            "exportedSymbol": "nanousd_create_backend_v1",
+            "abi": "NanousdBackend_v1",
+            "linkage": "extern_C",
+            "returns": "stable_backend_singleton",
+            "slotPopulation": "all_slots_non_null",
+            "readOnlySlotPolicy": "readonly_or_utility_slots_point_to_generated_implementations",
+            "unsupportedSlotPolicy": "mutating_or_deferred_slots_point_to_deterministic_stubs",
+            "crashSafetyPolicy": "every_slot_total_for_null_invalid_and_unsupported_inputs"
+          },
+          {
+            "op": "describe_diagnostics_reader",
+            "ok": true,
+            "source": "composed-stage-open diagnostics plus stage diagnostics",
+            "arrayPolicy": "malloc_array_freed_by_nanousd_free_diagnostics",
+            "jsonPolicy": "malloc_string_freed_by_nanousd_free_string",
+            "severityPolicy": "recoverable composition diagnostics reported as errors until warning taxonomy is contracted",
+            "relocateArcType": 8,
+            "invalidRelocateCategory": 8
+          },
+          {"op": "describe_vtable_slot", "ok": true, "function": "nanousd_open", "slot": "open", "nonnull": true, "support": "readonly", "pointerPolicy": "generated_readonly_implementation"},
+          {"op": "describe_vtable_slot", "ok": true, "function": "nanousd_attribqf", "slot": "attribqf", "nonnull": true, "support": "readonly", "pointerPolicy": "generated_readonly_implementation"},
+          {"op": "describe_vtable_slot", "ok": true, "function": "nanousd_set_attribf", "slot": "set_attribf", "nonnull": true, "support": "unsupported_stub", "pointerPolicy": "deterministic_unsupported_stub"},
+          {"op": "describe_vtable_slot", "ok": true, "function": "nanousd_write_usdc", "slot": "write_usdc", "nonnull": true, "support": "unsupported_stub", "pointerPolicy": "deterministic_unsupported_stub"},
+          {"op": "describe_vtable_slot", "ok": true, "function": "nanousd_get_local_transform", "slot": "get_local_transform", "nonnull": true, "support": "deferred", "pointerPolicy": "deterministic_unsupported_stub"},
+          {"op": "classify_function", "ok": true, "name": "nanousd_open", "category": "stage", "support": "readonly", "reason": "opens a read-only generated stage from supported layer resources"},
+          {"op": "classify_function", "ok": true, "name": "nanousd_nprims", "category": "prim", "support": "readonly", "reason": "reads populated stage traversal index"},
+          {"op": "classify_function", "ok": true, "name": "nanousd_attribqf", "category": "attribute", "support": "readonly", "reason": "reads quaternion field payloads with USD-to-C-API component order conversion"},
+          {"op": "classify_function", "ok": true, "name": "nanousd_attribm4d", "category": "attribute", "support": "readonly", "reason": "reads matrix4d field payloads as row-major double[16]"},
+          {"op": "classify_function", "ok": true, "name": "nanousd_attribarrayv3f", "category": "attribute", "support": "readonly", "reason": "copies homogeneous vec3-compatible array payloads into caller storage"},
+          {"op": "classify_function", "ok": true, "name": "nanousd_samplev3f", "category": "timeSamples", "support": "readonly", "reason": "reads exact authored time sample keys from native TimeSamples values"},
+          {"op": "classify_function", "ok": true, "name": "nanousd_reltarget", "category": "relationships", "support": "readonly", "reason": "reads relationship target listOp/ObjectPath field payloads"},
+          {"op": "classify_function", "ok": true, "name": "nanousd_path_parse", "category": "path", "support": "utility", "reason": "delegates to usd-paths handle semantics"},
+          {"op": "classify_function", "ok": true, "name": "nanousd_set_attribf", "category": "write", "support": "unsupported_stub", "reason": "read-only backend does not mutate attributes"},
+          {"op": "classify_function", "ok": true, "name": "nanousd_write_usdc", "category": "write", "support": "unsupported_stub", "reason": "read-only backend does not serialize layer files"}
+        ]
+      }
+    },
+    {
+      "id": "typed-attribute-reader-mapping",
+      "input": {
+        "ops": [
+          {"op": "describe_attribute_reader", "function": "nanousd_attribf", "storedType": "half", "payloadKind": "scalar"},
+          {"op": "describe_attribute_reader", "function": "nanousd_attribv3f", "storedType": "point3f", "payloadKind": "semanticAlias"},
+          {"op": "describe_attribute_reader", "function": "nanousd_attribqf", "storedType": "quatf", "payloadKind": "quaternion"},
+          {"op": "describe_attribute_reader", "function": "nanousd_attribqd", "storedType": "quatd", "payloadKind": "quaternion"},
+          {"op": "describe_attribute_reader", "function": "nanousd_attribm3d", "storedType": "matrix3d", "payloadKind": "matrix"},
+          {"op": "describe_attribute_reader", "function": "nanousd_attribm4d", "storedType": "frame4d", "payloadKind": "semanticAlias"},
+          {"op": "describe_attribute_reader", "function": "nanousd_attribarrayv3f", "storedType": "point3f[]", "payloadKind": "array"},
+          {"op": "describe_attribute_reader", "function": "nanousd_arraydataf", "storedType": "float[]", "payloadKind": "array"},
+          {"op": "describe_attribute_reader", "function": "nanousd_attribv3f", "storedType": "double3", "payloadKind": "dimensioned"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "describe_attribute_reader", "ok": true, "supported": true, "checkedReadType": "half", "cOutput": "float", "conversion": "half payload converts to float at C API boundary"},
+          {"op": "describe_attribute_reader", "ok": true, "supported": true, "checkedReadType": "float3", "cOutput": "float[3]", "conversion": "semantic alias point3f agrees with float3"},
+          {"op": "describe_attribute_reader", "ok": true, "supported": true, "checkedReadType": "quatf", "cOutput": "float[4]", "conversion": "reorder USD i,j,k,w payload to nanousd w,i,j,k output"},
+          {"op": "describe_attribute_reader", "ok": true, "supported": true, "checkedReadType": "quatd", "cOutput": "double[4]", "conversion": "reorder USD i,j,k,w payload to nanousd w,i,j,k output"},
+          {"op": "describe_attribute_reader", "ok": true, "supported": true, "checkedReadType": "matrix3d", "cOutput": "double[9]", "conversion": "flatten row-major matrix payload"},
+          {"op": "describe_attribute_reader", "ok": true, "supported": true, "checkedReadType": "matrix4d", "cOutput": "double[16]", "conversion": "semantic alias frame4d agrees with matrix4d and flattens row-major"},
+          {"op": "describe_attribute_reader", "ok": true, "supported": true, "checkedReadType": "float3[]", "cOutput": "flat float[3 * count]", "conversion": "semantic alias array point3f[] agrees with float3[]"},
+          {"op": "describe_attribute_reader", "ok": true, "supported": false, "checkedReadType": "float[]", "cOutput": "const float* plus count", "conversion": "zero-copy arraydata is optional until contiguous storage is contracted"},
+          {"op": "describe_attribute_reader", "ok": true, "supported": false, "checkedReadType": "float3", "cOutput": "float[3]", "conversion": "stored double3 does not agree with requested float3 reader"}
+        ]
+      }
+    },
+    {
+      "id": "time-sample-and-write-stub-mapping",
+      "input": {
+        "ops": [
+          {"op": "describe_sample_reader", "function": "nanousd_samplev3f", "storedType": "float3"},
+          {"op": "describe_sample_reader", "function": "nanousd_samplearrayd", "storedType": "double[]"},
+          {"op": "describe_unsupported_write", "function": "nanousd_set_samplev3f"},
+          {"op": "describe_unsupported_write", "function": "nanousd_define_prim"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "describe_sample_reader", "ok": true, "supported": true, "timeLookup": "exact_authored_sample_key", "checkedReadType": "float3", "conversion": "copy to float[3] when sample key exists"},
+          {"op": "describe_sample_reader", "ok": true, "supported": true, "timeLookup": "exact_authored_sample_key", "checkedReadType": "double[]", "conversion": "copy homogeneous numeric array to caller buffer"},
+          {"op": "describe_unsupported_write", "ok": true, "support": "unsupported_stub", "returnPolicy": "0_or_null_without_mutation", "mutatesStage": false},
+          {"op": "describe_unsupported_write", "ok": true, "support": "unsupported_stub", "returnPolicy": "0_or_null_without_mutation", "mutatesStage": false}
+        ]
+      }
+    },
+    {
+      "id": "single-layer-stage-open-summary",
+      "input": {
+        "ops": [
+          {"op": "open_stage_summary", "path": "benchmarks/fixtures/tiny.usda"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "open_stage_summary",
+            "ok": true,
+            "path": "benchmarks/fixtures/tiny.usda",
+            "valid": true,
+            "rootLayerPath": "benchmarks/fixtures/tiny.usda",
+            "layerCount": 1,
+            "firstLayerPath": "benchmarks/fixtures/tiny.usda",
+            "primCount": 1,
+            "totalAttributes": 1,
+            "firstPrimPath": "/World",
+            "firstPrimName": "World",
+            "firstPrimTypeName": "Xform",
+            "diagnosticCount": 0,
+            "error": ""
+          }
+        ]
+      }
+    }
+  ]
+}

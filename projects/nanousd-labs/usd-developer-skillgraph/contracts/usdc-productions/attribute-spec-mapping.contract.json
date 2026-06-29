@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/usdc-productions/attribute-spec-mapping.contract.json",
+  "title": "USDC Attribute Spec Mapping Production Contract",
+  "version": "0.1",
+  "spec_commit": "6b4f01f2d6d46b01507481524eb516b4ef358c31",
+  "owned_by": "usdc-spec-parser",
+  "co_owners": ["usdc-value-decoder"],
+  "derives_from": "contracts/document-model-productions/attribute-spec.contract.json",
+  "format_neutral_rules": "contracts/document-model-productions/attribute-spec.contract.json — the attribute spec field set (custom/variability/typeName required), listOp subfield rules, default-vs-typeName agreement, value-block sentinel semantics, and TimeSamples / Spline value-shape rules are pinned in the format-neutral production. This contract adds the USDC-specific mapping: Crate spec form 1 -> attribute spec, per-field name resolution, and per-field Crate value-representation type bindings.",
+  "spec_refs": [
+    "specification/file_formats/README.md#specs-section",
+    "specification/file_formats/README.md#type-table",
+    "specification/document_data_model/README.md#attribute-spec"
+  ],
+  "dependency_contracts": [
+    "contracts/usdc-productions/crate-section-layouts.contract.json",
+    "contracts/usdc-productions/crate-value-representations.contract.json"
+  ],
+  "spec_form": {
+    "id": 1,
+    "name": "Attribute",
+    "section_layout_ref": "contracts/usdc-productions/crate-section-layouts.contract.json#section_layouts.SPECS.spec_form_table"
+  },
+  "storage_mapping": {
+    "rule": "A SPECS entry with form=1 produces an attribute spec at the property path resolved through PATHS. Authored fields come from the FIELDSETS group whose start is given by the SPECS entry's field_set_index. The token-name in FIELDS is the canonical document-model field name; alias resolution is a USDA grammar concern and does not appear in Crate.",
+    "field_resolution": {
+      "custom": "FIELDS token name 'custom'; value type 1 (bool) inlined. Defaults to false when absent.",
+      "variability": "FIELDS token name 'variability'; value type 44 (Variability) inlined with payload encoding 0=varying, 1=uniform. Defaults to varying when absent.",
+      "typeName": "FIELDS token name 'typeName'; value type 11 (token) inlined as a uint32 token index. Array typeNames (e.g. 'float[]') are stored as a single token with the array suffix embedded in the token text, consistent with USDA round-trip.",
+      "default": "FIELDS token name 'default'; value type matches the attribute's declared typeName, decoded by usdc-value-decoder according to contracts/usdc-productions/crate-value-representations.contract.json#type_table_required_for_aousd_1_0_1. A ValueBlock (type 51) authored as the default stores a value-block sentinel.",
+      "connectionPaths": "FIELDS token name 'connectionPaths'; value type 34 (PathListOp). Subfields decoded per crate-value-representations.contract.json#list_ops.",
+      "timeSamples": "FIELDS token name 'timeSamples'; value type 46 (TimeSamples). Decoded by usdc-value-decoder as a native time->FieldValue map; storage must be a numeric-keyed native map, not string-keyed JSON. None-valued samples (ValueBlock type 51) decode to value-block sentinels.",
+      "spline": "FIELDS token name 'spline'; value type 59 (Splines) at minor>=12. Encountering this type at minor<12 emits UnsupportedUsdcFeature per crate-value-representations.contract.json#feature_gated_types. No USDC spline golden cases are in scope for AOUSD 1.0.1.",
+      "allowedTokens": "FIELDS token name 'allowedTokens'; value type 41 (TokenVector) offset-backed",
+      "displayName": "FIELDS token name 'displayName'; value type 10 (string)",
+      "displayGroup": "FIELDS token name 'displayGroup'; value type 10 (string)",
+      "documentation": "FIELDS token name 'documentation'; value type 10 (string)",
+      "comment": "FIELDS token name 'comment'; value type 10 (string)",
+      "customData": "FIELDS token name 'customData'; value type 31 (dictionary) offset-backed",
+      "hidden": "FIELDS token name 'hidden'; value type 1 (bool) inlined"
+    },
+    "default_field_type_table_reference": "The 'default' field's value-rep type id corresponds to typeName per crate-value-representations.contract.json#type_table_required_for_aousd_1_0_1. The mapping (typeName -> Crate type id) is: bool->1, uchar->2, int->3, uint->4, int64->5, uint64->6, half->7, float->8, double->9, string->10, token->11, asset->12, matrix2d/3d/4d->13/14/15, quatd/f/h->16/17/18, double2/float2/half2/int2->19/20/21/22, double3/float3/half3/int3->23/24/25/26, double4/float4/half4/int4->27/28/29/30. Arrays use the same type id with the Array flag set per crate-value-representations.contract.json#array_value_representations."
+  },
+  "forbidden_field_enforcement": {
+    "rule": "Per document-model-productions/common-metadata.contract.json#spec_kind_field_admission, an attribute spec admits only shared + attribute_only + custom; any other field-name token is rejected (and must not be interned as an extension field). In the USDC encoding, this is enforced by the field-name token: a FIELDS entry whose token name is one of {payload, references, inheritPaths, specializes, variantSetNames, variantSelection, subLayers, relocates, layerRelocates, defaultPrim, framesPerSecond, timeCodesPerSecond, startTimeCode, endTimeCode, customLayerData, colorSpace, connectionChildren, permission, prefix, suffix, symmetricPeer, symmetryArguments, symmetryFunction} attached to a form-1 spec is a contract violation (colorSpace is AOUSD §7.6.4.3 out-of-scope; the remainder are §7.6.3.4 / §7.6.4.4 deprecated — all rejected under strict spec conformance). The parser must emit a MalformedUsdcSection diagnostic.",
+    "rationale": "USDA enforces this via reserved-keyword rejection in the attribute metadata grammar. USDC needs the same enforcement at the field-name binding step because the binary format does not distinguish metadata contexts at write time."
+  },
+  "laws": [
+    "a Crate SPECS entry with form=1 produces exactly one attribute spec at the property path resolved through PATHS",
+    "variability is decoded from Crate type 44 with payload 0=varying, 1=uniform; the document-model storage is a native EnumVariability value, never a durable string",
+    "default value type must agree with typeName per the type_table mapping; a mismatched value-representation type id at the 'default' field produces a TypeMismatch diagnostic",
+    "TimeSamples (type 46) is in scope for USDC at all accepted Crate versions; the parser decodes the native time->FieldValue map. None-valued samples store value-block sentinels per document-model-productions/attribute-spec.contract.json#fields.timeSamples.",
+    "Splines (type 59) is version-gated at Crate minor>=12; encountering it at lower versions emits UnsupportedUsdcFeature",
+    "connectionPaths (FIELDS token) is decoded from PathListOp (type 34) with subfields per crate-value-representations.contract.json#list_ops",
+    "field-name tokens outside the attribute admitted set (document-model-productions/common-metadata.contract.json#spec_kind_field_admission) are rejected at FIELDS token binding time on form-1 specs"
+  ],
+  "golden_groups": [
+    "Crate form 1 specs decode to attribute specs at the expected property paths",
+    "custom / variability / typeName / default round-trip for scalar, vector, matrix, and array types",
+    "uniform variability authored",
+    "ValueBlock default decodes to a value-block sentinel",
+    "type mismatch diagnostic when default value-rep type id disagrees with typeName",
+    "TimeSamples (type 46) decode as native time->FieldValue map",
+    "connectionPaths (PathListOp) explicit / prepend / append / delete subfields",
+    "allowedTokens authored as TokenVector",
+    "Splines (type 59) on a minor<12 fixture emits UnsupportedUsdcFeature",
+    "forbidden prim-only / layer-only field names attached to form-1 spec emit MalformedUsdcSection"
+  ],
+  "golden_files": [
+    "goldens/integration/usdc-single-layer/basic.json",
+    "goldens/integration/usdc-single-layer/value-syntax.json",
+    "goldens/integration/usdc-single-layer/attribute-time-samples.json",
+    "goldens/integration/usdc-single-layer/property-listop-dispatch.json"
+  ]
+}

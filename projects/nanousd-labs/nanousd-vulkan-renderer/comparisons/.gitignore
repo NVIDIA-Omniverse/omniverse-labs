@@ -1,0 +1,5 @@
+.assets/
+# Regenerable FLIP pipeline outputs (flip_pipeline.py). Committed artifacts are
+# flip/baseline.json (regression ref) and flip/REPORT.md.
+flip/*.png
+flip/results.json

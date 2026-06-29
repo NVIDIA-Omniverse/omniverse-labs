@@ -1,0 +1,19 @@
+#usda 1.0
+
+def Xform "Template"
+{
+    float height = 5.0
+    string tag = "template"
+
+    def Mesh "Geo"
+    {
+        int faceCount = 6
+    }
+}
+
+def Xform "Instance" (
+    prepend references = </Template>
+)
+{
+    string tag = "instance_override"
+}

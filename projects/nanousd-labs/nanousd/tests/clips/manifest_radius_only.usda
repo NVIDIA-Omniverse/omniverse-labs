@@ -1,0 +1,9 @@
+#usda 1.0
+# Manifest declaring only /Geo.radius. Paired with clip_multi.usda
+# (which authors both radius and color) so the gating path can be
+# exercised: queries for `color` must skip the clip set.
+
+def Scope "Geo"
+{
+    float radius
+}

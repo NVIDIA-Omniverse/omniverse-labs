@@ -1,0 +1,3556 @@
+{
+  "generated_at": "2026-06-05T20:49:42-0700",
+  "host": "dirk-ai-server",
+  "platform": "Linux-6.17.0-29-generic-x86_64-with-glibc2.39",
+  "assets": {
+    "warehouse": "$HOME/assets/Isaac/Environments/Simple_Warehouse/full_warehouse.usd",
+    "dsx": "$HOME/dsx-assets/dsx_dataset_2.1/DSX_BP_/DSX_BP/Assembly/DSX_Main_BP.usda"
+  },
+  "settings": {
+    "width": 960,
+    "height": 540,
+    "frames": 12,
+    "warmup": 2,
+    "runs": 5,
+    "timeout_s": 600.0,
+    "ovrtx_python": "$HOME/nanousd-labs/.ovrtx03-venv/bin/python"
+  },
+  "profiles": [
+    {
+      "key": "ovrtx",
+      "title": "OVRTX",
+      "backend": "ovrtx",
+      "render_mode": "rt"
+    },
+    {
+      "key": "vulkan_rt",
+      "title": "Vulkan RT",
+      "backend": "vulkan",
+      "render_mode": "rt"
+    },
+    {
+      "key": "vulkan_raster",
+      "title": "Vulkan Raster",
+      "backend": "vulkan",
+      "render_mode": "raster"
+    },
+    {
+      "key": "opengl",
+      "title": "OpenGL GLES",
+      "backend": "opengl",
+      "render_mode": "raster"
+    }
+  ],
+  "capture_sheets": [
+    "captures/isaac_warehouse_full_rack_close_sheet.png",
+    "captures/dsx_datacenter_full_rack_close_sheet.png"
+  ],
+  "results": [
+    {
+      "scene": "isaac_warehouse_full",
+      "scene_title": "Isaac Sim Simple Warehouse Full",
+      "profile": "ovrtx",
+      "profile_title": "OVRTX",
+      "backend": "ovrtx",
+      "render_mode": "rt",
+      "run_index": 1,
+      "usd_path": "$HOME/assets/Isaac/Environments/Simple_Warehouse/full_warehouse.usd",
+      "resolution": [
+        960,
+        540
+      ],
+      "frames": 12,
+      "warmup_frames": 2,
+      "captures": [
+        {
+          "name": "rack_aisle_a",
+          "frame_ms": 5484.164161840454,
+          "camera": {
+            "name": "rack_aisle_a",
+            "eye": [
+              -2.0,
+              -16.0,
+              1.9
+            ],
+            "target": [
+              -6.0,
+              22.0,
+              1.4
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 50.0,
+            "near_clip": 0.05,
+            "far_clip": 400.0
+          },
+          "png": "captures/isaac_warehouse_full_ovrtx_run01_rack_aisle_a.png",
+          "mean_rgb": [
+            88.14939880371094,
+            92.91822052001953,
+            93.50591278076172
+          ]
+        },
+        {
+          "name": "rack_aisle_b",
+          "frame_ms": 10.56313095614314,
+          "camera": {
+            "name": "rack_aisle_b",
+            "eye": [
+              3.5,
+              -6.0,
+              2.6
+            ],
+            "target": [
+              -14.0,
+              20.0,
+              1.0
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 50.0,
+            "near_clip": 0.05,
+            "far_clip": 400.0
+          },
+          "png": "captures/isaac_warehouse_full_ovrtx_run01_rack_aisle_b.png",
+          "mean_rgb": [
+            78.7210693359375,
+            78.96430969238281,
+            76.03779602050781
+          ]
+        }
+      ],
+      "status": "ok",
+      "renderer_create_ms": 2676.8075509462506,
+      "load_stage_ms": 308.4658910520375,
+      "first_frame_ms": 5484.164161840454,
+      "load_to_first_frame_ms": 5792.630052892491,
+      "orbit": {
+        "wall_ms": 154.97787785716355,
+        "fps": 77.43040597742527,
+        "frame_ms_min": 8.843473857268691,
+        "frame_ms_p50": 12.505447142757475,
+        "frame_ms_p90": 15.608327835798264,
+        "frame_ms_p99": 16.670276359654963,
+        "frame_ms_max": 16.800861107185483,
+        "frame_ms_mean": 12.901340106812617
+      },
+      "worker_returncode": 0,
+      "worker_elapsed_s": null,
+      "timeout_s": 600.0,
+      "resumed": true
+    },
+    {
+      "scene": "isaac_warehouse_full",
+      "scene_title": "Isaac Sim Simple Warehouse Full",
+      "profile": "vulkan_rt",
+      "profile_title": "Vulkan RT",
+      "backend": "vulkan",
+      "render_mode": "rt",
+      "run_index": 1,
+      "usd_path": "$HOME/assets/Isaac/Environments/Simple_Warehouse/full_warehouse.usd",
+      "resolution": [
+        960,
+        540
+      ],
+      "frames": 12,
+      "warmup_frames": 2,
+      "captures": [
+        {
+          "name": "rack_aisle_a",
+          "frame_ms": 32799.07557996921,
+          "camera": {
+            "name": "rack_aisle_a",
+            "eye": [
+              -2.0,
+              -16.0,
+              1.9
+            ],
+            "target": [
+              -6.0,
+              22.0,
+              1.4
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 50.0,
+            "near_clip": 0.05,
+            "far_clip": 400.0
+          },
+          "png": "captures/isaac_warehouse_full_vulkan_rt_run01_rack_aisle_a.png",
+          "mean_rgb": [
+            75.30297088623047,
+            81.1271743774414,
+            88.91352081298828
+          ]
+        },
+        {
+          "name": "rack_aisle_b",
+          "frame_ms": 5.229431902989745,
+          "camera": {
+            "name": "rack_aisle_b",
+            "eye": [
+              3.5,
+              -6.0,
+              2.6
+            ],
+            "target": [
+              -14.0,
+              20.0,
+              1.0
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 50.0,
+            "near_clip": 0.05,
+            "far_clip": 400.0
+          },
+          "png": "captures/isaac_warehouse_full_vulkan_rt_run01_rack_aisle_b.png",
+          "mean_rgb": [
+            74.45896911621094,
+            79.35438537597656,
+            86.70838165283203
+          ]
+        }
+      ],
+      "status": "ok",
+      "renderer_create_ms": 17.29179499670863,
+      "load_stage_ms": 1345.1289332006127,
+      "first_frame_ms": 32799.07557996921,
+      "load_to_first_frame_ms": 34144.204513169825,
+      "orbit": {
+        "wall_ms": 52.62027797289193,
+        "fps": 228.048966335411,
+        "frame_ms_min": 2.8182549867779016,
+        "frame_ms_p50": 4.575246595777571,
+        "frame_ms_p90": 5.073869717307389,
+        "frame_ms_p99": 5.136580641847104,
+        "frame_ms_max": 5.1439921371638775,
+        "frame_ms_mean": 4.378170454098533
+      },
+      "worker_returncode": 0,
+      "worker_elapsed_s": null,
+      "timeout_s": 600.0,
+      "resumed": true
+    },
+    {
+      "scene": "isaac_warehouse_full",
+      "scene_title": "Isaac Sim Simple Warehouse Full",
+      "profile": "vulkan_raster",
+      "profile_title": "Vulkan Raster",
+      "backend": "vulkan",
+      "render_mode": "raster",
+      "run_index": 1,
+      "usd_path": "$HOME/assets/Isaac/Environments/Simple_Warehouse/full_warehouse.usd",
+      "resolution": [
+        960,
+        540
+      ],
+      "frames": 12,
+      "warmup_frames": 2,
+      "captures": [
+        {
+          "name": "rack_aisle_a",
+          "frame_ms": 31639.32089903392,
+          "camera": {
+            "name": "rack_aisle_a",
+            "eye": [
+              -2.0,
+              -16.0,
+              1.9
+            ],
+            "target": [
+              -6.0,
+              22.0,
+              1.4
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 50.0,
+            "near_clip": 0.05,
+            "far_clip": 400.0
+          },
+          "png": "captures/isaac_warehouse_full_vulkan_raster_run01_rack_aisle_a.png",
+          "mean_rgb": [
+            91.40641784667969,
+            94.08169555664062,
+            95.28346252441406
+          ]
+        },
+        {
+          "name": "rack_aisle_b",
+          "frame_ms": 5.345641868188977,
+          "camera": {
+            "name": "rack_aisle_b",
+            "eye": [
+              3.5,
+              -6.0,
+              2.6
+            ],
+            "target": [
+              -14.0,
+              20.0,
+              1.0
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 50.0,
+            "near_clip": 0.05,
+            "far_clip": 400.0
+          },
+          "png": "captures/isaac_warehouse_full_vulkan_raster_run01_rack_aisle_b.png",
+          "mean_rgb": [
+            90.1230697631836,
+            91.92755889892578,
+            92.20468139648438
+          ]
+        }
+      ],
+      "status": "ok",
+      "renderer_create_ms": 15.9766199067235,
+      "load_stage_ms": 1319.1437469795346,
+      "first_frame_ms": 31639.32089903392,
+      "load_to_first_frame_ms": 32958.46464601345,
+      "orbit": {
+        "wall_ms": 73.95049510523677,
+        "fps": 162.2707188494567,
+        "frame_ms_min": 5.237317876890302,
+        "frame_ms_p50": 6.1473449459299445,
+        "frame_ms_p90": 6.845402834005654,
+        "frame_ms_p99": 7.089974672999234,
+        "frame_ms_max": 7.118687964975834,
+        "frame_ms_mean": 6.156294548418373
+      },
+      "worker_returncode": 0,
+      "worker_elapsed_s": null,
+      "timeout_s": 600.0,
+      "resumed": true
+    },
+    {
+      "scene": "isaac_warehouse_full",
+      "scene_title": "Isaac Sim Simple Warehouse Full",
+      "profile": "opengl",
+      "profile_title": "OpenGL GLES",
+      "backend": "opengl",
+      "render_mode": "raster",
+      "run_index": 1,
+      "usd_path": "$HOME/assets/Isaac/Environments/Simple_Warehouse/full_warehouse.usd",
+      "resolution": [
+        960,
+        540
+      ],
+      "frames": 12,
+      "warmup_frames": 2,
+      "captures": [
+        {
+          "name": "rack_aisle_a",
+          "frame_ms": 27652.153936913237,
+          "camera": {
+            "name": "rack_aisle_a",
+            "eye": [
+              -2.0,
+              -16.0,
+              1.9
+            ],
+            "target": [
+              -6.0,
+              22.0,
+              1.4
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 50.0,
+            "near_clip": 0.05,
+            "far_clip": 400.0
+          },
+          "png": "captures/isaac_warehouse_full_opengl_run01_rack_aisle_a.png",
+          "mean_rgb": [
+            82.86263275146484,
+            85.60267639160156,
+            84.6731948852539
+          ]
+        },
+        {
+          "name": "rack_aisle_b",
+          "frame_ms": 11.098879156634212,
+          "camera": {
+            "name": "rack_aisle_b",
+            "eye": [
+              3.5,
+              -6.0,
+              2.6
+            ],
+            "target": [
+              -14.0,
+              20.0,
+              1.0
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 50.0,
+            "near_clip": 0.05,
+            "far_clip": 400.0
+          },
+          "png": "captures/isaac_warehouse_full_opengl_run01_rack_aisle_b.png",
+          "mean_rgb": [
+            79.35760498046875,
+            80.79202270507812,
+            79.1998062133789
+          ]
+        }
+      ],
+      "status": "ok",
+      "renderer_create_ms": 16.055147862061858,
+      "load_stage_ms": 1286.7212840355933,
+      "first_frame_ms": 27652.153936913237,
+      "load_to_first_frame_ms": 28938.87522094883,
+      "orbit": {
+        "wall_ms": 114.14842400699854,
+        "fps": 105.12628715105404,
+        "frame_ms_min": 8.115194039419293,
+        "frame_ms_p50": 9.589804452843964,
+        "frame_ms_p90": 10.206207795999944,
+        "frame_ms_p99": 10.882959368173035,
+        "frame_ms_max": 10.964426910504699,
+        "frame_ms_mean": 9.506124770268798
+      },
+      "worker_returncode": 0,
+      "worker_elapsed_s": null,
+      "timeout_s": 600.0,
+      "resumed": true
+    },
+    {
+      "scene": "dsx_datacenter_full",
+      "scene_title": "NVIDIA DSX Full Datacenter",
+      "profile": "ovrtx",
+      "profile_title": "OVRTX",
+      "backend": "ovrtx",
+      "render_mode": "rt",
+      "run_index": 1,
+      "usd_path": "$HOME/dsx-assets/dsx_dataset_2.1/DSX_BP_/DSX_BP/Assembly/DSX_Main_BP.usda",
+      "resolution": [
+        960,
+        540
+      ],
+      "frames": 12,
+      "warmup_frames": 2,
+      "captures": [
+        {
+          "name": "datahall_01",
+          "frame_ms": 49297.306480119005,
+          "camera": {
+            "name": "datahall_01",
+            "eye": [
+              38.903,
+              104.531,
+              20.384
+            ],
+            "target": [
+              444.497,
+              -809.42,
+              6.751
+            ],
+            "up": [
+              0.029,
+              -0.002,
+              1.0
+            ],
+            "fov_degrees": 45.69,
+            "near_clip": 1.0,
+            "far_clip": 10000000.0
+          },
+          "png": "captures/dsx_datacenter_full_ovrtx_run01_datahall_01.png",
+          "mean_rgb": [
+            220.87350463867188,
+            218.65225219726562,
+            215.81710815429688
+          ]
+        },
+        {
+          "name": "datahall_02",
+          "frame_ms": 185.8628918416798,
+          "camera": {
+            "name": "datahall_02",
+            "eye": [
+              28.655,
+              33.378,
+              20.439
+            ],
+            "target": [
+              28.655,
+              1033.378,
+              20.439
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 45.69,
+            "near_clip": 1.0,
+            "far_clip": 10000000.0
+          },
+          "png": "captures/dsx_datacenter_full_ovrtx_run01_datahall_02.png",
+          "mean_rgb": [
+            192.6613006591797,
+            190.51675415039062,
+            188.333984375
+          ]
+        }
+      ],
+      "status": "ok",
+      "renderer_create_ms": 2758.6302228737622,
+      "load_stage_ms": 3693.079632939771,
+      "first_frame_ms": 49297.306480119005,
+      "load_to_first_frame_ms": 52990.386113058776,
+      "orbit": {
+        "wall_ms": 2199.715429916978,
+        "fps": 5.455251091480004,
+        "frame_ms_min": 167.54121403209865,
+        "frame_ms_p50": 175.75706401839852,
+        "frame_ms_p90": 207.8773204702884,
+        "frame_ms_p99": 216.60322854295373,
+        "frame_ms_max": 217.61725493706763,
+        "frame_ms_mean": 183.29500767868012
+      },
+      "worker_returncode": 0,
+      "worker_elapsed_s": 85.86266798595898,
+      "timeout_s": 600.0
+    },
+    {
+      "scene": "dsx_datacenter_full",
+      "scene_title": "NVIDIA DSX Full Datacenter",
+      "profile": "vulkan_rt",
+      "profile_title": "Vulkan RT",
+      "backend": "vulkan",
+      "render_mode": "rt",
+      "run_index": 1,
+      "usd_path": "$HOME/dsx-assets/dsx_dataset_2.1/DSX_BP_/DSX_BP/Assembly/DSX_Main_BP.usda",
+      "resolution": [
+        960,
+        540
+      ],
+      "frames": 12,
+      "warmup_frames": 2,
+      "captures": [
+        {
+          "name": "datahall_01",
+          "frame_ms": 589940.6816260889,
+          "camera": {
+            "name": "datahall_01",
+            "eye": [
+              38.903,
+              104.531,
+              20.384
+            ],
+            "target": [
+              444.497,
+              -809.42,
+              6.751
+            ],
+            "up": [
+              0.029,
+              -0.002,
+              1.0
+            ],
+            "fov_degrees": 45.69,
+            "near_clip": 1.0,
+            "far_clip": 10000000.0
+          },
+          "png": "captures/dsx_datacenter_full_vulkan_rt_run01_datahall_01.png",
+          "mean_rgb": [
+            227.8877716064453,
+            228.26907348632812,
+            229.6391143798828
+          ]
+        },
+        {
+          "name": "datahall_02",
+          "frame_ms": 123.90405707992613,
+          "camera": {
+            "name": "datahall_02",
+            "eye": [
+              28.655,
+              33.378,
+              20.439
+            ],
+            "target": [
+              28.655,
+              1033.378,
+              20.439
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 45.69,
+            "near_clip": 1.0,
+            "far_clip": 10000000.0
+          },
+          "png": "captures/dsx_datacenter_full_vulkan_rt_run01_datahall_02.png",
+          "mean_rgb": [
+            246.03396606445312,
+            246.2373809814453,
+            246.5753173828125
+          ]
+        }
+      ],
+      "status": "ok",
+      "renderer_create_ms": 17.036185134202242,
+      "load_stage_ms": 498.21316497400403,
+      "first_frame_ms": 589940.6816260889,
+      "load_to_first_frame_ms": 590438.8947910629,
+      "orbit": {
+        "wall_ms": 640.4987131245434,
+        "fps": 18.73540064032358,
+        "frame_ms_min": 5.999222164973617,
+        "frame_ms_p50": 42.27401444222778,
+        "frame_ms_p90": 103.74149195849897,
+        "frame_ms_p99": 152.42801745422187,
+        "frame_ms_max": 158.29187305644155,
+        "frame_ms_mean": 53.36681803843627
+      },
+      "worker_returncode": 0,
+      "worker_elapsed_s": null,
+      "timeout_s": 600.0,
+      "resumed": true
+    },
+    {
+      "scene": "dsx_datacenter_full",
+      "scene_title": "NVIDIA DSX Full Datacenter",
+      "profile": "vulkan_raster",
+      "profile_title": "Vulkan Raster",
+      "backend": "vulkan",
+      "render_mode": "raster",
+      "run_index": 1,
+      "usd_path": "$HOME/dsx-assets/dsx_dataset_2.1/DSX_BP_/DSX_BP/Assembly/DSX_Main_BP.usda",
+      "resolution": [
+        960,
+        540
+      ],
+      "frames": 12,
+      "warmup_frames": 2,
+      "captures": [
+        {
+          "name": "datahall_01",
+          "frame_ms": 558125.3037890419,
+          "camera": {
+            "name": "datahall_01",
+            "eye": [
+              38.903,
+              104.531,
+              20.384
+            ],
+            "target": [
+              444.497,
+              -809.42,
+              6.751
+            ],
+            "up": [
+              0.029,
+              -0.002,
+              1.0
+            ],
+            "fov_degrees": 45.69,
+            "near_clip": 1.0,
+            "far_clip": 10000000.0
+          },
+          "png": "captures/dsx_datacenter_full_vulkan_raster_run01_datahall_01.png",
+          "mean_rgb": [
+            98.55279541015625,
+            101.30182647705078,
+            107.76068115234375
+          ]
+        },
+        {
+          "name": "datahall_02",
+          "frame_ms": 64.35057194903493,
+          "camera": {
+            "name": "datahall_02",
+            "eye": [
+              28.655,
+              33.378,
+              20.439
+            ],
+            "target": [
+              28.655,
+              1033.378,
+              20.439
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 45.69,
+            "near_clip": 1.0,
+            "far_clip": 10000000.0
+          },
+          "png": "captures/dsx_datacenter_full_vulkan_raster_run01_datahall_02.png",
+          "mean_rgb": [
+            88.3426513671875,
+            90.51142120361328,
+            96.1568832397461
+          ]
+        }
+      ],
+      "status": "ok",
+      "renderer_create_ms": 16.243243124336004,
+      "load_stage_ms": 500.32725697383285,
+      "first_frame_ms": 558125.3037890419,
+      "load_to_first_frame_ms": 558625.6310460158,
+      "orbit": {
+        "wall_ms": 645.4538011457771,
+        "fps": 18.591570734726798,
+        "frame_ms_min": 51.88566702418029,
+        "frame_ms_p50": 53.826826508156955,
+        "frame_ms_p90": 55.18265462014824,
+        "frame_ms_p99": 56.32775129517541,
+        "frame_ms_max": 56.46865488961339,
+        "frame_ms_mean": 53.775217345294855
+      },
+      "worker_returncode": 0,
+      "worker_elapsed_s": null,
+      "timeout_s": 600.0,
+      "resumed": true
+    },
+    {
+      "scene": "dsx_datacenter_full",
+      "scene_title": "NVIDIA DSX Full Datacenter",
+      "profile": "opengl",
+      "profile_title": "OpenGL GLES",
+      "backend": "opengl",
+      "render_mode": "raster",
+      "run_index": 1,
+      "status": "failed",
+      "error": "worker timed out after 600.0s",
+      "worker_returncode": 124,
+      "worker_elapsed_s": 602.9674162240699,
+      "timeout_s": 600.0
+    },
+    {
+      "scene": "isaac_warehouse_full",
+      "scene_title": "Isaac Sim Simple Warehouse Full",
+      "profile": "ovrtx",
+      "profile_title": "OVRTX",
+      "backend": "ovrtx",
+      "render_mode": "rt",
+      "run_index": 2,
+      "usd_path": "$HOME/assets/Isaac/Environments/Simple_Warehouse/full_warehouse.usd",
+      "resolution": [
+        960,
+        540
+      ],
+      "frames": 12,
+      "warmup_frames": 2,
+      "captures": [
+        {
+          "name": "rack_aisle_a",
+          "frame_ms": 5115.248891059309,
+          "camera": {
+            "name": "rack_aisle_a",
+            "eye": [
+              -2.0,
+              -16.0,
+              1.9
+            ],
+            "target": [
+              -6.0,
+              22.0,
+              1.4
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 50.0,
+            "near_clip": 0.05,
+            "far_clip": 400.0
+          },
+          "png": "captures/isaac_warehouse_full_ovrtx_run02_rack_aisle_a.png",
+          "mean_rgb": [
+            88.11958312988281,
+            92.88658142089844,
+            93.47653198242188
+          ]
+        },
+        {
+          "name": "rack_aisle_b",
+          "frame_ms": 10.626442031934857,
+          "camera": {
+            "name": "rack_aisle_b",
+            "eye": [
+              3.5,
+              -6.0,
+              2.6
+            ],
+            "target": [
+              -14.0,
+              20.0,
+              1.0
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 50.0,
+            "near_clip": 0.05,
+            "far_clip": 400.0
+          },
+          "png": "captures/isaac_warehouse_full_ovrtx_run02_rack_aisle_b.png",
+          "mean_rgb": [
+            78.72547149658203,
+            79.00149536132812,
+            76.08674621582031
+          ]
+        }
+      ],
+      "status": "ok",
+      "renderer_create_ms": 2703.514100983739,
+      "load_stage_ms": 294.01005897670984,
+      "first_frame_ms": 5115.248891059309,
+      "load_to_first_frame_ms": 5409.258950036019,
+      "orbit": {
+        "wall_ms": 157.75502985343337,
+        "fps": 76.06730518290877,
+        "frame_ms_min": 9.029426146298647,
+        "frame_ms_p50": 13.678613118827343,
+        "frame_ms_p90": 15.598365920595825,
+        "frame_ms_p99": 16.897023387718946,
+        "frame_ms_max": 17.05384091474116,
+        "frame_ms_mean": 13.132337888237089
+      },
+      "worker_returncode": 0,
+      "worker_elapsed_s": 12.560559035046026,
+      "timeout_s": 600.0
+    },
+    {
+      "scene": "isaac_warehouse_full",
+      "scene_title": "Isaac Sim Simple Warehouse Full",
+      "profile": "vulkan_rt",
+      "profile_title": "Vulkan RT",
+      "backend": "vulkan",
+      "render_mode": "rt",
+      "run_index": 2,
+      "usd_path": "$HOME/assets/Isaac/Environments/Simple_Warehouse/full_warehouse.usd",
+      "resolution": [
+        960,
+        540
+      ],
+      "frames": 12,
+      "warmup_frames": 2,
+      "captures": [
+        {
+          "name": "rack_aisle_a",
+          "frame_ms": 31999.875480076298,
+          "camera": {
+            "name": "rack_aisle_a",
+            "eye": [
+              -2.0,
+              -16.0,
+              1.9
+            ],
+            "target": [
+              -6.0,
+              22.0,
+              1.4
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 50.0,
+            "near_clip": 0.05,
+            "far_clip": 400.0
+          },
+          "png": "captures/isaac_warehouse_full_vulkan_rt_run02_rack_aisle_a.png",
+          "mean_rgb": [
+            75.30297088623047,
+            81.1271743774414,
+            88.91352081298828
+          ]
+        },
+        {
+          "name": "rack_aisle_b",
+          "frame_ms": 5.052851978689432,
+          "camera": {
+            "name": "rack_aisle_b",
+            "eye": [
+              3.5,
+              -6.0,
+              2.6
+            ],
+            "target": [
+              -14.0,
+              20.0,
+              1.0
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 50.0,
+            "near_clip": 0.05,
+            "far_clip": 400.0
+          },
+          "png": "captures/isaac_warehouse_full_vulkan_rt_run02_rack_aisle_b.png",
+          "mean_rgb": [
+            74.45896911621094,
+            79.35438537597656,
+            86.70838165283203
+          ]
+        }
+      ],
+      "status": "ok",
+      "renderer_create_ms": 17.718381946906447,
+      "load_stage_ms": 1341.48513013497,
+      "first_frame_ms": 31999.875480076298,
+      "load_to_first_frame_ms": 33341.36061021127,
+      "orbit": {
+        "wall_ms": 52.25896998308599,
+        "fps": 229.6256509434436,
+        "frame_ms_min": 2.7672990690916777,
+        "frame_ms_p50": 4.565203562378883,
+        "frame_ms_p90": 5.12304687872529,
+        "frame_ms_p99": 5.135634068865329,
+        "frame_ms_max": 5.136387888342142,
+        "frame_ms_mean": 4.348602165312816
+      },
+      "worker_returncode": 0,
+      "worker_elapsed_s": 34.30849557300098,
+      "timeout_s": 600.0
+    },
+    {
+      "scene": "isaac_warehouse_full",
+      "scene_title": "Isaac Sim Simple Warehouse Full",
+      "profile": "vulkan_raster",
+      "profile_title": "Vulkan Raster",
+      "backend": "vulkan",
+      "render_mode": "raster",
+      "run_index": 2,
+      "usd_path": "$HOME/assets/Isaac/Environments/Simple_Warehouse/full_warehouse.usd",
+      "resolution": [
+        960,
+        540
+      ],
+      "frames": 12,
+      "warmup_frames": 2,
+      "captures": [
+        {
+          "name": "rack_aisle_a",
+          "frame_ms": 31267.787978053093,
+          "camera": {
+            "name": "rack_aisle_a",
+            "eye": [
+              -2.0,
+              -16.0,
+              1.9
+            ],
+            "target": [
+              -6.0,
+              22.0,
+              1.4
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 50.0,
+            "near_clip": 0.05,
+            "far_clip": 400.0
+          },
+          "png": "captures/isaac_warehouse_full_vulkan_raster_run02_rack_aisle_a.png",
+          "mean_rgb": [
+            91.40641784667969,
+            94.08169555664062,
+            95.28346252441406
+          ]
+        },
+        {
+          "name": "rack_aisle_b",
+          "frame_ms": 5.205108085647225,
+          "camera": {
+            "name": "rack_aisle_b",
+            "eye": [
+              3.5,
+              -6.0,
+              2.6
+            ],
+            "target": [
+              -14.0,
+              20.0,
+              1.0
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 50.0,
+            "near_clip": 0.05,
+            "far_clip": 400.0
+          },
+          "png": "captures/isaac_warehouse_full_vulkan_raster_run02_rack_aisle_b.png",
+          "mean_rgb": [
+            90.1230697631836,
+            91.92755889892578,
+            92.20468139648438
+          ]
+        }
+      ],
+      "status": "ok",
+      "renderer_create_ms": 16.06678287498653,
+      "load_stage_ms": 1322.560956934467,
+      "first_frame_ms": 31267.787978053093,
+      "load_to_first_frame_ms": 32590.34893498756,
+      "orbit": {
+        "wall_ms": 74.21533996239305,
+        "fps": 161.69163957317625,
+        "frame_ms_min": 5.2547219675034285,
+        "frame_ms_p50": 6.230146856978536,
+        "frame_ms_p90": 6.851367023773491,
+        "frame_ms_p99": 7.061981679871679,
+        "frame_ms_max": 7.083483040332794,
+        "frame_ms_mean": 6.1791704695982235
+      },
+      "worker_returncode": 0,
+      "worker_elapsed_s": 33.13228301284835,
+      "timeout_s": 600.0
+    },
+    {
+      "scene": "isaac_warehouse_full",
+      "scene_title": "Isaac Sim Simple Warehouse Full",
+      "profile": "opengl",
+      "profile_title": "OpenGL GLES",
+      "backend": "opengl",
+      "render_mode": "raster",
+      "run_index": 2,
+      "usd_path": "$HOME/assets/Isaac/Environments/Simple_Warehouse/full_warehouse.usd",
+      "resolution": [
+        960,
+        540
+      ],
+      "frames": 12,
+      "warmup_frames": 2,
+      "captures": [
+        {
+          "name": "rack_aisle_a",
+          "frame_ms": 28320.612930925563,
+          "camera": {
+            "name": "rack_aisle_a",
+            "eye": [
+              -2.0,
+              -16.0,
+              1.9
+            ],
+            "target": [
+              -6.0,
+              22.0,
+              1.4
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 50.0,
+            "near_clip": 0.05,
+            "far_clip": 400.0
+          },
+          "png": "captures/isaac_warehouse_full_opengl_run02_rack_aisle_a.png",
+          "mean_rgb": [
+            82.86263275146484,
+            85.60267639160156,
+            84.6731948852539
+          ]
+        },
+        {
+          "name": "rack_aisle_b",
+          "frame_ms": 11.136633111163974,
+          "camera": {
+            "name": "rack_aisle_b",
+            "eye": [
+              3.5,
+              -6.0,
+              2.6
+            ],
+            "target": [
+              -14.0,
+              20.0,
+              1.0
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 50.0,
+            "near_clip": 0.05,
+            "far_clip": 400.0
+          },
+          "png": "captures/isaac_warehouse_full_opengl_run02_rack_aisle_b.png",
+          "mean_rgb": [
+            79.35760498046875,
+            80.79202270507812,
+            79.1998062133789
+          ]
+        }
+      ],
+      "status": "ok",
+      "renderer_create_ms": 16.106869094073772,
+      "load_stage_ms": 1290.4017420951277,
+      "first_frame_ms": 28320.612930925563,
+      "load_to_first_frame_ms": 29611.01467302069,
+      "orbit": {
+        "wall_ms": 114.42608013749123,
+        "fps": 104.87119706959402,
+        "frame_ms_min": 8.170939981937408,
+        "frame_ms_p50": 9.606777573935688,
+        "frame_ms_p90": 10.205582110211253,
+        "frame_ms_p99": 10.86261085001752,
+        "frame_ms_max": 10.942908003926277,
+        "frame_ms_mean": 9.529092601345232
+      },
+      "worker_returncode": 0,
+      "worker_elapsed_s": 30.12361981207505,
+      "timeout_s": 600.0
+    },
+    {
+      "scene": "dsx_datacenter_full",
+      "scene_title": "NVIDIA DSX Full Datacenter",
+      "profile": "ovrtx",
+      "profile_title": "OVRTX",
+      "backend": "ovrtx",
+      "render_mode": "rt",
+      "run_index": 2,
+      "usd_path": "$HOME/dsx-assets/dsx_dataset_2.1/DSX_BP_/DSX_BP/Assembly/DSX_Main_BP.usda",
+      "resolution": [
+        960,
+        540
+      ],
+      "frames": 12,
+      "warmup_frames": 2,
+      "captures": [
+        {
+          "name": "datahall_01",
+          "frame_ms": 48349.459598073736,
+          "camera": {
+            "name": "datahall_01",
+            "eye": [
+              38.903,
+              104.531,
+              20.384
+            ],
+            "target": [
+              444.497,
+              -809.42,
+              6.751
+            ],
+            "up": [
+              0.029,
+              -0.002,
+              1.0
+            ],
+            "fov_degrees": 45.69,
+            "near_clip": 1.0,
+            "far_clip": 10000000.0
+          },
+          "png": "captures/dsx_datacenter_full_ovrtx_run02_datahall_01.png",
+          "mean_rgb": [
+            221.0986785888672,
+            218.8866729736328,
+            216.0659637451172
+          ]
+        },
+        {
+          "name": "datahall_02",
+          "frame_ms": 169.79151614941657,
+          "camera": {
+            "name": "datahall_02",
+            "eye": [
+              28.655,
+              33.378,
+              20.439
+            ],
+            "target": [
+              28.655,
+              1033.378,
+              20.439
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 45.69,
+            "near_clip": 1.0,
+            "far_clip": 10000000.0
+          },
+          "png": "captures/dsx_datacenter_full_ovrtx_run02_datahall_02.png",
+          "mean_rgb": [
+            191.3252410888672,
+            189.30833435058594,
+            187.29991149902344
+          ]
+        }
+      ],
+      "status": "ok",
+      "renderer_create_ms": 2591.803568182513,
+      "load_stage_ms": 3700.444443151355,
+      "first_frame_ms": 48349.459598073736,
+      "load_to_first_frame_ms": 52049.90404122509,
+      "orbit": {
+        "wall_ms": 2172.1001099795103,
+        "fps": 5.524607242947563,
+        "frame_ms_min": 167.67035401426256,
+        "frame_ms_p50": 172.61300212703645,
+        "frame_ms_p90": 204.1906822938472,
+        "frame_ms_p99": 214.32363654952496,
+        "frame_ms_max": 215.53074312396348,
+        "frame_ms_mean": 180.9944438864477
+      },
+      "worker_returncode": 0,
+      "worker_elapsed_s": 85.59738418809138,
+      "timeout_s": 600.0
+    },
+    {
+      "scene": "dsx_datacenter_full",
+      "scene_title": "NVIDIA DSX Full Datacenter",
+      "profile": "vulkan_rt",
+      "profile_title": "Vulkan RT",
+      "backend": "vulkan",
+      "render_mode": "rt",
+      "run_index": 2,
+      "usd_path": "$HOME/dsx-assets/dsx_dataset_2.1/DSX_BP_/DSX_BP/Assembly/DSX_Main_BP.usda",
+      "resolution": [
+        960,
+        540
+      ],
+      "frames": 12,
+      "warmup_frames": 2,
+      "captures": [
+        {
+          "name": "datahall_01",
+          "frame_ms": 534845.6849369686,
+          "camera": {
+            "name": "datahall_01",
+            "eye": [
+              38.903,
+              104.531,
+              20.384
+            ],
+            "target": [
+              444.497,
+              -809.42,
+              6.751
+            ],
+            "up": [
+              0.029,
+              -0.002,
+              1.0
+            ],
+            "fov_degrees": 45.69,
+            "near_clip": 1.0,
+            "far_clip": 10000000.0
+          },
+          "png": "captures/dsx_datacenter_full_vulkan_rt_run02_datahall_01.png",
+          "mean_rgb": [
+            227.8877716064453,
+            228.26907348632812,
+            229.6391143798828
+          ]
+        },
+        {
+          "name": "datahall_02",
+          "frame_ms": 123.70294285938144,
+          "camera": {
+            "name": "datahall_02",
+            "eye": [
+              28.655,
+              33.378,
+              20.439
+            ],
+            "target": [
+              28.655,
+              1033.378,
+              20.439
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 45.69,
+            "near_clip": 1.0,
+            "far_clip": 10000000.0
+          },
+          "png": "captures/dsx_datacenter_full_vulkan_rt_run02_datahall_02.png",
+          "mean_rgb": [
+            246.03396606445312,
+            246.2373809814453,
+            246.5753173828125
+          ]
+        }
+      ],
+      "status": "ok",
+      "renderer_create_ms": 16.969473101198673,
+      "load_stage_ms": 498.08847391977906,
+      "first_frame_ms": 534845.6849369686,
+      "load_to_first_frame_ms": 535343.7734108884,
+      "orbit": {
+        "wall_ms": 651.8252268433571,
+        "fps": 18.409842862500582,
+        "frame_ms_min": 7.091201143339276,
+        "frame_ms_p50": 45.309807057492435,
+        "frame_ms_p90": 102.84130524378271,
+        "frame_ms_p99": 151.71448796754706,
+        "frame_ms_max": 157.57112810388207,
+        "frame_ms_mean": 54.303380757725485
+      },
+      "worker_returncode": 0,
+      "worker_elapsed_s": 539.507001172984,
+      "timeout_s": 600.0
+    },
+    {
+      "scene": "dsx_datacenter_full",
+      "scene_title": "NVIDIA DSX Full Datacenter",
+      "profile": "vulkan_raster",
+      "profile_title": "Vulkan Raster",
+      "backend": "vulkan",
+      "render_mode": "raster",
+      "run_index": 2,
+      "usd_path": "$HOME/dsx-assets/dsx_dataset_2.1/DSX_BP_/DSX_BP/Assembly/DSX_Main_BP.usda",
+      "resolution": [
+        960,
+        540
+      ],
+      "frames": 12,
+      "warmup_frames": 2,
+      "captures": [
+        {
+          "name": "datahall_01",
+          "frame_ms": 526851.2780009769,
+          "camera": {
+            "name": "datahall_01",
+            "eye": [
+              38.903,
+              104.531,
+              20.384
+            ],
+            "target": [
+              444.497,
+              -809.42,
+              6.751
+            ],
+            "up": [
+              0.029,
+              -0.002,
+              1.0
+            ],
+            "fov_degrees": 45.69,
+            "near_clip": 1.0,
+            "far_clip": 10000000.0
+          },
+          "png": "captures/dsx_datacenter_full_vulkan_raster_run02_datahall_01.png",
+          "mean_rgb": [
+            98.55279541015625,
+            101.30182647705078,
+            107.76068115234375
+          ]
+        },
+        {
+          "name": "datahall_02",
+          "frame_ms": 61.64035899564624,
+          "camera": {
+            "name": "datahall_02",
+            "eye": [
+              28.655,
+              33.378,
+              20.439
+            ],
+            "target": [
+              28.655,
+              1033.378,
+              20.439
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 45.69,
+            "near_clip": 1.0,
+            "far_clip": 10000000.0
+          },
+          "png": "captures/dsx_datacenter_full_vulkan_raster_run02_datahall_02.png",
+          "mean_rgb": [
+            88.3426513671875,
+            90.51142120361328,
+            96.1568832397461
+          ]
+        }
+      ],
+      "status": "ok",
+      "renderer_create_ms": 17.613552045077085,
+      "load_stage_ms": 466.4445389062166,
+      "first_frame_ms": 526851.2780009769,
+      "load_to_first_frame_ms": 527317.7225398831,
+      "orbit": {
+        "wall_ms": 624.9064940493554,
+        "fps": 19.202872932621876,
+        "frame_ms_min": 50.04939902573824,
+        "frame_ms_p50": 52.17362358234823,
+        "frame_ms_p90": 53.63687942735851,
+        "frame_ms_p99": 54.693706955295056,
+        "frame_ms_max": 54.8207419924438,
+        "frame_ms_mean": 52.06388242853185
+      },
+      "worker_returncode": 0,
+      "worker_elapsed_s": 530.2160884009209,
+      "timeout_s": 600.0
+    },
+    {
+      "scene": "dsx_datacenter_full",
+      "scene_title": "NVIDIA DSX Full Datacenter",
+      "profile": "opengl",
+      "profile_title": "OpenGL GLES",
+      "backend": "opengl",
+      "render_mode": "raster",
+      "run_index": 2,
+      "status": "failed",
+      "error": "worker timed out after 600.0s",
+      "worker_returncode": 124,
+      "worker_elapsed_s": 603.146456923103,
+      "timeout_s": 600.0
+    },
+    {
+      "scene": "isaac_warehouse_full",
+      "scene_title": "Isaac Sim Simple Warehouse Full",
+      "profile": "ovrtx",
+      "profile_title": "OVRTX",
+      "backend": "ovrtx",
+      "render_mode": "rt",
+      "run_index": 3,
+      "usd_path": "$HOME/assets/Isaac/Environments/Simple_Warehouse/full_warehouse.usd",
+      "resolution": [
+        960,
+        540
+      ],
+      "frames": 12,
+      "warmup_frames": 2,
+      "captures": [
+        {
+          "name": "rack_aisle_a",
+          "frame_ms": 6027.580595109612,
+          "camera": {
+            "name": "rack_aisle_a",
+            "eye": [
+              -2.0,
+              -16.0,
+              1.9
+            ],
+            "target": [
+              -6.0,
+              22.0,
+              1.4
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 50.0,
+            "near_clip": 0.05,
+            "far_clip": 400.0
+          },
+          "png": "captures/isaac_warehouse_full_ovrtx_run03_rack_aisle_a.png",
+          "mean_rgb": [
+            88.15760803222656,
+            92.92546081542969,
+            93.5111083984375
+          ]
+        },
+        {
+          "name": "rack_aisle_b",
+          "frame_ms": 13.503849972039461,
+          "camera": {
+            "name": "rack_aisle_b",
+            "eye": [
+              3.5,
+              -6.0,
+              2.6
+            ],
+            "target": [
+              -14.0,
+              20.0,
+              1.0
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 50.0,
+            "near_clip": 0.05,
+            "far_clip": 400.0
+          },
+          "png": "captures/isaac_warehouse_full_ovrtx_run03_rack_aisle_b.png",
+          "mean_rgb": [
+            78.79049682617188,
+            79.0344009399414,
+            76.1001968383789
+          ]
+        }
+      ],
+      "status": "ok",
+      "renderer_create_ms": 2613.871233072132,
+      "load_stage_ms": 312.97029787674546,
+      "first_frame_ms": 6027.580595109612,
+      "load_to_first_frame_ms": 6340.550892986357,
+      "orbit": {
+        "wall_ms": 162.2644029557705,
+        "fps": 73.95337351514442,
+        "frame_ms_min": 10.082309134304523,
+        "frame_ms_p50": 13.710939907468855,
+        "frame_ms_p90": 15.51704138983041,
+        "frame_ms_p99": 15.912116174586117,
+        "frame_ms_max": 15.960115008056164,
+        "frame_ms_mean": 13.50728857020537
+      },
+      "worker_returncode": 0,
+      "worker_elapsed_s": 13.509411863982677,
+      "timeout_s": 600.0
+    },
+    {
+      "scene": "isaac_warehouse_full",
+      "scene_title": "Isaac Sim Simple Warehouse Full",
+      "profile": "vulkan_rt",
+      "profile_title": "Vulkan RT",
+      "backend": "vulkan",
+      "render_mode": "rt",
+      "run_index": 3,
+      "usd_path": "$HOME/assets/Isaac/Environments/Simple_Warehouse/full_warehouse.usd",
+      "resolution": [
+        960,
+        540
+      ],
+      "frames": 12,
+      "warmup_frames": 2,
+      "captures": [
+        {
+          "name": "rack_aisle_a",
+          "frame_ms": 32376.71618699096,
+          "camera": {
+            "name": "rack_aisle_a",
+            "eye": [
+              -2.0,
+              -16.0,
+              1.9
+            ],
+            "target": [
+              -6.0,
+              22.0,
+              1.4
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 50.0,
+            "near_clip": 0.05,
+            "far_clip": 400.0
+          },
+          "png": "captures/isaac_warehouse_full_vulkan_rt_run03_rack_aisle_a.png",
+          "mean_rgb": [
+            75.30297088623047,
+            81.1271743774414,
+            88.91352081298828
+          ]
+        },
+        {
+          "name": "rack_aisle_b",
+          "frame_ms": 5.290869856253266,
+          "camera": {
+            "name": "rack_aisle_b",
+            "eye": [
+              3.5,
+              -6.0,
+              2.6
+            ],
+            "target": [
+              -14.0,
+              20.0,
+              1.0
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 50.0,
+            "near_clip": 0.05,
+            "far_clip": 400.0
+          },
+          "png": "captures/isaac_warehouse_full_vulkan_rt_run03_rack_aisle_b.png",
+          "mean_rgb": [
+            74.45896911621094,
+            79.35438537597656,
+            86.70838165283203
+          ]
+        }
+      ],
+      "status": "ok",
+      "renderer_create_ms": 17.195138847455382,
+      "load_stage_ms": 1359.2252931557596,
+      "first_frame_ms": 32376.71618699096,
+      "load_to_first_frame_ms": 33735.94148014672,
+      "orbit": {
+        "wall_ms": 54.00355905294418,
+        "fps": 222.2075768790609,
+        "frame_ms_min": 2.889910014346242,
+        "frame_ms_p50": 4.703894956037402,
+        "frame_ms_p90": 5.207220790907741,
+        "frame_ms_p99": 5.327302976511419,
+        "frame_ms_max": 5.341003881767392,
+        "frame_ms_mean": 4.492751691335191
+      },
+      "worker_returncode": 0,
+      "worker_elapsed_s": 34.707105067092925,
+      "timeout_s": 600.0
+    },
+    {
+      "scene": "isaac_warehouse_full",
+      "scene_title": "Isaac Sim Simple Warehouse Full",
+      "profile": "vulkan_raster",
+      "profile_title": "Vulkan Raster",
+      "backend": "vulkan",
+      "render_mode": "raster",
+      "run_index": 3,
+      "usd_path": "$HOME/assets/Isaac/Environments/Simple_Warehouse/full_warehouse.usd",
+      "resolution": [
+        960,
+        540
+      ],
+      "frames": 12,
+      "warmup_frames": 2,
+      "captures": [
+        {
+          "name": "rack_aisle_a",
+          "frame_ms": 31782.958212075755,
+          "camera": {
+            "name": "rack_aisle_a",
+            "eye": [
+              -2.0,
+              -16.0,
+              1.9
+            ],
+            "target": [
+              -6.0,
+              22.0,
+              1.4
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 50.0,
+            "near_clip": 0.05,
+            "far_clip": 400.0
+          },
+          "png": "captures/isaac_warehouse_full_vulkan_raster_run03_rack_aisle_a.png",
+          "mean_rgb": [
+            91.40641784667969,
+            94.08169555664062,
+            95.28346252441406
+          ]
+        },
+        {
+          "name": "rack_aisle_b",
+          "frame_ms": 5.51943015307188,
+          "camera": {
+            "name": "rack_aisle_b",
+            "eye": [
+              3.5,
+              -6.0,
+              2.6
+            ],
+            "target": [
+              -14.0,
+              20.0,
+              1.0
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 50.0,
+            "near_clip": 0.05,
+            "far_clip": 400.0
+          },
+          "png": "captures/isaac_warehouse_full_vulkan_raster_run03_rack_aisle_b.png",
+          "mean_rgb": [
+            90.1230697631836,
+            91.92755889892578,
+            92.20468139648438
+          ]
+        }
+      ],
+      "status": "ok",
+      "renderer_create_ms": 16.062516951933503,
+      "load_stage_ms": 1307.5004210695624,
+      "first_frame_ms": 31782.958212075755,
+      "load_to_first_frame_ms": 33090.45863314532,
+      "orbit": {
+        "wall_ms": 75.2850288990885,
+        "fps": 159.39424046824385,
+        "frame_ms_min": 5.3497611079365015,
+        "frame_ms_p50": 6.350229028612375,
+        "frame_ms_p90": 6.877135811373591,
+        "frame_ms_p99": 7.260477312374861,
+        "frame_ms_max": 7.304881000891328,
+        "frame_ms_mean": 6.267937365919352
+      },
+      "worker_returncode": 0,
+      "worker_elapsed_s": 33.63546209805645,
+      "timeout_s": 600.0
+    },
+    {
+      "scene": "isaac_warehouse_full",
+      "scene_title": "Isaac Sim Simple Warehouse Full",
+      "profile": "opengl",
+      "profile_title": "OpenGL GLES",
+      "backend": "opengl",
+      "render_mode": "raster",
+      "run_index": 3,
+      "usd_path": "$HOME/assets/Isaac/Environments/Simple_Warehouse/full_warehouse.usd",
+      "resolution": [
+        960,
+        540
+      ],
+      "frames": 12,
+      "warmup_frames": 2,
+      "captures": [
+        {
+          "name": "rack_aisle_a",
+          "frame_ms": 28251.925767865032,
+          "camera": {
+            "name": "rack_aisle_a",
+            "eye": [
+              -2.0,
+              -16.0,
+              1.9
+            ],
+            "target": [
+              -6.0,
+              22.0,
+              1.4
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 50.0,
+            "near_clip": 0.05,
+            "far_clip": 400.0
+          },
+          "png": "captures/isaac_warehouse_full_opengl_run03_rack_aisle_a.png",
+          "mean_rgb": [
+            82.86263275146484,
+            85.60267639160156,
+            84.6731948852539
+          ]
+        },
+        {
+          "name": "rack_aisle_b",
+          "frame_ms": 11.207466945052147,
+          "camera": {
+            "name": "rack_aisle_b",
+            "eye": [
+              3.5,
+              -6.0,
+              2.6
+            ],
+            "target": [
+              -14.0,
+              20.0,
+              1.0
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 50.0,
+            "near_clip": 0.05,
+            "far_clip": 400.0
+          },
+          "png": "captures/isaac_warehouse_full_opengl_run03_rack_aisle_b.png",
+          "mean_rgb": [
+            79.35760498046875,
+            80.79202270507812,
+            79.1998062133789
+          ]
+        }
+      ],
+      "status": "ok",
+      "renderer_create_ms": 16.686680959537625,
+      "load_stage_ms": 1336.2137188669294,
+      "first_frame_ms": 28251.925767865032,
+      "load_to_first_frame_ms": 29588.13948673196,
+      "orbit": {
+        "wall_ms": 118.37576399557292,
+        "fps": 101.37210181341497,
+        "frame_ms_min": 8.188874926418066,
+        "frame_ms_p50": 9.9529909202829,
+        "frame_ms_p90": 10.557262902148068,
+        "frame_ms_p99": 11.147384182550015,
+        "frame_ms_max": 11.219991138204932,
+        "frame_ms_mean": 9.854868636466563
+      },
+      "worker_returncode": 0,
+      "worker_elapsed_s": 30.117126440862194,
+      "timeout_s": 600.0
+    },
+    {
+      "scene": "dsx_datacenter_full",
+      "scene_title": "NVIDIA DSX Full Datacenter",
+      "profile": "ovrtx",
+      "profile_title": "OVRTX",
+      "backend": "ovrtx",
+      "render_mode": "rt",
+      "run_index": 3,
+      "usd_path": "$HOME/dsx-assets/dsx_dataset_2.1/DSX_BP_/DSX_BP/Assembly/DSX_Main_BP.usda",
+      "resolution": [
+        960,
+        540
+      ],
+      "frames": 12,
+      "warmup_frames": 2,
+      "captures": [
+        {
+          "name": "datahall_01",
+          "frame_ms": 48183.2528160885,
+          "camera": {
+            "name": "datahall_01",
+            "eye": [
+              38.903,
+              104.531,
+              20.384
+            ],
+            "target": [
+              444.497,
+              -809.42,
+              6.751
+            ],
+            "up": [
+              0.029,
+              -0.002,
+              1.0
+            ],
+            "fov_degrees": 45.69,
+            "near_clip": 1.0,
+            "far_clip": 10000000.0
+          },
+          "png": "captures/dsx_datacenter_full_ovrtx_run03_datahall_01.png",
+          "mean_rgb": [
+            220.88943481445312,
+            218.68185424804688,
+            215.85617065429688
+          ]
+        },
+        {
+          "name": "datahall_02",
+          "frame_ms": 187.0278068818152,
+          "camera": {
+            "name": "datahall_02",
+            "eye": [
+              28.655,
+              33.378,
+              20.439
+            ],
+            "target": [
+              28.655,
+              1033.378,
+              20.439
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 45.69,
+            "near_clip": 1.0,
+            "far_clip": 10000000.0
+          },
+          "png": "captures/dsx_datacenter_full_ovrtx_run03_datahall_02.png",
+          "mean_rgb": [
+            198.88316345214844,
+            197.12657165527344,
+            195.35057067871094
+          ]
+        }
+      ],
+      "status": "ok",
+      "renderer_create_ms": 2567.0478029642254,
+      "load_stage_ms": 3709.1430821456015,
+      "first_frame_ms": 48183.2528160885,
+      "load_to_first_frame_ms": 51892.3958982341,
+      "orbit": {
+        "wall_ms": 2279.86742509529,
+        "fps": 5.263463948785726,
+        "frame_ms_min": 169.50876894406974,
+        "frame_ms_p50": 180.8675859356299,
+        "frame_ms_p90": 215.0594826322049,
+        "frame_ms_p99": 219.91650148760527,
+        "frame_ms_max": 220.45493102632463,
+        "frame_ms_mean": 189.97585214674473
+      },
+      "worker_returncode": 0,
+      "worker_elapsed_s": 85.69504475593567,
+      "timeout_s": 600.0
+    },
+    {
+      "scene": "dsx_datacenter_full",
+      "scene_title": "NVIDIA DSX Full Datacenter",
+      "profile": "vulkan_rt",
+      "profile_title": "Vulkan RT",
+      "backend": "vulkan",
+      "render_mode": "rt",
+      "run_index": 3,
+      "usd_path": "$HOME/dsx-assets/dsx_dataset_2.1/DSX_BP_/DSX_BP/Assembly/DSX_Main_BP.usda",
+      "resolution": [
+        960,
+        540
+      ],
+      "frames": 12,
+      "warmup_frames": 2,
+      "captures": [
+        {
+          "name": "datahall_01",
+          "frame_ms": 534997.5483450107,
+          "camera": {
+            "name": "datahall_01",
+            "eye": [
+              38.903,
+              104.531,
+              20.384
+            ],
+            "target": [
+              444.497,
+              -809.42,
+              6.751
+            ],
+            "up": [
+              0.029,
+              -0.002,
+              1.0
+            ],
+            "fov_degrees": 45.69,
+            "near_clip": 1.0,
+            "far_clip": 10000000.0
+          },
+          "png": "captures/dsx_datacenter_full_vulkan_rt_run03_datahall_01.png",
+          "mean_rgb": [
+            227.8877716064453,
+            228.26907348632812,
+            229.6391143798828
+          ]
+        },
+        {
+          "name": "datahall_02",
+          "frame_ms": 124.31813287548721,
+          "camera": {
+            "name": "datahall_02",
+            "eye": [
+              28.655,
+              33.378,
+              20.439
+            ],
+            "target": [
+              28.655,
+              1033.378,
+              20.439
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 45.69,
+            "near_clip": 1.0,
+            "far_clip": 10000000.0
+          },
+          "png": "captures/dsx_datacenter_full_vulkan_rt_run03_datahall_02.png",
+          "mean_rgb": [
+            246.03396606445312,
+            246.2373809814453,
+            246.5753173828125
+          ]
+        }
+      ],
+      "status": "ok",
+      "renderer_create_ms": 17.518827924504876,
+      "load_stage_ms": 471.375040942803,
+      "first_frame_ms": 534997.5483450107,
+      "load_to_first_frame_ms": 535468.9233859535,
+      "orbit": {
+        "wall_ms": 633.862494956702,
+        "fps": 18.93155076294536,
+        "frame_ms_min": 6.678516045212746,
+        "frame_ms_p50": 40.361560066230595,
+        "frame_ms_p90": 104.88157914951445,
+        "frame_ms_p99": 150.87655439041558,
+        "frame_ms_max": 156.43100393936038,
+        "frame_ms_mean": 52.80913754055897
+      },
+      "worker_returncode": 0,
+      "worker_elapsed_s": 539.6133739198558,
+      "timeout_s": 600.0
+    },
+    {
+      "scene": "dsx_datacenter_full",
+      "scene_title": "NVIDIA DSX Full Datacenter",
+      "profile": "vulkan_raster",
+      "profile_title": "Vulkan Raster",
+      "backend": "vulkan",
+      "render_mode": "raster",
+      "run_index": 3,
+      "usd_path": "$HOME/dsx-assets/dsx_dataset_2.1/DSX_BP_/DSX_BP/Assembly/DSX_Main_BP.usda",
+      "resolution": [
+        960,
+        540
+      ],
+      "frames": 12,
+      "warmup_frames": 2,
+      "captures": [
+        {
+          "name": "datahall_01",
+          "frame_ms": 527056.8174580112,
+          "camera": {
+            "name": "datahall_01",
+            "eye": [
+              38.903,
+              104.531,
+              20.384
+            ],
+            "target": [
+              444.497,
+              -809.42,
+              6.751
+            ],
+            "up": [
+              0.029,
+              -0.002,
+              1.0
+            ],
+            "fov_degrees": 45.69,
+            "near_clip": 1.0,
+            "far_clip": 10000000.0
+          },
+          "png": "captures/dsx_datacenter_full_vulkan_raster_run03_datahall_01.png",
+          "mean_rgb": [
+            98.55279541015625,
+            101.30182647705078,
+            107.76068115234375
+          ]
+        },
+        {
+          "name": "datahall_02",
+          "frame_ms": 61.8436080403626,
+          "camera": {
+            "name": "datahall_02",
+            "eye": [
+              28.655,
+              33.378,
+              20.439
+            ],
+            "target": [
+              28.655,
+              1033.378,
+              20.439
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 45.69,
+            "near_clip": 1.0,
+            "far_clip": 10000000.0
+          },
+          "png": "captures/dsx_datacenter_full_vulkan_raster_run03_datahall_02.png",
+          "mean_rgb": [
+            88.3426513671875,
+            90.51142120361328,
+            96.1568832397461
+          ]
+        }
+      ],
+      "status": "ok",
+      "renderer_create_ms": 17.672481015324593,
+      "load_stage_ms": 496.7657218221575,
+      "first_frame_ms": 527056.8174580112,
+      "load_to_first_frame_ms": 527553.5831798334,
+      "orbit": {
+        "wall_ms": 626.2353421188891,
+        "fps": 19.162125151540604,
+        "frame_ms_min": 50.26899487711489,
+        "frame_ms_p50": 51.965136895887554,
+        "frame_ms_p90": 53.91371778678149,
+        "frame_ms_p99": 54.91320168133825,
+        "frame_ms_max": 55.03067607060075,
+        "frame_ms_mean": 52.174613966296114
+      },
+      "worker_returncode": 0,
+      "worker_elapsed_s": 530.4715930700768,
+      "timeout_s": 600.0
+    },
+    {
+      "scene": "dsx_datacenter_full",
+      "scene_title": "NVIDIA DSX Full Datacenter",
+      "profile": "opengl",
+      "profile_title": "OpenGL GLES",
+      "backend": "opengl",
+      "render_mode": "raster",
+      "run_index": 3,
+      "status": "failed",
+      "error": "worker timed out after 600.0s",
+      "worker_returncode": 124,
+      "worker_elapsed_s": 602.9571051620878,
+      "timeout_s": 600.0
+    },
+    {
+      "scene": "isaac_warehouse_full",
+      "scene_title": "Isaac Sim Simple Warehouse Full",
+      "profile": "ovrtx",
+      "profile_title": "OVRTX",
+      "backend": "ovrtx",
+      "render_mode": "rt",
+      "run_index": 4,
+      "usd_path": "$HOME/assets/Isaac/Environments/Simple_Warehouse/full_warehouse.usd",
+      "resolution": [
+        960,
+        540
+      ],
+      "frames": 12,
+      "warmup_frames": 2,
+      "captures": [
+        {
+          "name": "rack_aisle_a",
+          "frame_ms": 5053.191811079159,
+          "camera": {
+            "name": "rack_aisle_a",
+            "eye": [
+              -2.0,
+              -16.0,
+              1.9
+            ],
+            "target": [
+              -6.0,
+              22.0,
+              1.4
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 50.0,
+            "near_clip": 0.05,
+            "far_clip": 400.0
+          },
+          "png": "captures/isaac_warehouse_full_ovrtx_run04_rack_aisle_a.png",
+          "mean_rgb": [
+            88.28089141845703,
+            93.0300521850586,
+            93.59008026123047
+          ]
+        },
+        {
+          "name": "rack_aisle_b",
+          "frame_ms": 12.907413998618722,
+          "camera": {
+            "name": "rack_aisle_b",
+            "eye": [
+              3.5,
+              -6.0,
+              2.6
+            ],
+            "target": [
+              -14.0,
+              20.0,
+              1.0
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 50.0,
+            "near_clip": 0.05,
+            "far_clip": 400.0
+          },
+          "png": "captures/isaac_warehouse_full_ovrtx_run04_rack_aisle_b.png",
+          "mean_rgb": [
+            79.06592559814453,
+            79.18546295166016,
+            76.18952178955078
+          ]
+        }
+      ],
+      "status": "ok",
+      "renderer_create_ms": 2692.9766349494457,
+      "load_stage_ms": 301.14103900268674,
+      "first_frame_ms": 5053.191811079159,
+      "load_to_first_frame_ms": 5354.332850081846,
+      "orbit": {
+        "wall_ms": 168.2436119299382,
+        "fps": 71.32514490355312,
+        "frame_ms_min": 10.766523890197277,
+        "frame_ms_p50": 14.1787170432508,
+        "frame_ms_p90": 16.993492865003645,
+        "frame_ms_p99": 17.253956417553127,
+        "frame_ms_max": 17.280415166169405,
+        "frame_ms_mean": 14.004905320083102
+      },
+      "worker_returncode": 0,
+      "worker_elapsed_s": 12.539571502013132,
+      "timeout_s": 600.0
+    },
+    {
+      "scene": "isaac_warehouse_full",
+      "scene_title": "Isaac Sim Simple Warehouse Full",
+      "profile": "vulkan_rt",
+      "profile_title": "Vulkan RT",
+      "backend": "vulkan",
+      "render_mode": "rt",
+      "run_index": 4,
+      "usd_path": "$HOME/assets/Isaac/Environments/Simple_Warehouse/full_warehouse.usd",
+      "resolution": [
+        960,
+        540
+      ],
+      "frames": 12,
+      "warmup_frames": 2,
+      "captures": [
+        {
+          "name": "rack_aisle_a",
+          "frame_ms": 32271.147849969566,
+          "camera": {
+            "name": "rack_aisle_a",
+            "eye": [
+              -2.0,
+              -16.0,
+              1.9
+            ],
+            "target": [
+              -6.0,
+              22.0,
+              1.4
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 50.0,
+            "near_clip": 0.05,
+            "far_clip": 400.0
+          },
+          "png": "captures/isaac_warehouse_full_vulkan_rt_run04_rack_aisle_a.png",
+          "mean_rgb": [
+            75.30297088623047,
+            81.1271743774414,
+            88.91352081298828
+          ]
+        },
+        {
+          "name": "rack_aisle_b",
+          "frame_ms": 4.997485782951117,
+          "camera": {
+            "name": "rack_aisle_b",
+            "eye": [
+              3.5,
+              -6.0,
+              2.6
+            ],
+            "target": [
+              -14.0,
+              20.0,
+              1.0
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 50.0,
+            "near_clip": 0.05,
+            "far_clip": 400.0
+          },
+          "png": "captures/isaac_warehouse_full_vulkan_rt_run04_rack_aisle_b.png",
+          "mean_rgb": [
+            74.45896911621094,
+            79.35438537597656,
+            86.70838165283203
+          ]
+        }
+      ],
+      "status": "ok",
+      "renderer_create_ms": 17.60273100808263,
+      "load_stage_ms": 1302.0067680627108,
+      "first_frame_ms": 32271.147849969566,
+      "load_to_first_frame_ms": 33573.15461803228,
+      "orbit": {
+        "wall_ms": 51.645795814692974,
+        "fps": 232.35192353423005,
+        "frame_ms_min": 2.795961918309331,
+        "frame_ms_p50": 4.520483547821641,
+        "frame_ms_p90": 4.996100137941539,
+        "frame_ms_p99": 5.065037072636187,
+        "frame_ms_max": 5.0729080103337765,
+        "frame_ms_mean": 4.296834114938974
+      },
+      "worker_returncode": 0,
+      "worker_elapsed_s": 34.53520797099918,
+      "timeout_s": 600.0
+    },
+    {
+      "scene": "isaac_warehouse_full",
+      "scene_title": "Isaac Sim Simple Warehouse Full",
+      "profile": "vulkan_raster",
+      "profile_title": "Vulkan Raster",
+      "backend": "vulkan",
+      "render_mode": "raster",
+      "run_index": 4,
+      "usd_path": "$HOME/assets/Isaac/Environments/Simple_Warehouse/full_warehouse.usd",
+      "resolution": [
+        960,
+        540
+      ],
+      "frames": 12,
+      "warmup_frames": 2,
+      "captures": [
+        {
+          "name": "rack_aisle_a",
+          "frame_ms": 32310.16762694344,
+          "camera": {
+            "name": "rack_aisle_a",
+            "eye": [
+              -2.0,
+              -16.0,
+              1.9
+            ],
+            "target": [
+              -6.0,
+              22.0,
+              1.4
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 50.0,
+            "near_clip": 0.05,
+            "far_clip": 400.0
+          },
+          "png": "captures/isaac_warehouse_full_vulkan_raster_run04_rack_aisle_a.png",
+          "mean_rgb": [
+            91.40641784667969,
+            94.08169555664062,
+            95.28346252441406
+          ]
+        },
+        {
+          "name": "rack_aisle_b",
+          "frame_ms": 5.2145549561828375,
+          "camera": {
+            "name": "rack_aisle_b",
+            "eye": [
+              3.5,
+              -6.0,
+              2.6
+            ],
+            "target": [
+              -14.0,
+              20.0,
+              1.0
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 50.0,
+            "near_clip": 0.05,
+            "far_clip": 400.0
+          },
+          "png": "captures/isaac_warehouse_full_vulkan_raster_run04_rack_aisle_b.png",
+          "mean_rgb": [
+            90.1230697631836,
+            91.92755889892578,
+            92.20468139648438
+          ]
+        }
+      ],
+      "status": "ok",
+      "renderer_create_ms": 15.85400989279151,
+      "load_stage_ms": 1345.1129980385303,
+      "first_frame_ms": 32310.16762694344,
+      "load_to_first_frame_ms": 33655.28062498197,
+      "orbit": {
+        "wall_ms": 73.66267684847116,
+        "fps": 162.9047505928242,
+        "frame_ms_min": 5.221117055043578,
+        "frame_ms_p50": 6.131085101515055,
+        "frame_ms_p90": 6.7872734274715185,
+        "frame_ms_p99": 6.912002374883741,
+        "frame_ms_max": 6.924814078956842,
+        "frame_ms_mean": 6.13280894079556
+      },
+      "worker_returncode": 0,
+      "worker_elapsed_s": 34.18813961092383,
+      "timeout_s": 600.0
+    },
+    {
+      "scene": "isaac_warehouse_full",
+      "scene_title": "Isaac Sim Simple Warehouse Full",
+      "profile": "opengl",
+      "profile_title": "OpenGL GLES",
+      "backend": "opengl",
+      "render_mode": "raster",
+      "run_index": 4,
+      "usd_path": "$HOME/assets/Isaac/Environments/Simple_Warehouse/full_warehouse.usd",
+      "resolution": [
+        960,
+        540
+      ],
+      "frames": 12,
+      "warmup_frames": 2,
+      "captures": [
+        {
+          "name": "rack_aisle_a",
+          "frame_ms": 28699.41594800912,
+          "camera": {
+            "name": "rack_aisle_a",
+            "eye": [
+              -2.0,
+              -16.0,
+              1.9
+            ],
+            "target": [
+              -6.0,
+              22.0,
+              1.4
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 50.0,
+            "near_clip": 0.05,
+            "far_clip": 400.0
+          },
+          "png": "captures/isaac_warehouse_full_opengl_run04_rack_aisle_a.png",
+          "mean_rgb": [
+            82.86263275146484,
+            85.60267639160156,
+            84.6731948852539
+          ]
+        },
+        {
+          "name": "rack_aisle_b",
+          "frame_ms": 11.217172024771571,
+          "camera": {
+            "name": "rack_aisle_b",
+            "eye": [
+              3.5,
+              -6.0,
+              2.6
+            ],
+            "target": [
+              -14.0,
+              20.0,
+              1.0
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 50.0,
+            "near_clip": 0.05,
+            "far_clip": 400.0
+          },
+          "png": "captures/isaac_warehouse_full_opengl_run04_rack_aisle_b.png",
+          "mean_rgb": [
+            79.35760498046875,
+            80.79202270507812,
+            79.1998062133789
+          ]
+        }
+      ],
+      "status": "ok",
+      "renderer_create_ms": 16.045781085267663,
+      "load_stage_ms": 1345.9476251155138,
+      "first_frame_ms": 28699.41594800912,
+      "load_to_first_frame_ms": 30045.363573124632,
+      "orbit": {
+        "wall_ms": 110.21038703620434,
+        "fps": 108.88265909145184,
+        "frame_ms_min": 7.27875018492341,
+        "frame_ms_p50": 8.864484494552016,
+        "frame_ms_p90": 10.77104383148253,
+        "frame_ms_p99": 10.97328030038625,
+        "frame_ms_max": 10.987431043758988,
+        "frame_ms_mean": 9.17819858295843
+      },
+      "worker_returncode": 0,
+      "worker_elapsed_s": 30.55304993293248,
+      "timeout_s": 600.0
+    },
+    {
+      "scene": "dsx_datacenter_full",
+      "scene_title": "NVIDIA DSX Full Datacenter",
+      "profile": "ovrtx",
+      "profile_title": "OVRTX",
+      "backend": "ovrtx",
+      "render_mode": "rt",
+      "run_index": 4,
+      "usd_path": "$HOME/dsx-assets/dsx_dataset_2.1/DSX_BP_/DSX_BP/Assembly/DSX_Main_BP.usda",
+      "resolution": [
+        960,
+        540
+      ],
+      "frames": 12,
+      "warmup_frames": 2,
+      "captures": [
+        {
+          "name": "datahall_01",
+          "frame_ms": 48468.826247844845,
+          "camera": {
+            "name": "datahall_01",
+            "eye": [
+              38.903,
+              104.531,
+              20.384
+            ],
+            "target": [
+              444.497,
+              -809.42,
+              6.751
+            ],
+            "up": [
+              0.029,
+              -0.002,
+              1.0
+            ],
+            "fov_degrees": 45.69,
+            "near_clip": 1.0,
+            "far_clip": 10000000.0
+          },
+          "png": "captures/dsx_datacenter_full_ovrtx_run04_datahall_01.png",
+          "mean_rgb": [
+            220.8758087158203,
+            218.66966247558594,
+            215.8543701171875
+          ]
+        },
+        {
+          "name": "datahall_02",
+          "frame_ms": 169.35270419344306,
+          "camera": {
+            "name": "datahall_02",
+            "eye": [
+              28.655,
+              33.378,
+              20.439
+            ],
+            "target": [
+              28.655,
+              1033.378,
+              20.439
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 45.69,
+            "near_clip": 1.0,
+            "far_clip": 10000000.0
+          },
+          "png": "captures/dsx_datacenter_full_ovrtx_run04_datahall_02.png",
+          "mean_rgb": [
+            198.141357421875,
+            196.19522094726562,
+            194.36793518066406
+          ]
+        }
+      ],
+      "status": "ok",
+      "renderer_create_ms": 2560.710489982739,
+      "load_stage_ms": 3758.172184927389,
+      "first_frame_ms": 48468.826247844845,
+      "load_to_first_frame_ms": 52226.998432772234,
+      "orbit": {
+        "wall_ms": 2157.8025601338595,
+        "fps": 5.561213162735139,
+        "frame_ms_min": 165.3643378522247,
+        "frame_ms_p50": 170.4335834365338,
+        "frame_ms_p90": 207.78101063333452,
+        "frame_ms_p99": 215.10551620041952,
+        "frame_ms_max": 215.93071310780942,
+        "frame_ms_mean": 179.80428191367537
+      },
+      "worker_returncode": 0,
+      "worker_elapsed_s": 85.50672053801827,
+      "timeout_s": 600.0
+    },
+    {
+      "scene": "dsx_datacenter_full",
+      "scene_title": "NVIDIA DSX Full Datacenter",
+      "profile": "vulkan_rt",
+      "profile_title": "Vulkan RT",
+      "backend": "vulkan",
+      "render_mode": "rt",
+      "run_index": 4,
+      "usd_path": "$HOME/dsx-assets/dsx_dataset_2.1/DSX_BP_/DSX_BP/Assembly/DSX_Main_BP.usda",
+      "resolution": [
+        960,
+        540
+      ],
+      "frames": 12,
+      "warmup_frames": 2,
+      "captures": [
+        {
+          "name": "datahall_01",
+          "frame_ms": 536178.5103080329,
+          "camera": {
+            "name": "datahall_01",
+            "eye": [
+              38.903,
+              104.531,
+              20.384
+            ],
+            "target": [
+              444.497,
+              -809.42,
+              6.751
+            ],
+            "up": [
+              0.029,
+              -0.002,
+              1.0
+            ],
+            "fov_degrees": 45.69,
+            "near_clip": 1.0,
+            "far_clip": 10000000.0
+          },
+          "png": "captures/dsx_datacenter_full_vulkan_rt_run04_datahall_01.png",
+          "mean_rgb": [
+            227.8877716064453,
+            228.26907348632812,
+            229.6391143798828
+          ]
+        },
+        {
+          "name": "datahall_02",
+          "frame_ms": 122.05397384241223,
+          "camera": {
+            "name": "datahall_02",
+            "eye": [
+              28.655,
+              33.378,
+              20.439
+            ],
+            "target": [
+              28.655,
+              1033.378,
+              20.439
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 45.69,
+            "near_clip": 1.0,
+            "far_clip": 10000000.0
+          },
+          "png": "captures/dsx_datacenter_full_vulkan_rt_run04_datahall_02.png",
+          "mean_rgb": [
+            246.03396606445312,
+            246.2373809814453,
+            246.5753173828125
+          ]
+        }
+      ],
+      "status": "ok",
+      "renderer_create_ms": 17.45541486889124,
+      "load_stage_ms": 505.25335501879454,
+      "first_frame_ms": 536178.5103080329,
+      "load_to_first_frame_ms": 536683.7636630516,
+      "orbit": {
+        "wall_ms": 633.6166830733418,
+        "fps": 18.93889526676334,
+        "frame_ms_min": 6.395176984369755,
+        "frame_ms_p50": 40.30085040722042,
+        "frame_ms_p90": 102.26561359595509,
+        "frame_ms_p99": 151.46143870661038,
+        "frame_ms_max": 157.44001790881157,
+        "frame_ms_mean": 52.79055387169743
+      },
+      "worker_returncode": 0,
+      "worker_elapsed_s": 540.7136835369747,
+      "timeout_s": 600.0
+    },
+    {
+      "scene": "dsx_datacenter_full",
+      "scene_title": "NVIDIA DSX Full Datacenter",
+      "profile": "vulkan_raster",
+      "profile_title": "Vulkan Raster",
+      "backend": "vulkan",
+      "render_mode": "raster",
+      "run_index": 4,
+      "usd_path": "$HOME/dsx-assets/dsx_dataset_2.1/DSX_BP_/DSX_BP/Assembly/DSX_Main_BP.usda",
+      "resolution": [
+        960,
+        540
+      ],
+      "frames": 12,
+      "warmup_frames": 2,
+      "captures": [
+        {
+          "name": "datahall_01",
+          "frame_ms": 547555.526525015,
+          "camera": {
+            "name": "datahall_01",
+            "eye": [
+              38.903,
+              104.531,
+              20.384
+            ],
+            "target": [
+              444.497,
+              -809.42,
+              6.751
+            ],
+            "up": [
+              0.029,
+              -0.002,
+              1.0
+            ],
+            "fov_degrees": 45.69,
+            "near_clip": 1.0,
+            "far_clip": 10000000.0
+          },
+          "png": "captures/dsx_datacenter_full_vulkan_raster_run04_datahall_01.png",
+          "mean_rgb": [
+            98.55279541015625,
+            101.30182647705078,
+            107.76068115234375
+          ]
+        },
+        {
+          "name": "datahall_02",
+          "frame_ms": 61.51589984074235,
+          "camera": {
+            "name": "datahall_02",
+            "eye": [
+              28.655,
+              33.378,
+              20.439
+            ],
+            "target": [
+              28.655,
+              1033.378,
+              20.439
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 45.69,
+            "near_clip": 1.0,
+            "far_clip": 10000000.0
+          },
+          "png": "captures/dsx_datacenter_full_vulkan_raster_run04_datahall_02.png",
+          "mean_rgb": [
+            88.3426513671875,
+            90.51142120361328,
+            96.1568832397461
+          ]
+        }
+      ],
+      "status": "ok",
+      "renderer_create_ms": 13.803560985252261,
+      "load_stage_ms": 466.6647301055491,
+      "first_frame_ms": 547555.526525015,
+      "load_to_first_frame_ms": 548022.1912551206,
+      "orbit": {
+        "wall_ms": 627.8775408864021,
+        "fps": 19.112007069179565,
+        "frame_ms_min": 50.25348602794111,
+        "frame_ms_p50": 52.36505495849997,
+        "frame_ms_p90": 54.184705787338316,
+        "frame_ms_p99": 54.99188135378063,
+        "frame_ms_max": 55.0807339604944,
+        "frame_ms_mean": 52.310732464926936
+      },
+      "worker_returncode": 0,
+      "worker_elapsed_s": 551.0953243819531,
+      "timeout_s": 600.0
+    },
+    {
+      "scene": "dsx_datacenter_full",
+      "scene_title": "NVIDIA DSX Full Datacenter",
+      "profile": "opengl",
+      "profile_title": "OpenGL GLES",
+      "backend": "opengl",
+      "render_mode": "raster",
+      "run_index": 4,
+      "status": "failed",
+      "error": "worker timed out after 600.0s",
+      "worker_returncode": 124,
+      "worker_elapsed_s": 603.0558748668991,
+      "timeout_s": 600.0
+    },
+    {
+      "scene": "isaac_warehouse_full",
+      "scene_title": "Isaac Sim Simple Warehouse Full",
+      "profile": "ovrtx",
+      "profile_title": "OVRTX",
+      "backend": "ovrtx",
+      "render_mode": "rt",
+      "run_index": 5,
+      "usd_path": "$HOME/assets/Isaac/Environments/Simple_Warehouse/full_warehouse.usd",
+      "resolution": [
+        960,
+        540
+      ],
+      "frames": 12,
+      "warmup_frames": 2,
+      "captures": [
+        {
+          "name": "rack_aisle_a",
+          "frame_ms": 5118.44131606631,
+          "camera": {
+            "name": "rack_aisle_a",
+            "eye": [
+              -2.0,
+              -16.0,
+              1.9
+            ],
+            "target": [
+              -6.0,
+              22.0,
+              1.4
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 50.0,
+            "near_clip": 0.05,
+            "far_clip": 400.0
+          },
+          "png": "captures/isaac_warehouse_full_ovrtx_run05_rack_aisle_a.png",
+          "mean_rgb": [
+            88.16865539550781,
+            92.93439483642578,
+            93.51911163330078
+          ]
+        },
+        {
+          "name": "rack_aisle_b",
+          "frame_ms": 11.317044030874968,
+          "camera": {
+            "name": "rack_aisle_b",
+            "eye": [
+              3.5,
+              -6.0,
+              2.6
+            ],
+            "target": [
+              -14.0,
+              20.0,
+              1.0
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 50.0,
+            "near_clip": 0.05,
+            "far_clip": 400.0
+          },
+          "png": "captures/isaac_warehouse_full_ovrtx_run05_rack_aisle_b.png",
+          "mean_rgb": [
+            78.80975341796875,
+            79.06407928466797,
+            76.13248443603516
+          ]
+        }
+      ],
+      "status": "ok",
+      "renderer_create_ms": 2669.048085110262,
+      "load_stage_ms": 292.005083989352,
+      "first_frame_ms": 5118.44131606631,
+      "load_to_first_frame_ms": 5410.446400055662,
+      "orbit": {
+        "wall_ms": 170.94652401283383,
+        "fps": 70.19739108061125,
+        "frame_ms_min": 11.962378863245249,
+        "frame_ms_p50": 14.611416030675173,
+        "frame_ms_p90": 16.02871837094426,
+        "frame_ms_p99": 16.908951555378735,
+        "frame_ms_max": 17.015542136505246,
+        "frame_ms_mean": 14.229890909822037
+      },
+      "worker_returncode": 0,
+      "worker_elapsed_s": 12.516561766155064,
+      "timeout_s": 600.0
+    },
+    {
+      "scene": "isaac_warehouse_full",
+      "scene_title": "Isaac Sim Simple Warehouse Full",
+      "profile": "vulkan_rt",
+      "profile_title": "Vulkan RT",
+      "backend": "vulkan",
+      "render_mode": "rt",
+      "run_index": 5,
+      "usd_path": "$HOME/assets/Isaac/Environments/Simple_Warehouse/full_warehouse.usd",
+      "resolution": [
+        960,
+        540
+      ],
+      "frames": 12,
+      "warmup_frames": 2,
+      "captures": [
+        {
+          "name": "rack_aisle_a",
+          "frame_ms": 32422.592821065336,
+          "camera": {
+            "name": "rack_aisle_a",
+            "eye": [
+              -2.0,
+              -16.0,
+              1.9
+            ],
+            "target": [
+              -6.0,
+              22.0,
+              1.4
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 50.0,
+            "near_clip": 0.05,
+            "far_clip": 400.0
+          },
+          "png": "captures/isaac_warehouse_full_vulkan_rt_run05_rack_aisle_a.png",
+          "mean_rgb": [
+            75.30297088623047,
+            81.1271743774414,
+            88.91352081298828
+          ]
+        },
+        {
+          "name": "rack_aisle_b",
+          "frame_ms": 5.087977973744273,
+          "camera": {
+            "name": "rack_aisle_b",
+            "eye": [
+              3.5,
+              -6.0,
+              2.6
+            ],
+            "target": [
+              -14.0,
+              20.0,
+              1.0
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 50.0,
+            "near_clip": 0.05,
+            "far_clip": 400.0
+          },
+          "png": "captures/isaac_warehouse_full_vulkan_rt_run05_rack_aisle_b.png",
+          "mean_rgb": [
+            74.45896911621094,
+            79.35438537597656,
+            86.70838165283203
+          ]
+        }
+      ],
+      "status": "ok",
+      "renderer_create_ms": 17.389044864103198,
+      "load_stage_ms": 1320.330485003069,
+      "first_frame_ms": 32422.592821065336,
+      "load_to_first_frame_ms": 33742.923306068406,
+      "orbit": {
+        "wall_ms": 53.859989857301116,
+        "fps": 222.7998934235468,
+        "frame_ms_min": 2.9089159797877073,
+        "frame_ms_p50": 4.701880970969796,
+        "frame_ms_p90": 5.227858549915254,
+        "frame_ms_p99": 5.2908411785028875,
+        "frame_ms_max": 5.297672934830189,
+        "frame_ms_mean": 4.480542964302003
+      },
+      "worker_returncode": 0,
+      "worker_elapsed_s": 34.70764946611598,
+      "timeout_s": 600.0
+    },
+    {
+      "scene": "isaac_warehouse_full",
+      "scene_title": "Isaac Sim Simple Warehouse Full",
+      "profile": "vulkan_raster",
+      "profile_title": "Vulkan Raster",
+      "backend": "vulkan",
+      "render_mode": "raster",
+      "run_index": 5,
+      "usd_path": "$HOME/assets/Isaac/Environments/Simple_Warehouse/full_warehouse.usd",
+      "resolution": [
+        960,
+        540
+      ],
+      "frames": 12,
+      "warmup_frames": 2,
+      "captures": [
+        {
+          "name": "rack_aisle_a",
+          "frame_ms": 31073.319918941706,
+          "camera": {
+            "name": "rack_aisle_a",
+            "eye": [
+              -2.0,
+              -16.0,
+              1.9
+            ],
+            "target": [
+              -6.0,
+              22.0,
+              1.4
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 50.0,
+            "near_clip": 0.05,
+            "far_clip": 400.0
+          },
+          "png": "captures/isaac_warehouse_full_vulkan_raster_run05_rack_aisle_a.png",
+          "mean_rgb": [
+            91.40641784667969,
+            94.08169555664062,
+            95.28346252441406
+          ]
+        },
+        {
+          "name": "rack_aisle_b",
+          "frame_ms": 5.48736983910203,
+          "camera": {
+            "name": "rack_aisle_b",
+            "eye": [
+              3.5,
+              -6.0,
+              2.6
+            ],
+            "target": [
+              -14.0,
+              20.0,
+              1.0
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 50.0,
+            "near_clip": 0.05,
+            "far_clip": 400.0
+          },
+          "png": "captures/isaac_warehouse_full_vulkan_raster_run05_rack_aisle_b.png",
+          "mean_rgb": [
+            90.1230697631836,
+            91.92755889892578,
+            92.20468139648438
+          ]
+        }
+      ],
+      "status": "ok",
+      "renderer_create_ms": 16.104976879432797,
+      "load_stage_ms": 1337.4770020600408,
+      "first_frame_ms": 31073.319918941706,
+      "load_to_first_frame_ms": 32410.796921001747,
+      "orbit": {
+        "wall_ms": 74.76309803314507,
+        "fps": 160.5069922955839,
+        "frame_ms_min": 5.3872112184762955,
+        "frame_ms_p50": 6.250887527130544,
+        "frame_ms_p90": 6.881381501443684,
+        "frame_ms_p99": 7.076117566321046,
+        "frame_ms_max": 7.097802124917507,
+        "frame_ms_mean": 6.224480748642236
+      },
+      "worker_returncode": 0,
+      "worker_elapsed_s": 32.94683624594472,
+      "timeout_s": 600.0
+    },
+    {
+      "scene": "isaac_warehouse_full",
+      "scene_title": "Isaac Sim Simple Warehouse Full",
+      "profile": "opengl",
+      "profile_title": "OpenGL GLES",
+      "backend": "opengl",
+      "render_mode": "raster",
+      "run_index": 5,
+      "usd_path": "$HOME/assets/Isaac/Environments/Simple_Warehouse/full_warehouse.usd",
+      "resolution": [
+        960,
+        540
+      ],
+      "frames": 12,
+      "warmup_frames": 2,
+      "captures": [
+        {
+          "name": "rack_aisle_a",
+          "frame_ms": 29098.986363969743,
+          "camera": {
+            "name": "rack_aisle_a",
+            "eye": [
+              -2.0,
+              -16.0,
+              1.9
+            ],
+            "target": [
+              -6.0,
+              22.0,
+              1.4
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 50.0,
+            "near_clip": 0.05,
+            "far_clip": 400.0
+          },
+          "png": "captures/isaac_warehouse_full_opengl_run05_rack_aisle_a.png",
+          "mean_rgb": [
+            82.86263275146484,
+            85.60267639160156,
+            84.6731948852539
+          ]
+        },
+        {
+          "name": "rack_aisle_b",
+          "frame_ms": 11.146403150632977,
+          "camera": {
+            "name": "rack_aisle_b",
+            "eye": [
+              3.5,
+              -6.0,
+              2.6
+            ],
+            "target": [
+              -14.0,
+              20.0,
+              1.0
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 50.0,
+            "near_clip": 0.05,
+            "far_clip": 400.0
+          },
+          "png": "captures/isaac_warehouse_full_opengl_run05_rack_aisle_b.png",
+          "mean_rgb": [
+            79.35760498046875,
+            80.79202270507812,
+            79.1998062133789
+          ]
+        }
+      ],
+      "status": "ok",
+      "renderer_create_ms": 16.317206900566816,
+      "load_stage_ms": 1304.0478539187461,
+      "first_frame_ms": 29098.986363969743,
+      "load_to_first_frame_ms": 30403.03421788849,
+      "orbit": {
+        "wall_ms": 114.68874709680676,
+        "fps": 104.6310148446474,
+        "frame_ms_min": 8.149751927703619,
+        "frame_ms_p50": 9.602400939911604,
+        "frame_ms_p90": 10.245789168402553,
+        "frame_ms_p99": 10.76901105698198,
+        "frame_ms_max": 10.830346960574389,
+        "frame_ms_mean": 9.550599420132736
+      },
+      "worker_returncode": 0,
+      "worker_elapsed_s": 30.90962258982472,
+      "timeout_s": 600.0
+    },
+    {
+      "scene": "dsx_datacenter_full",
+      "scene_title": "NVIDIA DSX Full Datacenter",
+      "profile": "ovrtx",
+      "profile_title": "OVRTX",
+      "backend": "ovrtx",
+      "render_mode": "rt",
+      "run_index": 5,
+      "usd_path": "$HOME/dsx-assets/dsx_dataset_2.1/DSX_BP_/DSX_BP/Assembly/DSX_Main_BP.usda",
+      "resolution": [
+        960,
+        540
+      ],
+      "frames": 12,
+      "warmup_frames": 2,
+      "captures": [
+        {
+          "name": "datahall_01",
+          "frame_ms": 48656.770540867,
+          "camera": {
+            "name": "datahall_01",
+            "eye": [
+              38.903,
+              104.531,
+              20.384
+            ],
+            "target": [
+              444.497,
+              -809.42,
+              6.751
+            ],
+            "up": [
+              0.029,
+              -0.002,
+              1.0
+            ],
+            "fov_degrees": 45.69,
+            "near_clip": 1.0,
+            "far_clip": 10000000.0
+          },
+          "png": "captures/dsx_datacenter_full_ovrtx_run05_datahall_01.png",
+          "mean_rgb": [
+            220.7462615966797,
+            218.5309295654297,
+            215.69961547851562
+          ]
+        },
+        {
+          "name": "datahall_02",
+          "frame_ms": 168.04310190491378,
+          "camera": {
+            "name": "datahall_02",
+            "eye": [
+              28.655,
+              33.378,
+              20.439
+            ],
+            "target": [
+              28.655,
+              1033.378,
+              20.439
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 45.69,
+            "near_clip": 1.0,
+            "far_clip": 10000000.0
+          },
+          "png": "captures/dsx_datacenter_full_ovrtx_run05_datahall_02.png",
+          "mean_rgb": [
+            195.73973083496094,
+            193.83956909179688,
+            191.94430541992188
+          ]
+        }
+      ],
+      "status": "ok",
+      "renderer_create_ms": 2598.7298500258476,
+      "load_stage_ms": 3777.764692902565,
+      "first_frame_ms": 48656.770540867,
+      "load_to_first_frame_ms": 52434.535233769566,
+      "orbit": {
+        "wall_ms": 2163.909814087674,
+        "fps": 5.545517619023009,
+        "frame_ms_min": 163.19276113063097,
+        "frame_ms_p50": 173.13673987518996,
+        "frame_ms_p90": 204.15059940423816,
+        "frame_ms_p99": 211.02819642052054,
+        "frame_ms_max": 211.8487141560763,
+        "frame_ms_mean": 180.31241315960264
+      },
+      "worker_returncode": 0,
+      "worker_elapsed_s": 85.659019327024,
+      "timeout_s": 600.0
+    },
+    {
+      "scene": "dsx_datacenter_full",
+      "scene_title": "NVIDIA DSX Full Datacenter",
+      "profile": "vulkan_rt",
+      "profile_title": "Vulkan RT",
+      "backend": "vulkan",
+      "render_mode": "rt",
+      "run_index": 5,
+      "usd_path": "$HOME/dsx-assets/dsx_dataset_2.1/DSX_BP_/DSX_BP/Assembly/DSX_Main_BP.usda",
+      "resolution": [
+        960,
+        540
+      ],
+      "frames": 12,
+      "warmup_frames": 2,
+      "captures": [
+        {
+          "name": "datahall_01",
+          "frame_ms": 555375.1940780785,
+          "camera": {
+            "name": "datahall_01",
+            "eye": [
+              38.903,
+              104.531,
+              20.384
+            ],
+            "target": [
+              444.497,
+              -809.42,
+              6.751
+            ],
+            "up": [
+              0.029,
+              -0.002,
+              1.0
+            ],
+            "fov_degrees": 45.69,
+            "near_clip": 1.0,
+            "far_clip": 10000000.0
+          },
+          "png": "captures/dsx_datacenter_full_vulkan_rt_run05_datahall_01.png",
+          "mean_rgb": [
+            227.8877716064453,
+            228.26907348632812,
+            229.6391143798828
+          ]
+        },
+        {
+          "name": "datahall_02",
+          "frame_ms": 121.81107606738806,
+          "camera": {
+            "name": "datahall_02",
+            "eye": [
+              28.655,
+              33.378,
+              20.439
+            ],
+            "target": [
+              28.655,
+              1033.378,
+              20.439
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 45.69,
+            "near_clip": 1.0,
+            "far_clip": 10000000.0
+          },
+          "png": "captures/dsx_datacenter_full_vulkan_rt_run05_datahall_02.png",
+          "mean_rgb": [
+            246.03396606445312,
+            246.2373809814453,
+            246.5753173828125
+          ]
+        }
+      ],
+      "status": "ok",
+      "renderer_create_ms": 17.160202842205763,
+      "load_stage_ms": 475.85125314071774,
+      "first_frame_ms": 555375.1940780785,
+      "load_to_first_frame_ms": 555851.0453312192,
+      "orbit": {
+        "wall_ms": 644.4664970040321,
+        "fps": 18.620052486490888,
+        "frame_ms_min": 6.9509148597717285,
+        "frame_ms_p50": 42.70348011050373,
+        "frame_ms_p90": 104.76439162157477,
+        "frame_ms_p99": 150.38878588238734,
+        "frame_ms_max": 155.88288195431232,
+        "frame_ms_mean": 53.690405756545566
+      },
+      "worker_returncode": 0,
+      "worker_elapsed_s": 560.1798376711085,
+      "timeout_s": 600.0
+    },
+    {
+      "scene": "dsx_datacenter_full",
+      "scene_title": "NVIDIA DSX Full Datacenter",
+      "profile": "vulkan_raster",
+      "profile_title": "Vulkan Raster",
+      "backend": "vulkan",
+      "render_mode": "raster",
+      "run_index": 5,
+      "usd_path": "$HOME/dsx-assets/dsx_dataset_2.1/DSX_BP_/DSX_BP/Assembly/DSX_Main_BP.usda",
+      "resolution": [
+        960,
+        540
+      ],
+      "frames": 12,
+      "warmup_frames": 2,
+      "captures": [
+        {
+          "name": "datahall_01",
+          "frame_ms": 545762.4454931356,
+          "camera": {
+            "name": "datahall_01",
+            "eye": [
+              38.903,
+              104.531,
+              20.384
+            ],
+            "target": [
+              444.497,
+              -809.42,
+              6.751
+            ],
+            "up": [
+              0.029,
+              -0.002,
+              1.0
+            ],
+            "fov_degrees": 45.69,
+            "near_clip": 1.0,
+            "far_clip": 10000000.0
+          },
+          "png": "captures/dsx_datacenter_full_vulkan_raster_run05_datahall_01.png",
+          "mean_rgb": [
+            98.55279541015625,
+            101.30182647705078,
+            107.76068115234375
+          ]
+        },
+        {
+          "name": "datahall_02",
+          "frame_ms": 62.04081792384386,
+          "camera": {
+            "name": "datahall_02",
+            "eye": [
+              28.655,
+              33.378,
+              20.439
+            ],
+            "target": [
+              28.655,
+              1033.378,
+              20.439
+            ],
+            "up": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "fov_degrees": 45.69,
+            "near_clip": 1.0,
+            "far_clip": 10000000.0
+          },
+          "png": "captures/dsx_datacenter_full_vulkan_raster_run05_datahall_02.png",
+          "mean_rgb": [
+            88.3426513671875,
+            90.51142120361328,
+            96.1568832397461
+          ]
+        }
+      ],
+      "status": "ok",
+      "renderer_create_ms": 16.46114606410265,
+      "load_stage_ms": 463.2850729394704,
+      "first_frame_ms": 545762.4454931356,
+      "load_to_first_frame_ms": 546225.7305660751,
+      "orbit": {
+        "wall_ms": 628.5963980481029,
+        "fps": 19.09015075056429,
+        "frame_ms_min": 50.62814289703965,
+        "frame_ms_p50": 52.184631931595504,
+        "frame_ms_p90": 53.68724789004773,
+        "frame_ms_p99": 54.896214122418314,
+        "frame_ms_max": 55.045617977157235,
+        "frame_ms_mean": 52.36944928765297
+      },
+      "worker_returncode": 0,
+      "worker_elapsed_s": 549.1967728030868,
+      "timeout_s": 600.0
+    },
+    {
+      "scene": "dsx_datacenter_full",
+      "scene_title": "NVIDIA DSX Full Datacenter",
+      "profile": "opengl",
+      "profile_title": "OpenGL GLES",
+      "backend": "opengl",
+      "render_mode": "raster",
+      "run_index": 5,
+      "status": "failed",
+      "error": "worker timed out after 600.0s",
+      "worker_returncode": 124,
+      "worker_elapsed_s": 603.1208419329487,
+      "timeout_s": 600.0
+    }
+  ]
+}

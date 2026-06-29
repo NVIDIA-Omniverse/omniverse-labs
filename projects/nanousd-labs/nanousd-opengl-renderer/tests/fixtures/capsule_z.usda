@@ -1,0 +1,17 @@
+#usda 1.0
+(
+    doc = "Capsule (radius 0.5, height 2.0, axis Z) for true-scale tessellation gate. Object-space extent must be +-0.5 radial (x,y) and +-(height/2 + radius)=+-1.5 axial (z) -- the hemisphere caps add `radius` beyond the cylinder half-height. A unit-primitive-plus-nonuniform-scale (wrong) capsule would give +-1.0 axial (caps scaled with the cylinder, not true radius)."
+    defaultPrim = "World"
+    upAxis = "Y"
+    metersPerUnit = 1
+)
+def Xform "World"
+{
+    def Capsule "cap"
+    {
+        double radius = 0.5
+        double height = 2.0
+        uniform token axis = "Z"
+        color3f[] primvars:displayColor = [(0.7, 0.5, 0.3)]
+    }
+}

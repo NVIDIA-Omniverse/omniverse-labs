@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<fmiModelDescription
+    fmiVersion="2.0"
+    modelName="MotorDrive"
+    guid="6e9bc1a2-c050-4a8b-a4b9-98e9973216d5"
+    generationTool="NVIDIA ovx-USD-FMI"
+    description="Roller motor drive with velocity limiting and acceleration dynamics">
+
+  <CoSimulation modelIdentifier="MotorDrive" canHandleVariableCommunicationStepSize="true"/>
+
+  <ModelVariables>
+    <ScalarVariable name="speedCommand" valueReference="0" causality="input" variability="continuous">
+      <Real start="8.0"/>
+    </ScalarVariable>
+    <ScalarVariable name="enable" valueReference="1" causality="input" variability="continuous">
+      <Real start="1.0"/>
+    </ScalarVariable>
+    <ScalarVariable name="eStop" valueReference="2" causality="input" variability="continuous">
+      <Real start="0.0"/>
+    </ScalarVariable>
+    <ScalarVariable name="targetVelocity" valueReference="3" causality="output" variability="continuous" initial="calculated">
+      <Real/>
+    </ScalarVariable>
+    <ScalarVariable name="actualVelocity" valueReference="4" causality="output" variability="continuous" initial="calculated">
+      <Real/>
+    </ScalarVariable>
+    <ScalarVariable name="fault" valueReference="5" causality="output" variability="continuous" initial="calculated">
+      <Real/>
+    </ScalarVariable>
+    <ScalarVariable name="maxSpeed" valueReference="6" causality="parameter" variability="fixed">
+      <Real start="20.0"/>
+    </ScalarVariable>
+    <ScalarVariable name="acceleration" valueReference="7" causality="parameter" variability="fixed">
+      <Real start="8.0"/>
+    </ScalarVariable>
+    <ScalarVariable name="deceleration" valueReference="8" causality="parameter" variability="fixed">
+      <Real start="12.0"/>
+    </ScalarVariable>
+    <ScalarVariable name="brakeDeceleration" valueReference="9" causality="parameter" variability="fixed">
+      <Real start="50.0"/>
+    </ScalarVariable>
+    <ScalarVariable name="initialVelocity" valueReference="10" causality="parameter" variability="fixed">
+      <Real start="0.0"/>
+    </ScalarVariable>
+    <ScalarVariable name="time" valueReference="11" causality="independent" variability="continuous">
+      <Real/>
+    </ScalarVariable>
+  </ModelVariables>
+
+  <ModelStructure>
+    <Outputs>
+      <Unknown index="4"/>
+      <Unknown index="5"/>
+      <Unknown index="6"/>
+    </Outputs>
+  </ModelStructure>
+
+</fmiModelDescription>

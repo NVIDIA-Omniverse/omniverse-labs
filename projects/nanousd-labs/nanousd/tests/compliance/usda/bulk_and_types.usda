@@ -1,0 +1,18 @@
+#usda 1.0
+(
+    metersPerUnit = 0.01
+    kilogramsPerUnit = 0.5
+)
+
+def Mesh "Root"
+{
+    float[] floatArr = [1.0, 2.0, 3.0, 4.0, 5.0]
+    double[] doubleArr = [10.0, 20.0, 30.0]
+    int[] intArr = [100, 200, 300]
+    point3f[] points = [(1, 2, 3), (4, 5, 6), (7, 8, 9)]
+    point3d[] pointsD = [(10, 20, 30), (40, 50, 60)]
+    quatf orient = (1, 0, 0, 0)
+    quatd orientD = (0.707, 0, 0.707, 0)
+    matrix3d inertia = ( (1, 0, 0), (0, 2, 0), (0, 0, 3) )
+    string[] tags = ["alpha", "beta", "gamma"]
+}

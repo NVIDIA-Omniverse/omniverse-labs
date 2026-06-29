@@ -1,0 +1,38 @@
+#usda 1.0
+(
+    doc = "Synthetic skinned mesh for task #14: ONE joint with a non-uniform scale (2,1,0.5) and a diagonal vertex normal, so the skinned normal is visibly different under inverse-transpose vs direct matrix apply. bind=identity, rest=scale(2,1,0.5), no anim, geomBind=identity, mesh/skel world=identity -> the joint skin matrix IS scale(2,1,0.5). A diagonal normal (1,1,0) skins to (0.5,1,0)->(0.447,0.894,0) with the correct inverse-transpose, but to (2,1,0)->(0.894,0.447,0) with the old direct apply."
+    upAxis = "Y"
+    metersPerUnit = 1
+)
+
+def SkelRoot "Root"
+{
+    rel skel:skeleton = </Root/Skel>
+
+    def Skeleton "Skel"
+    {
+        uniform token[] joints = ["joint1"]
+        uniform matrix4d[] bindTransforms = [( (1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1) )]
+        uniform matrix4d[] restTransforms = [( (2, 0, 0, 0), (0, 1, 0, 0), (0, 0, 0.5, 0), (0, 0, 0, 1) )]
+    }
+
+    def Mesh "Tri"
+    {
+        rel skel:skeleton = </Root/Skel>
+        uniform token[] skel:joints = ["joint1"]
+        int[] faceVertexCounts = [3]
+        int[] faceVertexIndices = [0, 1, 2]
+        point3f[] points = [(0, 0, 0), (1, 0, 0), (0, 1, 0)]
+        normal3f[] normals = [(0.7071068, 0.7071068, 0), (0.7071068, 0.7071068, 0), (0.7071068, 0.7071068, 0)] (
+            interpolation = "vertex"
+        )
+        int[] primvars:skel:jointIndices = [0, 0, 0] (
+            elementSize = 1
+            interpolation = "vertex"
+        )
+        float[] primvars:skel:jointWeights = [1, 1, 1] (
+            elementSize = 1
+            interpolation = "vertex"
+        )
+    }
+}

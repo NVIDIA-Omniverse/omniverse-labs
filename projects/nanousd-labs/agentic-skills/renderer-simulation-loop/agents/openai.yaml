@@ -1,0 +1,4 @@
+interface:
+  display_name: "Renderer In The Simulation Loop"
+  short_description: "Renderer in a physics/RL loop"
+  default_prompt: "Use $renderer-simulation-loop to drive a renderer from a physics/RL loop — per-step transform/visibility/time updates through narrow dirty paths, frame pacing, and a no-CPU-bounce consumer contract — without the transpose-zeroes-translation origin-collapse bug."

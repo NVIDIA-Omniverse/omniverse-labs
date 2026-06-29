@@ -1,0 +1,20 @@
+#usda 1.0
+
+def Xform "World" (
+    prepend variantSets = "outer"
+)
+{
+    variantSet "outer" = {
+        "a" (
+            prepend variantSets = "inner"
+        ) {
+            variantSet "inner" = {
+                "x" {
+
+                }
+            }
+
+        }
+    }
+}
+

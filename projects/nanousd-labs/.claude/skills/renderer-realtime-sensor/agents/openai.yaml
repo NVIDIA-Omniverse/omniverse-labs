@@ -1,0 +1,4 @@
+interface:
+  display_name: "Renderer Realtime Sensor"
+  short_description: "Reproducible sensor renderers for sim/RL"
+  default_prompt: "Use $renderer-realtime-sensor to design a real-time multi-camera renderer that produces reproducible, AOV-labeled sensor data for a simulation/RL loop — naming the fidelity/throughput/determinism target rather than assuming throughput wins."

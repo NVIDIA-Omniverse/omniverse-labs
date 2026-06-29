@@ -1,0 +1,4 @@
+interface:
+  display_name: "Renderer Capability ABI"
+  short_description: "Govern the shared renderer ABI"
+  default_prompt: "Use $renderer-capability-abi to keep one canonical renderer header, a runtime capability bitmask, an explicit unsupported result, and a machine-checked conformance gate so backends stay interchangeable."

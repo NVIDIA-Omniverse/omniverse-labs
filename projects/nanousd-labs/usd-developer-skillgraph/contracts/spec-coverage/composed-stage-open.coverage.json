@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/spec-coverage/composed-stage-open.coverage.json",
+  "title": "Composed Stage Open Spec Coverage",
+  "version": "0.1",
+  "spec_tag": "v1.0.1",
+  "spec_commit": "v1.0.1",
+  "spec_source": "aousd/specifications-public@v1.0.1",
+  "status_values": {
+    "implemented": "Required behavior covered by this contract and its goldens.",
+    "optional_supported": "Supported for an optional spec input or capability, but not required for baseline compliance.",
+    "partial": "A bounded subset is included and later contracts must extend it.",
+    "deferred": "Specified behavior intentionally not included in this bounded contract."
+  },
+  "rules": [
+    {
+      "id": "composed-stage-open-direct-dependency-opening",
+      "owner": "usd-composed-stage-open",
+      "status": "implemented",
+      "description": "A runtime stage open that claims composed dependency opening discovers direct external reference assets from opened layer specs, recursively discovers reference dependencies through opened referenced layers, and opens them through graph layer-open boundaries before stage population. When the optional payload inclusion scenario is requested, it also discovers direct payload assets and references authored inside loaded payload layer stacks.",
+      "evidence": [
+        "contracts/handles/composed-stage-open.handle.json#open_composed_stage",
+        "graph/skillgraph.json#usd-composed-stage-open",
+        "goldens/unit/usd-composed-stage-open/composed-stage-open.json#opens-payload-assets-when-inclusion-requested"
+      ]
+    },
+    {
+      "id": "composed-stage-open-optional-payload-inclusion",
+      "owner": "usd-composed-stage-open",
+      "status": "optional_supported",
+      "description": "Runtime stage open supports the optional AOUSD payload inclusion input to composition through a bounded adapter scenario: payloadInclusion=include opens direct external payload assets and supplies a loaded-payload opinion source; payloadInclusion=omit omits payload asset opening and reports payload_loading=absent without treating authored payload arcs as missing dependencies. This is optional support, not a baseline spec-compliance requirement.",
+      "evidence": [
+        "contracts/handles/composed-stage-open.handle.json#open_composed_stage",
+        "goldens/unit/usd-composed-stage-open/composed-stage-open.json#opens-payload-assets-when-inclusion-requested",
+        "goldens/unit/usd-composed-stage-open/composed-stage-open.json#omits-payload-assets-when-inclusion-omitted"
+      ]
+    },
+    {
+      "id": "composition-arbitrator-remains-arbitration-only",
+      "owner": "usd-composed-stage-open",
+      "status": "implemented",
+      "description": "Asset resolution and dependency opening are outside usd-composition-arbitrator; opened sources feed usd-composition-arbitrator, which owns LIVERPS arbitration.",
+      "evidence": [
+        "contracts/handles/composed-stage-open.handle.json#laws",
+        "contracts/handles/composition-arbitrator.handle.json#laws"
+      ]
+    },
+    {
+      "id": "recursive-composition-open",
+      "owner": "usd-composed-stage-open",
+      "status": "partial",
+      "description": "Runtime open owns bounded recursive/chained reference dependency opening so reference and loaded-payload sources receive the supplied layers needed for recursive reference expansion.",
+      "deferred_reason": "Recursive payload-arc expansion, variant-contained arcs, and full resolver policy remain outside this bounded open contract."
+    }
+  ]
+}

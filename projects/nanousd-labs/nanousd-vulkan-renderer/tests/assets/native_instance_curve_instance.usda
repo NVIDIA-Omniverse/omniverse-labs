@@ -1,0 +1,14 @@
+#usda 1.0
+(
+    defaultPrim = "Tree"
+    upAxis = "Y"
+)
+
+def Xform "Tree" (
+    kind = "component"
+    prepend references = [
+        @./native_instance_curve_geometry.usda@
+    ]
+)
+{
+}

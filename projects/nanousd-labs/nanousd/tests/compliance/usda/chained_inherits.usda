@@ -1,0 +1,19 @@
+#usda 1.0
+
+def "Chained_A" (
+    inherits = </Chained_B>
+)
+{
+}
+
+def "Chained_B" (
+    inherits = </Chained_C>
+)
+{
+    int bVal = 2
+}
+
+def "Chained_C"
+{
+    int cVal = 3
+}

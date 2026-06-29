@@ -1,0 +1,162 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/document-model.handle.json",
+  "title": "USD Document Model Unit Contract",
+  "version": "0.1",
+  "spec_commit": "v1.0.1",
+  "capability_contracts": [
+    "contracts/capabilities/document-data-model.json",
+    "contracts/capabilities/semantic-runtime-types.json"
+  ],
+  "dependency_contracts": [
+    "contracts/handles/token.handle.json",
+    "contracts/capabilities/identifier-scanner.json",
+    "contracts/handles/foundational-values.handle.json",
+    "contracts/handles/path.handle.json"
+  ],
+  "scope": {
+    "included": [
+      "layer creation and dump",
+      "prim spec creation",
+      "attribute and relationship spec creation",
+      "canonical tagged field storage",
+      "token identity for field keys and token-valued/name-list metadata",
+      "known core metadata field token vocabulary",
+      "native specialized field values for specifier, variability, Retiming, Relocates, TimeSamples, and Spline",
+      "field existence and stored type inspection",
+      "checked typed field reads",
+      "child-list maintenance",
+      "duplicate path diagnostics",
+      "parent validation diagnostics",
+      "active field preservation"
+    ],
+    "deferred": [
+      "variant set and variant spec creation",
+      "complete core metadata field validation",
+      "composition and value resolution",
+      "stage population"
+    ]
+  },
+  "operations": {
+    "add_prim": {
+      "input": {
+        "parent": "parent layer or prim spec path",
+        "specifier": "def, over, or class",
+        "name": "prim name",
+        "typeName": "optional prim typeName token"
+      },
+      "output": {
+        "path": "created prim spec path"
+      }
+    },
+    "add_attribute": {
+      "input": {
+        "parent": "parent prim path",
+        "name": "property name",
+        "fields": "canonical tagged field map"
+      },
+      "output": {
+        "path": "created attribute spec path"
+      }
+    },
+    "add_relationship": {
+      "input": {
+        "parent": "parent prim path",
+        "name": "property name",
+        "fields": "canonical tagged field map"
+      },
+      "output": {
+        "path": "created relationship spec path"
+      }
+    },
+    "set_field": {
+      "input": {
+        "path": "existing spec path",
+        "field": "field name",
+        "value": "canonical tagged field value"
+      },
+      "output": {
+        "path": "updated spec path",
+        "field": "updated field name"
+      }
+    },
+    "get_field_type": {
+      "input": {
+        "path": "existing spec path",
+        "field": "field name"
+      },
+      "output": {
+        "exists": "whether the field exists on the requested spec",
+        "type": "stored USD/document-model field value type when present"
+      }
+    },
+    "read_field_as": {
+      "input": {
+        "path": "existing spec path",
+        "field": "field name",
+        "as": "requested USD/document-model field value type"
+      },
+      "output": {
+        "type": "requested type when the checked read succeeds",
+        "value": "adapter serialization of the requested typed field payload, or a TypeMismatch diagnostic when the requested type does not agree with the stored type"
+      }
+    },
+    "inspect_field_value": {
+      "input": {
+        "path": "existing spec path",
+        "field": "field name"
+      },
+      "output": {
+        "exists": "whether the field exists on the requested spec",
+        "type": "stored USD/document-model field value type when present",
+        "payloadKind": "field value payload kind when present",
+        "storageType": "underlying storage/read type used for agreement checks when present",
+        "scalarDomain": "scalar domain when present",
+        "numericPrecision": "numeric precision/width when present",
+        "elementType": "element type for shaped or array values when present",
+        "shape": "dimensioned, matrix, or quaternion shape when present",
+        "componentOrder": "quaternion component order when present",
+        "order": "matrix order when present",
+        "semanticRole": "semantic alias role when present",
+        "underlyingType": "semantic alias underlying type when present",
+        "arrayElementType": "array element type when present",
+        "arrayElementKind": "array element payload kind when present",
+        "isArray": "boolean when present",
+        "isValueBlock": "boolean when present"
+      }
+    },
+    "dump_layer": {
+      "input": {},
+      "output": {
+        "layer": "canonical layer/spec/field dump"
+      }
+    },
+    "inspect_token_storage": {
+      "input": {},
+      "output": {
+        "fieldKeyModel": "token",
+        "tokenValueModel": "token",
+        "typeNameParameterModel": "token",
+        "fieldValueModel": "typed_field_value_container",
+        "specializedFieldValueModel": "typed_domain_payloads",
+        "typedFieldReadModel": "inspect_then_checked_read",
+        "numericFieldPayloadModel": "native_numeric_payloads",
+        "foundationalPayloadCatalogModel": "complete_foundational_catalog",
+        "semanticAliasPayloadModel": "alias_role_plus_underlying_type",
+        "shapePayloadModel": "typed_dimensioned_quat_matrix_shapes",
+        "adapterNumberModel": "json_number_text_on_output",
+        "jsonStorageModel": "on_demand_only",
+        "pathKeyModel": "path_ref",
+        "pathParameterModel": "path_ref",
+        "pathTextApiOwner": "usd-paths",
+        "knownFieldCount": "number of known core/reserved field tokens declared by the document-model capability",
+        "requiredFieldTokens": "representative known field names visible through the token vocabulary",
+        "fieldTokenIdentityStable": "re-interning a known field name returns equal token identity"
+      }
+    }
+  },
+  "adapter_protocol": {
+    "input": "A JSON file containing one case with an ops array. Each case starts with a fresh layer.",
+    "output": "A JSON object with ok, diagnostics, and results."
+  }
+}

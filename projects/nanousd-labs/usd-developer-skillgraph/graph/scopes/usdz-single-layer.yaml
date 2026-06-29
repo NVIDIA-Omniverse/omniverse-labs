@@ -1,0 +1,100 @@
+name: usdz-single-layer
+version: 0.1
+
+goal: >
+  Generate a C++ target implementation that opens one resolved local USDZ
+  package layer resource, selects either the package default layer or an
+  explicit package entry, dispatches .usda entries to the USDA handler and .usdc
+  entries to the USDC handler, and emits canonical layer dump JSON only through
+  the validation adapter.
+
+required_nodes:
+  - usd-identifiers-and-names
+  - usd-tokens
+  - usd-foundational-values
+  - usd-paths
+  - usd-listops-authored
+  - usd-document-model
+  - usda-lexical-format
+  - usda-value-parser
+  - usda-spec-parser
+  - usd-resource-protocol
+  - usda-layer-open
+  - usdc-binary-format
+  - usdc-value-decoder
+  - usdc-spec-parser
+  - usdc-layer-open
+  - usdz-package-format
+  - usdz-layer-open
+  - usd-layer-open
+
+input_formats:
+  - usdz
+  - local filesystem resource
+  - package resource spelling
+
+outputs:
+  - contracts/handles/usdz-package-format.handle.json
+  - contracts/handles/usdz-layer-open.handle.json
+  - contracts/handles/layer-open.handle.json
+  - contracts/layer-dump.schema.json
+  - harness/dump_contract.md
+
+goldens:
+  - goldens/integration/usdz-single-layer/basic.json
+
+benchmark_targets:
+  - benchmarks/usdz/targets.json
+
+included:
+  - resolved local filesystem package opening
+  - package spelling split for explicit entries
+  - standard non-Zip64 ZIP/USDZ package indexing
+  - stored/no-encryption checks
+  - 64-byte package entry data alignment checks
+  - default layer selection from the first physical package entry
+  - explicit .usda and .usdc package entry opening
+  - package diagnostics before layer-format parser dispatch
+  - package equivalence with standalone USDA and USDC fixtures
+
+excluded:
+  - Zip64
+  - compressed or encrypted package entries
+  - USDZ writing
+  - temporary package extraction
+  - nested packages
+  - .usd forwarding format dispatch
+  - sublayer composition
+  - references and payload composition
+  - dependent layer loading
+  - asset resolution
+  - value resolution
+  - stage population
+
+boundary_guards:
+  defer_to:
+    resource_opening: usd-resource-protocol
+    package_layout: usdz-package-format
+    package_layer_dispatch: usdz-layer-open
+    layer_format_dispatch: usd-layer-open
+    usda_text_layer_opening: usda-layer-open
+    usdc_binary_layer_opening: usdc-layer-open
+    paths: usd-paths
+    values: usd-foundational-values
+    listops: usd-listops-authored
+    layer_storage: usd-document-model
+    canonical_dump_json: validation adapter over usd-document-model
+  forbidden_local_reimplementations:
+    - temp extraction of package entries
+    - raw file reads inside USDZ handlers
+    - direct calls from usdz-layer-open to USDA or USDC parsers
+    - filename or entry-name fixture dispatch
+    - file-size dispatch
+    - canned canonical-dump literals
+    - copying selected package entries into owned byte buffers when a byte view is available
+    - implicit composition semantics
+
+acceptance:
+  score: "100%"
+  diagnostics: "must match golden diagnostics exactly"
+  hermeticity: "generated target may read only target source, standard toolchain, and provided inputs"

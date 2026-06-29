@@ -1,0 +1,11 @@
+#usda 1.0
+
+over "World"
+{
+    double weakOnly = 20
+
+    def Scope "WeakChild"
+    {
+        string label = "weak"
+    }
+}

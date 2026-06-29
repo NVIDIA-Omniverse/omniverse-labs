@@ -1,0 +1,13 @@
+#usda 1.0
+
+def Xform "World" (
+    "World prim comment"
+    doc = "World prim documentation"
+)
+{
+    float3[] extent (
+        displayName = "Extent"
+        doc = "attribute docstring"
+    )
+}
+

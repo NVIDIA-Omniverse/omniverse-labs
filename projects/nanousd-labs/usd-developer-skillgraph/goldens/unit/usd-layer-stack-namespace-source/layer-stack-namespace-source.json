@@ -1,0 +1,699 @@
+{
+  "suite": "usd-layer-stack-namespace-source",
+  "contract": "contracts/handles/layer-stack-namespace-source.handle.json",
+  "spec_commit": "v1.0.1",
+  "cases": [
+    {
+      "id": "capabilities-and-stack-summary",
+      "input": {
+        "rootLayer": {
+          "identifier": "root.usda",
+          "fields": {
+            "subLayers": {"type": "asset[]", "value": ["asset.usda", "anim.usda"]},
+            "subLayerOffsets": {
+              "type": "Retiming[]",
+              "value": [
+                {"offset": 0.0, "scale": 1.0},
+                {"offset": 12.0, "scale": 0.5}
+              ]
+            },
+            "primChildren": {"type": "token[]", "value": ["World"]}
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "subLayers": {"type": "asset[]", "value": ["asset.usda", "anim.usda"]},
+                "subLayerOffsets": {
+                  "type": "Retiming[]",
+                  "value": [
+                    {"offset": 0.0, "scale": 1.0},
+                    {"offset": 12.0, "scale": 0.5}
+                  ]
+                },
+                "primChildren": {"type": "token[]", "value": ["World"]}
+              }
+            },
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "over"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        },
+        "sublayers": {
+          "asset.usda": {
+            "identifier": "asset.usda",
+            "fields": {"primChildren": {"type": "token[]", "value": ["World"]}},
+            "specs": {
+              "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["World"]}}},
+              "/World": {
+                "kind": "prim",
+                "fields": {
+                  "specifier": {"type": "specifier", "value": "def"},
+                  "typeName": {"type": "token", "value": "Xform"},
+                  "primChildren": {"type": "token[]", "value": []},
+                  "propertyChildren": {"type": "token[]", "value": []},
+                  "variantSetChildren": {"type": "token[]", "value": []}
+                }
+              }
+            }
+          },
+          "anim.usda": {
+            "identifier": "anim.usda",
+            "fields": {"primChildren": {"type": "token[]", "value": []}},
+            "specs": {
+              "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": []}}}
+            }
+          }
+        },
+        "ops": [
+          {"op": "build_source"},
+          {"op": "inspect_source"},
+          {"op": "layer_stack_summary"},
+          {"op": "prim_input", "path": "/World"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "build_source", "ok": true},
+          {
+            "op": "inspect_source",
+            "ok": true,
+            "mode": "layer_stack",
+            "composition": "partial",
+            "value_resolution": "partial",
+            "payload_loading": "absent",
+            "instancing": "absent",
+            "schema_fallbacks": "absent",
+            "child_ordering": "composed",
+            "property_ordering": "composed"
+          },
+          {
+            "op": "layer_stack_summary",
+            "ok": true,
+            "layers": [
+              {"identifier": "root.usda", "strengthIndex": 0, "offset": 0.0, "scale": 1.0},
+              {"identifier": "asset.usda", "strengthIndex": 1, "offset": 0.0, "scale": 1.0},
+              {"identifier": "anim.usda", "strengthIndex": 2, "offset": 12.0, "scale": 0.5}
+            ],
+            "diagnostics": []
+          },
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/World",
+            "exists": true,
+            "kind": "prim",
+            "fields": {
+              "specifier": {"type": "specifier", "value": "def"},
+              "typeName": {"type": "token", "value": "Xform"},
+              "primChildren": {"type": "token[]", "value": []},
+              "propertyChildren": {"type": "token[]", "value": []},
+              "variantSetChildren": {"type": "token[]", "value": []}
+            },
+            "childNames": [],
+            "propertyNames": [],
+            "contributingLayers": ["root.usda", "asset.usda"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "stronger-root-overrides-and-weaker-supplies",
+      "input": {
+        "rootLayer": {
+          "identifier": "root.usda",
+          "fields": {
+            "subLayers": {"type": "asset[]", "value": ["asset.usda"]},
+            "subLayerOffsets": {"type": "Retiming[]", "value": [{"offset": 0.0, "scale": 1.0}]},
+            "primChildren": {"type": "token[]", "value": ["World", "RootOnly"]}
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "subLayers": {"type": "asset[]", "value": ["asset.usda"]},
+                "subLayerOffsets": {"type": "Retiming[]", "value": [{"offset": 0.0, "scale": 1.0}]},
+                "primChildren": {"type": "token[]", "value": ["World", "RootOnly"]}
+              }
+            },
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "over"},
+                "kind": {"type": "token", "value": "assembly"},
+                "primChildren": {"type": "token[]", "value": ["RootChild"]},
+                "propertyChildren": {"type": "token[]", "value": ["visibility"]},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World.visibility": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "typeName": {"type": "token", "value": "token"},
+                "variability": {"type": "variability", "value": "uniform"},
+                "default": {"type": "token", "value": "inherited"}
+              }
+            },
+            "/RootOnly": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        },
+        "sublayers": {
+          "asset.usda": {
+            "identifier": "asset.usda",
+            "fields": {"primChildren": {"type": "token[]", "value": ["World", "AssetOnly"]}},
+            "specs": {
+              "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["World", "AssetOnly"]}}},
+              "/World": {
+                "kind": "prim",
+                "fields": {
+                  "specifier": {"type": "specifier", "value": "def"},
+                  "typeName": {"type": "token", "value": "Xform"},
+                  "kind": {"type": "token", "value": "component"},
+                  "primChildren": {"type": "token[]", "value": ["AssetChild"]},
+                  "propertyChildren": {"type": "token[]", "value": ["size"]},
+                  "variantSetChildren": {"type": "token[]", "value": []}
+                }
+              },
+              "/World.size": {
+                "kind": "attribute",
+                "fields": {
+                  "custom": {"type": "bool", "value": true},
+                  "typeName": {"type": "token", "value": "float"},
+                  "variability": {"type": "variability", "value": "uniform"},
+                  "default": {"type": "float", "value": 2.0}
+                }
+              },
+              "/AssetOnly": {
+                "kind": "prim",
+                "fields": {
+                  "specifier": {"type": "specifier", "value": "def"},
+                  "primChildren": {"type": "token[]", "value": []},
+                  "propertyChildren": {"type": "token[]", "value": []},
+                  "variantSetChildren": {"type": "token[]", "value": []}
+                }
+              }
+            }
+          }
+        },
+        "ops": [
+          {"op": "build_source"},
+          {"op": "prim_input", "path": "/"},
+          {"op": "prim_input", "path": "/World"},
+          {"op": "prim_input", "path": "/AssetOnly"},
+          {"op": "property_input", "path": "/World.visibility"},
+          {"op": "property_input", "path": "/World.size"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "build_source", "ok": true},
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/",
+            "exists": true,
+            "kind": "layer",
+            "fields": {
+              "subLayers": {"type": "asset[]", "value": ["asset.usda"]},
+              "subLayerOffsets": {"type": "Retiming[]", "value": [{"offset": 0.0, "scale": 1.0}]},
+              "primChildren": {"type": "token[]", "value": ["World", "RootOnly"]}
+            },
+            "childNames": ["World", "AssetOnly", "RootOnly"],
+            "propertyNames": [],
+            "contributingLayers": ["root.usda", "asset.usda"]
+          },
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/World",
+            "exists": true,
+            "kind": "prim",
+            "fields": {
+              "specifier": {"type": "specifier", "value": "def"},
+              "typeName": {"type": "token", "value": "Xform"},
+              "kind": {"type": "token", "value": "assembly"},
+              "primChildren": {"type": "token[]", "value": ["RootChild"]},
+              "propertyChildren": {"type": "token[]", "value": ["visibility"]},
+              "variantSetChildren": {"type": "token[]", "value": []}
+            },
+            "childNames": ["AssetChild", "RootChild"],
+            "propertyNames": ["size", "visibility"],
+            "contributingLayers": ["root.usda", "asset.usda"]
+          },
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/AssetOnly",
+            "exists": true,
+            "kind": "prim",
+            "fields": {
+              "specifier": {"type": "specifier", "value": "def"},
+              "primChildren": {"type": "token[]", "value": []},
+              "propertyChildren": {"type": "token[]", "value": []},
+              "variantSetChildren": {"type": "token[]", "value": []}
+            },
+            "childNames": [],
+            "propertyNames": [],
+            "contributingLayers": ["asset.usda"]
+          },
+          {
+            "op": "property_input",
+            "ok": true,
+            "path": "/World.visibility",
+            "exists": true,
+            "kind": "attribute",
+            "fields": {
+              "custom": {"type": "bool", "value": false},
+              "typeName": {"type": "token", "value": "token"},
+              "variability": {"type": "variability", "value": "uniform"},
+              "default": {"type": "token", "value": "inherited"}
+            },
+            "contributingLayers": ["root.usda"]
+          },
+          {
+            "op": "property_input",
+            "ok": true,
+            "path": "/World.size",
+            "exists": true,
+            "kind": "attribute",
+            "fields": {
+              "custom": {"type": "bool", "value": true},
+              "typeName": {"type": "token", "value": "float"},
+              "variability": {"type": "variability", "value": "uniform"},
+              "default": {"type": "float", "value": 2.0}
+            },
+            "contributingLayers": ["asset.usda"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "child-and-property-ordering",
+      "input": {
+        "rootLayer": {
+          "identifier": "root.usda",
+          "fields": {
+            "subLayers": {"type": "asset[]", "value": ["asset.usda"]},
+            "primChildren": {"type": "token[]", "value": ["World", "Props"]},
+            "primOrder": {"type": "token[]", "value": ["World"]}
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "subLayers": {"type": "asset[]", "value": ["asset.usda"]},
+                "primChildren": {"type": "token[]", "value": ["World", "Props"]},
+                "primOrder": {"type": "token[]", "value": ["World"]}
+              }
+            },
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "over"},
+                "primChildren": {"type": "token[]", "value": ["Materials"]},
+                "primOrder": {"type": "token[]", "value": ["Geom"]},
+                "propertyChildren": {"type": "token[]", "value": ["visibility"]},
+                "propertyOrder": {"type": "token[]", "value": ["visibility", "displayColor"]},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        },
+        "sublayers": {
+          "asset.usda": {
+            "identifier": "asset.usda",
+            "fields": {
+              "primChildren": {"type": "token[]", "value": ["Props", "World", "Looks"]},
+              "primOrder": {"type": "token[]", "value": ["Looks"]}
+            },
+            "specs": {
+              "/": {
+                "kind": "layer",
+                "fields": {
+                  "primChildren": {"type": "token[]", "value": ["Props", "World", "Looks"]},
+                  "primOrder": {"type": "token[]", "value": ["Looks"]}
+                }
+              },
+              "/World": {
+                "kind": "prim",
+                "fields": {
+                  "specifier": {"type": "specifier", "value": "def"},
+                  "primChildren": {"type": "token[]", "value": ["Geom", "Rig"]},
+                  "primOrder": {"type": "token[]", "value": ["Rig"]},
+                  "propertyChildren": {"type": "token[]", "value": ["size", "displayColor"]},
+                  "variantSetChildren": {"type": "token[]", "value": []}
+                }
+              }
+            }
+          }
+        },
+        "ops": [
+          {"op": "build_source"},
+          {"op": "prim_input", "path": "/"},
+          {"op": "prim_input", "path": "/World"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "build_source", "ok": true},
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/",
+            "exists": true,
+            "kind": "layer",
+            "fields": {
+              "subLayers": {"type": "asset[]", "value": ["asset.usda"]},
+              "primChildren": {"type": "token[]", "value": ["World", "Props"]},
+              "primOrder": {"type": "token[]", "value": ["World"]}
+            },
+            "childNames": ["World", "Looks", "Props"],
+            "propertyNames": [],
+            "contributingLayers": ["root.usda", "asset.usda"]
+          },
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/World",
+            "exists": true,
+            "kind": "prim",
+            "fields": {
+              "specifier": {"type": "specifier", "value": "def"},
+              "primChildren": {"type": "token[]", "value": ["Materials"]},
+              "primOrder": {"type": "token[]", "value": ["Geom"]},
+              "propertyChildren": {"type": "token[]", "value": ["visibility"]},
+              "propertyOrder": {"type": "token[]", "value": ["visibility", "displayColor"]},
+              "variantSetChildren": {"type": "token[]", "value": []}
+            },
+            "childNames": ["Geom", "Rig", "Materials"],
+            "propertyNames": ["visibility", "displayColor", "size"],
+            "contributingLayers": ["root.usda", "asset.usda"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "authored-listop-field-composition",
+      "input": {
+        "rootLayer": {
+          "identifier": "root.usda",
+          "fields": {
+            "subLayers": {"type": "asset[]", "value": ["weak.usda"]},
+            "primChildren": {"type": "token[]", "value": ["Root"]}
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "subLayers": {"type": "asset[]", "value": ["weak.usda"]},
+                "primChildren": {"type": "token[]", "value": ["Root"]}
+              }
+            },
+            "/Root": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "apiSchemas": {
+                  "type": "listop<token>",
+                  "value": {"explicit": [], "prepend": ["CollectionAPI:lights"], "append": [], "delete": []}
+                },
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        },
+        "sublayers": {
+          "weak.usda": {
+            "identifier": "weak.usda",
+            "fields": {"primChildren": {"type": "token[]", "value": ["Root"]}},
+            "specs": {
+              "/": {
+                "kind": "layer",
+                "fields": {"primChildren": {"type": "token[]", "value": ["Root"]}}
+              },
+              "/Root": {
+                "kind": "prim",
+                "fields": {
+                  "specifier": {"type": "specifier", "value": "def"},
+                  "apiSchemas": {
+                    "type": "listop<token>",
+                    "value": {"explicit": [], "prepend": ["CollectionAPI:shadows"], "append": [], "delete": []}
+                  },
+                  "primChildren": {"type": "token[]", "value": []},
+                  "propertyChildren": {"type": "token[]", "value": []},
+                  "variantSetChildren": {"type": "token[]", "value": []}
+                }
+              }
+            }
+          }
+        },
+        "ops": [
+          {"op": "build_source"},
+          {"op": "prim_input", "path": "/Root"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "build_source", "ok": true},
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/Root",
+            "exists": true,
+            "kind": "prim",
+            "fields": {
+              "specifier": {"type": "specifier", "value": "def"},
+              "apiSchemas": {
+                "type": "listop<token>",
+                "value": {"explicit": [], "prepend": ["CollectionAPI:lights", "CollectionAPI:shadows"], "append": [], "delete": []}
+              },
+              "primChildren": {"type": "token[]", "value": []},
+              "propertyChildren": {"type": "token[]", "value": []},
+              "variantSetChildren": {"type": "token[]", "value": []}
+            },
+            "childNames": [],
+            "propertyNames": [],
+            "contributingLayers": ["root.usda", "weak.usda"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "recursive-sublayer-stack-order",
+      "input": {
+        "rootLayer": {
+          "identifier": "root.usda",
+          "fields": {
+            "subLayers": {"type": "asset[]", "value": ["asset.usda", "anim.usda"]},
+            "primChildren": {"type": "token[]", "value": []}
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "subLayers": {"type": "asset[]", "value": ["asset.usda", "anim.usda"]},
+                "primChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        },
+        "sublayers": {
+          "asset.usda": {
+            "identifier": "asset.usda",
+            "fields": {
+              "subLayers": {"type": "asset[]", "value": ["nested.usda"]},
+              "subLayerOffsets": {"type": "Retiming[]", "value": [{"offset": 48.0, "scale": 2.0}]},
+              "primChildren": {"type": "token[]", "value": ["AssetOnly"]}
+            },
+            "specs": {
+              "/": {
+                "kind": "layer",
+                "fields": {
+                  "subLayers": {"type": "asset[]", "value": ["nested.usda"]},
+                  "subLayerOffsets": {"type": "Retiming[]", "value": [{"offset": 48.0, "scale": 2.0}]},
+                  "primChildren": {"type": "token[]", "value": ["AssetOnly"]}
+                }
+              },
+              "/AssetOnly": {
+                "kind": "prim",
+                "fields": {
+                  "specifier": {"type": "specifier", "value": "def"},
+                  "primChildren": {"type": "token[]", "value": []},
+                  "propertyChildren": {"type": "token[]", "value": []},
+                  "variantSetChildren": {"type": "token[]", "value": []}
+                }
+              }
+            }
+          },
+          "nested.usda": {
+            "identifier": "nested.usda",
+            "fields": {"primChildren": {"type": "token[]", "value": ["NestedOnly"]}},
+            "specs": {
+              "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["NestedOnly"]}}},
+              "/NestedOnly": {
+                "kind": "prim",
+                "fields": {
+                  "specifier": {"type": "specifier", "value": "def"},
+                  "primChildren": {"type": "token[]", "value": []},
+                  "propertyChildren": {"type": "token[]", "value": []},
+                  "variantSetChildren": {"type": "token[]", "value": []}
+                }
+              }
+            }
+          },
+          "anim.usda": {
+            "identifier": "anim.usda",
+            "fields": {"primChildren": {"type": "token[]", "value": ["AnimOnly"]}},
+            "specs": {
+              "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["AnimOnly"]}}},
+              "/AnimOnly": {
+                "kind": "prim",
+                "fields": {
+                  "specifier": {"type": "specifier", "value": "def"},
+                  "primChildren": {"type": "token[]", "value": []},
+                  "propertyChildren": {"type": "token[]", "value": []},
+                  "variantSetChildren": {"type": "token[]", "value": []}
+                }
+              }
+            }
+          }
+        },
+        "ops": [
+          {"op": "build_source"},
+          {"op": "layer_stack_summary"},
+          {"op": "prim_input", "path": "/AssetOnly"},
+          {"op": "prim_input", "path": "/NestedOnly"},
+          {"op": "prim_input", "path": "/AnimOnly"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "build_source", "ok": true},
+          {
+            "op": "layer_stack_summary",
+            "ok": true,
+            "layers": [
+              {"identifier": "root.usda", "strengthIndex": 0, "offset": 0.0, "scale": 1.0},
+              {"identifier": "asset.usda", "strengthIndex": 1, "offset": 0.0, "scale": 1.0},
+              {"identifier": "nested.usda", "strengthIndex": 2, "offset": 48.0, "scale": 2.0},
+              {"identifier": "anim.usda", "strengthIndex": 3, "offset": 0.0, "scale": 1.0}
+            ],
+            "diagnostics": []
+          },
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/AssetOnly",
+            "exists": true,
+            "kind": "prim",
+            "fields": {
+              "specifier": {"type": "specifier", "value": "def"},
+              "primChildren": {"type": "token[]", "value": []},
+              "propertyChildren": {"type": "token[]", "value": []},
+              "variantSetChildren": {"type": "token[]", "value": []}
+            },
+            "childNames": [],
+            "propertyNames": [],
+            "contributingLayers": ["asset.usda"]
+          },
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/NestedOnly",
+            "exists": true,
+            "kind": "prim",
+            "fields": {
+              "specifier": {"type": "specifier", "value": "def"},
+              "primChildren": {"type": "token[]", "value": []},
+              "propertyChildren": {"type": "token[]", "value": []},
+              "variantSetChildren": {"type": "token[]", "value": []}
+            },
+            "childNames": [],
+            "propertyNames": [],
+            "contributingLayers": ["nested.usda"]
+          },
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/AnimOnly",
+            "exists": true,
+            "kind": "prim",
+            "fields": {
+              "specifier": {"type": "specifier", "value": "def"},
+              "primChildren": {"type": "token[]", "value": []},
+              "propertyChildren": {"type": "token[]", "value": []},
+              "variantSetChildren": {"type": "token[]", "value": []}
+            },
+            "childNames": [],
+            "propertyNames": [],
+            "contributingLayers": ["anim.usda"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "missing-sublayer-diagnostic",
+      "input": {
+        "rootLayer": {
+          "identifier": "root.usda",
+          "fields": {
+            "subLayers": {"type": "asset[]", "value": ["missing.usda"]},
+            "primChildren": {"type": "token[]", "value": []}
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "subLayers": {"type": "asset[]", "value": ["missing.usda"]},
+                "primChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        },
+        "sublayers": {},
+        "ops": [
+          {"op": "build_source"}
+        ]
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {
+            "code": "MissingSublayer",
+            "message": "No supplied layer for sublayer asset missing.usda"
+          }
+        ],
+        "results": [
+          {"op": "build_source", "ok": false}
+        ]
+      }
+    }
+  ]
+}

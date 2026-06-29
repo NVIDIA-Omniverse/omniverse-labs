@@ -1,0 +1,151 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/spec-coverage/specializes-composition.coverage.json",
+  "title": "USD Specializes Composition Spec Coverage Ledger",
+  "version": "0.1",
+  "spec_tag": "v1.0.1",
+  "spec_commit": "v1.0.1",
+  "normative_source": {
+    "repo": "aousd/specifications-public",
+    "tag": "v1.0.1",
+    "commit": "v1.0.1",
+    "rule": "Only the AOUSD core specification at aousd/specifications-public v1.0.1 is normative for this ledger. This ledger covers only direct specializes namespace composition."
+  },
+  "status_values": {
+    "implemented": "In scope for the specializes-namespace-source contract and covered by goldens.",
+    "partial": "A bounded subset is included and later contracts must extend it.",
+    "deferred": "Specified behavior intentionally not included in this first specializes contract.",
+    "out_of_scope": "Belongs to another subsystem or future skill."
+  },
+  "coverage_rules": [
+    "The provider composes direct specializes arcs and delegates stage traversal to usd-stage-population.",
+    "The provider consumes a base namespace source, not parser-local USDA syntax.",
+    "A generated target must include bounded recursive direct specializes expansion and implied upstream specializes arcs represented by the base source before claiming this contract.",
+    "A generated target must not claim full value resolution, specializes authored inside selected variants, or unbounded recursive behavior from this provider."
+  ],
+  "items": [
+    {
+      "id": "specializes.direct-specialize-paths",
+      "owner": "usd-specializes-namespace-source",
+      "status": "partial",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:522 Specializes",
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:528 specializes composed like inherits",
+        "aousd/specifications-public@v1.0.1:specification/document_data_model/README.md:733 specializes",
+        "aousd/specifications-public@v1.0.1:specification/file_formats/README.md:1166 SpecializesMetadata"
+      ],
+      "obligations": [
+        "Read direct specialize path items from the base source-visible specializes field.",
+        "Map the specialized source prim and descendants onto the specialize-authoring prim path.",
+        "Preserve target opinions as stronger than specialized source opinions.",
+        "Resolve specialized source paths through the applicable source-visible composed or layer-stack context rather than only through the layer where the specializes arc was authored."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-specializes-namespace-source/specializes-namespace-source.json#specializes-class-tree"
+      ]
+    },
+    {
+      "id": "specializes.namespace-mapping",
+      "owner": "usd-specializes-namespace-source",
+      "status": "implemented",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:533 Namespace Mapping"
+      ],
+      "obligations": [
+        "Use the same namespace mapping behavior as inherits.",
+        "Map properties under the specialized source prim to corresponding properties under the specialize-authoring prim path."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-specializes-namespace-source/specializes-namespace-source.json#specializes-class-tree"
+      ]
+    },
+    {
+      "id": "specializes.path-validation",
+      "owner": "usd-specializes-namespace-source",
+      "status": "implemented",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:specification/document_data_model/README.md:206 ObjectPath value range",
+        "aousd/specifications-public@v1.0.1:specification/document_data_model/README.md:733 specializes"
+      ],
+      "obligations": [
+        "Reject property paths in specialize path items.",
+        "Diagnose a missing specialized prim source path.",
+        "Include the specialize-authoring prim path and specialized source path in diagnostics."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-specializes-namespace-source/specializes-namespace-source.json#missing-specialized-prim"
+      ]
+    },
+    {
+      "id": "specializes.global-weakest-strength",
+      "owner": "usd-specializes-namespace-source",
+      "status": "partial",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:800 Strength Ordering",
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:824 composition arc order",
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:854 Specializes strength",
+        "aousd/specifications-public@v1.0.1:specification/glossary/README.md:85 LIVERPS",
+        "aousd/specifications-public@v1.0.1:specification/glossary/README.md:162 Specializes"
+      ],
+      "obligations": [
+        "Treat all opinions on the specialize-authoring prim as stronger than specialized opinions in this bounded source.",
+        "Require specialized opinions to be modeled as globally weaker than local, inherits, variants, relocates, references, and payloads in LIVERPS.",
+        "Place usd-specializes-namespace-source after usd-inherits-namespace-source and before usd-variant-namespace-source in graph evaluation order so variant selection can observe specialized non-variant opinions.",
+        "Require usd-variant-namespace-source to insert selected variant opinions above specializes opinions when both are present.",
+        "Document that evaluation order is distinct from LIVERPS field-strength order."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-specializes-namespace-source/specializes-namespace-source.json#specializes-class-tree",
+        "graph/skillgraph.json#usd-specializes-namespace-source",
+        "graph/skillgraph.json#usd-variant-namespace-source"
+      ],
+      "deferred_reason": "Full arbitration against payload opinions remains deferred to usd-composition-arbitrator, which merges payload opinion sources with the terminal non-variant source."
+    },
+    {
+      "id": "specializes.implied-arcs",
+      "owner": "usd-specializes-namespace-source",
+      "status": "partial",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:528 specializes composed like inherits",
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:854 Specializes strength"
+      ],
+      "obligations": [
+        "When a specializes arc authored in a weaker referenced or otherwise introduced layer stack targets an absolute source path, include stronger upstream layer-stack opinions at that same source path as implied specialized contributors.",
+        "Preserve source-visible layer strength among implied specialized contributors while keeping them in the specializes family.",
+        "Do not diagnose absence of an implied contributor when no upstream layer-stack site contributes at the specialized source path."
+      ]
+    },
+    {
+      "id": "specializes.recursive-expansion",
+      "owner": "usd-specializes-namespace-source",
+      "status": "partial",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:528 specializes composed like inherits",
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:854 Specializes strength"
+      ],
+      "obligations": [
+        "Expand specializes paths authored on specialized source prims transitively.",
+        "Order a source prim's own opinions stronger than opinions introduced by that source prim's specializes arcs.",
+        "Detect recursive specializes cycles using semantic paths and mapping context; diagnose cycles without unbounded recursion or crashes."
+      ]
+    },
+    {
+      "id": "specializes.stage-population-consumption",
+      "owner": "usd-specializes-namespace-source",
+      "status": "implemented",
+      "spec_refs": [
+        "aousd/specifications-public@v1.0.1:specification/stage_population/README.md:17 stage population",
+        "aousd/specifications-public@v1.0.1:specification/stage_population/README.md:106 composition arcs",
+        "aousd/specifications-public@v1.0.1:specification/composition/README.md:522 Specializes"
+      ],
+      "obligations": [
+        "Expose specialized composed prims and properties through the namespace-source boundary.",
+        "Allow usd-stage-population to populate specialized prims and properties without evaluating specializes itself.",
+        "Preserve composed child and property ordering when consumed by stage population."
+      ],
+      "positive_goldens": [
+        "goldens/integration/usd-specializes-stage-population/specializes-stage-population.json#specialized-tree-populates-stage"
+      ]
+    }
+  ]
+}

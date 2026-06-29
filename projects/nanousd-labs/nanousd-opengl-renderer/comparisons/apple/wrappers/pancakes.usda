@@ -1,0 +1,33 @@
+#usda 1.0
+(
+    defaultPrim = "pancakes_photogrammetry"
+    metersPerUnit = 0.01
+    upAxis = "Y"
+    subLayers = [
+        @./pancakes_photogrammetry.usdc@
+    ]
+)
+
+def DomeLight "CompareDome"
+{
+    color3f inputs:color = (0.78, 0.82, 0.9)
+    float inputs:intensity = 450
+}
+
+def SphereLight "CompareKey"
+{
+    color3f inputs:color = (1, 0.95, 0.86)
+    float inputs:intensity = 6000
+    float inputs:radius = 19.7844268
+    double3 xformOp:translate = (27.4697082, 48.5538158, 19.5044815)
+    uniform token[] xformOpOrder = ["xformOp:translate"]
+}
+
+def SphereLight "CompareFill"
+{
+    color3f inputs:color = (0.68, 0.76, 1)
+    float inputs:intensity = 1200
+    float inputs:radius = 35.6119683
+    double3 xformOp:translate = (-37.8189004, 12.9418475, -31.9350283)
+    uniform token[] xformOpOrder = ["xformOp:translate"]
+}

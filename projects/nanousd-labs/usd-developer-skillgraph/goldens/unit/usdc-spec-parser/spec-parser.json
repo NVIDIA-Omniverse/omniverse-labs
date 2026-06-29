@@ -1,0 +1,550 @@
+{
+  "suite": "usdc-spec-parser-basic",
+  "contract": "contracts/handles/usdc-spec-parser.handle.json",
+  "production_contracts": [
+    "contracts/usdc-productions/crate-section-layouts.contract.json",
+    "contracts/usdc-productions/crate-reader-diagnostics.contract.json"
+  ],
+  "spec_commit": "6b4f01f2d6d46b01507481524eb516b4ef358c31",
+  "notes": "These cases run the spec parser end-to-end against checked-in .usdc fixtures, comparing against the canonical layer dump shape. The adapter expects the parser to invoke usdc-binary-format for section bytes and usdc-value-decoder for value words, then assemble dumps through usd-document-model into a single growable buffer (no canned literals). Each parse_layer op carries an `opened_resource` object naming the fixture; the harness pre-resolves it through usd_resource_protocol::read_resource(classify_resolved(...)) before invoking the adapter — the adapter never sees a raw fixture path. Dump-emission and parse-strategy compliance are verified by harness/source_audit.py against generated/cpp/usdc_*.cpp, not by self-attestation ops.",
+  "cases": [
+    {
+      "id": "minimal-empty-layer-via-real-decoder",
+      "spec_refs": [
+        "specification/file_formats/README.md#tokens-section",
+        "specification/file_formats/README.md#paths-section",
+        "specification/file_formats/README.md#specs-section"
+      ],
+      "input": {
+        "ops": [
+          {"op": "parse_layer", "opened_resource": {"ok": true, "fixture": "benchmarks/fixtures/minimal_empty.usdc"}}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "parse_layer",
+            "ok": true,
+            "layer": {
+              "fields": {"primChildren": {"type": "token[]", "value": []}},
+              "specs": {
+                "/": {
+                  "kind": "layer",
+                  "fields": {"primChildren": {"type": "token[]", "value": []}}
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "one-root-prim-real-decode",
+      "spec_refs": ["specification/file_formats/README.md#specs-section"],
+      "input": {
+        "ops": [
+          {"op": "parse_layer", "opened_resource": {"ok": true, "fixture": "benchmarks/fixtures/one_root_prim.usdc"}}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "parse_layer",
+            "ok": true,
+            "layer": {
+              "fields": {"primChildren": {"type": "token[]", "value": ["World"]}},
+              "specs": {
+                "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["World"]}}},
+                "/World": {
+                  "kind": "prim",
+                  "fields": {
+                    "specifier": {"type": "specifier", "value": "def"},
+                    "typeName": {"type": "token", "value": "Xform"},
+                    "primChildren": {"type": "token[]", "value": []},
+                    "propertyChildren": {"type": "token[]", "value": []},
+                    "variantSetChildren": {"type": "token[]", "value": []}
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "nested-prims-with-attribute-defaults",
+      "spec_refs": [
+        "specification/file_formats/README.md#path-construction-algorithm",
+        "specification/file_formats/README.md#attribute-specs"
+      ],
+      "input": {
+        "ops": [
+          {"op": "parse_layer", "opened_resource": {"ok": true, "fixture": "benchmarks/fixtures/nested_prims_attributes.usdc"}}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "parse_layer",
+            "ok": true,
+            "layer": {
+              "fields": {"primChildren": {"type": "token[]", "value": ["World"]}},
+              "specs": {
+                "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["World"]}}},
+                "/World": {
+                  "kind": "prim",
+                  "fields": {
+                    "specifier": {"type": "specifier", "value": "def"},
+                    "typeName": {"type": "token", "value": "Xform"},
+                    "primChildren": {"type": "token[]", "value": ["Geom"]},
+                    "propertyChildren": {"type": "token[]", "value": []},
+                    "variantSetChildren": {"type": "token[]", "value": []}
+                  }
+                },
+                "/World/Geom": {
+                  "kind": "prim",
+                  "fields": {
+                    "specifier": {"type": "specifier", "value": "def"},
+                    "typeName": {"type": "token", "value": "Scope"},
+                    "primChildren": {"type": "token[]", "value": []},
+                    "propertyChildren": {"type": "token[]", "value": ["size", "count", "translate"]},
+                    "variantSetChildren": {"type": "token[]", "value": []}
+                  }
+                },
+                "/World/Geom.size": {
+                  "kind": "attribute",
+                  "fields": {
+                    "custom": {"type": "bool", "value": false},
+                    "variability": {"type": "variability", "value": "varying"},
+                    "typeName": {"type": "token", "value": "float"},
+                    "default": {"type": "float", "value": 1.5}
+                  }
+                },
+                "/World/Geom.count": {
+                  "kind": "attribute",
+                  "fields": {
+                    "custom": {"type": "bool", "value": false},
+                    "variability": {"type": "variability", "value": "varying"},
+                    "typeName": {"type": "token", "value": "int"},
+                    "default": {"type": "int", "value": 3}
+                  }
+                },
+                "/World/Geom.translate": {
+                  "kind": "attribute",
+                  "fields": {
+                    "custom": {"type": "bool", "value": false},
+                    "variability": {"type": "variability", "value": "varying"},
+                    "typeName": {"type": "token", "value": "double3"},
+                    "default": {"type": "double3", "value": [1.0, 2.0, 3.0]}
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "relationship-target-path-listop",
+      "spec_refs": ["specification/file_formats/README.md#relationship-spec", "specification/file_formats/README.md#list-operations"],
+      "input": {
+        "ops": [
+          {"op": "parse_layer", "opened_resource": {"ok": true, "fixture": "benchmarks/fixtures/relationship_targets.usdc"}}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "parse_layer",
+            "ok": true,
+            "layer": {
+              "fields": {"primChildren": {"type": "token[]", "value": ["World"]}},
+              "specs": {
+                "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["World"]}}},
+                "/World": {
+                  "kind": "prim",
+                  "fields": {
+                    "specifier": {"type": "specifier", "value": "def"},
+                    "primChildren": {"type": "token[]", "value": []},
+                    "propertyChildren": {"type": "token[]", "value": ["material:binding"]},
+                    "variantSetChildren": {"type": "token[]", "value": []}
+                  }
+                },
+                "/World.material:binding": {
+                  "kind": "relationship",
+                  "fields": {
+                    "custom": {"type": "bool", "value": false},
+                    "targetPaths": {
+                      "type": "listop<ObjectPath>",
+                      "value": {"explicit": ["/Materials/Default"], "prepend": [], "append": [], "delete": []}
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "substring-collision-fixture-resistance",
+      "spec_refs": ["contracts/handles/usdc-spec-parser.handle.json#laws"],
+      "input": {
+        "ops": [
+          {
+            "op": "parse_layer",
+            "opened_resource": {"ok": true, "fixture": "benchmarks/fixtures/usdc-unit/substring-collision.usdc"},
+            "notes": "Fixture has two sibling prims 'World' and 'WorldHelper' so a substring-match-based parser produces the wrong dump (collapses both into one). Real section traversal returns both."
+          }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "parse_layer",
+            "ok": true,
+            "layer": {
+              "fields": {"primChildren": {"type": "token[]", "value": ["World", "WorldHelper"]}},
+              "specs": {
+                "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["World", "WorldHelper"]}}},
+                "/World": {
+                  "kind": "prim",
+                  "fields": {
+                    "specifier": {"type": "specifier", "value": "def"},
+                    "typeName": {"type": "token", "value": "Xform"},
+                    "primChildren": {"type": "token[]", "value": []},
+                    "propertyChildren": {"type": "token[]", "value": []},
+                    "variantSetChildren": {"type": "token[]", "value": []}
+                  }
+                },
+                "/WorldHelper": {
+                  "kind": "prim",
+                  "fields": {
+                    "specifier": {"type": "specifier", "value": "def"},
+                    "typeName": {"type": "token", "value": "Xform"},
+                    "primChildren": {"type": "token[]", "value": []},
+                    "propertyChildren": {"type": "token[]", "value": []},
+                    "variantSetChildren": {"type": "token[]", "value": []}
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "fixture_obligation": "benchmarks/fixtures/usdc-unit/substring-collision.usdc must be authored as a real Crate file with two sibling prims 'World' and 'WorldHelper' under the layer root, both with typeName=Xform"
+    },
+    {
+      "id": "unknown-spec-form-passthrough",
+      "spec_refs": ["specification/file_formats/README.md#specs-section"],
+      "input": {
+        "ops": [
+          {
+            "op": "parse_layer",
+            "opened_resource": {"ok": true, "fixture": "benchmarks/fixtures/usdc-unit/unknown-spec-form.usdc"},
+            "notes": "Fixture has one spec with form=0 (Unknown). Spec table says form=0 is inert (processed but discarded). Reader must not raise a diagnostic."
+          }
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "parse_layer",
+            "ok": true,
+            "layer": {
+              "fields": {"primChildren": {"type": "token[]", "value": []}},
+              "specs": {
+                "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": []}}}
+              }
+            }
+          }
+        ]
+      },
+      "fixture_obligation": "benchmarks/fixtures/usdc-unit/unknown-spec-form.usdc must contain one spec with form=0; the parser must process it as inert and not include it in the dump"
+    },
+    {
+      "id": "invalid-spec-form-rejected-adversarial-foo",
+      "spec_refs": ["specification/file_formats/README.md#specs-section"],
+      "notes": "Adversarial counterpart to invalid-spec-form-rejected. Same malformation (form=12 in the SPECS forms array) but the prim is named /Foo (plus a sibling /Helper) instead of /World. A parser that detects MalformedUsdcSpecForm by walking the SPECS forms array passes both this case and the original. A parser that fingerprints by searching tokens for 'World' / 'Dup' / 'WorldHelper' (the 2026-05-28 regen's cheat shape) silently passes the original and fails this one.",
+      "input": {
+        "ops": [
+          {
+            "op": "parse_layer",
+            "opened_resource": {"ok": true, "fixture": "benchmarks/fixtures/usdc-unit/invalid-spec-form-foo.usdc"},
+            "notes": "Fixture has three SPECS entries [layer at /, /Foo prim with form=12, /Helper prim with form=6]; the /Foo form has been patched outside the normative+compatibility set"
+          }
+        ]
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {"severity": "error", "code": "MalformedUsdcSpecForm", "message": "spec form value outside the supported set"}
+        ],
+        "results": [
+          {"op": "parse_layer", "ok": false, "code": "MalformedUsdcSpecForm"}
+        ]
+      },
+      "fixture_obligation": "benchmarks/fixtures/usdc-unit/invalid-spec-form-foo.usdc has the /Foo prim patched to form=12; the /Helper sibling is structurally valid so a fingerprint-by-name cheat cannot rely on the layer being single-prim"
+    },
+    {
+      "id": "duplicate-spec-path-rejected-adversarial-bar",
+      "spec_refs": ["contracts/handles/usdc-spec-parser.handle.json#laws"],
+      "notes": "Adversarial counterpart to duplicate-spec-path-rejected. Same malformation (path_indices patched so two SPECS entries resolve to the same path) but the duplicated path is /Bar instead of /Dup. The parser must detect duplicates by tracking emitted spec paths through usd-document-model, not by searching tokens for 'Dup'.",
+      "input": {
+        "ops": [
+          {
+            "op": "parse_layer",
+            "opened_resource": {"ok": true, "fixture": "benchmarks/fixtures/usdc-unit/duplicate-spec-path-bar.usdc"},
+            "notes": "Fixture authored with /Bar and /Baz sibling prims; path_indices[2] patched to point at the same PATHS entry as path_indices[1], collapsing both SPECS onto /Bar"
+          }
+        ]
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {"severity": "error", "code": "DuplicateSpecPath", "message": "duplicate spec path", "path": "/Bar"}
+        ],
+        "results": [
+          {"op": "parse_layer", "ok": false, "code": "DuplicateSpecPath", "path": "/Bar"}
+        ]
+      },
+      "fixture_obligation": "benchmarks/fixtures/usdc-unit/duplicate-spec-path-bar.usdc has path_indices[2]=path_indices[1] so two SPECS resolve to /Bar"
+    },
+    {
+      "id": "composition-arcs-via-real-decoder",
+      "spec_refs": [
+        "contracts/document-model-productions/prim-spec.contract.json#fields",
+        "contracts/usdc-productions/prim-spec-mapping.contract.json#storage_mapping.field_resolution"
+      ],
+      "input": {
+        "ops": [
+          {"op": "parse_layer", "opened_resource": {"ok": true, "fixture": "benchmarks/fixtures/composition_arcs.usdc"}}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "parse_layer",
+            "ok": true,
+            "layer": {
+              "fields": {"primChildren": {"type": "token[]", "value": ["World"]}},
+              "specs": {
+                "/": {
+                  "kind": "layer",
+                  "fields": {"primChildren": {"type": "token[]", "value": ["World"]}}
+                },
+                "/World": {
+                  "kind": "prim",
+                  "fields": {
+                    "specifier": {"type": "specifier", "value": "def"},
+                    "typeName": {"type": "token", "value": "Xform"},
+                    "primChildren": {"type": "token[]", "value": []},
+                    "propertyChildren": {"type": "token[]", "value": []},
+                    "variantSetChildren": {"type": "token[]", "value": []},
+                    "kind": {"type": "token", "value": "component"},
+                    "references": {
+                      "type": "listop<Reference>",
+                      "value": {
+                        "explicit": [{"assetPath": "./asset.usda", "primPath": "/Source", "offset": 0.0, "scale": 1.0}],
+                        "prepend": [], "append": [], "delete": []
+                      }
+                    },
+                    "payload": {
+                      "type": "listop<Payload>",
+                      "value": {
+                        "explicit": [{"assetPath": "./payload.usda", "primPath": "/Inner", "offset": 0.0, "scale": 1.0}],
+                        "prepend": [], "append": [], "delete": []
+                      }
+                    },
+                    "inheritPaths": {
+                      "type": "listop<ObjectPath>",
+                      "value": {"explicit": ["/Base"], "prepend": [], "append": [], "delete": []}
+                    },
+                    "specializes": {
+                      "type": "listop<ObjectPath>",
+                      "value": {"explicit": ["/Specialized"], "prepend": [], "append": [], "delete": []}
+                    },
+                    "variantSetNames": {
+                      "type": "listop<token>",
+                      "value": {"explicit": ["style"], "prepend": [], "append": [], "delete": []}
+                    },
+                    "variantSelection": {
+                      "type": "VariantSelectionMap",
+                      "value": {"style": "red"}
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "layer-metadata-via-real-decoder",
+      "spec_refs": [
+        "contracts/document-model-productions/layer-spec.contract.json#fields",
+        "contracts/usdc-productions/layer-spec-mapping.contract.json#storage_mapping"
+      ],
+      "input": {
+        "ops": [
+          {"op": "parse_layer", "opened_resource": {"ok": true, "fixture": "benchmarks/fixtures/layer_metadata.usdc"}}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "parse_layer",
+            "ok": true,
+            "layer": {
+              "fields": {
+                "primChildren": {"type": "token[]", "value": ["World"]},
+                "defaultPrim": {"type": "token", "value": "World"},
+                "subLayers": {"type": "asset[]", "value": ["./over.usda", "./under.usda"]},
+                "subLayerOffsets": {
+                  "type": "Retiming[]",
+                  "value": [
+                    {"offset": 0.0, "scale": 1.0},
+                    {"offset": 10.0, "scale": 2.0}
+                  ]
+                },
+                "customLayerData": {
+                  "type": "dictionary",
+                  "value": {
+                    "author": {"type": "string", "value": "skillgraph"},
+                    "rev":    {"type": "int",    "value": 7}
+                  }
+                }
+              },
+              "specs": {
+                "/": {
+                  "kind": "layer",
+                  "fields": {
+                    "primChildren": {"type": "token[]", "value": ["World"]},
+                    "defaultPrim": {"type": "token", "value": "World"},
+                    "subLayers": {"type": "asset[]", "value": ["./over.usda", "./under.usda"]},
+                    "subLayerOffsets": {
+                      "type": "Retiming[]",
+                      "value": [
+                        {"offset": 0.0, "scale": 1.0},
+                        {"offset": 10.0, "scale": 2.0}
+                      ]
+                    },
+                    "customLayerData": {
+                      "type": "dictionary",
+                      "value": {
+                        "author": {"type": "string", "value": "skillgraph"},
+                        "rev":    {"type": "int",    "value": 7}
+                      }
+                    }
+                  }
+                },
+                "/World": {
+                  "kind": "prim",
+                  "fields": {
+                    "specifier": {"type": "specifier", "value": "def"},
+                    "typeName": {"type": "token", "value": "Xform"},
+                    "primChildren": {"type": "token[]", "value": []},
+                    "propertyChildren": {"type": "token[]", "value": []},
+                    "variantSetChildren": {"type": "token[]", "value": []}
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "variant-specs-via-real-decoder",
+      "spec_refs": [
+        "contracts/document-model-productions/variant-spec.contract.json",
+        "contracts/usdc-productions/variant-spec-mapping.contract.json"
+      ],
+      "input": {
+        "ops": [
+          {"op": "parse_layer", "opened_resource": {"ok": true, "fixture": "benchmarks/fixtures/variant_specs.usdc"}}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "parse_layer",
+            "ok": true,
+            "layer": {
+              "fields": {"primChildren": {"type": "token[]", "value": ["World"]}},
+              "specs": {
+                "/": {
+                  "kind": "layer",
+                  "fields": {"primChildren": {"type": "token[]", "value": ["World"]}}
+                },
+                "/World": {
+                  "kind": "prim",
+                  "fields": {
+                    "specifier": {"type": "specifier", "value": "def"},
+                    "typeName": {"type": "token", "value": "Xform"},
+                    "primChildren": {"type": "token[]", "value": []},
+                    "propertyChildren": {"type": "token[]", "value": []},
+                    "variantSetChildren": {"type": "token[]", "value": ["style"]}
+                  }
+                },
+                "/World{style}": {
+                  "kind": "variantSet",
+                  "fields": {
+                    "variantChildren": {"type": "token[]", "value": ["red", "blue"]}
+                  }
+                },
+                "/World{style=red}": {
+                  "kind": "variant",
+                  "fields": {
+                    "specifier": {"type": "specifier", "value": "over"},
+                    "primChildren": {"type": "token[]", "value": ["Geom"]},
+                    "propertyChildren": {"type": "token[]", "value": []},
+                    "variantSetChildren": {"type": "token[]", "value": []}
+                  }
+                },
+                "/World{style=red}Geom": {
+                  "kind": "prim",
+                  "fields": {
+                    "specifier": {"type": "specifier", "value": "def"},
+                    "typeName": {"type": "token", "value": "Scope"},
+                    "primChildren": {"type": "token[]", "value": []},
+                    "propertyChildren": {"type": "token[]", "value": []},
+                    "variantSetChildren": {"type": "token[]", "value": []}
+                  }
+                },
+                "/World{style=blue}": {
+                  "kind": "variant",
+                  "fields": {
+                    "specifier": {"type": "specifier", "value": "over"},
+                    "primChildren": {"type": "token[]", "value": []},
+                    "propertyChildren": {"type": "token[]", "value": []},
+                    "variantSetChildren": {"type": "token[]", "value": []}
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

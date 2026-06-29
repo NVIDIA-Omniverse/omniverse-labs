@@ -1,0 +1,292 @@
+{
+  "suite": "usd-stage-population",
+  "contract": "contracts/handles/stage-population.handle.json",
+  "spec_commit": "v1.0.1",
+  "cases": [
+    {
+      "id": "hierarchy-traversal-and-queries",
+      "input": {
+        "source": "single_layer",
+        "layer": {
+          "fields": {
+            "primChildren": {"type": "token[]", "value": ["World", "Other"]},
+            "primOrder": {"type": "token[]", "value": ["Other"]},
+            "defaultPrim": {"type": "token", "value": "World"}
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "primChildren": {"type": "token[]", "value": ["World", "Other"]},
+                "primOrder": {"type": "token[]", "value": ["Other"]},
+                "defaultPrim": {"type": "token", "value": "World"}
+              }
+            },
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "typeName": {"type": "token", "value": "Xform"},
+                "kind": {"type": "token", "value": "group"},
+                "instanceable": {"type": "bool", "value": false},
+                "primChildren": {"type": "token[]", "value": ["B", "A", "Inactive"]},
+                "primOrder": {"type": "token[]", "value": ["A"]},
+                "propertyChildren": {"type": "token[]", "value": ["zeta", "alpha:rel", "points"]},
+                "propertyOrder": {"type": "token[]", "value": ["points"]},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World/A": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "typeName": {"type": "token", "value": "Mesh"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World/B": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "over"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World/Inactive": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "active": {"type": "bool", "value": false},
+                "primChildren": {"type": "token[]", "value": ["Hidden"]},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World/Inactive/Hidden": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/Other": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "class"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World.points": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "typeName": {"type": "token", "value": "point3f[]"},
+                "variability": {"type": "variability", "value": "varying"},
+                "default": {"type": "point3f[]", "value": [[0.0, 1.0, 2.0]]}
+              }
+            },
+            "/World.alpha:rel": {
+              "kind": "relationship",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "targetPaths": {
+                  "type": "listop<ObjectPath>",
+                  "value": {
+                    "explicit": ["/World/A"],
+                    "prepend": [],
+                    "append": [],
+                    "delete": []
+                  }
+                }
+              }
+            },
+            "/World.zeta": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": true},
+                "typeName": {"type": "token", "value": "float"},
+                "variability": {"type": "variability", "value": "uniform"},
+                "default": {"type": "float", "value": 1.0}
+              }
+            }
+          }
+        },
+        "ops": [
+          {"op": "populate_stage"},
+          {"op": "stage_summary"},
+          {"op": "traverse_prims"},
+          {"op": "prim_summary", "path": "/World"},
+          {"op": "prim_summary", "path": "/World/A"},
+          {"op": "prim_summary", "path": "/World/B"},
+          {"op": "prim_summary", "path": "/Other"},
+          {"op": "prim_summary", "path": "/World/Inactive"},
+          {"op": "property_summary", "path": "/World.points"},
+          {"op": "property_summary", "path": "/World.alpha:rel"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "populate_stage", "ok": true},
+          {"op": "stage_summary", "ok": true, "sourceMode": "single_layer", "primCount": 4, "defaultPrim": "/World", "diagnostics": []},
+          {"op": "traverse_prims", "ok": true, "paths": ["/Other", "/World", "/World/A", "/World/B"]},
+          {"op": "prim_summary", "ok": true, "exists": true, "path": "/World", "name": "World", "parent": "/", "children": ["/World/A", "/World/B"], "properties": ["points", "alpha:rel", "zeta"], "typeName": "Xform", "specifier": "def", "active": true, "loaded": true, "defined": true, "abstract": false, "instanceable": false},
+          {"op": "prim_summary", "ok": true, "exists": true, "path": "/World/A", "name": "A", "parent": "/World", "children": [], "properties": [], "typeName": "Mesh", "specifier": "def", "active": true, "loaded": true, "defined": true, "abstract": false, "instanceable": false},
+          {"op": "prim_summary", "ok": true, "exists": true, "path": "/World/B", "name": "B", "parent": "/World", "children": [], "properties": [], "typeName": "", "specifier": "over", "active": true, "loaded": true, "defined": false, "abstract": false, "instanceable": false},
+          {"op": "prim_summary", "ok": true, "exists": true, "path": "/Other", "name": "Other", "parent": "/", "children": [], "properties": [], "typeName": "", "specifier": "class", "active": true, "loaded": true, "defined": true, "abstract": true, "instanceable": false},
+          {"op": "prim_summary", "ok": true, "exists": false, "path": "/World/Inactive"},
+          {
+            "op": "property_summary",
+            "ok": true,
+            "exists": true,
+            "path": "/World.points",
+            "kind": "attribute",
+            "owner": "/World",
+            "name": "points",
+            "fields": {
+              "custom": {"type": "bool", "value": false},
+              "typeName": {"type": "token", "value": "point3f[]"},
+              "variability": {"type": "variability", "value": "varying"},
+              "default": {"type": "point3f[]", "value": [[0.0, 1.0, 2.0]]}
+            }
+          },
+          {
+            "op": "property_summary",
+            "ok": true,
+            "exists": true,
+            "path": "/World.alpha:rel",
+            "kind": "relationship",
+            "owner": "/World",
+            "name": "alpha:rel",
+            "fields": {
+              "custom": {"type": "bool", "value": false},
+              "targetPaths": {
+                "type": "listop<ObjectPath>",
+                "value": {
+                  "explicit": ["/World/A"],
+                  "prepend": [],
+                  "append": [],
+                  "delete": []
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "population-mask-keeps-ancestors",
+      "input": {
+        "source": "single_layer",
+        "populationMask": ["/World/A"],
+        "layer": {
+          "fields": {"primChildren": {"type": "token[]", "value": ["World", "Other"]}, "defaultPrim": {"type": "token", "value": "World"}},
+          "specs": {
+            "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["World", "Other"]}, "defaultPrim": {"type": "token", "value": "World"}}},
+            "/World": {"kind": "prim", "fields": {"specifier": {"type": "specifier", "value": "def"}, "primChildren": {"type": "token[]", "value": ["A", "B"]}, "propertyChildren": {"type": "token[]", "value": []}, "variantSetChildren": {"type": "token[]", "value": []}}},
+            "/World/A": {"kind": "prim", "fields": {"specifier": {"type": "specifier", "value": "def"}, "primChildren": {"type": "token[]", "value": []}, "propertyChildren": {"type": "token[]", "value": []}, "variantSetChildren": {"type": "token[]", "value": []}}},
+            "/World/B": {"kind": "prim", "fields": {"specifier": {"type": "specifier", "value": "def"}, "primChildren": {"type": "token[]", "value": []}, "propertyChildren": {"type": "token[]", "value": []}, "variantSetChildren": {"type": "token[]", "value": []}}},
+            "/Other": {"kind": "prim", "fields": {"specifier": {"type": "specifier", "value": "def"}, "primChildren": {"type": "token[]", "value": []}, "propertyChildren": {"type": "token[]", "value": []}, "variantSetChildren": {"type": "token[]", "value": []}}}
+          }
+        },
+        "ops": [
+          {"op": "populate_stage"},
+          {"op": "stage_summary"},
+          {"op": "traverse_prims"},
+          {"op": "prim_summary", "path": "/World"},
+          {"op": "prim_summary", "path": "/World/A"},
+          {"op": "prim_summary", "path": "/World/B"},
+          {"op": "prim_summary", "path": "/Other"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "populate_stage", "ok": true},
+          {"op": "stage_summary", "ok": true, "sourceMode": "single_layer", "primCount": 2, "defaultPrim": "/World", "diagnostics": []},
+          {"op": "traverse_prims", "ok": true, "paths": ["/World", "/World/A"]},
+          {"op": "prim_summary", "ok": true, "exists": true, "path": "/World", "name": "World", "parent": "/", "children": ["/World/A"], "properties": [], "typeName": "", "specifier": "def", "active": true, "loaded": true, "defined": true, "abstract": false, "instanceable": false},
+          {"op": "prim_summary", "ok": true, "exists": true, "path": "/World/A", "name": "A", "parent": "/World", "children": [], "properties": [], "typeName": "", "specifier": "def", "active": true, "loaded": true, "defined": true, "abstract": false, "instanceable": false},
+          {"op": "prim_summary", "ok": true, "exists": false, "path": "/World/B"},
+          {"op": "prim_summary", "ok": true, "exists": false, "path": "/Other"}
+        ]
+      }
+    },
+    {
+      "id": "active-prunes-descendants",
+      "input": {
+        "source": "single_layer",
+        "populationMask": ["/World/Inactive/Hidden"],
+        "layer": {
+          "fields": {"primChildren": {"type": "token[]", "value": ["World"]}},
+          "specs": {
+            "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["World"]}}},
+            "/World": {"kind": "prim", "fields": {"specifier": {"type": "specifier", "value": "def"}, "primChildren": {"type": "token[]", "value": ["Inactive", "Live"]}, "propertyChildren": {"type": "token[]", "value": []}, "variantSetChildren": {"type": "token[]", "value": []}}},
+            "/World/Inactive": {"kind": "prim", "fields": {"specifier": {"type": "specifier", "value": "def"}, "active": {"type": "bool", "value": false}, "primChildren": {"type": "token[]", "value": ["Hidden"]}, "propertyChildren": {"type": "token[]", "value": []}, "variantSetChildren": {"type": "token[]", "value": []}}},
+            "/World/Inactive/Hidden": {"kind": "prim", "fields": {"specifier": {"type": "specifier", "value": "def"}, "primChildren": {"type": "token[]", "value": []}, "propertyChildren": {"type": "token[]", "value": []}, "variantSetChildren": {"type": "token[]", "value": []}}},
+            "/World/Live": {"kind": "prim", "fields": {"specifier": {"type": "specifier", "value": "def"}, "primChildren": {"type": "token[]", "value": []}, "propertyChildren": {"type": "token[]", "value": []}, "variantSetChildren": {"type": "token[]", "value": []}}}
+          }
+        },
+        "ops": [
+          {"op": "populate_stage"},
+          {"op": "stage_summary"},
+          {"op": "traverse_prims"},
+          {"op": "prim_summary", "path": "/World"},
+          {"op": "prim_summary", "path": "/World/Inactive"},
+          {"op": "prim_summary", "path": "/World/Inactive/Hidden"},
+          {"op": "prim_summary", "path": "/World/Live"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "populate_stage", "ok": true},
+          {"op": "stage_summary", "ok": true, "sourceMode": "single_layer", "primCount": 1, "defaultPrim": "", "diagnostics": []},
+          {"op": "traverse_prims", "ok": true, "paths": ["/World"]},
+          {"op": "prim_summary", "ok": true, "exists": true, "path": "/World", "name": "World", "parent": "/", "children": [], "properties": [], "typeName": "", "specifier": "def", "active": true, "loaded": true, "defined": true, "abstract": false, "instanceable": false},
+          {"op": "prim_summary", "ok": true, "exists": false, "path": "/World/Inactive"},
+          {"op": "prim_summary", "ok": true, "exists": false, "path": "/World/Inactive/Hidden"},
+          {"op": "prim_summary", "ok": true, "exists": false, "path": "/World/Live"}
+        ]
+      }
+    },
+    {
+      "id": "property-ordering",
+      "input": {
+        "source": "single_layer",
+        "layer": {
+          "fields": {"primChildren": {"type": "token[]", "value": ["World"]}},
+          "specs": {
+            "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["World"]}}},
+            "/World": {"kind": "prim", "fields": {"specifier": {"type": "specifier", "value": "def"}, "primChildren": {"type": "token[]", "value": []}, "propertyChildren": {"type": "token[]", "value": ["zeta", "alpha", "beta:gamma"]}, "propertyOrder": {"type": "token[]", "value": ["beta:gamma"]}, "variantSetChildren": {"type": "token[]", "value": []}}},
+            "/World.zeta": {"kind": "attribute", "fields": {"custom": {"type": "bool", "value": false}, "typeName": {"type": "token", "value": "float"}, "variability": {"type": "variability", "value": "uniform"}}},
+            "/World.alpha": {"kind": "attribute", "fields": {"custom": {"type": "bool", "value": false}, "typeName": {"type": "token", "value": "float"}, "variability": {"type": "variability", "value": "uniform"}}},
+            "/World.beta:gamma": {"kind": "relationship", "fields": {"custom": {"type": "bool", "value": false}}}
+          }
+        },
+        "ops": [
+          {"op": "populate_stage"},
+          {"op": "prim_summary", "path": "/World"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "populate_stage", "ok": true},
+          {"op": "prim_summary", "ok": true, "exists": true, "path": "/World", "name": "World", "parent": "/", "children": [], "properties": ["beta:gamma", "alpha", "zeta"], "typeName": "", "specifier": "def", "active": true, "loaded": true, "defined": true, "abstract": false, "instanceable": false}
+        ]
+      }
+    }
+  ]
+}

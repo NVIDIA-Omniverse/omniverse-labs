@@ -1,0 +1,25 @@
+[project]
+name = "ov-fmi"
+version = "0.1.0"
+description = "FMI co-simulation with ovrtx rendering"
+requires-python = ">=3.10,<3.14"
+dependencies = [
+    "fmpy==0.3.25",
+    "numpy>=2.2",
+    "glfw>=2.8",
+    "PyOpenGL>=3.1",
+    # usd-core is NOT listed here: it must live in an isolated venv because
+    # ovrtx refuses to load if usd-core is installed in the same environment.
+    # setup.sh creates apps/ov-fmi/.usd_venv/ and writes USD_PYTHON to .env.
+    # See apps/ov-fmi/fmi_usd_helper/ for the preferred C++ alternative.
+    # ovphysx: optional physics simulation.  Required only for rigid-body scenes.
+    # Install after ovrtx with:
+    # pip install ovphysx==0.4.9 --extra-index-url https://pypi.nvidia.com
+    # Must be installed AFTER ovrtx to avoid Carbonite plugin conflicts.
+    # ovrtx: installed separately by setup scripts from NVIDIA's wheel index
+    # so the matching native library (.so/.dll) is present.
+    # See ../../README.md for installation instructions.
+]
+
+[tool.setuptools]
+py-modules = ["fmi_parser", "fmi_runtime", "main", "parse_fmi_schema"]

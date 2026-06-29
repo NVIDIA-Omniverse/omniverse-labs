@@ -1,0 +1,149 @@
+{
+  "suite": "usdc-single-layer-variant-specs",
+  "spec_commit": "6b4f01f2d6d46b01507481524eb516b4ef358c31",
+  "production_contracts": [
+    "contracts/document-model-productions/variant-spec.contract.json",
+    "contracts/usdc-productions/variant-spec-mapping.contract.json"
+  ],
+  "notes": "Exercises variant and variantSet spec kinds (Crate forms 10/11). The format-neutral variant-spec contract pins specifier=over for variant specs, unauthored typeName, and variantSetChildren-vs-variantSetNames separation. Variant-aware path components use the {name=value} syntax for variants and {name} for variantSets. Mirrors goldens/integration/usda-single-layer/variant-specs.json.",
+  "cases": [
+    {
+      "id": "single-variantset-two-variants-one-with-child-prim",
+      "spec_refs": [
+        "contracts/document-model-productions/variant-spec.contract.json#spec_kinds",
+        "contracts/usdc-productions/variant-spec-mapping.contract.json#storage_mapping"
+      ],
+      "input": {
+        "fixture": "benchmarks/fixtures/variant_specs.usdc"
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "layer": {
+          "fields": {
+            "primChildren": {"type": "token[]", "value": ["World"]}
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "primChildren": {"type": "token[]", "value": ["World"]}
+              }
+            },
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "typeName": {"type": "token", "value": "Xform"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": ["style"]}
+              }
+            },
+            "/World{style}": {
+              "kind": "variantSet",
+              "fields": {
+                "variantChildren": {"type": "token[]", "value": ["red", "blue"]}
+              }
+            },
+            "/World{style=red}": {
+              "kind": "variant",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "over"},
+                "primChildren": {"type": "token[]", "value": ["Geom"]},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World{style=red}Geom": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "typeName": {"type": "token", "value": "Scope"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World{style=blue}": {
+              "kind": "variant",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "over"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "nested-variantset-inside-variant",
+      "spec_refs": [
+        "contracts/document-model-productions/variant-spec.contract.json#nesting_rules.nested_variantSets_allowed",
+        "contracts/usdc-productions/variant-spec-mapping.contract.json#storage_mapping.variantSet_rule"
+      ],
+      "input": {
+        "fixture": "benchmarks/fixtures/nested_variants.usdc"
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "layer": {
+          "fields": {
+            "primChildren": {"type": "token[]", "value": ["World"]}
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "primChildren": {"type": "token[]", "value": ["World"]}
+              }
+            },
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "typeName": {"type": "token", "value": "Xform"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": ["outer"]}
+              }
+            },
+            "/World{outer}": {
+              "kind": "variantSet",
+              "fields": {
+                "variantChildren": {"type": "token[]", "value": ["a"]}
+              }
+            },
+            "/World{outer=a}": {
+              "kind": "variant",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "over"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": ["inner"]}
+              }
+            },
+            "/World{outer=a}{inner}": {
+              "kind": "variantSet",
+              "fields": {
+                "variantChildren": {"type": "token[]", "value": ["x"]}
+              }
+            },
+            "/World{outer=a}{inner=x}": {
+              "kind": "variant",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "over"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

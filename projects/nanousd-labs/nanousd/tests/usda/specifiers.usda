@@ -1,0 +1,70 @@
+#usda 1.0
+
+# All specifier forms
+
+# def with type name
+def Xform "DefWithType"
+{
+    float size = 1.0
+}
+
+# def without type name (bare)
+def "DefBare"
+{
+    int count = 5
+}
+
+# over with type name
+over Mesh "OverWithType"
+{
+    float weight = 0.5
+}
+
+# over without type name
+over "OverBare"
+{
+    string label = "override"
+}
+
+# class with type name
+class Material "ClassWithType"
+{
+    float opacity = 1.0
+    string shader = "default"
+}
+
+# class without type name
+class "ClassBare"
+{
+    double radius = 5.0
+}
+
+# Nested: all specifiers inside a def
+def Scope "Parent"
+{
+    def Mesh "ChildDef"
+    {
+    }
+
+    over "ChildOver"
+    {
+    }
+
+    class "ChildClass"
+    {
+    }
+
+    # Deep nesting with different specifiers
+    def Xform "Level1"
+    {
+        over "Level2"
+        {
+            class "Level3"
+            {
+                def Mesh "Level4"
+                {
+                }
+            }
+        }
+    }
+}

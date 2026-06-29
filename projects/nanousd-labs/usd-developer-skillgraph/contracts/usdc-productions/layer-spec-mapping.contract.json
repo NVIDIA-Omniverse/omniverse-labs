@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/usdc-productions/layer-spec-mapping.contract.json",
+  "title": "USDC Layer Spec Mapping Production Contract",
+  "version": "0.1",
+  "spec_commit": "6b4f01f2d6d46b01507481524eb516b4ef358c31",
+  "owned_by": "usdc-spec-parser",
+  "derives_from": "contracts/document-model-productions/layer-spec.contract.json",
+  "format_neutral_rules": "contracts/document-model-productions/layer-spec.contract.json — the layer spec field set, primChildren maintenance, subLayer/Retiming agreement, and relocates value-shape rules are pinned in the format-neutral production. This contract adds the USDC-specific mapping: Crate spec form 7 -> layer spec, per-field name resolution, and per-field Crate value-representation type bindings.",
+  "spec_refs": [
+    "specification/file_formats/README.md#specs-section",
+    "specification/file_formats/README.md#layer-offset",
+    "specification/file_formats/README.md#type-table",
+    "specification/document_data_model/README.md#layer-spec"
+  ],
+  "dependency_contracts": [
+    "contracts/usdc-productions/crate-section-layouts.contract.json",
+    "contracts/usdc-productions/crate-value-representations.contract.json"
+  ],
+  "spec_form": {
+    "id": 7,
+    "name": "Layer",
+    "section_layout_ref": "contracts/usdc-productions/crate-section-layouts.contract.json#section_layouts.SPECS.spec_form_table"
+  },
+  "storage_mapping": {
+    "rule": "A SPECS entry with form=7 produces the root layer spec at path '/'. Every Crate layer contains exactly one form-7 spec. Authored layer-level fields come from the FIELDSETS group whose start is given by the SPECS entry's field_set_index.",
+    "field_resolution": {
+      "primChildren": "FIELDS token name 'primChildren'; value type 41 (TokenVector) offset-backed; ordered list of root prim names. Materialized from root prim spec storage when absent.",
+      "primOrder": "FIELDS token name 'primOrder'; value type 41 (TokenVector) offset-backed",
+      "defaultPrim": "FIELDS token name 'defaultPrim'; value type 11 (token) inlined",
+      "subLayers": "FIELDS token name 'subLayers'; value type 12 (asset) with the Array flag set; element count followed by uint32 string indices into STRINGS for each asset reference",
+      "subLayerOffsets": "FIELDS token name 'subLayerOffsets'; value type 49 (LayerOffsetVector); decoded as a sequence of (offset:double, scale:double) records, one per subLayer item",
+      "layerRelocates": "Canonical AOUSD §7.6.1.2.4 layer field. The on-disk Crate FIELDS token name is 'relocates'; it maps to the document-model layerRelocates field. Value type 58 (Relocates) at minor>=11: uint64 count followed by alternating uint32 path-index source + uint32 path-index target entries. Encountering this type at minor<11 emits UnsupportedUsdcFeature.",
+      "documentation": "FIELDS token name 'documentation'; value type 10 (string) inlined as uint32 string index into STRINGS",
+      "comment": "FIELDS token name 'comment'; value type 10 (string)",
+      "customLayerData": "FIELDS token name 'customLayerData'; value type 31 (dictionary) offset-backed",
+      "framesPerSecond": "FIELDS token name 'framesPerSecond'; value type 9 (double) offset-backed (or inlined when representable as float)",
+      "timeCodesPerSecond": "FIELDS token name 'timeCodesPerSecond'; value type 9 (double)",
+      "startTimeCode": "FIELDS token name 'startTimeCode'; value type 9 (double)",
+      "endTimeCode": "FIELDS token name 'endTimeCode'; value type 9 (double)"
+    },
+    "rejected_fields": {
+      "policy": "Strict AOUSD §7.6 conformance. A form-7 (Layer) spec whose FIELDS table binds a §7.6.1.8 Deprecated or §7.6.1.7 Out of Scope layer token is rejected with MalformedUsdcSection — these tokens are reserved by the spec and are no longer decoded into live document-model fields, even though real (OpenUSD-written) .usdc files may contain them.",
+      "deprecated_tokens": ["framePrecision", "owner", "sessionOwner", "hasOwnedSublayers", "startFrame", "endFrame"],
+      "out_of_scope_tokens": ["expressionVariables", "colorManagementSystem", "colorConfiguration"]
+    },
+    "subLayer_offset_pairing": "subLayers and subLayerOffsets are stored as parallel arrays. When the Crate FIELDS table authors subLayers without subLayerOffsets, the parser materializes default Retiming records (offset=0.0, scale=1.0) one per subLayer item. When both are authored, their lengths must match; mismatch emits MalformedUsdcSection per the format-neutral law in document-model-productions/layer-spec.contract.json#laws."
+  },
+  "forbidden_field_enforcement": {
+    "rule": "Per document-model-productions/common-metadata.contract.json#spec_kind_field_admission, layer specs admit only the union of shared metadata and layer_only fields. In the USDC encoding, a FIELDS entry whose token name is one of the prim_only, attribute_only, or relationship_only sets (e.g. specifier, typeName, primChildren-on-attribute, targetPaths) attached to a form-7 spec is a contract violation. The parser emits MalformedUsdcSection."
+  },
+  "laws": [
+    "a Crate SPECS entry with form=7 produces exactly the root layer spec at path '/'",
+    "primChildren is materialized from root prim storage when absent; when authored explicitly the stored TokenVector wins and root-prim storage must agree",
+    "subLayers (asset[] via type 12 + Array flag) and subLayerOffsets (LayerOffsetVector via type 49) must have matching lengths when both are authored",
+    "subLayerOffsets values are native Retiming records (offset:double, scale:double); raw dictionaries or JSON payloads are forbidden",
+    "relocates (type 58) is version-gated at Crate minor>=11; encountering it at lower versions emits UnsupportedUsdcFeature",
+    "the canonical document-model field is layerRelocates (§7.6.1.2.4); the on-disk Crate FIELDS token name is 'relocates' and maps to it",
+    "a form-7 spec binding a §7.6.1.8 deprecated or §7.6.1.7 out-of-scope layer token is rejected with MalformedUsdcSection per rejected_fields",
+    "layer specs reject the prim_only, attribute_only, and relationship_only field name sets per document-model-productions/common-metadata.contract.json#spec_kind_field_admission"
+  ],
+  "golden_groups": [
+    "Crate form 7 produces the root layer spec at '/'",
+    "primChildren materialized from root prim storage when FIELDS omits it",
+    "primChildren preserved exactly when authored in Crate",
+    "subLayers with matching subLayerOffsets length",
+    "subLayers without subLayerOffsets defaults to per-item Retiming(0.0, 1.0)",
+    "relocates (type 58) round-trip on a v0.11+ fixture; UnsupportedUsdcFeature on a v0.8 fixture",
+    "defaultPrim authored as token",
+    "customLayerData dictionary round-trip",
+    "framesPerSecond / timeCodesPerSecond / startTimeCode / endTimeCode authored as doubles",
+    "forbidden prim-only / attribute-only / relationship-only field names attached to form-7 spec emit MalformedUsdcSection"
+  ],
+  "golden_files": [
+    "goldens/integration/usdc-single-layer/basic.json",
+    "goldens/integration/usdc-single-layer/layer-metadata.json"
+  ]
+}

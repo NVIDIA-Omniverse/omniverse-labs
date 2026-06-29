@@ -1,0 +1,21 @@
+#usda 1.0
+(
+    relocates = {
+        </Root/Child>: </Root/MovedChild>
+    }
+)
+
+def "Root" (
+    references = @./relocates_ref.usda@</Ref>
+)
+{
+    over "Child"
+    {
+        string ignoredSourceLabel = "from_relocate_source"
+    }
+
+    over "MovedChild"
+    {
+        string localLabel = "from_root_over"
+    }
+}

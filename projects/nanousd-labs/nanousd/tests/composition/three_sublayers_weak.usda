@@ -1,0 +1,8 @@
+#usda 1.0
+
+def Xform "Prim"
+{
+    string opinion = "weakest"
+    float weakOnly = 3.0
+    float midOnly = 99.0
+}

@@ -1,0 +1,7 @@
+#usda 1.0
+
+# Spec §16.2.17 PrimItem production requires each PropertySpec to be
+# followed by a StatementSeparator (Crlf or Semicolon). This file has
+# `int v = 0 }` on one line with no separator — must be rejected.
+
+def "Foo" { int v = 0 }

@@ -1,0 +1,8 @@
+#usda 1.0
+(
+    subLayers = [@./stage_population_order_base.usda@]
+)
+
+over "Parent"
+{
+}

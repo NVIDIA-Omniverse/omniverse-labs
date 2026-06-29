@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/lint/usdz-single-layer.lint.json",
+  "title": "USDZ Single-Layer Contract Lint Rules",
+  "version": "0.1",
+  "spec_commit": "6b4f01f2d6d46b01507481524eb516b4ef358c31",
+  "summary": "Static checks for the USDZ package-format and layer-open ownership boundaries.",
+  "rules": [
+    {
+      "id": "no_raw_ifstream_in_usdz_handlers",
+      "pattern_kind": "symbol_present",
+      "symbol": "std::ifstream",
+      "applies_to_artifacts": [
+        "generated/cpp/usdz_package.cpp",
+        "generated/cpp/usdz_layer_open.cpp",
+        "generated/cpp/usdz_package_adapter.cpp",
+        "generated/cpp/usdz_layer_open_adapter.cpp"
+      ],
+      "source_law": "contracts/handles/usdz-package-format.handle.json#laws",
+      "message": "USDZ code consumes already-opened outer package bytes; it must not open files directly."
+    },
+    {
+      "id": "no_temp_extraction",
+      "pattern_kind": "regex_match",
+      "regex": "\\b(mkstemp|tmpnam|tempnam|std::filesystem::temp_directory_path|std::ofstream|remove\\s*\\(|rename\\s*\\()",
+      "applies_to_artifacts": [
+        "generated/cpp/usdz_package.cpp",
+        "generated/cpp/usdz_layer_open.cpp"
+      ],
+      "source_law": "contracts/handles/usdz-package-format.handle.json#laws",
+      "message": "USDZ package entries must be exposed as byte views, not extracted to temporary files."
+    },
+    {
+      "id": "no_direct_usda_parser_call",
+      "pattern_kind": "symbol_present",
+      "symbol": "parse_usda_text",
+      "applies_to_artifacts": [
+        "generated/cpp/usdz_layer_open.cpp"
+      ],
+      "source_law": "contracts/handles/usdz-layer-open.handle.json#laws",
+      "message": "USDZ layer-open must dispatch .usda entries through usda-layer-open, not call the USDA parser directly."
+    },
+    {
+      "id": "no_direct_usdc_parser_call",
+      "pattern_kind": "symbol_present",
+      "symbol": "parse_usdc_layer",
+      "applies_to_artifacts": [
+        "generated/cpp/usdz_layer_open.cpp"
+      ],
+      "source_law": "contracts/handles/usdz-layer-open.handle.json#laws",
+      "message": "USDZ layer-open must dispatch .usdc entries through usdc-layer-open, not call the USDC parser directly."
+    },
+    {
+      "id": "no_owned_entry_vector_copy",
+      "pattern_kind": "regex_match",
+      "regex": "std::vector\\s*<\\s*std::uint8_t\\s*>\\s+\\w+\\s*\\([^;]*(entry|view|subspan)",
+      "applies_to_artifacts": [
+        "generated/cpp/usdz_package.cpp",
+        "generated/cpp/usdz_layer_open.cpp"
+      ],
+      "source_law": "contracts/handles/usdz-package-format.handle.json#laws",
+      "message": "Selected USDZ entries must remain non-owning byte views over the outer package bytes."
+    },
+    {
+      "id": "no_filename_package_dispatch",
+      "pattern_kind": "regex_match",
+      "regex": "find\\s*\\(\\s*\"[^\"]*(benchmarks/fixtures|default_root|explicit_root|compressed_entry|misaligned_entry|unsafe_path)",
+      "applies_to_artifacts": [
+        "generated/cpp/usdz_package.cpp",
+        "generated/cpp/usdz_layer_open.cpp"
+      ],
+      "source_law": "graph/scopes/usdz-single-layer.yaml#boundary_guards.forbidden_local_reimplementations",
+      "message": "Production USDZ code must not dispatch behavior from fixture or package filenames."
+    }
+  ]
+}

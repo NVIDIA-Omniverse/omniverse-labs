@@ -1,0 +1,47 @@
+{
+    "version": "1.0",
+    "file_records": [
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/6.0/Isaac/SimReady/Industrial/Warehouse/Boxes/Flat_Box_A13/textures/T_FlatBox_A01_Tile_Albedo.png",
+            "source_hash": "b5e4e6285f0cb07b25e290a9e66899809068cf2b",
+            "target_url": "./SubUSDs/textures/T_FlatBox_A01_Tile_Albedo.png",
+            "target_hash": "dfc898bbd20aa47ee7b0d71253c160db8e23fc70"
+        },
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/6.0/Isaac/SimReady/Industrial/Warehouse/Boxes/Flat_Box_A13/textures/T_FlatBox_A01_Tile_Normal.png",
+            "source_hash": "db009149471e55bef9b758c0840af7f872d49838",
+            "target_url": "./SubUSDs/textures/T_FlatBox_A01_Tile_Normal.png",
+            "target_hash": "9411ffad33804be5e8a35bc3d1c0828658d537df"
+        },
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/6.0/Isaac/SimReady/Industrial/Warehouse/Boxes/Flat_Box_A13/textures/T_FlatBox_A01_Tile_ORM.png",
+            "source_hash": "80feada83881d6b6d5936678db55c633bf3ce611",
+            "target_url": "./SubUSDs/textures/T_FlatBox_A01_Tile_ORM.png",
+            "target_hash": "6b5e0784a5f6ec28efc8d9f224a7e496b4168a55"
+        },
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/6.0/Isaac/SimReady/Industrial/Warehouse/Boxes/Flat_Box_A13/textures/T_FlatBox_A01_Trim_Albedo.png",
+            "source_hash": "6669e1d1e4e574d243739124d875e9b3be030b61",
+            "target_url": "./SubUSDs/textures/T_FlatBox_A01_Trim_Albedo.png",
+            "target_hash": "861b9db437d6c72ef2c4f80a2e7432fc04857d08"
+        },
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/6.0/Isaac/SimReady/Industrial/Warehouse/Boxes/Flat_Box_A13/textures/T_FlatBox_A01_Trim_Normal.png",
+            "source_hash": "a28c695caf5e6abb4688e158e4d9ddf02972229f",
+            "target_url": "./SubUSDs/textures/T_FlatBox_A01_Trim_Normal.png",
+            "target_hash": "90d1d27b30bce556bc0841fbaf45cbd7e01752d7"
+        },
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/6.0/Isaac/SimReady/Industrial/Warehouse/Boxes/Flat_Box_A13/textures/T_FlatBox_A01_Trim_ORM.png",
+            "source_hash": "4b873e9db0e0e269deff52b25932b4b09e6696ab",
+            "target_url": "./SubUSDs/textures/T_FlatBox_A01_Trim_ORM.png",
+            "target_hash": "61df2f2272c2393372af64636a077f62aa8bf202"
+        },
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/6.0/Isaac/SimReady/Industrial/Warehouse/Boxes/Flat_Box_A13/payloads/Physics/physics.usda",
+            "source_hash": "cdd953cd06b7d8c4e9dfc1ab3a715789eed3220a",
+            "target_url": "./SubUSDs/physics.usda",
+            "target_hash": "e2e1c08cbdadbdebc5f601e5f69c282a0689c0c3"
+        }
+    ]
+}

@@ -1,0 +1,41 @@
+#usda 1.0
+
+# Ported from OpenUSD PCP fixture
+# testPcpMuseum_SubrootReferenceAndVariants.testenv/SubrootReferenceAndVariants/group.usda
+# (Pixar OpenUSD release branch).
+#
+# /Group declares a variant set "v" with selection "y". Each variant body
+# authors /Group/Model with a distinct value for attribute "a". A subroot
+# reference from elsewhere to @this@</Group/Model> must apply /Group's
+# ancestral variant selection (v=y) when composing the target namespace —
+# per spec §11.2.5 — so /Group/Model's composed content is drawn from the
+# v=y variant body.
+#
+# Adaptation from upstream: upstream used `over "Model"` inside each
+# variant body; nanousd resolves subroot references by locating a Prim
+# spec at the variant-decorated source path, so we change the variant
+# bodies to `def "Model"` to give them concrete primitives to materialize.
+# The semantic being tested (ancestral selection applies) is unchanged.
+
+def "Group" (
+    variantSets = "v"
+    variants = {
+        string v = "y"
+    }
+)
+{
+    variantSet "v" = {
+        "x" {
+            def Xform "Model"
+            {
+                string a = "v_x"
+            }
+        }
+        "y" {
+            def Xform "Model"
+            {
+                string a = "v_y"
+            }
+        }
+    }
+}

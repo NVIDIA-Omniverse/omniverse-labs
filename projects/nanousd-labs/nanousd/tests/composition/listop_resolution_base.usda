@@ -1,0 +1,29 @@
+#usda 1.0
+(
+    defaultPrim = "Source"
+)
+
+# Weaker layer for listop combining tests (spec §12.2.6).
+# Sublayered from listop_resolution_root.usda. Both layers use
+# composable list ops (prepend) so the combined result must contain
+# items from both — root's prepends first, base's prepends after,
+# per ListOp combining rules (§6.6.3.6).
+
+def Xform "Source" (
+    prepend apiSchemas = ["BaseAPI"]
+)
+{
+    prepend rel relTargets = [
+        </Source/WeakProp>,
+        </Source/SharedProp>
+    ]
+
+    def Scope "WeakProp"
+    {
+        int v = 0
+    }
+    def Scope "SharedProp"
+    {
+        int v = 0
+    }
+}

@@ -1,0 +1,80 @@
+{
+  "suite": "usdc-single-layer-layer-metadata",
+  "spec_commit": "6b4f01f2d6d46b01507481524eb516b4ef358c31",
+  "production_contracts": [
+    "contracts/document-model-productions/layer-spec.contract.json",
+    "contracts/usdc-productions/layer-spec-mapping.contract.json"
+  ],
+  "notes": "Exercises layer-spec metadata: subLayers (asset[]), subLayerOffsets (LayerOffsetVector), defaultPrim (token), customLayerData (dictionary). The format-neutral layer-spec contract pins the field set and the subLayer/Retiming agreement law; the USDC mapping contract pins the encoding (type-12 asset Array for subLayers, type-49 LayerOffsetVector for subLayerOffsets). Mirrors goldens/integration/usda-single-layer/layer-metadata.json.",
+  "cases": [
+    {
+      "id": "sublayers-with-offsets-defaultprim-customlayerdata",
+      "spec_refs": [
+        "contracts/document-model-productions/layer-spec.contract.json#fields",
+        "contracts/usdc-productions/layer-spec-mapping.contract.json#storage_mapping.subLayer_offset_pairing"
+      ],
+      "input": {
+        "fixture": "benchmarks/fixtures/layer_metadata.usdc"
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "layer": {
+          "fields": {
+            "primChildren": {"type": "token[]", "value": ["World"]},
+            "defaultPrim": {"type": "token", "value": "World"},
+            "subLayers": {"type": "asset[]", "value": ["./over.usda", "./under.usda"]},
+            "subLayerOffsets": {
+              "type": "Retiming[]",
+              "value": [
+                {"offset": 0.0, "scale": 1.0},
+                {"offset": 10.0, "scale": 2.0}
+              ]
+            },
+            "customLayerData": {
+              "type": "dictionary",
+              "value": {
+                "author": {"type": "string", "value": "skillgraph"},
+                "rev":    {"type": "int",    "value": 7}
+              }
+            }
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "primChildren": {"type": "token[]", "value": ["World"]},
+                "defaultPrim": {"type": "token", "value": "World"},
+                "subLayers": {"type": "asset[]", "value": ["./over.usda", "./under.usda"]},
+                "subLayerOffsets": {
+                  "type": "Retiming[]",
+                  "value": [
+                    {"offset": 0.0, "scale": 1.0},
+                    {"offset": 10.0, "scale": 2.0}
+                  ]
+                },
+                "customLayerData": {
+                  "type": "dictionary",
+                  "value": {
+                    "author": {"type": "string", "value": "skillgraph"},
+                    "rev":    {"type": "int",    "value": 7}
+                  }
+                }
+              }
+            },
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "typeName": {"type": "token", "value": "Xform"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

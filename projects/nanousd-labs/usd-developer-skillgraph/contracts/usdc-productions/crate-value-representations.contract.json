@@ -1,0 +1,200 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/usdc-productions/crate-value-representations.contract.json",
+  "title": "Crate Value Representations Production Contract",
+  "version": "0.1",
+  "spec_commit": "6b4f01f2d6d46b01507481524eb516b4ef358c31",
+  "owned_by": "usdc-value-decoder",
+  "spec_refs": [
+    "specification/file_formats/README.md#value-representations",
+    "specification/file_formats/README.md#inlined-value-representation",
+    "specification/file_formats/README.md#offset-value-representation",
+    "specification/file_formats/README.md#array-value-representations",
+    "specification/file_formats/README.md#type-table",
+    "specification/file_formats/README.md#bool",
+    "specification/file_formats/README.md#half"
+  ],
+  "scope": {
+    "included": [
+      "8-byte value representation word read",
+      "type-and-flags dispatch",
+      "Inlined-flag scalar decoding",
+      "Offset-backed scalar decoding",
+      "Array-flag uncompressed array decoding",
+      "Array+Compressed integer and float array decoding via the compression primitives",
+      "Dictionary decoding (count + alternating index/offset entries)",
+      "TokenListOp, StringListOp, PathListOp authored values",
+      "Specifier, Permission, Variability enum values",
+      "ValueBlock sentinel",
+      "Value indirect pointer (with recursion guard)",
+      "Half-precision (Imath 1+5+10) decoding for scalars and vectors"
+    ],
+    "deferred": [
+      "value resolution",
+      "schema fallback evaluation",
+      "time sample interpolation",
+      "spline evaluation",
+      "Splines, Relocates, PathExpression decoding (UnsupportedUsdcFeature when encountered)"
+    ]
+  },
+  "value_representation_word": {
+    "size_bytes": 8,
+    "endianness": "little-endian",
+    "layout": {
+      "payload": "bytes 0 through 5 (6 bytes); interpretation depends on type and flags",
+      "type": "byte 6, unsigned 8-bit integer indexing the type table (§16.3.10.1)",
+      "flags": "byte 7, bit flags"
+    },
+    "flags": {
+      "array_bit": "bit 63 of the 8-byte LE word (byte 7, mask 0x80) — value is an array",
+      "inlined_bit": "bit 62 of the 8-byte LE word (byte 7, mask 0x40) — value is inlined in payload",
+      "compressed_bit": "bit 61 of the 8-byte LE word (byte 7, mask 0x20) — array payload is compressed",
+      "errata_ref": "docs/usdc-spec-errata.md#1-value-representation-flag-bits-live-in-the-high-bits-of-byte-7",
+      "errata_note": "AOUSD §16.3.9 prose ('last bit / second-last bit / third-last bit') is positionally ambiguous; the high-bit reading is normative for this repository because real .usdc files (and Pixar _ValueRep _IsArrayBit = 1ull<<63 etc.) use bits 63/62/61. A reader must not also accept the low-bit layout (0x01/0x02/0x04) as a fallback.",
+      "combinations": {
+        "valid": [
+          "no flags: offset-backed scalar at payload (the offset is the 6-byte payload interpreted as uint64)",
+          "inlined only: scalar value directly in first 4 payload bytes",
+          "array only: offset-backed uncompressed array (8B count + element bytes at offset)",
+          "array + compressed: offset-backed compressed array (compressed integer/float array as defined in crate-compression)"
+        ],
+        "invalid": [
+          "inlined + array",
+          "inlined + compressed",
+          "inlined + array + compressed"
+        ]
+      }
+    },
+    "laws": [
+      "the 8-byte word is read once as a single little-endian uint64; multiple per-byte reads to extract type/flags are a contract violation per the performance contract",
+      "dispatch is driven by the 1-byte type code and 1-byte flags only; field-name substring matches and section-payload text scans are contract violations",
+      "the combinations 'inlined + array', 'inlined + compressed', and 'inlined + array + compressed' must produce a clear diagnostic (MalformedUsdcValueRepresentation)"
+    ]
+  },
+  "inlined_values": {
+    "payload_window": "only the first 4 bytes of the 6-byte payload may encode data",
+    "zero_payload_meaning": "implicit empty/zero-valued instance of the type",
+    "always_inlined_types": [
+      "bool", "uchar", "int", "uint", "half", "float",
+      "Variability", "ValueBlock", "AnimationBlock",
+      "string (by index)", "token (by index)", "ObjectPath (by index)", "asset (by index)"
+    ],
+    "optionally_inlined_types": [
+      "double (if the value is identical when cast to float)",
+      "int64 (if the value is in range of int32)",
+      "uint64 (if the value is in range of uint32)",
+      "matrixXd (if diagonal with int8_t-exact diagonal elements)",
+      "dictionary (only when empty)"
+    ],
+    "dimensional_payload_rules": {
+      "single_dimension": "payload is the inlined value directly cast to the type",
+      "two_dimensions": "payload holds contiguous values converted to the element type",
+      "three_dimensions": "payload holds the top-left-to-bottom-right diagonal values (e.g. Matrix3D stores the 3 diagonal entries)",
+      "half_precision_special_case": "Vec2h fits in 4 bytes and inlines half-precision values directly; Vec3h and Vec4h inline only when values are representable as signed int8"
+    },
+    "laws": [
+      "inlined values are not arrays and are not compressed; encountering Inlined alongside Array or Compressed is a contract violation",
+      "inlined indices (string, token, ObjectPath, asset) are uint32 Index values; resolution through the token/string/path tables is owned by usdc-spec-parser"
+    ]
+  },
+  "offset_values": {
+    "scalar_offset_layout": "payload is a uint64 byte offset from the start of the file; the bytes at that offset are the typed scalar value",
+    "array_offset_layout": "payload is a uint64 byte offset from the start of the file; at that offset, an 8B unsigned 64-bit element count precedes the array data",
+    "empty_array_sentinel": "if the payload is zero, the array is considered empty (§16.3.9.3)",
+    "small_array_compression_rule": "arrays of 16 bytes or fewer should not be compressed; readers must accept either form",
+    "compressed_array_dispatch": {
+      "integer_arrays": "use crate-compression.compressed_integer_array decoding on the array's signed/unsigned integer width",
+      "float_arrays": "use crate-compression.compressed_float_array decoding (i-form or t-form by encoding character)",
+      "non_simple_types": "quaternions, matrices, and similar types may not be compressed; encountering Compressed on these types is a contract violation"
+    },
+    "laws": [
+      "offset-backed scalar and array values must be returned as non-owning views into the opened payload until canonicalization runs",
+      "the array element count is uint64 (Crate >= 0.7.0); readers must not interpret it as uint32",
+      "compressed array bit set on a non-simple type (quat, matrix, etc.) is a contract violation"
+    ]
+  },
+  "type_table_required_for_aousd_1_0_1": {
+    "scalars": ["bool", "uchar", "int", "uint", "int64", "uint64", "half", "float", "double", "string", "token", "asset"],
+    "matrices": ["matrix2d", "matrix3d", "matrix4d"],
+    "quaternions": ["quatd", "quatf", "quath"],
+    "vectors": [
+      "double2", "float2", "half2", "int2",
+      "double3", "float3", "half3", "int3",
+      "double4", "float4", "half4", "int4"
+    ],
+    "containers": ["dictionary", "PathVector", "TokenVector", "StringVector", "DoubleVector", "LayerOffsetVector"],
+    "list_ops": [
+      "TokenListOp", "StringListOp", "PathListOp",
+      "ReferenceListOp", "PayloadListOp",
+      "IntListOp", "Int64ListOp", "UIntListOp", "UInt64ListOp",
+      "UnregisteredValueListOp"
+    ],
+    "enums": ["Specifier", "Permission", "Variability", "VariantSelectionMap"],
+    "sentinels": ["ValueBlock", "AnimationBlock"],
+    "indirect": ["Value", "UnregisteredValue"],
+    "deferred_to_minor_ge_10": ["PathExpression", "Relocates", "Splines"],
+    "compatibility_allowed": ["TimeSamples", "TimeCode", "Payload"]
+  },
+  "half_precision": {
+    "size_bytes": 2,
+    "encoding": "Imath 1+5+10 bit layout",
+    "fields": {
+      "sign": "bit 15",
+      "exponent": "bits 14 through 10 (5 bits)",
+      "mantissa": "bits 9 through 0 (10 bits)"
+    },
+    "special_cases": {
+      "exponent_31": "Inf or NaN depending on mantissa",
+      "exponent_1_through_30": "normalized number",
+      "exponent_0_with_nonzero_mantissa": "denormalized number",
+      "all_zero": "positive or negative zero by sign bit"
+    },
+    "laws": [
+      "half reads return a target-native half representation; converting to float and back at the binary-format boundary is allowed but the canonical value reported through the value-decoder must round-trip without loss"
+    ]
+  },
+  "dictionary_value": {
+    "layout": {
+      "element_count": "8B unsigned 64-bit integer",
+      "entries": "alternating 4B key (Token Index) and 8B value (signed 64-bit byte offset from the current position to a value representation)"
+    },
+    "empty_form": "an empty dictionary is represented implicitly as inlined with zero payload",
+    "laws": [
+      "dictionary keys are uint32 Token indices; reading them as strings is a contract violation",
+      "dictionary value offsets are signed 64-bit; a negative offset is valid and points backward in the payload",
+      "dictionaries may not be stored inside an array"
+    ]
+  },
+  "feature_gated_types": {
+    "minor_ge_10": ["PathExpression"],
+    "minor_ge_11": ["Relocates"],
+    "minor_ge_12": ["Splines"],
+    "policy": "encountering these types under a version triple that does not require their support produces a clear UnsupportedUsdcFeature diagnostic; placeholder JSON output is a contract violation"
+  },
+  "laws": [
+    "value type dispatch is driven by the 1-byte type code and 1-byte flags read from the 8-byte value representation word; field-name substring matches and section-payload text scans are contract violations",
+    "the Array / Inlined / Compressed bits are read from the high bits of byte 7 of the 8-byte LE word (masks 0x80 / 0x40 / 0x20). See docs/usdc-spec-errata.md#1. Accepting the low-bit layout (0x01/0x02/0x04) as a fallback is a contract violation because it hides the spec/reference divergence and lets a single decoder pass two contradictory test suites.",
+    "inlined and offset-backed scalars of the same value type must share a single decoded value shape",
+    "token, string, path, and asset Index resolution is delegated to usdc-spec-parser and consumed through table handles; this contract does not implement table parsing",
+    "compressed array decoding consumes crate-compression's primitives; this contract must not reimplement the LZ4 or codepoint decoders",
+    "value types introduced at Crate 0.10.0 or later must emit UnsupportedUsdcFeature when encountered; placeholder JSON or silent drops are contract violations",
+    "Value (indirect pointer) decoding must guard against recursion; circular pointers produce an empty value rather than an infinite loop"
+  ],
+  "golden_groups": [
+    "inlined scalar values for bool, int, float, token-index, ObjectPath-index",
+    "offset-backed scalar values for double, int64",
+    "inlined+array, inlined+compressed, inlined+array+compressed flag combinations produce MalformedUsdcValueRepresentation",
+    "offset-backed uncompressed array (8B count + element bytes)",
+    "offset-backed compressed integer array dispatching through crate-compression",
+    "offset-backed compressed float array (i-form and t-form)",
+    "dictionary value with token keys and offset entries (including negative offsets)",
+    "half-precision (Vec2h inlined, Vec3h with int8-representable values inlined, Vec3h offset for non-representable values)",
+    "TokenListOp, StringListOp, PathListOp authored values",
+    "ValueBlock sentinel",
+    "Splines/Relocates/PathExpression produce UnsupportedUsdcFeature under minor_lt_10 fixtures"
+  ],
+  "golden_files": [
+    "goldens/unit/usdc-value-decoder/value-decoder.json",
+    "goldens/integration/usdc-single-layer/basic.json"
+  ]
+}

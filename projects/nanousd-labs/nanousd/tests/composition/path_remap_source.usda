@@ -1,0 +1,27 @@
+#usda 1.0
+
+def "Model"
+{
+    float inputs:color.connect = </Model/Shader.outputs:color>
+    float externalInput.connect = </Library.outputs:value>
+
+    rel material:binding = </Model/Materials/Preview>
+    rel externalTarget = </Library>
+
+    def "Shader"
+    {
+        color3f outputs:color = (1, 0, 0)
+    }
+
+    def "Materials"
+    {
+        def "Preview"
+        {
+        }
+    }
+}
+
+def "Library"
+{
+    float outputs:value = 3
+}

@@ -1,0 +1,6 @@
+#usda 1.0
+
+def Scope "T"
+{
+    int tooLarge = 2147483648
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Renderer Image Comparison Testing"
+  short_description: "Test renderers with golden images"
+  default_prompt: "Use $renderer-image-comparison-testing to design or run golden-image renderer comparisons with reliable capture, thresholds, artifacts, and residual-risk reporting."

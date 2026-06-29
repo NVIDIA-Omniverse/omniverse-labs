@@ -1,0 +1,64 @@
+{
+  "suite": "usdc-single-layer-attribute-time-samples",
+  "spec_commit": "6b4f01f2d6d46b01507481524eb516b4ef358c31",
+  "production_contracts": [
+    "contracts/document-model-productions/attribute-spec.contract.json#fields.timeSamples",
+    "contracts/usdc-productions/attribute-spec-mapping.contract.json#storage_mapping.field_resolution.timeSamples"
+  ],
+  "notes": "Exercises the TimeSamples value type (Crate type 46) co-owned by usdc-value-decoder and usdc-spec-parser. The format-neutral attribute-spec contract requires native time->FieldValue maps; string-keyed JSON storage is forbidden. None-valued samples (ValueBlock type 51) decode to value-block sentinels. Mirrors goldens/integration/usda-single-layer/attribute-time-samples.json.",
+  "cases": [
+    {
+      "id": "float-time-samples-with-value-block-sentinel",
+      "spec_refs": [
+        "contracts/document-model-productions/attribute-spec.contract.json#fields.timeSamples",
+        "contracts/usdc-productions/attribute-spec-mapping.contract.json#storage_mapping.field_resolution.timeSamples"
+      ],
+      "input": {
+        "fixture": "benchmarks/fixtures/attribute_time_samples.usdc"
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "layer": {
+          "fields": {
+            "primChildren": {"type": "token[]", "value": ["World"]}
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "primChildren": {"type": "token[]", "value": ["World"]}
+              }
+            },
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "typeName": {"type": "token", "value": "Xform"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": ["size"]},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World.size": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "variability": {"type": "variability", "value": "varying"},
+                "typeName": {"type": "token", "value": "float"},
+                "timeSamples": {
+                  "type": "TimeSamples",
+                  "value": {
+                    "0.0": {"type": "float", "value": 1.0},
+                    "1.0": {"type": "float", "value": 2.0},
+                    "2.0": {"type": "valueBlock", "value": null}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

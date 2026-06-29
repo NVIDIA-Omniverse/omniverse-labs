@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+# nanousd-vulkan-renderer pre-commit hook — render-correctness gate.
+#
+# Fires on changes that affect rendering correctness (shaders, gpu_vulkan,
+# renderer dispatch, deferred compute). Blocks commit if
+# test/verify_rendering_correctness.py fails. Skip with NU_SKIP_RENDER_CHECK=1.
+#
+# Install: `git config core.hooksPath .githooks` in this repo.
+# See feedback_three_render_breaking_optimizations.md for why this exists.
+set -euo pipefail
+
+if [[ "${NU_SKIP_RENDER_CHECK:-}" == "1" ]]; then
+    echo "[pre-commit] NU_SKIP_RENDER_CHECK=1 — skipping render-correctness gate."
+    exit 0
+fi
+
+# Files that affect rendering correctness. Edit deliberately.
+REL_PATTERNS=(
+    'src/gpu_vulkan\.c$'
+    'src/gpu\.h$'
+    'src/renderer\.c$'
+    'src/shaders/.*\.glsl$'
+    'src/shaders/slang/.*\.slang$'
+    'include/nusd_renderer\.h$'
+)
+
+CHANGED=$(git diff --cached --name-only --diff-filter=ACMR)
+RELEVANT=""
+for pat in "${REL_PATTERNS[@]}"; do
+    match=$(echo "$CHANGED" | grep -E "$pat" || true)
+    if [[ -n "$match" ]]; then
+        RELEVANT+="$match"$'\n'
+    fi
+done
+
+if [[ -z "$RELEVANT" ]]; then
+    # No render-relevant files; let commit through.
+    exit 0
+fi
+
+cat <<EOF
+[pre-commit] Rendering-relevant files staged:
+$(echo "$RELEVANT" | sed 's/^/    /')
+
+Running test/verify_rendering_correctness.py to verify rendering is actually
+working at IsaacLab production config (4096 envs / 64×64 / dexsuite-Lift).
+
+Expected wall-clock: ~12-15 min.
+
+Skip with: NU_SKIP_RENDER_CHECK=1 git commit ...
+
+(but: three optimizations broke rendering today by passing weaker gates;
+ the canary-at-production-config is the only gate that consistently catches
+ fake-pace + buffer-vanishing bugs. Skip at your peril.)
+
+EOF
+
+VENV_PY="${HOME}/.venv/bin/python"
+if [[ ! -x "$VENV_PY" ]]; then
+    echo "[pre-commit] FAIL: venv python not found at $VENV_PY"
+    echo "[pre-commit] Bypass with NU_SKIP_RENDER_CHECK=1 if you're sure."
+    exit 1
+fi
+
+if ! "$VENV_PY" test/verify_rendering_correctness.py; then
+    echo ""
+    echo "[pre-commit] FAIL: verify_rendering_correctness.py reported a regression."
+    echo "[pre-commit] Fix the rendering correctness issue before committing."
+    echo "[pre-commit] To bypass (not recommended): NU_SKIP_RENDER_CHECK=1 git commit ..."
+    exit 1
+fi
+
+echo "[pre-commit] verify_rendering_correctness.py PASS — proceeding with commit."

@@ -1,0 +1,55 @@
+{
+  "mode": "vulkan_anti_staleness",
+  "n_envs": 16,
+  "tile_w": 64,
+  "tile_h": 64,
+  "seed": 42,
+  "preset": "vulkan_renderer",
+  "interop_class": "CudaOwnedInterop",
+  "envs": {
+    "NU_DEFERRED_SHADE": null,
+    "NU_DEFERRED_DEBUG_MODE": null,
+    "NUSD_INVERTED_INTEROP": "1",
+    "NU_TILE_RES": null,
+    "NU_FRAME_SKIP": null
+  },
+  "stats": {
+    "frameA": {
+      "shape": [
+        16,
+        64,
+        64,
+        4
+      ],
+      "mean": 161.88373184204102,
+      "max": 255,
+      "min": 0,
+      "n_zero": 6322,
+      "n_ab": 1,
+      "n_total": 262144,
+      "ab_survival_pct": 0.0003814697265625,
+      "chosen_dptr": "dptr1"
+    },
+    "frameB": {
+      "shape": [
+        16,
+        64,
+        64,
+        4
+      ],
+      "mean": 161.93402099609375,
+      "max": 255,
+      "min": 0,
+      "n_zero": 6290,
+      "n_ab": 0,
+      "n_total": 262144,
+      "ab_survival_pct": 0.0,
+      "chosen_dptr": "dptr0",
+      "selection_rule": "opposite-of-frameA (renderer alternates double-buffer slots)"
+    }
+  },
+  "saved": [
+    "capture_vulkan_anti_staleness_frameA.npy",
+    "capture_vulkan_anti_staleness_frameB.npy"
+  ]
+}

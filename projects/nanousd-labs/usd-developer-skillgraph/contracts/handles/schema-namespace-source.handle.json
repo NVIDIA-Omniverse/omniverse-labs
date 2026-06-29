@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/schema-namespace-source.handle.json",
+  "title": "USD Schema Namespace Source Contract",
+  "version": "0.1",
+  "spec_tag": "v1.0.1",
+  "spec_commit": "v1.0.1",
+  "spec_source": "aousd/specifications-public@v1.0.1",
+  "capability_contracts": [
+    "contracts/capabilities/namespace-source.json",
+    "contracts/capabilities/schema-registry.json",
+    "contracts/capabilities/semantic-runtime-types.json"
+  ],
+  "dependency_contracts": [
+    "contracts/handles/variant-namespace-source.handle.json",
+    "contracts/handles/document-model.handle.json",
+    "contracts/handles/path.handle.json",
+    "contracts/handles/token.handle.json"
+  ],
+  "coverage_contracts": [
+    "contracts/spec-coverage/schema-fallbacks.coverage.json"
+  ],
+  "scope": {
+    "included": [
+      "wrapping a composed namespace source with schema-derived prim definitions",
+      "using composed typeName and composed apiSchemas field data as schema inputs",
+      "fallbackPrimTypes substitution when the authored typeName is not registered and a registered fallback type is available",
+      "typed schema inheritance into the prim definition",
+      "single applied schema property injection",
+      "multiple applied schema instance-name property injection",
+      "schema inclusions from registered built-ins and auto-applies",
+      "multiple applied schema inclusion instance propagation",
+      "override properties that sparsely strengthen included schema property fields",
+      "diagnostics for schema inclusions or override properties that violate the registry-backed schema contract",
+      "schema-defined property field maps containing typeName, custom, variability, and fallback default fields when supplied by the registry",
+      "authored composed property specs overriding schema-defined property fields",
+      "property child enumeration merging authored properties with schema-defined prim-definition properties",
+      "strongest propertyOrder applied to the authored-plus-schema property set"
+    ],
+    "deferred": [
+      "schema definition discovery from files, plugins, or process-global registries",
+      "schema family version negotiation beyond exact registered names",
+      "domain algorithms for specific schemas such as collections, color, xforms, materials, or geometry",
+      "attribute value interpolation or value-clip evaluation"
+    ]
+  },
+  "model": {
+    "SchemaNamespaceSource": "A namespace-source wrapper that injects schema-defined property inputs and prim-definition context without evaluating composition arcs itself.",
+    "PrimDefinition": "Per-prim schema context built from effective typed schema, applied schemas, and registered schema property definitions.",
+    "SchemaPropertyInput": "A property input whose field map originates from a schema definition and is weaker than an authored property input at the same path."
+  },
+  "operations": {
+    "inspect_source": {
+      "input": {},
+      "output": {
+        "mode": "namespace source mode inherited from the wrapped source",
+        "composition": "composition level inherited from the wrapped source",
+        "value_resolution": "value-resolution level inherited from the wrapped source",
+        "schema_fallbacks": "full",
+        "child_ordering": "child ordering inherited from the wrapped source",
+        "property_ordering": "composed"
+      }
+    },
+    "schema_summary": {
+      "input": {
+        "path": "absolute composed prim path"
+      },
+      "output": {
+        "exists": "whether the prim exists in the wrapped source",
+        "authoredType": "composed authored typeName token when present",
+        "effectiveType": "registered concrete typed schema used for the prim definition, after fallbackPrimTypes substitution if applicable",
+        "typeless": "true when no concrete registered type applies",
+        "appliedSchemas": "ordered applied schema tokens from apiSchemas",
+        "schemaOrder": "strong-to-weak schema order used for fallback acquisition",
+        "properties": "schema-defined property names contributed by the prim definition"
+      }
+    },
+    "prim_input": {
+      "input": {
+        "path": "absolute composed prim path"
+      },
+      "output": {
+        "exists": "whether the prim exists",
+        "fields": "source-visible prim fields from the wrapped source",
+        "childNames": "candidate child prim names from the wrapped source",
+        "propertyNames": "authored and schema-defined property names in composed order"
+      }
+    },
+    "property_input": {
+      "input": {
+        "path": "absolute composed property path"
+      },
+      "output": {
+        "exists": "whether an authored or schema-defined property input exists",
+        "kind": "attribute or relationship",
+        "fields": "authored fields merged over weaker schema-defined fields",
+        "schemaDefined": "whether the property exists in the prim definition",
+        "authored": "whether the wrapped source supplies an authored/composed property input"
+      }
+    },
+    "diagnostics": {
+      "input": {},
+      "output": {
+        "diagnostics": "diagnostics from the wrapped source plus schema-source diagnostics"
+      }
+    }
+  },
+  "laws": [
+    "the schema source must consume a namespace source and must not read parser-local USDA structures",
+    "the schema source must not evaluate references, payloads, inherits, specializes, variants, relocates, or layer stacks locally",
+    "schema definition ingestion is implementation-defined by AOUSD v1.0.1 and must be supplied explicitly at this boundary",
+    "the composed prim definition uses a concrete registered typed schema when the composed typeName names one; abstract or unregistered type names leave the prim typeless unless fallbackPrimTypes supplies a registered concrete substitute",
+    "apiSchemas is interpreted on the composed prim, not at the layer level",
+    "multiple applied schema property names are formed by substituting the recorded instance name into the schema definition's placeholder property name",
+    "schema built-ins and auto-applies are registry-supplied inclusions in the owning schema's prim definition and are composed as weaker schema definitions",
+    "a multiple applied schema included by type from another multiple applied schema uses the owning schema's recorded instance name; a named multiple applied built-in under another multiple applied schema prefixes the owning instance name to the included instance name",
+    "override properties sparsely strengthen metadata fields on included properties, do not define new properties, and must not override typeName or variability",
+    "schema-defined properties participate in property child enumeration before propertyOrder is applied",
+    "authored composed property fields are stronger than schema-defined property fields for the same property path",
+    "schema fallback defaults remain schema-defined fallback data for value resolution and must not be reclassified as authored defaults",
+    "stage population may consume schema-defined property names from this source, but must not compute prim definitions itself"
+  ],
+  "adapter_protocol": {
+    "input": "A JSON file containing rootLayer, optional sublayers/referenceLayers, a schemaRegistry object, and ops. Schema definitions are a conformance input for the implementation-defined schema registry boundary.",
+    "output": "A JSON object with ok, diagnostics, and operation results."
+  }
+}

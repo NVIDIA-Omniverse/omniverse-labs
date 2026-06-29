@@ -1,0 +1,587 @@
+{
+  "suite": "usdz-single-layer-basic",
+  "spec_commit": "6b4f01f2d6d46b01507481524eb516b4ef358c31",
+  "cases": [
+    {
+      "id": "default-layer-usda",
+      "spec_refs": [
+        "openusd_usdz_spec/Package layout",
+        "contracts/handles/usdz-layer-open.handle.json"
+      ],
+      "input": {
+        "fixture": "benchmarks/fixtures/usdz/default_root_usda.usdz"
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "layer": {
+          "fields": {
+            "primChildren": {
+              "type": "token[]",
+              "value": [
+                "World"
+              ]
+            }
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "primChildren": {
+                  "type": "token[]",
+                  "value": [
+                    "World"
+                  ]
+                }
+              }
+            },
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {
+                  "type": "specifier",
+                  "value": "def"
+                },
+                "typeName": {
+                  "type": "token",
+                  "value": "Xform"
+                },
+                "primChildren": {
+                  "type": "token[]",
+                  "value": []
+                },
+                "propertyChildren": {
+                  "type": "token[]",
+                  "value": []
+                },
+                "variantSetChildren": {
+                  "type": "token[]",
+                  "value": []
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "default-layer-usdc",
+      "spec_refs": [
+        "openusd_usdz_spec/Package layout",
+        "contracts/handles/usdz-layer-open.handle.json"
+      ],
+      "input": {
+        "fixture": "benchmarks/fixtures/usdz/default_root_usdc.usdz"
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "layer": {
+          "fields": {
+            "primChildren": {
+              "type": "token[]",
+              "value": [
+                "World"
+              ]
+            }
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "primChildren": {
+                  "type": "token[]",
+                  "value": [
+                    "World"
+                  ]
+                }
+              }
+            },
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {
+                  "type": "specifier",
+                  "value": "def"
+                },
+                "typeName": {
+                  "type": "token",
+                  "value": "Xform"
+                },
+                "primChildren": {
+                  "type": "token[]",
+                  "value": []
+                },
+                "propertyChildren": {
+                  "type": "token[]",
+                  "value": []
+                },
+                "variantSetChildren": {
+                  "type": "token[]",
+                  "value": []
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "extra-assets-ignored-after-default",
+      "spec_refs": [
+        "openusd_usdz_spec/Package layout",
+        "contracts/handles/usdz-layer-open.handle.json"
+      ],
+      "input": {
+        "fixture": "benchmarks/fixtures/usdz/extra_assets.usdz"
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "layer": {
+          "fields": {
+            "primChildren": {
+              "type": "token[]",
+              "value": [
+                "World"
+              ]
+            }
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "primChildren": {
+                  "type": "token[]",
+                  "value": [
+                    "World"
+                  ]
+                }
+              }
+            },
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {
+                  "type": "specifier",
+                  "value": "def"
+                },
+                "typeName": {
+                  "type": "token",
+                  "value": "Xform"
+                },
+                "primChildren": {
+                  "type": "token[]",
+                  "value": []
+                },
+                "propertyChildren": {
+                  "type": "token[]",
+                  "value": []
+                },
+                "variantSetChildren": {
+                  "type": "token[]",
+                  "value": []
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "explicit-entry-usda",
+      "spec_refs": [
+        "openusd_usdz_spec/Package layout",
+        "contracts/handles/usdz-layer-open.handle.json"
+      ],
+      "input": {
+        "fixture": "benchmarks/fixtures/usdz/explicit_root_usda.usdz[scenes/root.usda]"
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "layer": {
+          "fields": {
+            "primChildren": {
+              "type": "token[]",
+              "value": [
+                "World"
+              ]
+            }
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "primChildren": {
+                  "type": "token[]",
+                  "value": [
+                    "World"
+                  ]
+                }
+              }
+            },
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {
+                  "type": "specifier",
+                  "value": "def"
+                },
+                "typeName": {
+                  "type": "token",
+                  "value": "Xform"
+                },
+                "primChildren": {
+                  "type": "token[]",
+                  "value": []
+                },
+                "propertyChildren": {
+                  "type": "token[]",
+                  "value": []
+                },
+                "variantSetChildren": {
+                  "type": "token[]",
+                  "value": []
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "explicit-entry-usdc",
+      "spec_refs": [
+        "openusd_usdz_spec/Package layout",
+        "contracts/handles/usdz-layer-open.handle.json"
+      ],
+      "input": {
+        "fixture": "benchmarks/fixtures/usdz/explicit_root_usdc.usdz[scenes/root.usdc]"
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "layer": {
+          "fields": {
+            "primChildren": {
+              "type": "token[]",
+              "value": [
+                "World"
+              ]
+            }
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "primChildren": {
+                  "type": "token[]",
+                  "value": [
+                    "World"
+                  ]
+                }
+              }
+            },
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {
+                  "type": "specifier",
+                  "value": "def"
+                },
+                "typeName": {
+                  "type": "token",
+                  "value": "Xform"
+                },
+                "primChildren": {
+                  "type": "token[]",
+                  "value": []
+                },
+                "propertyChildren": {
+                  "type": "token[]",
+                  "value": []
+                },
+                "variantSetChildren": {
+                  "type": "token[]",
+                  "value": []
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "commented-eocd-leniency",
+      "spec_refs": [
+        "openusd_usdz_spec/Package layout",
+        "contracts/handles/usdz-layer-open.handle.json",
+        "docs/usdz-spec-errata.md#2-eocd-comment-length-leniency"
+      ],
+      "input": {
+        "fixture": "benchmarks/fixtures/usdz/commented_eocd.usdz"
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "layer": {
+          "fields": {
+            "primChildren": {
+              "type": "token[]",
+              "value": [
+                "World"
+              ]
+            }
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "primChildren": {
+                  "type": "token[]",
+                  "value": [
+                    "World"
+                  ]
+                }
+              }
+            },
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {
+                  "type": "specifier",
+                  "value": "def"
+                },
+                "typeName": {
+                  "type": "token",
+                  "value": "Xform"
+                },
+                "primChildren": {
+                  "type": "token[]",
+                  "value": []
+                },
+                "propertyChildren": {
+                  "type": "token[]",
+                  "value": []
+                },
+                "variantSetChildren": {
+                  "type": "token[]",
+                  "value": []
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "invalid-zip",
+      "spec_refs": [
+        "openusd_usdz_spec/Package layout",
+        "contracts/handles/usdz-layer-open.handle.json"
+      ],
+      "input": {
+        "fixture": "benchmarks/fixtures/usdz/invalid_zip.usdz"
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {
+            "severity": "error",
+            "code": "InvalidUsdzArchive",
+            "message": "could not locate ZIP end of central directory"
+          }
+        ]
+      }
+    },
+    {
+      "id": "compressed-entry",
+      "spec_refs": [
+        "openusd_usdz_spec/Package layout",
+        "contracts/handles/usdz-layer-open.handle.json"
+      ],
+      "input": {
+        "fixture": "benchmarks/fixtures/usdz/compressed_entry.usdz"
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {
+            "severity": "error",
+            "code": "UnsupportedUsdzCompression",
+            "message": "USDZ entries must use ZIP stored method",
+            "path": "root.usda"
+          }
+        ]
+      }
+    },
+    {
+      "id": "encrypted-entry",
+      "spec_refs": [
+        "openusd_usdz_spec/Package layout",
+        "contracts/handles/usdz-layer-open.handle.json"
+      ],
+      "input": {
+        "fixture": "benchmarks/fixtures/usdz/encrypted_entry.usdz"
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {
+            "severity": "error",
+            "code": "UnsupportedUsdzEncryption",
+            "message": "USDZ entries must not be encrypted",
+            "path": "root.usda"
+          }
+        ]
+      }
+    },
+    {
+      "id": "misaligned-entry",
+      "spec_refs": [
+        "openusd_usdz_spec/Package layout",
+        "contracts/handles/usdz-layer-open.handle.json"
+      ],
+      "input": {
+        "fixture": "benchmarks/fixtures/usdz/misaligned_entry.usdz"
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {
+            "severity": "error",
+            "code": "MisalignedUsdzEntryData",
+            "message": "USDZ entry data offset is not 64-byte aligned",
+            "path": "root.usda"
+          }
+        ]
+      }
+    },
+    {
+      "id": "missing-default-layer",
+      "spec_refs": [
+        "openusd_usdz_spec/Package layout",
+        "contracts/handles/usdz-layer-open.handle.json"
+      ],
+      "input": {
+        "fixture": "benchmarks/fixtures/usdz/empty.usdz"
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {
+            "severity": "error",
+            "code": "MissingUsdzDefaultLayer",
+            "message": "USDZ archive has no default layer"
+          }
+        ]
+      }
+    },
+    {
+      "id": "missing-explicit-entry",
+      "spec_refs": [
+        "openusd_usdz_spec/Package layout",
+        "contracts/handles/usdz-layer-open.handle.json"
+      ],
+      "input": {
+        "fixture": "benchmarks/fixtures/usdz/default_root_usda.usdz[missing.usda]"
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {
+            "severity": "error",
+            "code": "MissingUsdzEntry",
+            "message": "USDZ entry not found: missing.usda",
+            "path": "missing.usda"
+          }
+        ]
+      }
+    },
+    {
+      "id": "unsupported-usd-entry",
+      "spec_refs": [
+        "openusd_usdz_spec/Package layout",
+        "contracts/handles/usdz-layer-open.handle.json"
+      ],
+      "input": {
+        "fixture": "benchmarks/fixtures/usdz/unsupported_usd.usdz"
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {
+            "severity": "error",
+            "code": "UnsupportedPackageLayerFormat",
+            "message": "unsupported USDZ package entry format: root.usd",
+            "path": "root.usd"
+          }
+        ]
+      }
+    },
+    {
+      "id": "unsupported-nested-usdz-entry",
+      "spec_refs": [
+        "openusd_usdz_spec/Package layout",
+        "contracts/handles/usdz-layer-open.handle.json"
+      ],
+      "input": {
+        "fixture": "benchmarks/fixtures/usdz/nested_usdz.usdz"
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {
+            "severity": "error",
+            "code": "NestedUsdzUnsupported",
+            "message": "nested USDZ package entries are out of scope: nested.usdz",
+            "path": "nested.usdz"
+          }
+        ]
+      }
+    },
+    {
+      "id": "duplicate-entry-name",
+      "spec_refs": [
+        "openusd_usdz_spec/Package layout",
+        "contracts/handles/usdz-layer-open.handle.json"
+      ],
+      "input": {
+        "fixture": "benchmarks/fixtures/usdz/duplicate_names.usdz"
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {
+            "severity": "error",
+            "code": "DuplicateUsdzEntryName",
+            "message": "duplicate USDZ entry name: root.usda",
+            "path": "root.usda"
+          }
+        ]
+      }
+    },
+    {
+      "id": "unsafe-entry-path",
+      "spec_refs": [
+        "openusd_usdz_spec/Package layout",
+        "contracts/handles/usdz-layer-open.handle.json"
+      ],
+      "input": {
+        "fixture": "benchmarks/fixtures/usdz/unsafe_path.usdz"
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {
+            "severity": "error",
+            "code": "UnsafeUsdzEntryPath",
+            "message": "unsafe USDZ entry path: ../root.usda",
+            "path": "../root.usda"
+          }
+        ]
+      }
+    }
+  ]
+}

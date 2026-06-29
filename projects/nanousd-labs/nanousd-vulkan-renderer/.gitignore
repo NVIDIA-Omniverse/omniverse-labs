@@ -1,0 +1,9 @@
+build/
+*.o
+*.so
+*.a
+*.egg-info/
+__pycache__/
+*.pyc
+.cache/
+*.nzgeo

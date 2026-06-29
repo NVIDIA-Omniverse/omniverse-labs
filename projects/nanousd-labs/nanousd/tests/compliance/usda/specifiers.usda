@@ -1,0 +1,28 @@
+#usda 1.0
+(
+    defaultPrim = "Defined"
+)
+
+def Xform "Defined" {
+    float value = 1.0
+}
+
+class Xform "Abstract" {
+    float value = 2.0
+
+    def Xform "AbstractChild" {
+        float value = 4.0
+    }
+}
+
+over "OverOnly" {
+    float value = 3.0
+}
+
+def Xform "DefinedWithOverChild" {
+    over "OverChild" {
+        def Xform "HiddenGrandchild" {
+            float value = 5.0
+        }
+    }
+}

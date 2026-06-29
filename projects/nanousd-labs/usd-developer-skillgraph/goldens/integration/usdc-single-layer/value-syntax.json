@@ -1,0 +1,58 @@
+{
+  "suite": "usdc-single-layer-value-syntax",
+  "spec_commit": "6b4f01f2d6d46b01507481524eb516b4ef358c31",
+  "production_contracts": [
+    "contracts/document-model-productions/attribute-spec.contract.json",
+    "contracts/usdc-productions/attribute-spec-mapping.contract.json",
+    "contracts/usdc-productions/crate-value-representations.contract.json"
+  ],
+  "notes": "Exercises attribute typeName + default agreement and the uniform variability authored shape. Mirrors goldens/integration/usda-single-layer/value-syntax.json. Additional foundational value-type coverage will be added as the type-table sweep fixtures land.",
+  "cases": [
+    {
+      "id": "uniform-variability-float-default",
+      "spec_refs": [
+        "contracts/document-model-productions/attribute-spec.contract.json#fields.variability",
+        "contracts/usdc-productions/attribute-spec-mapping.contract.json#storage_mapping.field_resolution.variability"
+      ],
+      "input": {
+        "fixture": "benchmarks/fixtures/uniform_variability.usdc"
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "layer": {
+          "fields": {
+            "primChildren": {"type": "token[]", "value": ["World"]}
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "primChildren": {"type": "token[]", "value": ["World"]}
+              }
+            },
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "typeName": {"type": "token", "value": "Xform"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": ["radius"]},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World.radius": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "variability": {"type": "variability", "value": "uniform"},
+                "typeName": {"type": "token", "value": "float"},
+                "default": {"type": "float", "value": 2.5}
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

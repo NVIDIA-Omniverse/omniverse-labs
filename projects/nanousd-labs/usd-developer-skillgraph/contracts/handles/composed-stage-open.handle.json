@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/composed-stage-open.handle.json",
+  "title": "USD Composed Stage Open Contract",
+  "version": "0.1",
+  "spec_tag": "v1.0.1",
+  "spec_commit": "v1.0.1",
+  "spec_source": "aousd/specifications-public@v1.0.1",
+  "dependency_contracts": [
+    "contracts/handles/layer-stack-open.handle.json",
+    "contracts/handles/reference-namespace-source.handle.json",
+    "contracts/handles/payload-namespace-source.handle.json",
+    "contracts/handles/relocates-namespace-source.handle.json",
+    "contracts/handles/inherits-namespace-source.handle.json",
+    "contracts/handles/specializes-namespace-source.handle.json",
+    "contracts/handles/variant-namespace-source.handle.json",
+    "contracts/handles/composition-arbitrator.handle.json",
+    "contracts/handles/stage-population.handle.json",
+    "contracts/handles/resource.handle.json",
+    "contracts/handles/layer-open.handle.json",
+    "contracts/handles/document-model.handle.json",
+    "contracts/handles/path.handle.json",
+    "contracts/handles/token.handle.json"
+  ],
+  "coverage_contracts": [
+    "contracts/spec-coverage/composed-stage-open.coverage.json"
+  ],
+  "scope": {
+    "included": [
+      "runtime stage-open orchestration for local USDA files before backend-specific C API handle construction",
+      "root layer-stack opening through usd-layer-stack-open",
+      "local authoring-layer-relative resolution and opening of direct and recursively discovered external reference assets from opened layer specs",
+      "optional local authoring-layer-relative resolution and opening of direct external payload assets discovered from opened layer specs when payload inclusion is requested",
+      "adapter-controlled optional payload inclusion scenario that opens and composes direct payload assets when payloadInclusion=include and omits the payload opinion source when payloadInclusion=omit",
+      "local authoring-layer-relative resolution and opening of reference assets discovered inside loaded payload layer stacks only when payload inclusion is requested",
+      "construction of reference, payload, relocates, inherits, specializes, variant, and composition-arbitrator sources from opened dependencies",
+      "population of a Stage from the usd-composition-arbitrator namespace-source facade",
+      "stable ownership of opened dependency layers for the lifetime of the populated Stage",
+      "diagnostic aggregation from layer opening, dependency opening, arc-source construction, composition, and stage population",
+      "deduplication of equivalent aggregated diagnostics by code, message, and path"
+    ],
+    "deferred": [
+      "full asset resolver search paths, callbacks, contexts, repository policy, and package resources",
+      "recursive or chained payload expansion beyond direct opened dependency layers",
+      "references or payloads authored inside selected variants",
+      "cross-layer reference, payload, inherit, specialize, and variant listOp composition before arc discovery",
+      "payload load masks beyond the bounded payload inclusion scenario, unloaded-payload prim state, and load/unload mutation",
+      "schema fallback properties, full instancing/prototypes, value clips, interpolation, and file serialization"
+    ]
+  },
+  "model": {
+    "ComposedStageOpenResult": "Target-native result that owns all opened layer-stack results, arc sources, the composition arbitrator, and the populated Stage.",
+    "DependencyLayerSet": "Opened dependency layer-stack results keyed by authored asset identifier and held alive for reference and payload source construction.",
+    "ArcDiscovery": "Bounded scan of opened layer specs for source-visible external reference asset identifiers and, when optional payload inclusion is requested, external payload asset identifiers. Reference dependency discovery recurses through opened referenced layer stacks and optionally loaded payload layer stacks; payload-arc discovery remains direct until recursive payload contracts exist.",
+    "ComposedNamespace": "The usd-composition-arbitrator namespace-source facade built from opened local and arc-family sources.",
+    "PopulatedStage": "The Stage produced by usd-stage-population from the composed namespace-source facade."
+  },
+  "operations": {
+    "open_composed_stage": {
+      "input": {
+        "rootLocation": "resolved local root layer resource location",
+        "payloadInclusion": "adapter-only scenario control, include or omit, for whether direct external payload assets are opened and supplied; this is not an authored USD field"
+      },
+      "output": {
+        "result": "target-native ComposedStageOpenResult containing a populated Stage or diagnostics"
+      }
+    },
+    "open_composed_stage_summary": {
+      "input": {
+        "rootLocation": "resolved local root layer resource location"
+      },
+      "output": {
+        "ok": "whether a populated Stage was produced from a successfully opened root layer",
+        "composition": "partial",
+        "payload_loading": "partial when loaded payload opinions are supplied, absent when payloadInclusion=omit",
+        "rootLayerPath": "root layer resource location",
+        "layerCount": "number of root, sublayer, reference, and payload layer-stack roots opened",
+        "referenceLayerCount": "number of direct and recursively discovered external reference assets opened",
+        "payloadLayerCount": "number of direct external payload assets and nested reference assets needed by loaded payload layer stacks",
+        "primCount": "number of populated traversal prims",
+        "diagnostics": "aggregated diagnostics"
+      }
+    },
+    "stage": {
+      "input": {
+        "result": "successful ComposedStageOpenResult"
+      },
+      "output": {
+        "stage": "target-native Stage populated from usd-composition-arbitrator"
+      }
+    }
+  },
+  "laws": [
+    "nanousd_open and other runtime stage-open consumers must use this orchestration boundary when they need authored composition arcs to affect stage population",
+    "the backend must not construct reference sources, or optional payload sources when payload inclusion is requested, with empty dependency maps when authored external dependency assets are discoverable and the adapter scenario requests opening them",
+    "when payloadInclusion=omit in the adapter scenario, the orchestrator must not open payload assets and must omit the payload opinion source rather than constructing a failing empty payload source",
+    "when payloadInclusion=include in the adapter scenario, direct external payload asset identifiers discovered in opened layer specs must be opened through usd-layer-stack-open and supplied to usd-payload-namespace-source",
+    "the orchestrator owns dependency discovery and opening; usd-composition-arbitrator remains responsible only for opinion arbitration over supplied sources",
+    "dependency layers must be opened through usd-layer-stack-open or usd-layer-open providers, not by reparsing USDA text or storing parser-local syntax trees",
+    "direct and recursively discovered external reference asset identifiers are resolved by the same bounded local policy used for local sublayers until a richer asset resolver contract is added",
+    "recursive reference dependency discovery must be cycle-bounded by authored asset identifier and resolved location; cycles must be reported as diagnostics and must not recurse unboundedly or crash generated implementations",
+    "payload asset discovery remains optional and bounded to direct authored payload arcs until a recursive payload contract is added, but loaded payload layer stacks must still open referenced assets needed for references authored inside the loaded payload target subtree when payload inclusion is requested",
+    "opened dependency layer objects must outlive every reference, payload, composition-arbitrator, and Stage object that can hold pointers or views into them",
+    "aggregated diagnostics must preserve recoverable composition errors while avoiding duplicate reports of the same code/message/path emitted through multiple provider views",
+    "the populated Stage must be built by usd-stage-population from the composition-arbitrator NamespaceSource facade; the orchestrator must not reimplement stage traversal or prim/property indexes",
+    "the result must report composition=partial until recursive payload arcs, variant-contained arcs, full resolver policy, full value resolution, schema fallback, and full instancing/prototypes are covered by later contracts"
+  ],
+  "adapter_protocol": {
+    "input": "A JSON file containing one case with rootLocation, optional adapter-only payloadInclusion scenario control, optional resources mapping temporary relative resource paths to USDA text, and an ops array. The adapter may materialize resources in a temporary directory before calling the domain stage-open boundary.",
+    "output": "A JSON object with ok, diagnostics, and results."
+  }
+}

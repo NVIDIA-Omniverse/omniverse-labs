@@ -1,0 +1,52 @@
+{
+  "mode": "vulkan_16env",
+  "n_envs": 16,
+  "tile_w": 64,
+  "tile_h": 64,
+  "seed": 42,
+  "preset": "vulkan_renderer",
+  "interop_class": "CudaOwnedInterop",
+  "envs": {
+    "NU_DEFERRED_SHADE": null,
+    "NU_DEFERRED_DEBUG_MODE": null,
+    "NUSD_INVERTED_INTEROP": "1",
+    "NU_TILE_RES": null,
+    "NU_FRAME_SKIP": null
+  },
+  "stats": {
+    "step4_dptr0": {
+      "shape": [
+        16,
+        64,
+        64,
+        4
+      ],
+      "mean": 161.93333053588867,
+      "max": 255,
+      "min": 0,
+      "n_zero": 6293,
+      "n_ab": 0,
+      "n_total": 262144,
+      "ab_survival_pct": 0.0
+    },
+    "step4_dptr1": {
+      "shape": [
+        16,
+        64,
+        64,
+        4
+      ],
+      "mean": 171.0,
+      "max": 171,
+      "min": 171,
+      "n_zero": 0,
+      "n_ab": 262144,
+      "n_total": 262144,
+      "ab_survival_pct": 100.0
+    }
+  },
+  "saved": [
+    "capture_vulkan_16env_step4_dptr0.npy",
+    "capture_vulkan_16env_step4_dptr1.npy"
+  ]
+}

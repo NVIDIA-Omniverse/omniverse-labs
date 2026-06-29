@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/path.performance.json",
+  "title": "USD Path Performance Contract",
+  "version": "0.1",
+  "spec_commit": "v1.0.1",
+  "scope": {
+    "included": [
+      "equality of existing PathHandle values",
+      "hashing or stable identity hash of existing PathHandle values",
+      "parent lookup of existing PathHandle values",
+      "final-name lookup of existing PathHandle values",
+      "prefix checks on existing PathHandle values",
+      "retained representation shape for existing PathHandle values"
+    ],
+    "excluded": [
+      "parsing arbitrary path text",
+      "validating identifier grammar from text",
+      "stringification or copying complete path text out",
+      "lexicographic total ordering when implementation chooses string order"
+    ]
+  },
+  "model": {
+    "PathHandle": "Opaque conformance reference that may wrap target-native structured path values.",
+    "PathComponentIdentity": "Reusable component names are canonicalized through a target-native identity mechanism that provides stable equality, hashing, and string recovery.",
+    "retained_text_policy": "A generated path target may retain canonical full-path text for lookup or stringification, but durable path nodes should not also retain full raw component strings when component identity handles are available. Parsed component strings are parser temporaries, not durable representation.",
+    "constant_or_structural_time": "Hot operations should scale with relevant path structure, not complete string length. Equality, hashing, parent lookup, and final-name lookup should not rescan complete path text once handles exist.",
+    "ratio_gate": "Compare long or deep path timings with short or shallow timings for the same pre-created operation."
+  },
+  "operations": {
+    "equal": {
+      "expected_complexity": "O(1) on canonical whole-path identity, or a documented structural comparison that is benchmarked separately from raw text comparison."
+    },
+    "hash": {
+      "expected_complexity": "Amortized O(1) from cached or identity-derived hash data, not rehashing complete path text on each call."
+    },
+    "parent": {
+      "expected_complexity": "O(1) lookup of a cached parent handle or parent id for existing path handles."
+    },
+    "name": {
+      "expected_complexity": "O(1) access to the final canonical component identity."
+    },
+    "has_prefix": {
+      "expected_complexity": "O(prefix component count) using component identity comparisons, not rescanning the complete path string."
+    },
+    "retained_representation": {
+      "expected_shape": "Path nodes should retain compact identity fields such as whole-path id, parent id, final component identity, optional property identity, kind, depth, and cached hash. Canonical text should be a single cached/registry value or lazily produced output, not duplicated as both path text and per-node raw component strings."
+    }
+  },
+  "measurement": {
+    "primary_signal": "long/deep ns_per_op divided by short/shallow ns_per_op for pre-created handles",
+    "secondary_signal": "absolute ns_per_op ceiling",
+    "memory_signal": "Inspectable generated representation should distinguish parser temporaries from retained node fields; future adapters may add retained bytes per path and retained text-copy ratio gates.",
+    "note": "Adapters must pre-create PathHandle values before timing. Timed loops must operate on native PathHandle or PathRef values, not reparsed strings."
+  }
+}

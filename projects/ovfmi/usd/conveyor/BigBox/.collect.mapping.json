@@ -1,0 +1,53 @@
+{
+    "version": "1.0",
+    "file_records": [
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/6.0/Isaac/SimReady/Industrial/Warehouse/Boxes/Corrugated_Brown_Box_B13/textures/T_Plastic_Black_A_ORM.png",
+            "source_hash": "75547f114a4e7a76412dfcff4bc01c5944af34b7",
+            "target_url": "./SubUSDs/textures/T_Plastic_Black_A_ORM.png",
+            "target_hash": "03ea7e46985c4133a187e92a5d892aaee4adfd77"
+        },
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/6.0/Isaac/SimReady/Industrial/Warehouse/Boxes/Corrugated_Brown_Box_B13/textures/t_corrugatedboxes_b01_tile01_albedo.png",
+            "source_hash": "5d44426b0c80282bb74b470df23def1301b90806",
+            "target_url": "./SubUSDs/textures/t_corrugatedboxes_b01_tile01_albedo.png",
+            "target_hash": "caaf67f1bb01a62c2f6e9713f7fd13be5dc510cc"
+        },
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/6.0/Isaac/SimReady/Industrial/Warehouse/Boxes/Corrugated_Brown_Box_B13/textures/t_corrugatedboxes_b01_tile01_normal.png",
+            "source_hash": "d8a7780afb6b6836c0b95b265721aebfff4b22f2",
+            "target_url": "./SubUSDs/textures/t_corrugatedboxes_b01_tile01_normal.png",
+            "target_hash": "7de745636c82a90bb3bc4fb7d7dab8e3b23a35ad"
+        },
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/6.0/Isaac/SimReady/Industrial/Warehouse/Boxes/Corrugated_Brown_Box_B13/textures/t_corrugatedboxes_b01_tile01_orm.png",
+            "source_hash": "7c44a545386067967ae53695df6bf971318d43c2",
+            "target_url": "./SubUSDs/textures/t_corrugatedboxes_b01_tile01_orm.png",
+            "target_hash": "76769b7de1be5b8770c6f5033248fa467ff78510"
+        },
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/6.0/Isaac/SimReady/Industrial/Warehouse/Boxes/Corrugated_Brown_Box_B13/textures/t_corrugatedboxes_b01_trim_Albedo.png",
+            "source_hash": "5e11f6700bfd4066ec5560c8e1cf4deea67cf8a9",
+            "target_url": "./SubUSDs/textures/t_corrugatedboxes_b01_trim_Albedo.png",
+            "target_hash": "69e38b81afefe8b94ddc4be55f3bd09ec66f402a"
+        },
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/6.0/Isaac/SimReady/Industrial/Warehouse/Boxes/Corrugated_Brown_Box_B13/textures/t_corrugatedboxes_b01_trim_normal.png",
+            "source_hash": "c02783508d0166fe1e219fe0af72fa43e1e7e60a",
+            "target_url": "./SubUSDs/textures/t_corrugatedboxes_b01_trim_normal.png",
+            "target_hash": "4ee586e4e717fbddb5ed7d225fcc44f504418731"
+        },
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/6.0/Isaac/SimReady/Industrial/Warehouse/Boxes/Corrugated_Brown_Box_B13/textures/t_corrugatedboxes_b01_trim_orm.png",
+            "source_hash": "60c140e334c6795b235aea85e0dd14c649bc160a",
+            "target_url": "./SubUSDs/textures/t_corrugatedboxes_b01_trim_orm.png",
+            "target_hash": "0e7af1ebc7f9a1be73668f86a757fe18029208c9"
+        },
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/6.0/Isaac/SimReady/Industrial/Warehouse/Boxes/Corrugated_Brown_Box_B13/payloads/Physics/physics.usda",
+            "source_hash": "45a1850a179c3abf595f6187dd54888997b10e7f",
+            "target_url": "./SubUSDs/physics.usda",
+            "target_hash": "064ed06dcbbd04e8bedcb8bf2c4d2f615d856e50"
+        }
+    ]
+}

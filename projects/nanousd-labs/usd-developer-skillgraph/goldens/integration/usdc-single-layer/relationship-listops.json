@@ -1,0 +1,64 @@
+{
+  "suite": "usdc-single-layer-relationship-listops",
+  "spec_commit": "6b4f01f2d6d46b01507481524eb516b4ef358c31",
+  "production_contracts": [
+    "contracts/document-model-productions/relationship-spec.contract.json",
+    "contracts/document-model-productions/common-metadata.contract.json#listop_subfields",
+    "contracts/usdc-productions/relationship-spec-mapping.contract.json"
+  ],
+  "notes": "Exercises the full {explicit, prepend, append, delete} subfield set on a relationship's targetPaths listOp. The format-neutral relationship-spec contract pins the subfield names; the USDC mapping contract pins the encoding (PathListOp type 34 with the bitmask byte). Mirrors goldens/integration/usda-single-layer/relationship-listops.json.",
+  "cases": [
+    {
+      "id": "all-four-subfields-on-targetpaths",
+      "spec_refs": [
+        "contracts/document-model-productions/relationship-spec.contract.json#listop_subfield_rules",
+        "contracts/usdc-productions/relationship-spec-mapping.contract.json#storage_mapping.field_resolution.targetPaths"
+      ],
+      "input": {
+        "fixture": "benchmarks/fixtures/relationship_listops.usdc"
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "layer": {
+          "fields": {
+            "primChildren": {"type": "token[]", "value": ["World"]}
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "primChildren": {"type": "token[]", "value": ["World"]}
+              }
+            },
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "typeName": {"type": "token", "value": "Xform"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": ["material:binding"]},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World.material:binding": {
+              "kind": "relationship",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "targetPaths": {
+                  "type": "listop<ObjectPath>",
+                  "value": {
+                    "explicit": ["/Materials/A"],
+                    "prepend":  ["/Materials/B"],
+                    "append":   ["/Materials/C"],
+                    "delete":   ["/Materials/D"]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+# Per-asset thumbnails — ~140 files, regenerable from `python3 run.py`
+# given the cache at ~/assets/agibot/cache/. Skip from tree.
+out/*.png
+# Keep the compressed contact sheet:
+!out/_grid*.jpg
+# Skip the full-res grid:
+out/_grid.png
+out/_grid_small.png

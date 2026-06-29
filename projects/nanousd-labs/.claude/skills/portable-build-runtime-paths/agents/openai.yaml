@@ -1,0 +1,4 @@
+interface:
+  display_name: "Portable Build Runtime Paths"
+  short_description: "Make builds run after relocation"
+  default_prompt: "Audit or fix this build so binaries, libraries, shaders, plugins, and packaged resources run from installed or relocated artifact paths without cwd or username-specific assumptions."

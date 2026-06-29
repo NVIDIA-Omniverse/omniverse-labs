@@ -1,0 +1,13 @@
+#usda 1.0
+
+def "RootRef" (
+    references = @./relocates_nested_mid.usda@</Mid>
+)
+{
+}
+
+def "RootPayload" (
+    payload = @./relocates_nested_mid.usda@</Mid>
+)
+{
+}

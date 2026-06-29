@@ -1,0 +1,10 @@
+#usda 1.0
+(
+    subLayers = [
+        @./compound_offset_sub.usda@ (offset = 20; scale = 2)
+    ]
+)
+
+def Xform "Model"
+{
+}

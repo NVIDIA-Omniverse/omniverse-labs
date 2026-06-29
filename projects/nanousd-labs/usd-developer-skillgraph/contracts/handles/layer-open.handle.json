@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/layer-open.handle.json",
+  "title": "USD Single-Layer Open Contract",
+  "version": "0.1",
+  "spec_commit": "v1.0.1",
+  "dependency_contracts": [
+    "contracts/handles/resource.handle.json",
+    "contracts/handles/usda-layer-open.handle.json",
+    "contracts/handles/usdc-layer-open.handle.json",
+    "contracts/handles/usdz-layer-open.handle.json",
+    "contracts/handles/document-model.handle.json"
+  ],
+  "adapter_contracts": [
+    "contracts/layer-dump.schema.json"
+  ],
+  "scope": {
+    "included": [
+      "open one resolved local USD layer resource",
+      "resource protocol I/O before concrete format handler invocation",
+      "extension-first format dispatch from ResolvedLocation metadata",
+      "resource-signature fallback dispatch for ambiguous resources without a registered extension match",
+      "generic dispatch to registered USDA and USDC layer-format handlers",
+      "generic dispatch to the registered USDZ package layer handler for .usdz local resources and Package resolved locations",
+      "file-backed fast-path forwarding to concrete handlers when present",
+      "return of parsed layer data as usd-document-model storage",
+      "canonical dump adapter from the stored single-layer data model",
+      "clear diagnostics for unsupported resources, unsupported formats, malformed USDA, USDC, or USDZ content, and duplicate spec paths"
+    ],
+    "deferred": [
+      "asset resolver search paths and resolver callbacks",
+      "sublayer, reference, payload, inherits, specializes, variant, relocates, and value clip composition",
+      "dependent layer loading",
+      "value resolution",
+      "stage population",
+      "schema fallback evaluation",
+      ".usd forwarding dispatch"
+    ]
+  },
+  "model": {
+    "RootInput": "A concrete resolved local resource location supplied to the target entrypoint.",
+    "ResourceOpen": "The resource protocol step that turns the resolved location into opened resource bytes or a file-backed byte view.",
+    "LayerFormatDispatch": "A generic format-dispatch boundary with registered USDA and USDC handlers in active target scopes.",
+    "LayerData": "The document-model layer/spec/field storage populated by the selected layer-format parser.",
+    "LayerOpenResult": "A target-native result containing either LayerData or diagnostics. It is not a JSON object.",
+    "CanonicalDump": "The language-neutral ok, diagnostics, and layer JSON result used only by integration adapters and goldens."
+  },
+  "operations": {
+    "open_layer": {
+      "input": {
+        "resolvedLocation": "resolved local file or supported local file URI"
+      },
+      "output": {
+        "result": "target-native LayerOpenResult containing a document-model Layer or diagnostics"
+      }
+    },
+    "dispatch_opened_resource": {
+      "input": {
+        "displayName": "resolved resource display spelling",
+        "openedResourceBytes": "opened resource bytes or file-backed byte view from a successful ResourceReadResult"
+      },
+      "output": {
+        "result": "target-native LayerOpenResult containing a document-model Layer or unsupported-format diagnostic"
+      }
+    }
+  },
+  "laws": [
+    "resource opening must consume usd-resource-protocol",
+    "USDA opened-resource byte handling must consume usda-layer-open",
+    "USDC opened-resource byte handling must consume usdc-layer-open when that handler is registered in the active target scope",
+    "USDZ opened-resource byte handling must consume usdz-layer-open when that handler is registered in the active target scope",
+    "format dispatch must consult the ResolvedLocation display and extension before consulting opened resource signatures; suffix matching on the raw identifier before resolution is a contract violation",
+    "when a registered handler matches a resolved .usda or .usdc extension, the opener must select that handler without reading resource content to inspect a header or magic value for the dispatch decision",
+    "opened resource signatures are a fallback only for ambiguous resources with no registered extension match; mismatched opened bytes under an explicit .usda or .usdc extension are diagnosed by the selected concrete handler, not redispatched to another handler",
+    "when usd-resource-protocol exposes file_backed_path on the opened ResourceReadResult, the opener must forward that path to standalone USDA and USDC concrete handlers so format-specific fast paths can run",
+    "file_backed_path must not be forwarded to an inner USDC handler selected from a USDZ package unless it names the same byte extent; USDZ entries pass an entry byte view and leave standalone file_backed_path unset",
+    "parsed specs and fields must be stored through usd-document-model before returning a successful layer result",
+    "open_layer and dispatch_opened_resource must not return Json, dict, tagged JSON, or canonical dump trees as their domain result",
+    "JSON materialization is allowed only in explicit adapters, diagnostics serialization, and dump commands",
+    "the generic layer opener must not parse USDA grammar directly",
+    "the generic layer opener must not parse USDC binary data directly",
+    "the generic layer opener must not parse ZIP central directories or USDZ package entries directly",
+    "the generic layer opener must not implement composition, value resolution, stage population, or schemas",
+    "generated targets must pass their active scope goldens for this contract"
+  ],
+  "adapter_protocol": {
+    "input": "The current integration adapter is the generated dump command. It receives a USDA or USDC filepath as its final argument.",
+    "output": "A JSON object matching contracts/layer-dump.schema.json."
+  }
+}

@@ -1,0 +1,16 @@
+#usda 1.0
+(
+    defaultPrim = "Geo"
+    subLayers = [
+        @./stage_ordering_base.usda@
+    ]
+)
+
+# Stronger layer — authors a `default` value for /Geo.radius. The
+# weaker layer has timeSamples. Per §12.3 the per-opinion walk finds
+# this opinion first; its `default` wins over the weaker timeSamples.
+
+over "Geo"
+{
+    float radius = 7.0
+}

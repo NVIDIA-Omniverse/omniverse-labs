@@ -1,0 +1,1124 @@
+{
+  "suite": "usd-composition-arbitrator",
+  "contract": "contracts/handles/composition-arbitrator.handle.json",
+  "spec_tag": "v1.0.1",
+  "spec_commit": "v1.0.1",
+  "cases": [
+    {
+      "id": "liverps-family-ordering",
+      "input": {
+        "rootLayer": {
+          "identifier": "root.usda",
+          "fields": {
+            "primChildren": {"type": "token[]", "value": ["World"]},
+            "layerRelocates": {
+              "type": "Relocates",
+              "value": {"/World/Source": "/World/Relocated"}
+            }
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "primChildren": {"type": "token[]", "value": ["World"]},
+                "layerRelocates": {
+                  "type": "Relocates",
+                  "value": {"/World/Source": "/World/Relocated"}
+                }
+              }
+            },
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "typeName": {"type": "token", "value": "Scope"},
+                "kind": {"type": "token", "value": "component"},
+                "references": {
+                  "type": "listop<Reference>",
+                  "value": {
+                    "explicit": [{"asset": "asset.usda", "path": "/RefRoot", "offset": 0.0, "scale": 1.0}],
+                    "prepend": [],
+                    "append": [],
+                    "delete": []
+                  }
+                },
+                "payload": {
+                  "type": "listop<Payload>",
+                  "value": {
+                    "explicit": [{"asset": "payload.usda", "path": "/PayloadRoot", "offset": 0.0, "scale": 1.0}],
+                    "prepend": [],
+                    "append": [],
+                    "delete": []
+                  }
+                },
+                "inheritPaths": {
+                  "type": "listop<ObjectPath>",
+                  "value": {"explicit": ["/_Inherited"], "prepend": [], "append": [], "delete": []}
+                },
+                "specializes": {
+                  "type": "listop<ObjectPath>",
+                  "value": {"explicit": ["/_Specialized"], "prepend": [], "append": [], "delete": []}
+                },
+                "variantSetNames": {
+                  "type": "listop<string>",
+                  "value": {"explicit": ["modelingVariant"], "prepend": [], "append": [], "delete": []}
+                },
+                "variantSelection": {
+                  "type": "VariantSetMap",
+                  "value": {"modelingVariant": "high"}
+                },
+                "primChildren": {"type": "token[]", "value": ["Local", "Relocated"]},
+                "properties": {"type": "token[]", "value": ["familyToken", "localOnly"]},
+                "variantSetChildren": {"type": "token[]", "value": ["modelingVariant"]}
+              }
+            },
+            "/World.familyToken": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "typeName": {"type": "token", "value": "token"},
+                "variability": {"type": "variability", "value": "varying"},
+                "default": {"type": "token", "value": "local"}
+              }
+            },
+            "/World.localOnly": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "typeName": {"type": "token", "value": "token"},
+                "variability": {"type": "variability", "value": "uniform"},
+                "default": {"type": "token", "value": "local-only"}
+              }
+            },
+            "/World/Local": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "primChildren": {"type": "token[]", "value": []},
+                "properties": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World/Relocated": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "over"},
+                "kind": {"type": "token", "value": "localRelocated"},
+                "primChildren": {"type": "token[]", "value": []},
+                "properties": {"type": "token[]", "value": ["targetLocal"]},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World/Relocated.targetLocal": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "typeName": {"type": "token", "value": "token"},
+                "variability": {"type": "variability", "value": "uniform"},
+                "default": {"type": "token", "value": "target-local"}
+              }
+            },
+            "/World{modelingVariant=}": {
+              "kind": "variantSet",
+              "fields": {
+                "variantChildren": {"type": "token[]", "value": ["high"]}
+              }
+            },
+            "/World{modelingVariant=high}": {
+              "kind": "variant",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "over"},
+                "kind": {"type": "token", "value": "variant"},
+                "primChildren": {"type": "token[]", "value": ["VariantChild"]},
+                "properties": {"type": "token[]", "value": ["familyToken", "variantOnly"]},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World{modelingVariant=high}.familyToken": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "typeName": {"type": "token", "value": "token"},
+                "variability": {"type": "variability", "value": "varying"},
+                "default": {"type": "token", "value": "variant"}
+              }
+            },
+            "/World{modelingVariant=high}.variantOnly": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "typeName": {"type": "token", "value": "token"},
+                "variability": {"type": "variability", "value": "uniform"},
+                "default": {"type": "token", "value": "variant-only"}
+              }
+            },
+            "/World{modelingVariant=high}VariantChild": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "primChildren": {"type": "token[]", "value": []},
+                "properties": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/_Inherited": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "over"},
+                "kind": {"type": "token", "value": "inherited"},
+                "primChildren": {"type": "token[]", "value": ["InheritedChild"]},
+                "properties": {"type": "token[]", "value": ["familyToken", "inheritedOnly"]},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/_Inherited.familyToken": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "typeName": {"type": "token", "value": "token"},
+                "variability": {"type": "variability", "value": "varying"},
+                "default": {"type": "token", "value": "inherits"}
+              }
+            },
+            "/_Inherited.inheritedOnly": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "typeName": {"type": "token", "value": "token"},
+                "variability": {"type": "variability", "value": "uniform"},
+                "default": {"type": "token", "value": "inherited-only"}
+              }
+            },
+            "/_Inherited/InheritedChild": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "primChildren": {"type": "token[]", "value": []},
+                "properties": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/_Specialized": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "over"},
+                "kind": {"type": "token", "value": "specializes"},
+                "primChildren": {"type": "token[]", "value": ["SpecializedChild"]},
+                "properties": {"type": "token[]", "value": ["familyToken", "specializesOnly"]},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/_Specialized.familyToken": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "typeName": {"type": "token", "value": "token"},
+                "variability": {"type": "variability", "value": "varying"},
+                "default": {"type": "token", "value": "specializes"}
+              }
+            },
+            "/_Specialized.specializesOnly": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "typeName": {"type": "token", "value": "token"},
+                "variability": {"type": "variability", "value": "uniform"},
+                "default": {"type": "token", "value": "specializes-only"}
+              }
+            },
+            "/_Specialized/SpecializedChild": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "primChildren": {"type": "token[]", "value": []},
+                "properties": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        },
+        "referenceLayers": {
+          "asset.usda": {
+            "identifier": "asset.usda",
+            "fields": {"primChildren": {"type": "token[]", "value": ["RefRoot"]}},
+            "specs": {
+              "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["RefRoot"]}}},
+              "/RefRoot": {
+                "kind": "prim",
+                "fields": {
+                  "specifier": {"type": "specifier", "value": "def"},
+                  "kind": {"type": "token", "value": "reference"},
+                  "primChildren": {"type": "token[]", "value": ["ReferenceChild", "Source"]},
+                  "properties": {"type": "token[]", "value": ["familyToken", "referenceOnly"]},
+                  "variantSetChildren": {"type": "token[]", "value": []}
+                }
+              },
+              "/RefRoot.familyToken": {
+                "kind": "attribute",
+                "fields": {
+                  "custom": {"type": "bool", "value": false},
+                  "typeName": {"type": "token", "value": "token"},
+                  "variability": {"type": "variability", "value": "varying"},
+                  "default": {"type": "token", "value": "reference"}
+                }
+              },
+              "/RefRoot.referenceOnly": {
+                "kind": "attribute",
+                "fields": {
+                  "custom": {"type": "bool", "value": false},
+                  "typeName": {"type": "token", "value": "token"},
+                  "variability": {"type": "variability", "value": "uniform"},
+                  "default": {"type": "token", "value": "reference-only"}
+                }
+              },
+              "/RefRoot/ReferenceChild": {
+                "kind": "prim",
+                "fields": {
+                  "specifier": {"type": "specifier", "value": "def"},
+                  "primChildren": {"type": "token[]", "value": []},
+                  "properties": {"type": "token[]", "value": []},
+                  "variantSetChildren": {"type": "token[]", "value": []}
+                }
+              },
+              "/RefRoot/Source": {
+                "kind": "prim",
+                "fields": {
+                  "specifier": {"type": "specifier", "value": "def"},
+                  "typeName": {"type": "token", "value": "Mesh"},
+                  "primChildren": {"type": "token[]", "value": []},
+                  "properties": {"type": "token[]", "value": ["points"]},
+                  "variantSetChildren": {"type": "token[]", "value": []}
+                }
+              },
+              "/RefRoot/Source.points": {
+                "kind": "attribute",
+                "fields": {
+                  "custom": {"type": "bool", "value": false},
+                  "typeName": {"type": "token", "value": "point3f[]"},
+                  "variability": {"type": "variability", "value": "varying"},
+                  "default": {"type": "array", "value": []}
+                }
+              }
+            }
+          }
+        },
+        "payloadLayers": {
+          "payload.usda": {
+            "identifier": "payload.usda",
+            "fields": {"primChildren": {"type": "token[]", "value": ["PayloadRoot"]}},
+            "specs": {
+              "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["PayloadRoot"]}}},
+              "/PayloadRoot": {
+                "kind": "prim",
+                "fields": {
+                  "specifier": {"type": "specifier", "value": "def"},
+                  "kind": {"type": "token", "value": "payload"},
+                  "primChildren": {"type": "token[]", "value": ["PayloadChild"]},
+                  "properties": {"type": "token[]", "value": ["familyToken", "payloadOnly"]},
+                  "variantSetChildren": {"type": "token[]", "value": []}
+                }
+              },
+              "/PayloadRoot.familyToken": {
+                "kind": "attribute",
+                "fields": {
+                  "custom": {"type": "bool", "value": false},
+                  "typeName": {"type": "token", "value": "token"},
+                  "variability": {"type": "variability", "value": "varying"},
+                  "default": {"type": "token", "value": "payload"}
+                }
+              },
+              "/PayloadRoot.payloadOnly": {
+                "kind": "attribute",
+                "fields": {
+                  "custom": {"type": "bool", "value": false},
+                  "typeName": {"type": "token", "value": "token"},
+                  "variability": {"type": "variability", "value": "uniform"},
+                  "default": {"type": "token", "value": "payload-only"}
+                }
+              },
+              "/PayloadRoot/PayloadChild": {
+                "kind": "prim",
+                "fields": {
+                  "specifier": {"type": "specifier", "value": "def"},
+                  "primChildren": {"type": "token[]", "value": []},
+                  "properties": {"type": "token[]", "value": []},
+                  "variantSetChildren": {"type": "token[]", "value": []}
+                }
+              }
+            }
+          }
+        },
+        "ops": [
+          {"op": "build_arbitrator"},
+          {"op": "inspect_source"},
+          {"op": "compose_prim_index", "path": "/World"},
+          {"op": "compose_property_index", "path": "/World.familyToken"},
+          {"op": "compose_prim_index", "path": "/World/Relocated"},
+          {"op": "compose_property_index", "path": "/World/Relocated.points"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "build_arbitrator", "ok": true},
+          {
+            "op": "inspect_source",
+            "ok": true,
+            "mode": "composed_namespace",
+            "composition": "partial",
+            "value_resolution": "partial",
+            "payload_loading": "partial",
+            "instancing": "full",
+            "schema_fallbacks": "absent",
+            "child_ordering": "composed",
+            "property_ordering": "composed"
+          },
+          {
+            "op": "compose_prim_index",
+            "ok": true,
+            "path": "/World",
+            "exists": true,
+            "kind": "prim",
+            "fields": {
+              "specifier": {"type": "specifier", "value": "def"},
+              "typeName": {"type": "token", "value": "Scope"},
+              "kind": {"type": "token", "value": "component"},
+              "references": {
+                "type": "listop<Reference>",
+                "value": {
+                  "append": [],
+                  "delete": [],
+                  "explicit": [{"asset": "asset.usda", "offset": 0.0, "path": "/RefRoot", "scale": 1.0}],
+                  "prepend": []
+                }
+              },
+              "payload": {
+                "type": "listop<Payload>",
+                "value": {
+                  "append": [],
+                  "delete": [],
+                  "explicit": [{"asset": "payload.usda", "offset": 0.0, "path": "/PayloadRoot", "scale": 1.0}],
+                  "prepend": []
+                }
+              },
+              "inheritPaths": {
+                "type": "listop<ObjectPath>",
+                "value": {"append": [], "delete": [], "explicit": ["/_Inherited"], "prepend": []}
+              },
+              "specializes": {
+                "type": "listop<ObjectPath>",
+                "value": {"append": [], "delete": [], "explicit": ["/_Specialized"], "prepend": []}
+              },
+              "variantSetNames": {
+                "type": "listop<string>",
+                "value": {"append": [], "delete": [], "explicit": ["modelingVariant"], "prepend": []}
+              },
+              "variantSelection": {
+                "type": "VariantSetMap",
+                "value": {"modelingVariant": "high"}
+              },
+              "primChildren": {"type": "token[]", "value": ["Local", "Relocated"]},
+              "propertyChildren": {"type": "token[]", "value": ["familyToken", "localOnly"]},
+              "variantSetChildren": {"type": "token[]", "value": ["modelingVariant"]}
+            },
+            "childNames": [
+              "SpecializedChild",
+              "PayloadChild",
+              "VariantChild",
+              "InheritedChild",
+              "Relocated",
+              "ReferenceChild",
+              "Local"
+            ],
+            "propertyNames": [
+              "familyToken",
+              "inheritedOnly",
+              "localOnly",
+              "payloadOnly",
+              "referenceOnly",
+              "specializesOnly",
+              "variantOnly"
+            ],
+            "opinions": [
+              {
+                "family": "local",
+                "sourceIdentifier": "root.usda",
+                "specPath": "/World",
+                "exposedPath": "/World",
+                "source": "root.usda:/World"
+              },
+              {
+                "family": "inherits",
+                "sourceIdentifier": "root.usda",
+                "specPath": "/_Inherited",
+                "exposedPath": "/World",
+                "source": "root.usda:/_Inherited"
+              },
+              {
+                "family": "variants",
+                "sourceIdentifier": "root.usda",
+                "specPath": "/World{modelingVariant=high}",
+                "exposedPath": "/World",
+                "source": "root.usda:/World{modelingVariant=high}"
+              },
+              {
+                "family": "references",
+                "sourceIdentifier": "asset.usda",
+                "specPath": "/RefRoot",
+                "exposedPath": "/World",
+                "source": "asset.usda:/RefRoot"
+              },
+              {
+                "family": "payloads",
+                "sourceIdentifier": "payload.usda",
+                "specPath": "/PayloadRoot",
+                "exposedPath": "/World",
+                "source": "payload.usda:/PayloadRoot"
+              },
+              {
+                "family": "specializes",
+                "sourceIdentifier": "root.usda",
+                "specPath": "/_Specialized",
+                "exposedPath": "/World",
+                "source": "root.usda:/_Specialized"
+              }
+            ],
+            "contributingSources": [
+              "root.usda:/World",
+              "root.usda:/_Inherited",
+              "root.usda:/World{modelingVariant=high}",
+              "asset.usda:/RefRoot",
+              "payload.usda:/PayloadRoot",
+              "root.usda:/_Specialized"
+            ]
+          },
+          {
+            "op": "compose_property_index",
+            "ok": true,
+            "path": "/World.familyToken",
+            "exists": true,
+            "kind": "attribute",
+            "fields": {
+              "custom": {"type": "bool", "value": false},
+              "typeName": {"type": "token", "value": "token"},
+              "variability": {"type": "variability", "value": "varying"},
+              "default": {"type": "token", "value": "local"}
+            },
+            "opinions": [
+              {
+                "family": "local",
+                "sourceIdentifier": "root.usda",
+                "specPath": "/World.familyToken",
+                "exposedPath": "/World.familyToken",
+                "source": "root.usda:/World.familyToken"
+              },
+              {
+                "family": "inherits",
+                "sourceIdentifier": "root.usda",
+                "specPath": "/_Inherited.familyToken",
+                "exposedPath": "/World.familyToken",
+                "source": "root.usda:/_Inherited.familyToken"
+              },
+              {
+                "family": "variants",
+                "sourceIdentifier": "root.usda",
+                "specPath": "/World{modelingVariant=high}.familyToken",
+                "exposedPath": "/World.familyToken",
+                "source": "root.usda:/World{modelingVariant=high}.familyToken"
+              },
+              {
+                "family": "references",
+                "sourceIdentifier": "asset.usda",
+                "specPath": "/RefRoot.familyToken",
+                "exposedPath": "/World.familyToken",
+                "source": "asset.usda:/RefRoot.familyToken"
+              },
+              {
+                "family": "payloads",
+                "sourceIdentifier": "payload.usda",
+                "specPath": "/PayloadRoot.familyToken",
+                "exposedPath": "/World.familyToken",
+                "source": "payload.usda:/PayloadRoot.familyToken"
+              },
+              {
+                "family": "specializes",
+                "sourceIdentifier": "root.usda",
+                "specPath": "/_Specialized.familyToken",
+                "exposedPath": "/World.familyToken",
+                "source": "root.usda:/_Specialized.familyToken"
+              }
+            ],
+            "contributingSources": [
+              "root.usda:/World.familyToken",
+              "root.usda:/_Inherited.familyToken",
+              "root.usda:/World{modelingVariant=high}.familyToken",
+              "asset.usda:/RefRoot.familyToken",
+              "payload.usda:/PayloadRoot.familyToken",
+              "root.usda:/_Specialized.familyToken"
+            ]
+          },
+          {
+            "op": "compose_prim_index",
+            "ok": true,
+            "path": "/World/Relocated",
+            "exists": true,
+            "kind": "prim",
+            "fields": {
+              "specifier": {"type": "specifier", "value": "def"},
+              "typeName": {"type": "token", "value": "Mesh"},
+              "kind": {"type": "token", "value": "localRelocated"},
+              "primChildren": {"type": "token[]", "value": []},
+              "propertyChildren": {"type": "token[]", "value": ["targetLocal"]},
+              "variantSetChildren": {"type": "token[]", "value": []}
+            },
+            "childNames": [],
+            "propertyNames": ["points", "targetLocal"],
+            "opinions": [
+              {
+                "family": "local",
+                "sourceIdentifier": "root.usda",
+                "specPath": "/World/Relocated",
+                "exposedPath": "/World/Relocated",
+                "source": "root.usda:/World/Relocated"
+              },
+              {
+                "family": "relocates",
+                "sourceIdentifier": "asset.usda",
+                "specPath": "/RefRoot/Source",
+                "exposedPath": "/World/Relocated",
+                "source": "asset.usda:/RefRoot/Source"
+              }
+            ],
+            "contributingSources": [
+              "root.usda:/World/Relocated",
+              "asset.usda:/RefRoot/Source"
+            ]
+          },
+          {
+            "op": "compose_property_index",
+            "ok": true,
+            "path": "/World/Relocated.points",
+            "exists": true,
+            "kind": "attribute",
+            "fields": {
+              "custom": {"type": "bool", "value": false},
+              "typeName": {"type": "token", "value": "point3f[]"},
+              "variability": {"type": "variability", "value": "varying"},
+              "default": {"type": "array", "value": []}
+            },
+            "opinions": [
+              {
+                "family": "relocates",
+                "sourceIdentifier": "asset.usda",
+                "specPath": "/RefRoot/Source.points",
+                "exposedPath": "/World/Relocated.points",
+                "source": "asset.usda:/RefRoot/Source.points"
+              }
+            ],
+            "contributingSources": [
+              "asset.usda:/RefRoot/Source.points"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "variant-selection-from-referenced-layer",
+      "input": {
+        "rootLayer": {
+          "identifier": "root.usda",
+          "fields": {"primChildren": {"type": "token[]", "value": ["World"]}},
+          "specs": {
+            "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["World"]}}},
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "over"},
+                "references": {
+                  "type": "listop<Reference>",
+                  "value": {
+                    "explicit": [{"asset": "asset.usda", "path": "/Model", "offset": 0.0, "scale": 1.0}],
+                    "prepend": [],
+                    "append": [],
+                    "delete": []
+                  }
+                },
+                "primChildren": {"type": "token[]", "value": []},
+                "properties": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World{modelingVariant=}": {
+              "kind": "variantSet",
+              "fields": {"variantChildren": {"type": "token[]", "value": ["high"]}}
+            },
+            "/World{modelingVariant=high}": {
+              "kind": "variant",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "over"},
+                "kind": {"type": "token", "value": "selectedVariant"},
+                "primChildren": {"type": "token[]", "value": ["Geom"]},
+                "properties": {"type": "token[]", "value": ["detail"]},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World{modelingVariant=high}.detail": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "typeName": {"type": "token", "value": "float"},
+                "variability": {"type": "variability", "value": "varying"},
+                "default": {"type": "float", "value": 7.0}
+              }
+            },
+            "/World{modelingVariant=high}Geom": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "typeName": {"type": "token", "value": "Mesh"},
+                "primChildren": {"type": "token[]", "value": []},
+                "properties": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        },
+        "referenceLayers": {
+          "asset.usda": {
+            "identifier": "asset.usda",
+            "fields": {"primChildren": {"type": "token[]", "value": ["Model"]}},
+            "specs": {
+              "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["Model"]}}},
+              "/Model": {
+                "kind": "prim",
+                "fields": {
+                  "specifier": {"type": "specifier", "value": "def"},
+                  "typeName": {"type": "token", "value": "Scope"},
+                  "variantSetNames": {
+                    "type": "listop<string>",
+                    "value": {"explicit": ["modelingVariant"], "prepend": [], "append": [], "delete": []}
+                  },
+                  "variantSelection": {
+                    "type": "VariantSetMap",
+                    "value": {"modelingVariant": "high"}
+                  },
+                  "primChildren": {"type": "token[]", "value": []},
+                  "properties": {"type": "token[]", "value": []},
+                  "variantSetChildren": {"type": "token[]", "value": ["modelingVariant"]}
+                }
+              }
+            }
+          }
+        },
+        "ops": [
+          {"op": "build_arbitrator"},
+          {"op": "compose_prim_index", "path": "/World"},
+          {"op": "compose_property_index", "path": "/World.detail"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "build_arbitrator", "ok": true},
+          {
+            "op": "compose_prim_index",
+            "ok": true,
+            "path": "/World",
+            "exists": true,
+            "kind": "prim",
+            "fields": {
+              "specifier": {"type": "specifier", "value": "def"},
+              "typeName": {"type": "token", "value": "Scope"},
+              "kind": {"type": "token", "value": "selectedVariant"},
+              "references": {
+                "type": "listop<Reference>",
+                "value": {
+                  "append": [],
+                  "delete": [],
+                  "explicit": [{"asset": "asset.usda", "offset": 0.0, "path": "/Model", "scale": 1.0}],
+                  "prepend": []
+                }
+              },
+              "variantSetNames": {
+                "type": "listop<string>",
+                "value": {"append": [], "delete": [], "explicit": ["modelingVariant"], "prepend": []}
+              },
+              "variantSelection": {
+                "type": "VariantSetMap",
+                "value": {"modelingVariant": "high"}
+              },
+              "primChildren": {"type": "token[]", "value": []},
+              "propertyChildren": {"type": "token[]", "value": []},
+              "variantSetChildren": {"type": "token[]", "value": []}
+            },
+            "childNames": ["Geom"],
+            "propertyNames": ["detail"],
+            "opinions": [
+              {
+                "family": "local",
+                "sourceIdentifier": "root.usda",
+                "specPath": "/World",
+                "exposedPath": "/World",
+                "source": "root.usda:/World"
+              },
+              {
+                "family": "variants",
+                "sourceIdentifier": "root.usda",
+                "specPath": "/World{modelingVariant=high}",
+                "exposedPath": "/World",
+                "source": "root.usda:/World{modelingVariant=high}"
+              },
+              {
+                "family": "references",
+                "sourceIdentifier": "asset.usda",
+                "specPath": "/Model",
+                "exposedPath": "/World",
+                "source": "asset.usda:/Model"
+              }
+            ],
+            "contributingSources": [
+              "root.usda:/World",
+              "root.usda:/World{modelingVariant=high}",
+              "asset.usda:/Model"
+            ]
+          },
+          {
+            "op": "compose_property_index",
+            "ok": true,
+            "path": "/World.detail",
+            "exists": true,
+            "kind": "attribute",
+            "fields": {
+              "custom": {"type": "bool", "value": false},
+              "typeName": {"type": "token", "value": "float"},
+              "variability": {"type": "variability", "value": "varying"},
+              "default": {"type": "float", "value": 7.0}
+            },
+            "opinions": [
+              {
+                "family": "variants",
+                "sourceIdentifier": "root.usda",
+                "specPath": "/World{modelingVariant=high}.detail",
+                "exposedPath": "/World.detail",
+                "source": "root.usda:/World{modelingVariant=high}.detail"
+              }
+            ],
+            "contributingSources": [
+              "root.usda:/World{modelingVariant=high}.detail"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "reference-path-valued-fields-remap",
+      "input": {
+        "rootLayer": {
+          "identifier": "root.usda",
+          "fields": {"primChildren": {"type": "token[]", "value": ["World"]}},
+          "specs": {
+            "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["World"]}}},
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "over"},
+                "references": {
+                  "type": "listop<Reference>",
+                  "value": {
+                    "explicit": [{"asset": "asset.usda", "path": "/Model", "offset": 0.0, "scale": 1.0}],
+                    "prepend": [],
+                    "append": [],
+                    "delete": []
+                  }
+                },
+                "primChildren": {"type": "token[]", "value": []},
+                "properties": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        },
+        "referenceLayers": {
+          "asset.usda": {
+            "identifier": "asset.usda",
+            "fields": {"primChildren": {"type": "token[]", "value": ["Model", "Outside"]}},
+            "specs": {
+              "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["Model", "Outside"]}}},
+              "/Model": {
+                "kind": "prim",
+                "fields": {
+                  "specifier": {"type": "specifier", "value": "def"},
+                  "typeName": {"type": "token", "value": "Scope"},
+                  "primChildren": {"type": "token[]", "value": ["Geom"]},
+                  "properties": {"type": "token[]", "value": ["look", "driver"]},
+                  "variantSetChildren": {"type": "token[]", "value": []}
+                }
+              },
+              "/Model/Geom": {
+                "kind": "prim",
+                "fields": {
+                  "specifier": {"type": "specifier", "value": "def"},
+                  "primChildren": {"type": "token[]", "value": []},
+                  "properties": {"type": "token[]", "value": ["points"]},
+                  "variantSetChildren": {"type": "token[]", "value": []}
+                }
+              },
+              "/Model/Geom.points": {
+                "kind": "attribute",
+                "fields": {
+                  "custom": {"type": "bool", "value": false},
+                  "typeName": {"type": "token", "value": "point3f[]"},
+                  "variability": {"type": "variability", "value": "varying"},
+                  "default": {"type": "array", "value": []}
+                }
+              },
+              "/Model.look": {
+                "kind": "relationship",
+                "fields": {
+                  "custom": {"type": "bool", "value": false},
+                  "targetPaths": {
+                    "type": "listop<ObjectPath>",
+                    "value": {"explicit": ["/Model/Geom", "/Outside"], "prepend": [], "append": [], "delete": []}
+                  }
+                }
+              },
+              "/Model.driver": {
+                "kind": "attribute",
+                "fields": {
+                  "custom": {"type": "bool", "value": false},
+                  "typeName": {"type": "token", "value": "float"},
+                  "variability": {"type": "variability", "value": "varying"},
+                  "connectionPaths": {
+                    "type": "listop<ObjectPath>",
+                    "value": {"explicit": ["/Model/Geom.points", "/Outside.value"], "prepend": [], "append": [], "delete": []}
+                  }
+                }
+              },
+              "/Outside": {
+                "kind": "prim",
+                "fields": {
+                  "specifier": {"type": "specifier", "value": "def"},
+                  "primChildren": {"type": "token[]", "value": []},
+                  "properties": {"type": "token[]", "value": ["value"]},
+                  "variantSetChildren": {"type": "token[]", "value": []}
+                }
+              },
+              "/Outside.value": {
+                "kind": "attribute",
+                "fields": {
+                  "custom": {"type": "bool", "value": false},
+                  "typeName": {"type": "token", "value": "float"},
+                  "variability": {"type": "variability", "value": "varying"},
+                  "default": {"type": "float", "value": 1.0}
+                }
+              }
+            }
+          }
+        },
+        "ops": [
+          {"op": "build_arbitrator"},
+          {"op": "compose_property_index", "path": "/World.look"},
+          {"op": "compose_property_index", "path": "/World.driver"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "build_arbitrator", "ok": true},
+          {
+            "op": "compose_property_index",
+            "ok": true,
+            "path": "/World.look",
+            "exists": true,
+            "kind": "relationship",
+            "fields": {
+              "custom": {"type": "bool", "value": false},
+              "targetPaths": {
+                "type": "listop<ObjectPath>",
+                "value": {"append": [], "delete": [], "explicit": ["/World/Geom"], "prepend": []}
+              }
+            },
+            "opinions": [
+              {
+                "family": "references",
+                "sourceIdentifier": "asset.usda",
+                "specPath": "/Model.look",
+                "exposedPath": "/World.look",
+                "source": "asset.usda:/Model.look"
+              }
+            ],
+            "contributingSources": ["asset.usda:/Model.look"]
+          },
+          {
+            "op": "compose_property_index",
+            "ok": true,
+            "path": "/World.driver",
+            "exists": true,
+            "kind": "attribute",
+            "fields": {
+              "custom": {"type": "bool", "value": false},
+              "typeName": {"type": "token", "value": "float"},
+              "variability": {"type": "variability", "value": "varying"},
+              "connectionPaths": {
+                "type": "listop<ObjectPath>",
+                "value": {"append": [], "delete": [], "explicit": ["/World/Geom.points"], "prepend": []}
+              }
+            },
+            "opinions": [
+              {
+                "family": "references",
+                "sourceIdentifier": "asset.usda",
+                "specPath": "/Model.driver",
+                "exposedPath": "/World.driver",
+                "source": "asset.usda:/Model.driver"
+              }
+            ],
+            "contributingSources": ["asset.usda:/Model.driver"]
+          }
+        ]
+      }
+    },
+    {
+      "id": "omits-payload-source",
+      "input": {
+        "includePayloadSource": false,
+        "rootLayer": {
+          "identifier": "root.usda",
+          "fields": {"primChildren": {"type": "token[]", "value": ["World"]}},
+          "specs": {
+            "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["World"]}}},
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "over"},
+                "payload": {
+                  "type": "listop<Payload>",
+                  "value": {
+                    "explicit": [{"asset": "payload.usda", "path": "/PayloadRoot", "offset": 0.0, "scale": 1.0}],
+                    "prepend": [],
+                    "append": [],
+                    "delete": []
+                  }
+                },
+                "primChildren": {"type": "token[]", "value": []},
+                "properties": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        },
+        "payloadLayers": {
+          "payload.usda": {
+            "identifier": "payload.usda",
+            "fields": {"primChildren": {"type": "token[]", "value": ["PayloadRoot"]}},
+            "specs": {
+              "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["PayloadRoot"]}}},
+              "/PayloadRoot": {
+                "kind": "prim",
+                "fields": {
+                  "specifier": {"type": "specifier", "value": "def"},
+                  "primChildren": {"type": "token[]", "value": ["PayloadChild"]},
+                  "properties": {"type": "token[]", "value": []},
+                  "variantSetChildren": {"type": "token[]", "value": []}
+                }
+              },
+              "/PayloadRoot/PayloadChild": {
+                "kind": "prim",
+                "fields": {
+                  "specifier": {"type": "specifier", "value": "def"},
+                  "primChildren": {"type": "token[]", "value": []},
+                  "properties": {"type": "token[]", "value": []},
+                  "variantSetChildren": {"type": "token[]", "value": []}
+                }
+              }
+            }
+          }
+        },
+        "ops": [
+          {"op": "build_arbitrator"},
+          {"op": "inspect_source"},
+          {"op": "compose_prim_index", "path": "/World/PayloadChild"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "build_arbitrator", "ok": true},
+          {
+            "op": "inspect_source",
+            "ok": true,
+            "mode": "composed_namespace",
+            "composition": "partial",
+            "value_resolution": "partial",
+            "payload_loading": "absent",
+            "instancing": "full",
+            "schema_fallbacks": "absent",
+            "child_ordering": "composed",
+            "property_ordering": "composed"
+          },
+          {
+            "op": "compose_prim_index",
+            "ok": true,
+            "path": "/World/PayloadChild",
+            "exists": false,
+            "kind": "missing",
+            "fields": {},
+            "childNames": [],
+            "propertyNames": [],
+            "opinions": [],
+            "contributingSources": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "aggregates-consumed-source-diagnostics",
+      "input": {
+        "rootLayer": {
+          "identifier": "root.usda",
+          "fields": {"primChildren": {"type": "token[]", "value": ["World"]}},
+          "specs": {
+            "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["World"]}}},
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "payload": {
+                  "type": "listop<Payload>",
+                  "value": {
+                    "explicit": [{"asset": "missing_payload.usda", "path": "/PayloadRoot", "offset": 0.0, "scale": 1.0}],
+                    "prepend": [],
+                    "append": [],
+                    "delete": []
+                  }
+                },
+                "primChildren": {"type": "token[]", "value": []},
+                "properties": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        },
+        "ops": [
+          {"op": "build_arbitrator"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [
+          {
+            "code": "MissingPayloadLayer",
+            "message": "No supplied layer for payload asset missing_payload.usda"
+          }
+        ],
+        "results": [
+          {"op": "build_arbitrator", "ok": true}
+        ]
+      }
+    }
+  ]
+}

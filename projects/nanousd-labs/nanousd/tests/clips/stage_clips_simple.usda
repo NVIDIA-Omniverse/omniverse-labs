@@ -1,0 +1,24 @@
+#usda 1.0
+(
+    defaultPrim = "Geo"
+)
+
+# Stage with clips authored on /Geo. Attribute `radius` has no local
+# value, so per §12.3.4.5 the clip set contributes the value. `color`
+# has a locally authored default, which wins over any clip per the
+# per-opinion priority (timeSamples > spline > default > clips).
+
+def Scope "Geo" (
+    clips = {
+        dictionary default = {
+            string primPath = "/Geo"
+            asset[] assetPaths = [@./clip_a.usda@, @./clip_b.usda@]
+            double2[] active = [(0, 0), (10, 1)]
+            double2[] times  = [(0, 0), (10, 10), (20, 10)]
+        }
+    }
+)
+{
+    float radius
+    color3f color = (0.5, 0.5, 0.5)
+}

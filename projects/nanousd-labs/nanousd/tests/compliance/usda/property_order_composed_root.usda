@@ -1,0 +1,8 @@
+#usda 1.0
+(
+    subLayers = [@./property_order_composed_weak.usda@]
+)
+
+over "Ordered" {
+    float delta = 4.0
+}

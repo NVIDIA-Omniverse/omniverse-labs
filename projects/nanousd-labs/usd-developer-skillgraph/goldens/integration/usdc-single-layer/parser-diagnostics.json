@@ -1,0 +1,103 @@
+{
+  "suite": "usdc-single-layer-parser-diagnostics",
+  "spec_commit": "6b4f01f2d6d46b01507481524eb516b4ef358c31",
+  "production_contracts": [
+    "contracts/document-model-productions/common-metadata.contract.json#diagnostics",
+    "contracts/usdc-productions/crate-reader-diagnostics.contract.json",
+    "contracts/usdc-productions/parser-diagnostics-mapping.contract.json"
+  ],
+  "notes": "Negative cases that exercise the format-neutral diagnostic-code reduction at the layer-open dispatch boundary. Each case asserts the format-neutral code per parser-diagnostics-mapping.contract.json#code_reduction_table, NOT the USDC-specific wire-layer code. Unit-level adapters preserve the wire-layer code; this integration boundary surfaces the reduced code.",
+  "cases": [
+    {
+      "id": "bad-magic-header-reduces-to-invalid-layer-header",
+      "spec_refs": [
+        "contracts/usdc-productions/parser-diagnostics-mapping.contract.json#code_reduction_table.InvalidUsdcHeader"
+      ],
+      "input": {
+        "fixture": "benchmarks/fixtures/bad_magic.usdc"
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {"severity": "error", "code": "InvalidLayerHeader", "message": "expected PXR-USDC magic"}
+        ]
+      }
+    },
+    {
+      "id": "unsupported-version-reduces-to-unsupported-layer-version",
+      "spec_refs": [
+        "contracts/usdc-productions/parser-diagnostics-mapping.contract.json#code_reduction_table.UnsupportedUsdcVersion"
+      ],
+      "input": {
+        "fixture": "benchmarks/fixtures/unsupported_version.usdc"
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {"severity": "error", "code": "UnsupportedLayerVersion", "message": "unsupported Crate version"}
+        ]
+      }
+    },
+    {
+      "id": "unknown-spec-form-zero-processed-inert",
+      "spec_refs": [
+        "contracts/usdc-productions/crate-section-layouts.contract.json#section_layouts.SPECS.spec_form_table",
+        "contracts/document-model-productions/prim-spec.contract.json"
+      ],
+      "notes": "Fixture's sole non-layer SPECS entry has form=0 (Unknown). Form 0 is inert per the crate-section-layouts contract's SPECS spec_form_table; the parser processes it without emitting a diagnostic and does not materialize it as a document-model spec. The resulting layer has no root prims. THIS FIELD IS DOCUMENTATION ONLY (case-level, not inside `expected`); score.py does not compare it.",
+      "input": {
+        "fixture": "benchmarks/fixtures/usdc-unit/unknown-spec-form.usdc"
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "layer": {
+          "fields": {
+            "primChildren": {"type": "token[]", "value": []}
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "primChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "invalid-spec-form-twelve-on-foo-prim-adversarial",
+      "spec_refs": [
+        "contracts/usdc-productions/crate-section-layouts.contract.json#section_layouts.SPECS.spec_form_table"
+      ],
+      "notes": "Adversarial counterpart to invalid-spec-form-twelve-reduces-to-malformed-spec-form. Same malformation (form=12 patched into the SPECS forms array) but the prim is named /Foo instead of /World, and the layer also contains a sibling /Helper prim. The parser must detect form=12 from the SPECS forms array itself, not from the presence of any specific token name in TOKENS or any specific path in PATHS. A parser that fingerprints by searching for 'World' / 'Dup' / 'WorldHelper' in tokens or paths (as the regen on 2026-05-28 did) silently produces ok=true on this fixture and fails this case.",
+      "input": {
+        "fixture": "benchmarks/fixtures/usdc-unit/invalid-spec-form-foo.usdc"
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {"severity": "error", "code": "MalformedUsdcSpecForm", "message": "spec form value outside the supported set"}
+        ]
+      }
+    },
+    {
+      "id": "duplicate-spec-path-on-bar-prim-adversarial",
+      "spec_refs": [
+        "contracts/document-model-productions/common-metadata.contract.json#diagnostics.codes_format_neutral",
+        "contracts/usdc-productions/parser-diagnostics-mapping.contract.json#code_reduction_table.DuplicateSpecPath"
+      ],
+      "notes": "Adversarial counterpart to duplicate-spec-path-diagnostic. Same malformation (path_indices patched so two SPECS entries resolve to the same path) but the duplicated path is /Bar instead of /Dup. The parser must detect duplicates by tracking emitted spec paths through usd-document-model and propagating add_spec's DuplicateSpecPath diagnostic to the dump, not by searching for any specific token or path name. A parser that fingerprints by checking for 'Dup' in tokens (as the regen on 2026-05-28 did) silently produces ok=true on this fixture and fails this case.",
+      "input": {
+        "fixture": "benchmarks/fixtures/usdc-unit/duplicate-spec-path-bar.usdc"
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {"severity": "error", "code": "DuplicateSpecPath", "message": "duplicate spec path", "path": "/Bar"}
+        ]
+      }
+    }
+  ]
+}

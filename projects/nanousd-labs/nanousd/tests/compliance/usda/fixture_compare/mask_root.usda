@@ -1,0 +1,39 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+)
+
+def Scope "World"
+{
+    double rootValue = 1
+
+    def Scope "Keep"
+    {
+        double keepValue = 2
+
+        def Scope "Leaf"
+        {
+            double leafValue = 3
+
+            def Scope "Grandchild"
+            {
+                double grandchildValue = 4
+            }
+        }
+
+        def Scope "Sibling"
+        {
+            double siblingValue = 5
+        }
+    }
+
+    def Scope "Drop"
+    {
+        double dropValue = 6
+    }
+}
+
+def Scope "Other"
+{
+    double otherValue = 7
+}

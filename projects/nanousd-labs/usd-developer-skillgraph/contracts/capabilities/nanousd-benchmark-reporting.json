@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/nanousd-benchmark-reporting.json",
+  "title": "nanousd Backend Benchmark Reporting Capability",
+  "version": "0.1",
+  "purpose": "Define the reporting shape for comparing generated skillgraph nanousd backend benchmark results against nanousd default or other baseline backends.",
+  "scope": {
+    "included": [
+      "consume JSON emitted by harness/nanousd_backend_benchmark.py",
+      "Markdown best-run metric tables by target and backend",
+      "declared comparison tables with PASS, SLOW, SKIP, or FAIL status",
+      "generated-vs-baseline pressure ratio tables",
+      "optional inline SVG bar charts for one selected metric",
+      "local report outputs under reports/nanousd-backend"
+    ],
+    "deferred": [
+      "benchmark execution",
+      "statistical significance testing beyond the benchmark runner's best-run selection",
+      "machine-independent performance gates",
+      "interactive dashboards",
+      "tracked generated report artifacts"
+    ]
+  },
+  "dependencies": {
+    "required": [
+      {
+        "provider": "nanousd-readonly-backend",
+        "capability": "nanousd_readonly_backend",
+        "reason": "Reports interpret benchmark results for the generated nanousd backend and must preserve the backend contract's correctness/performance boundary."
+      }
+    ]
+  },
+  "operations": {
+    "render_markdown_report": {
+      "input": {
+        "benchmark_json": "JSON output from harness/nanousd_backend_benchmark.py",
+        "baseline": "backend id used as denominator for pressure ratios",
+        "candidate": "backend id used as numerator for pressure ratios"
+      },
+      "output": {
+        "format": "Markdown",
+        "sections": [
+          "best runs",
+          "declared comparisons",
+          "candidate vs baseline pressure ratios",
+          "signal interpretation notes"
+        ]
+      }
+    },
+    "render_svg_chart": {
+      "input": {
+        "benchmark_json": "JSON output from harness/nanousd_backend_benchmark.py",
+        "metric": "numeric best-run metric to visualize"
+      },
+      "output": {
+        "format": "inline SVG",
+        "chart": "grouped bar chart by benchmark target and backend"
+      }
+    }
+  },
+  "laws": [
+    "reporting consumes benchmark JSON and must not rerun benchmarks or parse benchmark stdout",
+    "best-run values in reports must come from the benchmark runner's best field, not from recomputing a different selection metric",
+    "reports must distinguish optional SLOW comparisons from required failures",
+    "tables and charts must include backend ids, target ids, metric names, and units where units are known",
+    "generated-vs-baseline pressure ratios must preserve the configured baseline and candidate backend ids",
+    "SVG reports must be self-contained and must not require external assets or JavaScript",
+    "report outputs are local review artifacts and must not be tracked unless a later contract explicitly promotes a stable fixture report"
+  ]
+}

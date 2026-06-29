@@ -1,0 +1,16 @@
+#usda 1.0
+(
+    defaultPrim = "Root"
+)
+
+def Xform "Root"
+{
+    string source = "layer_c"
+    float priority = 3.0
+    float from_c = 99.0
+}
+
+def Scope "OnlyInC"
+{
+    int value = 300
+}

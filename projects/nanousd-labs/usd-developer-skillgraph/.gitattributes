@@ -1,0 +1,10 @@
+# USDA text sources are LF so artifacts that embed them (e.g. the USDZ packages
+# built by benchmarks/make_usdz_fixtures.py) stay byte-reproducible across
+# platforms. Without this, autocrlf checks these out as CRLF on Windows.
+# (.usd is intentionally omitted: it is a format-ambiguous extension that may
+# hold a binary Crate, so it must not be forced to text.)
+*.usda text eol=lf
+
+# Binary USD artifacts must never be line-ending converted.
+*.usdc binary
+*.usdz binary

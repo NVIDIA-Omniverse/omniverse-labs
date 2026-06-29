@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/usda-lexical-format.json",
+  "title": "USDA Lexical Format Capability Contract",
+  "version": "0.1",
+  "spec_commit": "v1.0.1",
+  "dependency_contracts": [
+    "contracts/capabilities/identifier-scanner.json"
+  ],
+  "scope": {
+    "included": [
+      "USDA text header recognition",
+      "UTF-8 source text handling",
+      "whitespace and comment skipping",
+      "string, number, asset-reference, path-reference, and punctuation tokenization",
+      "identifier token validation through usd-identifiers-and-names",
+      "source locations sufficient for parser diagnostics"
+    ],
+    "deferred": [
+      "mapping tokens to document-model fields",
+      "typed value construction",
+      "resource opening",
+      "binary or package formats"
+    ]
+  },
+  "model": {
+    "SourceText": "A UTF-8 USDA text buffer handed to lexical parsing after resource opening.",
+    "TokenStream": "A target-native tokenizer, scanner, parser substrate, or direct recursive-descent interface that presents the same lexical boundaries.",
+    "SourceLocation": "Line/column or equivalent stable diagnostic location metadata."
+  },
+  "laws": [
+    "identifier validity must consume the identifier scanner capability",
+    "lexing must not create document-model specs or fields",
+    "lexing must not parse or canonicalize USD namespace paths beyond recognizing delimiters",
+    "lexing must not construct typed field values"
+  ]
+}

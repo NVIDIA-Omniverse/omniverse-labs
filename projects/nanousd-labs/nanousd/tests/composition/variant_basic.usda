@@ -1,0 +1,32 @@
+#usda 1.0
+(
+    defaultPrim = "Model"
+)
+
+# A prim with one variant set whose selected variant contributes a child
+# prim and an attribute value. Per spec §11.2, selecting the "high" variant
+# should compose its body into /Model's namespace.
+
+def Xform "Model" (
+    variantSets = "lod"
+    variants = {
+        string lod = "high"
+    }
+)
+{
+    int baseline = 1
+
+    variantSet "lod" = {
+        "high" {
+            int fromVariant = 100
+
+            def Scope "HighChild"
+            {
+                int value = 7
+            }
+        }
+        "low" {
+            int fromVariant = 10
+        }
+    }
+}

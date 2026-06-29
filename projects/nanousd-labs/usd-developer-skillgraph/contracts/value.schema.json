@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/value.schema.json",
+  "title": "Canonical USD Field Value Adapter Representation",
+  "type": "object",
+  "required": ["type", "value"],
+  "additionalProperties": false,
+  "properties": {
+    "type": {
+      "type": "string",
+      "description": "Normative or specialized value type name, e.g. token, float, token[], listop<ObjectPath>, valueBlock."
+    },
+    "role": {
+      "type": "string",
+      "description": "Optional semantic alias role, e.g. point3f. The underlying type remains in type."
+    },
+    "value": {}
+  }
+}

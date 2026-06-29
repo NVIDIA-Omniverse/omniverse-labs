@@ -1,0 +1,104 @@
+{
+  "suite": "usda-value-syntax",
+  "contract": "contracts/usda-productions/value-syntax.contract.json",
+  "spec_commit": "v1.0.1",
+  "cases": [
+    {
+      "id": "asset-array-matrix-and-dictionaries",
+      "spec_refs": [
+        "file_formats/README.md:568 Values",
+        "file_formats/README.md:526 AssetRef",
+        "file_formats/README.md:619 DictionaryKey",
+        "foundational_data_types/README.md"
+      ],
+      "input": {
+        "usda": "#usda 1.0\n(\n    customLayerData = {\n        dictionary nested = {\n            string owner = \"skillgraph\"\n            token purpose = \"render\"\n        }\n    }\n)\n\ndef \"World\"\n{\n    asset texture = @textures/diffuse.tx@\n    token[] purposes = [\"render\", \"proxy\"]\n    matrix4d transform = ((1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1))\n}\n"
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "layer": {
+          "fields": {
+            "customLayerData": {
+              "type": "dictionary",
+              "value": {
+                "nested": {
+                  "type": "dictionary",
+                  "value": {
+                    "owner": {"type": "string", "value": "skillgraph"},
+                    "purpose": {"type": "token", "value": "render"}
+                  }
+                }
+              }
+            },
+            "primChildren": {"type": "token[]", "value": ["World"]}
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "customLayerData": {
+                  "type": "dictionary",
+                  "value": {
+                    "nested": {
+                      "type": "dictionary",
+                      "value": {
+                        "owner": {"type": "string", "value": "skillgraph"},
+                        "purpose": {"type": "token", "value": "render"}
+                      }
+                    }
+                  }
+                },
+                "primChildren": {"type": "token[]", "value": ["World"]}
+              }
+            },
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": ["texture", "purposes", "transform"]},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World.texture": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "variability": {"type": "variability", "value": "varying"},
+                "typeName": {"type": "token", "value": "asset"},
+                "default": {"type": "asset", "value": "textures/diffuse.tx"}
+              }
+            },
+            "/World.purposes": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "variability": {"type": "variability", "value": "varying"},
+                "typeName": {"type": "token", "value": "token[]"},
+                "default": {"type": "token[]", "value": ["render", "proxy"]}
+              }
+            },
+            "/World.transform": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "variability": {"type": "variability", "value": "varying"},
+                "typeName": {"type": "token", "value": "matrix4d"},
+                "default": {
+                  "type": "matrix4d",
+                  "value": [
+                    [1.0, 0.0, 0.0, 0.0],
+                    [0.0, 1.0, 0.0, 0.0],
+                    [0.0, 0.0, 1.0, 0.0],
+                    [0.0, 0.0, 0.0, 1.0]
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

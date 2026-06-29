@@ -1,0 +1,174 @@
+{
+  "suite": "usd-inherits-stage-population",
+  "contract": "contracts/handles/stage-population.handle.json",
+  "spec_tag": "v1.0.1",
+  "spec_commit": "v1.0.1",
+  "cases": [
+    {
+      "id": "inherited-tree-populates-stage",
+      "input": {
+        "rootLayer": {
+          "identifier": "root.usda",
+          "fields": {
+            "primChildren": {"type": "token[]", "value": ["World"]},
+            "defaultPrim": {"type": "token", "value": "World"}
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "primChildren": {"type": "token[]", "value": ["World"]},
+                "defaultPrim": {"type": "token", "value": "World"}
+              }
+            },
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "kind": {"type": "token", "value": "assembly"},
+                "inheritPaths": {
+                  "type": "listop<ObjectPath>",
+                  "value": {
+                    "explicit": ["/_Class"],
+                    "prepend": [],
+                    "append": [],
+                    "delete": []
+                  }
+                },
+                "primChildren": {"type": "token[]", "value": ["Local"]},
+                "properties": {"type": "token[]", "value": ["localSize"]},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World/Local": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "typeName": {"type": "token", "value": "Scope"},
+                "primChildren": {"type": "token[]", "value": []},
+                "properties": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World.localSize": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "typeName": {"type": "token", "value": "float"},
+                "variability": {"type": "variability", "value": "varying"},
+                "default": {"type": "float", "value": 4.0}
+              }
+            },
+            "/_Class": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "over"},
+                "typeName": {"type": "token", "value": "Xform"},
+                "kind": {"type": "token", "value": "component"},
+                "primChildren": {"type": "token[]", "value": ["Geom"]},
+                "properties": {"type": "token[]", "value": ["inheritedSize"]},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/_Class.inheritedSize": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "typeName": {"type": "token", "value": "float"},
+                "variability": {"type": "variability", "value": "varying"},
+                "default": {"type": "float", "value": 2.0}
+              }
+            },
+            "/_Class/Geom": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "typeName": {"type": "token", "value": "Mesh"},
+                "primChildren": {"type": "token[]", "value": []},
+                "properties": {"type": "token[]", "value": ["points"]},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/_Class/Geom.points": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "typeName": {"type": "token", "value": "point3f[]"},
+                "variability": {"type": "variability", "value": "varying"},
+                "default": {"type": "array", "value": []}
+              }
+            }
+          }
+        },
+        "ops": [
+          {"op": "populate_stage"},
+          {"op": "stage_summary"},
+          {"op": "traverse_prims"},
+          {"op": "prim_summary", "path": "/World"},
+          {"op": "prim_summary", "path": "/World/Geom"},
+          {"op": "prim_summary", "path": "/World/Local"},
+          {"op": "property_summary", "path": "/World.inheritedSize"},
+          {"op": "property_summary", "path": "/World.localSize"},
+          {"op": "property_summary", "path": "/World/Geom.points"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "populate_stage", "ok": true},
+          {"op": "stage_summary", "ok": true, "sourceMode": "composed_namespace", "primCount": 3, "defaultPrim": "/World", "diagnostics": []},
+          {"op": "traverse_prims", "ok": true, "paths": ["/World", "/World/Geom", "/World/Local"]},
+          {"op": "prim_summary", "ok": true, "exists": true, "path": "/World", "name": "World", "parent": "/", "children": ["/World/Geom", "/World/Local"], "properties": ["inheritedSize", "localSize"], "typeName": "Xform", "specifier": "def", "active": true, "loaded": true, "defined": true, "abstract": false, "instanceable": false},
+          {"op": "prim_summary", "ok": true, "exists": true, "path": "/World/Geom", "name": "Geom", "parent": "/World", "children": [], "properties": ["points"], "typeName": "Mesh", "specifier": "def", "active": true, "loaded": true, "defined": true, "abstract": false, "instanceable": false},
+          {"op": "prim_summary", "ok": true, "exists": true, "path": "/World/Local", "name": "Local", "parent": "/World", "children": [], "properties": [], "typeName": "Scope", "specifier": "def", "active": true, "loaded": true, "defined": true, "abstract": false, "instanceable": false},
+          {
+            "op": "property_summary",
+            "ok": true,
+            "exists": true,
+            "path": "/World.inheritedSize",
+            "kind": "attribute",
+            "owner": "/World",
+            "name": "inheritedSize",
+            "fields": {
+              "custom": {"type": "bool", "value": false},
+              "typeName": {"type": "token", "value": "float"},
+              "variability": {"type": "variability", "value": "varying"},
+              "default": {"type": "float", "value": 2.0}
+            }
+          },
+          {
+            "op": "property_summary",
+            "ok": true,
+            "exists": true,
+            "path": "/World.localSize",
+            "kind": "attribute",
+            "owner": "/World",
+            "name": "localSize",
+            "fields": {
+              "custom": {"type": "bool", "value": false},
+              "typeName": {"type": "token", "value": "float"},
+              "variability": {"type": "variability", "value": "varying"},
+              "default": {"type": "float", "value": 4.0}
+            }
+          },
+          {
+            "op": "property_summary",
+            "ok": true,
+            "exists": true,
+            "path": "/World/Geom.points",
+            "kind": "attribute",
+            "owner": "/World/Geom",
+            "name": "points",
+            "fields": {
+              "custom": {"type": "bool", "value": false},
+              "typeName": {"type": "token", "value": "point3f[]"},
+              "variability": {"type": "variability", "value": "varying"},
+              "default": {"type": "array", "value": []}
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

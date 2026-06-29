@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/usdc.performance.json",
+  "title": "USDC Crate Reader Performance Contract",
+  "version": "0.1",
+  "spec_commit": "6b4f01f2d6d46b01507481524eb516b4ef358c31",
+  "scope": {
+    "included": [
+      "USDC header and table-of-contents validation",
+      "LZ4 buffer decompression",
+      "compressed integer array decoding",
+      "Crate value representation dispatch",
+      "standard section lookup",
+      "PATHS reconstruction from the Crate index arrays",
+      "SPECS to document-model mapping",
+      "canonical layer dump emission"
+    ],
+    "excluded": [
+      "composition",
+      "value resolution",
+      "stage population",
+      "USDC writing",
+      "USDZ package extraction"
+    ]
+  },
+  "model": {
+    "ZeroCopyPayload": "The opened USDC payload is carried as a non-owning byte view plus an opaque owner. Section bytes and offset-backed values must be byte views into that same payload. Full O(N) copies of the payload during parsing are not acceptable.",
+    "SectionLookup": "The standard sections (TOKENS, STRINGS, FIELDS, FIELDSETS, PATHS, SPECS) must be addressable in O(1) once the table of contents has been validated. Linear name scans on every access are not acceptable.",
+    "ValueRepresentationDispatch": "Each Crate value representation is a single 8-byte little-endian word containing a 6-byte payload, a 1-byte type, and a 1-byte flags field. Decoding must read the word once and dispatch by type and flags. Dispatching values by field-name substrings, by section-payload string scans, or by canned per-fixture JSON is not acceptable.",
+    "DumpEmission": "The canonical layer dump must be emitted into a single growable output buffer using direct integer and floating point formatting. Per-field std::ostringstream construction, locale-aware streaming, or O(N) string concatenation in the hot path is not acceptable.",
+    "AllocationDiscipline": "Header and TOC validation must allocate O(section_count), not O(file_size). Per-byte allocations during decompression or per-value allocations during dispatch are not acceptable."
+  },
+  "operations": {
+    "validate_header_and_toc": {
+      "expected_complexity": "O(section_count) plus a small constant. Not O(file_size)."
+    },
+    "section_bytes": {
+      "expected_complexity": "O(1) lookup on a validated table of contents, indexed by known section kind."
+    },
+    "decode_lz4_buffer": {
+      "expected_complexity": "Linear in the compressed input size at standard LZ4 streaming rates. Implementations must use a real LZ4 decoder, not a byte-at-a-time interpreter."
+    },
+    "decode_compressed_int_array": {
+      "expected_complexity": "Linear in the element count. Codepoints decoded by table dispatch on the 2-bit code, not by per-element branch chains."
+    },
+    "decode_value_representation": {
+      "expected_complexity": "O(1) for the 8-byte word read and the type/flags dispatch. Type-specific work is the only variable cost."
+    },
+    "build_layer": {
+      "expected_complexity": "O(specs plus total authored field count). Path reconstruction is O(path_count) using the algorithm in AOUSD spec 16.3.8.4.5.4."
+    },
+    "dump_layer": {
+      "expected_complexity": "Linear in the dump byte size with a single output buffer and amortized one allocation."
+    }
+  },
+  "measurement": {
+    "primary_signal": "throughput in MB per second of opened payload, measured at a unit-level adapter that bypasses process startup",
+    "secondary_signal": "allocation count per opened layer where the target can report it",
+    "note": "CLI-process smoke benchmarks (benchmarks/usdc/targets.json) must not be the only perf signal. Process startup masks parser cost on sub-kilobyte fixtures and is unsuitable as a parser performance gate."
+  }
+}

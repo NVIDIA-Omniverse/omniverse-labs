@@ -1,0 +1,25 @@
+#usda 1.0
+(
+    defaultPrim = "Geo"
+)
+
+# Weaker layer for clips metadata combining tests (spec §12.3.4 +
+# §12.2.5 + §12.2.6).  Authors one clip set ("wide") and one entry
+# in the clipSets search order.  The root layer sublayers this and
+# adds its own entries; the composed values must include both
+# layers' contributions per the dict/listop combining rules.
+
+def Xform "Geo" (
+    clips = {
+        dictionary wide = {
+            string primPath = "/GeoWide"
+            asset manifestAssetPath = @./manifest_wide.usda@
+            asset[] assetPaths = [@./wide_01.usda@, @./wide_02.usda@]
+            double2[] active = [(0, 0), (10, 1)]
+            double2[] times  = [(0, 0), (20, 20)]
+        }
+    }
+    prepend clipSets = ["wide"]
+)
+{
+}

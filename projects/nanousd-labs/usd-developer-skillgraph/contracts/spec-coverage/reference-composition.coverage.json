@@ -1,0 +1,200 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/spec-coverage/reference-composition.coverage.json",
+  "title": "USD Reference Composition Spec Coverage Ledger",
+  "version": "0.1",
+  "spec_commit": "v1.0.1",
+  "normative_source": {
+    "repo": "aousd/specifications-public",
+    "commit": "v1.0.1",
+    "rule": "The pinned composition, document_data_model, file_formats, and stage_population specifications are normative. This ledger covers bounded in-memory external reference composition over supplied layers."
+  },
+  "status_values": {
+    "implemented": "In scope for the reference-namespace-source contract and covered by goldens.",
+    "partial": "A bounded subset is included and later contracts must extend it.",
+    "deferred": "Specified behavior intentionally not included in this first reference contract.",
+    "out_of_scope": "Belongs to another subsystem or future skill."
+  },
+  "coverage_rules": [
+    "The provider composes references and delegates stage traversal to usd-stage-population.",
+    "The first provider consumes already-opened reference layers, not asset identifiers or resources.",
+    "A generated target may claim bounded recursive reference expansion only across supplied already-opened layers.",
+    "A generated target must not claim payloads, asset resolution, or full value resolution from this provider."
+  ],
+  "items": [
+    {
+      "id": "references.direct-external-target-path",
+      "owner": "usd-reference-namespace-source",
+      "status": "partial",
+      "spec_refs": [
+        "file_formats/README.md:1214 ReferenceListItem",
+        "document_data_model/README.md:699 references"
+      ],
+      "obligations": [
+        "Read direct external reference arcs from the base source-visible references field.",
+        "Use supplied already-opened reference layers keyed by authored asset identifier.",
+        "Map the target prim path and descendants under the referring prim path."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-reference-namespace-source/reference-namespace-source.json#composes-external-reference-tree"
+      ],
+      "deferred_reason": "This first provider does not resolve or open reference assets."
+    },
+    {
+      "id": "references.default-prim-target",
+      "owner": "usd-reference-namespace-source",
+      "status": "implemented",
+      "spec_refs": [
+        "document_data_model/README.md:521 defaultPrim",
+        "file_formats/README.md:1214 ReferenceListItem"
+      ],
+      "obligations": [
+        "Use the referenced layer defaultPrim when an external reference has an asset but no target path.",
+        "Diagnose asset-only references when the referenced layer has no defaultPrim."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-reference-namespace-source/reference-namespace-source.json#asset-reference-uses-default-prim"
+      ]
+    },
+    {
+      "id": "references.local-stronger-than-referenced",
+      "owner": "usd-reference-namespace-source",
+      "status": "implemented",
+      "spec_refs": [
+        "composition/README.md references"
+      ],
+      "obligations": [
+        "Local base-source fields are stronger than referenced target fields.",
+        "A local over must not erase a weaker referenced def for population-facing specifier output.",
+        "Local child and property opinions are composed after referenced opinions."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-reference-namespace-source/reference-namespace-source.json#composes-external-reference-tree"
+      ]
+    },
+    {
+      "id": "references.same-arc-strength-ordering",
+      "owner": "usd-reference-namespace-source",
+      "status": "partial",
+      "spec_refs": [
+        "composition/README.md same-arc-type strength ordering"
+      ],
+      "obligations": [
+        "Order reference opinions authored deeper in namespace stronger than reference opinions authored higher in namespace.",
+        "Preserve source-visible authored list order for sibling reference arcs authored at the same prim.",
+        "Expose fields, child names, property names, and contributing sources in that strong-to-weak reference-family order before the composition arbitrator applies cross-family LIVERPS."
+      ],
+      "positive_goldens": [
+        "nanousd compliance tests/composition/livrps_strength_root.usda#NamespaceDepth",
+        "nanousd compliance tests/composition/livrps_strength_root.usda#SiblingRefs"
+      ],
+      "deferred_reason": "This remains partial because full cross-layer reference listOp composition is not included."
+    },
+    {
+      "id": "references.separable-family-opinions",
+      "owner": "usd-reference-namespace-source",
+      "status": "implemented",
+      "spec_refs": [
+        "composition/README.md references",
+        "composition/README.md:689 source path opinions"
+      ],
+      "obligations": [
+        "Retain reference-family opinions separately from local base-source opinions even when a flattened NamespaceSource view is also exposed.",
+        "Allow downstream providers such as relocates to consume referenced opinions at a path without also consuming local base-source opinions at that path.",
+        "Preserve typed source/spec-path provenance for the reference-family view."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-relocates-namespace-source/relocates-namespace-source.json#relocates-referenced-child"
+      ]
+    },
+    {
+      "id": "references.stage-population-consumption",
+      "owner": "usd-reference-namespace-source",
+      "status": "implemented",
+      "spec_refs": [
+        "stage_population/README.md",
+        "composition/README.md references"
+      ],
+      "obligations": [
+        "Expose the composed reference tree through the namespace-source boundary.",
+        "Allow usd-stage-population to populate referenced prims and properties without evaluating reference arcs itself.",
+        "Preserve composed child and property ordering when consumed by stage population."
+      ],
+      "positive_goldens": [
+        "goldens/integration/usd-reference-stage-population/reference-stage-population.json#referenced-tree-populates-stage"
+      ]
+    },
+    {
+      "id": "references.missing-layer",
+      "owner": "usd-reference-namespace-source",
+      "status": "implemented",
+      "spec_refs": [
+        "resource interface diagnostics"
+      ],
+      "obligations": [
+        "Report missing supplied reference layers clearly.",
+        "Include the authored asset identifier in diagnostics.",
+        "Do not construct a successful namespace source when a direct required reference layer is absent."
+      ],
+      "positive_goldens": [
+        "goldens/unit/usd-reference-namespace-source/reference-namespace-source.json#missing-reference-layer"
+      ]
+    },
+    {
+      "id": "references.recursive-expansion",
+      "owner": "usd-reference-namespace-source",
+      "status": "partial",
+      "spec_refs": [
+        "composition/README.md references"
+      ],
+      "obligations": [
+        "Expand references authored inside referenced target subtrees while their authored asset layers are supplied.",
+        "Compose parent and nested namespace mappings so chained reference target prims contribute at the exposed scene path.",
+        "Detect recursive reference cycles by asset identifier, target path, referring prim path, and mapping context.",
+        "Diagnose cycles and missing nested dependency layers without unbounded recursion or crashes."
+      ],
+      "positive_goldens": [
+        "nanousd compliance usda/test_composition_implied_inherits recursive reference dependency fixture"
+      ],
+      "deferred_reason": "This remains partial because asset resolution, cross-layer reference listOp composition, layer-offset value application, and variant-contained references are not included."
+    },
+    {
+      "id": "references.arc-local-relocate-mapping",
+      "owner": "usd-reference-namespace-source",
+      "status": "implemented",
+      "spec_refs": [
+        "composition/README.md:713 Namespace Mapping",
+        "composition/README.md:705 ancestral relocated path"
+      ],
+      "obligations": [
+        "When a referenced layer stack authors layerRelocates and also authors nested references, carry the layer stack's relocate mapping on the nested reference record.",
+        "Use the arc-local relocate mapping to hide source paths, expose relocated target paths, suppress stale target collisions, and redirect remote-source reads to relocated source specs.",
+        "Remap reference path-valued targetPaths and connectionPaths through the accumulated reference mapping and arc-local relocate mapping.",
+        "Report ancestral-relocate authoring errors as recoverable diagnostics without making generated stage open invalid."
+      ],
+      "positive_goldens": [
+        "nanousd compliance tests/composition/relocates_nested_root.usda#RootRef"
+      ]
+    },
+    {
+      "id": "references.asset-loading",
+      "owner": "future-reference-loading-skill",
+      "status": "deferred",
+      "spec_refs": [
+        "resource interface resolved resource interaction",
+        "file_formats/README.md AssetRef"
+      ],
+      "deferred_reason": "Reference asset resolution and resource opening should be introduced in a later loader contract that consumes usd-layer-open and usd-resource-protocol."
+    },
+    {
+      "id": "references.payloads",
+      "owner": "usd-payload-namespace-source",
+      "status": "out_of_scope",
+      "spec_refs": [
+        "file_formats/README.md:1249 PayloadMetadata",
+        "stage_population/README.md payload loading"
+      ],
+      "deferred_reason": "Payload composition includes load policy and is intentionally separate from direct reference composition."
+    }
+  ]
+}

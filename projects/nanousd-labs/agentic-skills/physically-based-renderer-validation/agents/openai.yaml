@@ -1,0 +1,4 @@
+interface:
+  display_name: "Physically Based Renderer Validation"
+  short_description: "Validate PBR against a reference"
+  default_prompt: "Use $physically-based-renderer-validation to make physical correctness an explicit, AOV-decomposed contract and validate material, light, transport, and tonemap behavior against a reference renderer."

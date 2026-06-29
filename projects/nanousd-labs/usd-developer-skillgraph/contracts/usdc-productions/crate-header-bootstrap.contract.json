@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/usdc-productions/crate-header-bootstrap.contract.json",
+  "title": "Crate Header and Bootstrap Production Contract",
+  "version": "0.1",
+  "spec_commit": "6b4f01f2d6d46b01507481524eb516b4ef358c31",
+  "owned_by": "usdc-binary-format",
+  "spec_refs": [
+    "specification/file_formats/README.md#binary",
+    "specification/file_formats/README.md#header",
+    "specification/file_formats/README.md#crate-versions",
+    "specification/file_formats/README.md#bootstrap"
+  ],
+  "scope": {
+    "included": [
+      "PXR-USDC magic validation",
+      "version triple read (major, minor, patch) from 3 discrete bytes",
+      "5 unused header bytes read without validation",
+      "8B table-of-contents offset",
+      "8B reserved bootstrap field read without validation",
+      "version-range acceptance for major 0, minor 8 through 12",
+      "feature-gating diagnostics for value types introduced at minor 10 or later"
+    ],
+    "deferred": [
+      "table-of-contents section parsing",
+      "section byte interpretation",
+      "value representation decoding",
+      "Crate versions with major != 0 or minor < 8 or minor > 12"
+    ]
+  },
+  "byte_layout": {
+    "header": {
+      "magic": {
+        "size_bytes": 8,
+        "value": "ASCII 'PXR-USDC' (hex 5058522D55534443)",
+        "validation": "exact match required before any further reads"
+      },
+      "version_triple": {
+        "size_bytes": 3,
+        "fields": {
+          "major": "byte 8, unsigned 8-bit integer",
+          "minor": "byte 9, unsigned 8-bit integer",
+          "patch": "byte 10, unsigned 8-bit integer"
+        },
+        "validation": "each byte read discretely; the version word must not be read as a single uint64 because that conflates the version triple with the unused bytes"
+      },
+      "unused": {
+        "size_bytes": 5,
+        "bytes": "bytes 11 through 15",
+        "validation": "read but not validated; nonzero values must not cause rejection (§16.3.8.1: 'recommended to be zero value bytes, but are not required to be so currently')",
+        "preservation": "implementations should preserve these bytes for any future round-trip use"
+      }
+    },
+    "bootstrap": {
+      "toc_offset": {
+        "size_bytes": 8,
+        "value": "unsigned 64-bit little-endian byte offset from the start of the file to the table of contents",
+        "validation": "must be less than the file size and must allow the table of contents to lie within the payload"
+      },
+      "reserved": {
+        "size_bytes": 8,
+        "validation": "read but not validated; nonzero values must not cause rejection (§16.3.8.3)",
+        "preservation": "implementations should preserve these bytes for any future round-trip use"
+      }
+    }
+  },
+  "version_policy": {
+    "accepted": {
+      "major": 0,
+      "minor_range": [8, 12],
+      "patch": "any"
+    },
+    "structural_feature_baseline": {
+      "compressed_toc": "all accepted versions (minor >= 4) require LZ4-compressed table-of-contents reads",
+      "compressed_int_arrays": "all accepted versions (minor >= 5) support compressed (u)int and (u)int64 arrays",
+      "compressed_float_arrays": "all accepted versions (minor >= 6) support compressed float arrays",
+      "64bit_array_sizes": "all accepted versions (minor >= 7) write array sizes as unsigned 64-bit integers"
+    },
+    "feature_gates": {
+      "minor_lt_10": "all required Crate value types and sections used by AOUSD 1.0.1 readers must be decoded",
+      "minor_ge_10": "the version triple must be accepted; value types introduced at minor 10 or later (Splines, Relocates, PathExpression) may emit UnsupportedUsdcFeature diagnostics rather than be decoded"
+    },
+    "rejection": "version triples with major != 0, minor < 8, or minor > 12 produce UnsupportedUsdcVersion before any section interpretation"
+  },
+  "laws": [
+    "magic, version triple, and bootstrap are read in order from a non-owning byte view; an owned copy of the opened payload must not be made",
+    "version triple bytes are read discretely; reading the version word as a single uint64 and comparing against a literal is a contract violation because it conflates the version triple with the unused header bytes",
+    "unused header bytes and reserved bootstrap bytes must be tolerated for any byte values",
+    "validate_header must produce InvalidUsdcHeader for non-PXR-USDC magic and UnsupportedUsdcVersion for out-of-range version triples before any section interpretation runs",
+    "the table-of-contents offset must fit within the opened payload; integer overflow in the offset arithmetic is an error",
+    "this contract owns header and bootstrap byte layout only; it must not interpret section bytes or value representations"
+  ],
+  "golden_groups": [
+    "valid PXR-USDC headers across the accepted version range",
+    "invalid magic and out-of-range version diagnostics",
+    "nonzero unused header bytes and nonzero reserved bootstrap bytes are accepted",
+    "table-of-contents offsets outside the payload produce a clear diagnostic",
+    "0.10.0+ version triples are accepted but value-decoder feature gates apply"
+  ],
+  "golden_files": [
+    "goldens/unit/usdc-binary-format/binary-format.json",
+    "goldens/integration/usdc-single-layer/basic.json"
+  ]
+}

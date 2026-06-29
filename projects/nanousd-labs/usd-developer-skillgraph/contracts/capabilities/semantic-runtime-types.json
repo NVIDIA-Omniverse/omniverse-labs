@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/semantic-runtime-types.json",
+  "title": "USD Semantic Runtime Types Capability",
+  "version": "0.1",
+  "spec_tag": "v1.0.1",
+  "spec_commit": "v1.0.1",
+  "spec_source": "aousd/specifications-public@v1.0.1",
+  "spec_references": [
+    "specification/path_grammar/README.md",
+    "specification/document_data_model/README.md",
+    "specification/file_formats/README.md",
+    "specification/glossary/README.md"
+  ],
+  "purpose": "Define cross-cutting runtime representation requirements for values that carry USD semantic identity, especially paths, field keys, tokens, and grammar-defined names. The contract prevents generated domain logic from using adapter strings or canonical dump text as the authoritative representation for data that should participate in path or token/name identity.",
+  "scope": {
+    "included": [
+      "spec paths, prim paths, property paths, object paths, and variant-selection paths",
+      "path construction, path comparison, prefix checks, and path ordering",
+      "field names and known core metadata field keys",
+      "USD token scalar values and token arrays",
+      "grammar-defined names used as identity in layer, namespace, composition, or stage data",
+      "child prim names, property names, variant set names, variant names used in selected variant addressing, and schema/type names",
+      "conversion at parser, adapter, diagnostic, and serialization boundaries"
+    ],
+    "deferred": [
+      "requiring a particular C++ type, ABI layout, allocator, table, atom implementation, or global singleton",
+      "forcing user-authored display strings or arbitrary string-valued fields into token identity",
+      "changing the authored USD/document-model type of string-typed or specialized fields",
+      "asset identifier and resource location representation beyond not confusing them with object paths",
+      "deduplicating every string payload in generic unmodeled field values"
+    ]
+  },
+  "model": {
+    "SemanticPath": "A target-native path abstraction such as a handle, interned path reference, indexed path node, or backend-native path object. It is not a raw string in domain storage.",
+    "SemanticName": "A target-native identity abstraction for grammar-defined USD names used for lookup, equality, ordering, or path construction. It may share the token identity domain or use a target-native name atom.",
+    "FieldToken": "A token or field atom used as the identity for known and extension field keys.",
+    "USDTokenValue": "A target-native value for fields whose authored USD type is token or token[].",
+    "BoundaryString": "A string accepted or emitted at parser, adapter, diagnostic, C ABI, or serialization boundaries. It is converted to or from the target-native semantic type before domain logic stores or compares it.",
+    "TypePreservingInterning": "Optional interning or atomization of string-authored semantic names that does not change the authored field value type exposed by checked reads or canonical dumps."
+  },
+  "laws": [
+    "domain-facing APIs and long-lived runtime records must represent spec paths, object paths, prim paths, property paths, and variant-selection paths as SemanticPath values or equivalent target-native path references",
+    "a string cache for a path is allowed only as a derived diagnostic, display, adapter, or serialization cache; it must not be the only authoritative identity used by composition, stage population, or generated backend logic",
+    "path construction, path comparison, path hashing, path prefix checks, parent/name queries, and path ordering must consume the usd-paths capability or an equivalent target-native implementation that satisfies the path contract",
+    "field keys must be FieldToken values or equivalent field atoms; generated domain code must not key durable field maps by raw strings",
+    "USD token scalar and token-array field values must preserve token identity as USDTokenValue values or equivalent target-native token handles",
+    "grammar-defined names that participate in identity, lookup, ordering, or path construction must be stored as SemanticName values or equivalent target-native name handles in domain records",
+    "child prim names, property names, variant set names, selected variant names, and schema/type names must not be retained as raw strings in composition records, stage population indexes, or backend query state when they are used for identity decisions",
+    "interning a grammar-defined name must not change the authored field type: variantSetNames remains a listop<string> field, variantSelection remains its specialized map type, and displayName remains a string even if an implementation uses name handles internally",
+    "variant set names are identifier-like names; selected variant names follow the variant-name grammar and may contain characters not valid in identifiers, so any SemanticName implementation used for variants must support the variant-name domain and must not apply prim/property identifier restrictions to selected variant names",
+    "empty or missing semantic values may use an invalid/null handle when the surrounding contract permits absence, but that sentinel must remain distinguishable from a valid empty string or valid empty token when the value domain permits one",
+    "adapter JSON, textual USDA parsing, diagnostics, reports, and C ABI string outputs may expose strings, but those strings are boundary representations converted at the edge",
+    "asset identifiers and resolved resource locations are not USD object paths; they may use resource or asset abstractions and must not be coerced into path handles unless a field's specified type is ObjectPath or another path-valued type",
+    "composition provenance records that pair a source identifier with a spec path must keep the spec path as a SemanticPath value; composite strings such as source.usda:/Prim are boundary renderings only",
+    "generic field value containers may choose compact storage, std::variant-style storage, arenas, or backend-native values, but checked reads must preserve whether the stored USD/document-model type is path, token, string, specialized map, or another typed value"
+  ]
+}

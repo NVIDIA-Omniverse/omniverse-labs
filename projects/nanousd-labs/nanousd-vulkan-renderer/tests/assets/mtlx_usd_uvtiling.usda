@@ -1,0 +1,46 @@
+#usda 1.0
+(
+    doc = "Task #15: MaterialX authored directly in USD (not a standalone .mtlx). TiledMat's base-color image carries inputs:uvtiling=(4,2); the USD-authored path must read it into mdl_uv_transform (it previously only honored uvtiling on standalone .mtlx). PlainMat has no uvtiling and must stay identity (1,1,0,0) — the orthogonality case."
+)
+
+def "Materials"
+{
+    def Material "TiledMat"
+    {
+        token outputs:mtlx:surface.connect = </Materials/TiledMat/Surface.outputs:surface>
+
+        def Shader "Surface"
+        {
+            uniform token info:id = "ND_standard_surface_surfaceshader"
+            color3f inputs:base_color.connect = </Materials/TiledMat/Image.outputs:out>
+            token outputs:surface
+        }
+
+        def Shader "Image"
+        {
+            uniform token info:id = "ND_image_color3"
+            asset inputs:file = @./uvtiling_tex.png@
+            float2 inputs:uvtiling = (4, 2)
+            color3f outputs:out
+        }
+    }
+
+    def Material "PlainMat"
+    {
+        token outputs:mtlx:surface.connect = </Materials/PlainMat/Surface.outputs:surface>
+
+        def Shader "Surface"
+        {
+            uniform token info:id = "ND_standard_surface_surfaceshader"
+            color3f inputs:base_color.connect = </Materials/PlainMat/Image.outputs:out>
+            token outputs:surface
+        }
+
+        def Shader "Image"
+        {
+            uniform token info:id = "ND_image_color3"
+            asset inputs:file = @./uvtiling_tex.png@
+            color3f outputs:out
+        }
+    }
+}

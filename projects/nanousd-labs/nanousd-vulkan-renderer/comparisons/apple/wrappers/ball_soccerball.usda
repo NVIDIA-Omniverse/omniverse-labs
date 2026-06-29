@@ -1,0 +1,33 @@
+#usda 1.0
+(
+    defaultPrim = "ball_soccerball"
+    metersPerUnit = 1
+    upAxis = "Y"
+    subLayers = [
+        @./ball_soccerball_realistic.usdc@
+    ]
+)
+
+def DomeLight "CompareDome"
+{
+    color3f inputs:color = (0.78, 0.82, 0.9)
+    float inputs:intensity = 450
+}
+
+def SphereLight "CompareKey"
+{
+    color3f inputs:color = (1, 0.95, 0.86)
+    float inputs:intensity = 6000
+    float inputs:radius = 0.189597559
+    double3 xformOp:translate = (0.284396338, 0.41711463, 0.227517071)
+    uniform token[] xformOpOrder = ["xformOp:translate"]
+}
+
+def SphereLight "CompareFill"
+{
+    color3f inputs:color = (0.68, 0.76, 1)
+    float inputs:intensity = 1200
+    float inputs:radius = 0.341275606
+    double3 xformOp:translate = (-0.341275606, 0.0758390236, -0.265436583)
+    uniform token[] xformOpOrder = ["xformOp:translate"]
+}

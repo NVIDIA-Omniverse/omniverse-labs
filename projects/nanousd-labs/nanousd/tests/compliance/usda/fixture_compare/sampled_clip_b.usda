@@ -1,0 +1,13 @@
+#usda 1.0
+
+def Scope "World"
+{
+    float clipRadius.timeSamples = {
+        0: 10,
+        10: 20,
+    }
+    float clipWithLocalDefault.timeSamples = {
+        0: 300,
+        10: 400,
+    }
+}

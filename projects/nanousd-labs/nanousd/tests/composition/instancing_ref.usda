@@ -1,0 +1,17 @@
+#usda 1.0
+
+def Mesh "Template"
+{
+    string purpose = "from_ref"
+    float radius = 5.0
+
+    def Scope "Child1"
+    {
+        int value = 42
+    }
+
+    def Scope "Child2"
+    {
+        int value = 99
+    }
+}

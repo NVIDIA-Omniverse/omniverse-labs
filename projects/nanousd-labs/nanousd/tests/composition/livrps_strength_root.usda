@@ -1,0 +1,65 @@
+#usda 1.0
+(
+    '''
+    Same-arc-type LIVRPS strength fixtures. These mirror AOUSD composition
+    spec examples for namespace depth, authored-vs-implied ordering, and
+    sibling arc list ordering.
+    '''
+)
+
+def "DepthAncestor"
+{
+    def "Child"
+    {
+        int namespaceDepthVal = 10
+    }
+}
+
+def "DepthDescendant"
+{
+    int namespaceDepthVal = 20
+}
+
+def "NamespaceDepth" (
+    references = </DepthAncestor>
+)
+{
+    def "Child" (
+        references = </DepthDescendant>
+    )
+    {
+    }
+}
+
+def "SiblingA"
+{
+    int siblingRefVal = 10
+}
+
+def "SiblingB"
+{
+    int siblingRefVal = 20
+}
+
+def "SiblingRefs" (
+    references = [</SiblingA>, </SiblingB>]
+)
+{
+}
+
+class "RootClass"
+{
+    int authoredVsImpliedVal = 10
+}
+
+class "RefClass"
+{
+    int authoredVsImpliedVal = 20
+}
+
+def "AuthoredVsImplied" (
+    inherits = </RootClass>
+    references = @./livrps_strength_ref.usda@</Ref>
+)
+{
+}

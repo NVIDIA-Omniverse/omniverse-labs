@@ -1,0 +1,30 @@
+#usda 1.0
+
+def "Instance" (
+    references = @./path_remap_source.usda@</Model>
+)
+{
+}
+
+def "Model" (
+    references = @./path_remap_source.usda@</Model>
+)
+{
+}
+
+def "LocalSource"
+{
+    float localInput.connect = </Outside.outputs:value>
+    rel localTarget = </Outside>
+}
+
+def "Outside"
+{
+    float outputs:value = 2
+}
+
+def "LocalInstance" (
+    references = </LocalSource>
+)
+{
+}

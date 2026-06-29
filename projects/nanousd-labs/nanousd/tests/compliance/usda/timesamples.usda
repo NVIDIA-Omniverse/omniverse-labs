@@ -1,0 +1,10 @@
+#usda 1.0
+
+def Xform "Root" {
+    float scalarF = 999.0
+
+    float anim.timeSamples = { 1: 0.0, 12: 0.5, 24: 1.0 }
+    double animD.timeSamples = { 1: 0.0, 12: 0.5, 24: 1.0 }
+    float3 dir.timeSamples = { 1: (1, 0, 0), 24: (0, 1, 0) }
+    double3 pos.timeSamples = { 1: (0, 0, 0), 12: (5, 5, 5), 24: (10, 10, 10) }
+}

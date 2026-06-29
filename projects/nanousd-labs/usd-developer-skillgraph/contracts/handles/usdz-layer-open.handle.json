@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/usdz-layer-open.handle.json",
+  "title": "USDZ Layer Open Contract",
+  "version": "0.1",
+  "spec_commit": "6b4f01f2d6d46b01507481524eb516b4ef358c31",
+  "dependency_contracts": [
+    "contracts/handles/usdz-package-format.handle.json",
+    "contracts/handles/usda-layer-open.handle.json",
+    "contracts/handles/usdc-layer-open.handle.json",
+    "contracts/handles/document-model.handle.json"
+  ],
+  "scope": {
+    "included": [
+      "opening an already-opened outer USDZ package resource",
+      "default package layer selection",
+      "explicit package entry selection",
+      "dispatch of .usda package entries to usda-layer-open",
+      "dispatch of .usdc package entries to usdc-layer-open",
+      "target-native LayerOpenResult pass-through from the selected handler",
+      "package diagnostics before format parsing"
+    ],
+    "deferred": [
+      ".usd forwarding",
+      "nested packages",
+      "package writes",
+      "composition and dependent layer loading",
+      "asset resolution inside package-relative asset paths"
+    ]
+  },
+  "model": {
+    "LayerOpenResult": "The same target-native result returned by USDA and USDC layer handlers.",
+    "PackageEntryByteView": "The non-owning entry byte view produced by usdz-package-format."
+  },
+  "operations": {
+    "open_usdz_layer": {
+      "input": {
+        "openedOuterPackage": "ResourceReadResult for the outer .usdz bytes",
+        "entry": "optional explicit package entry path"
+      },
+      "output": {"result": "target-native LayerOpenResult"}
+    },
+    "is_usdz_layer_location": {
+      "input": {"display": "resolved location or package spelling"},
+      "output": {"matches": "true for .usdz packages and .usdz[entry] package spellings"}
+    }
+  },
+  "laws": [
+    "usdz-layer-open must consume usdz-package-format for ZIP/USDZ structure and must not parse central directories locally",
+    "usdz-layer-open must consume usda-layer-open for .usda entries and usdc-layer-open for .usdc entries",
+    "file_backed_path from the outer package must not be forwarded to an inner USDC handler unless it names the same byte extent; USDZ entries pass PackageEntryByteView bytes and leave standalone file_backed_path unset",
+    "unsupported .usd entries, nested .usdz entries, and missing entries must fail before parser-specific layer state is emitted",
+    "the domain result remains LayerOpenResult, not canonical dump JSON"
+  ],
+  "adapter_protocol": {
+    "input": "A JSON file containing one case with USDZ layer-open ops and an opened_resource object.",
+    "output": "A JSON object with ok, diagnostics, and results; dump fields are adapter-only."
+  }
+}

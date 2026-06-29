@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/usdc-productions/crate-toc.contract.json",
+  "title": "Crate Table-of-Contents Production Contract",
+  "version": "0.1",
+  "spec_commit": "6b4f01f2d6d46b01507481524eb516b4ef358c31",
+  "owned_by": "usdc-binary-format",
+  "spec_refs": [
+    "specification/file_formats/README.md#table-of-contents",
+    "specification/file_formats/README.md#crate-versions"
+  ],
+  "scope": {
+    "included": [
+      "table-of-contents section count read (8B unsigned 64-bit integer)",
+      "section entry parsing (16B null-terminated name + 8B offset + 8B size)",
+      "standard section kind recognition (TOKENS, STRINGS, FIELDS, FIELDSETS, PATHS, SPECS)",
+      "O(1) section addressing by section kind",
+      "non-owning section byte views into the opened payload",
+      "section offset and size bounds validation against the opened payload",
+      "terminal-position invariant (TOC must end at the file's last byte)"
+    ],
+    "deferred": [
+      "section internal layout parsing",
+      "value representation decoding",
+      "section ownership policies (which absences are errors)"
+    ]
+  },
+  "byte_layout": {
+    "toc_compression": "uncompressed at all accepted Crate versions. The v0.4.0 version-table note 'Compressed the Table of Contents Sections' refers to section-internal payload compression (TOKENS data, FIELDS value reps, FIELDSETS/PATHS/SPECS compressed integer arrays), not the TOC entries themselves. Reference USD writers emit TOC entries as raw bytes immediately after the bootstrap.",
+    "terminal_invariant": "the TOC must end at the file's last byte (§16.3.8.4: 'The Table of Contents must be at the end of the file')",
+    "section_count": {
+      "size_bytes": 8,
+      "value": "unsigned 64-bit little-endian integer",
+      "validation": "must allow 8 + section_count * 32 bytes to fit between toc_offset and EOF, with no trailing bytes"
+    },
+    "section_entry": {
+      "size_bytes": 32,
+      "fields": {
+        "name": {
+          "size_bytes": 16,
+          "encoding": "ASCII, null-terminated",
+          "trailing_bytes": "bytes after the first NUL byte are undefined; readers must not extend the section name into them, must not hash the full 16 bytes as section identity, and must not compare full-16-byte raw fields for equality"
+        },
+        "offset": {
+          "size_bytes": 8,
+          "value": "unsigned 64-bit little-endian byte offset from the start of the file"
+        },
+        "size": {
+          "size_bytes": 8,
+          "value": "unsigned 64-bit little-endian length in bytes"
+        }
+      },
+      "validation": "offset and offset+size must lie within the opened payload; integer overflow in the addition is an error"
+    },
+    "standard_section_kinds": [
+      "TOKENS",
+      "STRINGS",
+      "FIELDS",
+      "FIELDSETS",
+      "PATHS",
+      "SPECS"
+    ],
+    "section_count_bound": "no spec-mandated upper bound; implementations may reject implausibly large counts but must accept at least the six standard sections plus any vendor-defined sections present in the fixtures"
+  },
+  "laws": [
+    "the table-of-contents is read as raw uncompressed bytes: 8B section count + N x 32B entries. Only section-internal payloads (TOKENS data, FIELDS value reps, compressed integer arrays in FIELDSETS/PATHS/SPECS) are LZ4-compressed; the TOC entries themselves are not",
+    "the table-of-contents must end at the file's last byte; trailing bytes after the entry list are an error",
+    "standard section kinds (TOKENS, STRINGS, FIELDS, FIELDSETS, PATHS, SPECS) must be addressable in O(1) after read_toc completes; linear name scans on every access are a contract violation",
+    "section names are 16-byte ASCII with NUL termination; bytes after the first NUL are undefined and must not influence equality, hashing, or identity",
+    "section bytes are returned as non-owning views into the opened payload; per-section copies are a contract violation",
+    "section absence is reported cleanly at the binary-format level; spec-parser policy determines which absences are errors",
+    "section offsets and sizes must lie within the opened payload; integer overflow in offset+size arithmetic is an error",
+    "this contract does not interpret section content or value representations"
+  ],
+  "golden_groups": [
+    "TOC round-trip on 4-section and 6-section fixtures (uncompressed entries)",
+    "missing optional sections produce absence, not error",
+    "section names with non-zero trailing bytes after the NUL are treated identical to their NUL-truncated form",
+    "duplicate section names in the TOC produce a diagnostic",
+    "section offset or size outside the payload produces a clear diagnostic",
+    "non-terminal TOC (bytes after the entry list) produces a diagnostic",
+    "O(1) section-kind lookup independent of section count"
+  ],
+  "golden_files": [
+    "goldens/unit/usdc-binary-format/binary-format.json",
+    "goldens/integration/usdc-single-layer/basic.json"
+  ]
+}

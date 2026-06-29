@@ -1,0 +1,255 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/spec-coverage/usda-single-layer.coverage.json",
+  "title": "USDA Single-Layer Spec Coverage Ledger",
+  "version": "0.1",
+  "spec_commit": "v1.0.1",
+  "normative_source": {
+    "repo": "aousd/specifications-public",
+    "commit": "v1.0.1",
+    "rule": "The pinned specification is the source of truth for USD behavior and USDA grammar. Contracts, handles, skills, and goldens decompose that specification and add library-quality constraints; they must not relax or replace the specification."
+  },
+  "contract_role": {
+    "grammar_contracts": "State which pinned spec productions are accepted or rejected in each parser context.",
+    "mapping_contracts": "Map valid productions to document-model fields and target-native domain values.",
+    "handle_contracts": "Define stable conformance surfaces used by generated targets and adapters.",
+    "quality_contracts": "Forbid toy implementations such as JSON-as-storage, parser-local paths, raw string field identity, or non-native specialized values.",
+    "performance_contracts": "Attach workflow-specific targets and operation flatness requirements where the specification is intentionally abstract."
+  },
+  "coverage_rules": [
+    "Every production in this scope must be implemented, deferred with an explicit reason, or marked out of scope for this subgraph.",
+    "A production marked implemented must have at least one positive golden, and ambiguous/context-sensitive productions must have negative goldens.",
+    "Parsing must be grammar-first. Implementations match a valid USDA production in the current context before selecting document-model storage.",
+    "Document-model field names do not make a token stream legal. Reserved USDA keywords are accepted only by productions that name those keywords.",
+    "Storage mappings and quality floors apply after successful grammar recognition."
+  ],
+  "status_values": {
+    "implemented": "In scope for this subgraph and covered by contracts/goldens.",
+    "deferred": "Specified but intentionally not implemented in this subgraph; the reason must name the owning future capability.",
+    "out_of_scope": "Belongs to a different format or higher-level USD subsystem."
+  },
+  "productions": [
+    {
+      "id": "lexical.keywords-and-identifiers",
+      "owner": "usda-lexical-format",
+      "status": "implemented",
+      "spec_refs": [
+        "file_formats/README.md:424 Keywords",
+        "file_formats/README.md:503 BaseIdentifier",
+        "file_formats/README.md:507 KeywordlessIdentifier",
+        "file_formats/README.md:511 Identifier",
+        "file_formats/README.md:513 NamespacedName"
+      ],
+      "grammar_obligations": [
+        "Identifier excludes every Keyword.",
+        "NamespacedName is based on BaseIdentifier and may contain keyword spellings where the grammar permits names.",
+        "Metadata keys using KeyValueMetadata/ListOpMetadata consume Identifier, not BaseIdentifier."
+      ],
+      "quality_floor": [
+        "Identifier validation is owned by usd-identifiers-and-names/usda-lexical-format, not reimplemented ad hoc in the spec parser."
+      ],
+      "positive_goldens": [
+        "goldens/integration/usda-single-layer/basic.json"
+      ],
+      "negative_goldens": [
+        "goldens/integration/usda-single-layer/parser-diagnostics.json#attribute-metadata-keyword-payload-invalid"
+      ]
+    },
+    {
+      "id": "metadata.context-dispatch",
+      "owner": "usda-spec-parser",
+      "status": "implemented",
+      "spec_refs": [
+        "file_formats/README.md:831 KeyValueMetadata",
+        "file_formats/README.md:850 ListOpMetadata",
+        "file_formats/README.md:878 AttributeMetadataItem",
+        "file_formats/README.md:1126 RelationshipMetadataItem",
+        "file_formats/README.md:1265 PrimMetadataItem",
+        "file_formats/README.md:1528 LayerMetadataItem"
+      ],
+      "grammar_obligations": [
+        "Layer metadata accepts SharedMetadata, DocMetadata, ListOpMetadata, SublayerMetadata, and RelocatesMetadata.",
+        "Prim metadata accepts SharedMetadata, ListOpMetadata, KindMetadata, PayloadMetadata, InheritsMetadata, SpecializesMetadata, ReferencesMetadata, VariantsMetadata, and VariantSetsMetadata.",
+        "Attribute metadata accepts SharedMetadata and ListOpMetadata only.",
+        "Relationship metadata accepts SharedMetadata and ListOpMetadata only.",
+        "Keyword metadata productions must be selected by context before storage mapping."
+      ],
+      "quality_floor": [
+        "Metadata parsing may share helpers, but helpers must be parameterized by the grammar production family and must reject keywords that are not legal in the current context.",
+        "Known document-model fields must not bypass grammar validation."
+      ],
+      "positive_goldens": [
+        "goldens/integration/usda-single-layer/common-metadata.json",
+        "goldens/integration/usda-single-layer/common-metadata.json#standalone-layer-doc-string",
+        "goldens/integration/usda-single-layer/metadata-grammar-contexts.json"
+      ],
+      "negative_goldens": [
+        "goldens/integration/usda-single-layer/parser-diagnostics.json#attribute-metadata-keyword-payload-invalid",
+        "goldens/integration/usda-single-layer/parser-diagnostics.json#relationship-metadata-keyword-references-invalid"
+      ]
+    },
+    {
+      "id": "prim-metadata.composition-arc-storage",
+      "owner": "usda-spec-parser",
+      "status": "implemented",
+      "spec_refs": [
+        "file_formats/README.md:1189 InheritsOrSpecializesList",
+        "file_formats/README.md:1226 ReferencesMetadata",
+        "file_formats/README.md:1241 PayloadList",
+        "file_formats/README.md:1249 PayloadMetadata",
+        "file_formats/README.md:1253 VariantsMetadata",
+        "file_formats/README.md:1257 VariantSetsMetadata",
+        "document_data_model/README.md:744 variantSetNames",
+        "schemas/README.md:37 apiSchemas"
+      ],
+      "grammar_obligations": [
+        "ReferenceList and PayloadList accept None, a single item, an empty bracketed list, or a bracketed list of items.",
+        "Reference/Payload items may be asset refs, path refs, or asset+path pairs with permitted layer offset parameters.",
+        "References allow customData parameters; payloads do not.",
+        "A missing listOp token authors the explicit listOp subfield."
+      ],
+      "storage_mapping": [
+        "references -> listOp<Reference> native arc records",
+        "payload -> listOp<Payload> native arc records",
+        "inherits -> listOp<ObjectPath>",
+        "specializes -> listOp<ObjectPath>",
+        "variantSets -> listOp<string>",
+        "apiSchemas -> listOp<token>",
+        "variants -> VariantSetMap"
+      ],
+      "quality_floor": [
+        "Composition arc records are stored inertly and natively; they are not dictionaries, JSON objects, bare asset strings, or bare path strings.",
+        "No composition, asset loading, or value resolution is performed."
+      ],
+      "positive_goldens": [
+        "goldens/integration/usda-single-layer/prim-metadata-composition.json",
+        "goldens/integration/usda-single-layer/metadata-grammar-contexts.json"
+      ],
+      "negative_goldens": [
+        "goldens/integration/usda-single-layer/parser-diagnostics.json#attribute-metadata-keyword-payload-invalid"
+      ]
+    },
+    {
+      "id": "attribute-specs.special-values",
+      "owner": "usda-spec-parser",
+      "status": "implemented",
+      "spec_refs": [
+        "file_formats/README.md:895 AttributeDeclaration",
+        "file_formats/README.md:899 AttributeAssignment",
+        "file_formats/README.md:910 SpecialAttributeType",
+        "file_formats/README.md:916 ListOpConnect",
+        "file_formats/README.md:927 shared listOp production note"
+      ],
+      "grammar_obligations": [
+        "Attribute declarations produce attribute specs with custom, variability, typeName, and property path.",
+        "Special attribute forms .timeSamples, .connect, and .spline are property productions, not generic metadata.",
+        "ListOpConnect shares a leading listOp token with ListOpRelationship and must be dispatched by following tokens."
+      ],
+      "quality_floor": [
+        "TimeSamples and Spline are native domain values.",
+        "Connect targets are authored listOp<ObjectPath> values and are not resolved."
+      ],
+      "positive_goldens": [
+        "goldens/integration/usda-single-layer/attribute-time-samples.json",
+        "goldens/integration/usda-single-layer/property-listop-dispatch.json"
+      ],
+      "negative_goldens": [
+        "goldens/integration/usda-single-layer/parser-diagnostics.json#attribute-metadata-keyword-payload-invalid"
+      ]
+    },
+    {
+      "id": "relationship-specs.targets",
+      "owner": "usda-spec-parser",
+      "status": "implemented",
+      "spec_refs": [
+        "file_formats/README.md:1134 RelationshipType",
+        "file_formats/README.md:1140 RelationshipAssignment",
+        "file_formats/README.md:1147 ListOpRelationship",
+        "file_formats/README.md:1171 Relationship Values"
+      ],
+      "grammar_obligations": [
+        "Relationships accept rel/custom rel, target assignment to None, single path refs, or path-ref lists.",
+        "ListOpRelationship authors targetPaths subfields.",
+        "Relationship metadata does not accept prim-only metadata keywords."
+      ],
+      "quality_floor": [
+        "Target paths are authored listOp<ObjectPath> values and are not resolved."
+      ],
+      "positive_goldens": [
+        "goldens/integration/usda-single-layer/relationship-listops.json",
+        "goldens/integration/usda-single-layer/property-listop-dispatch.json"
+      ],
+      "negative_goldens": [
+        "goldens/integration/usda-single-layer/parser-diagnostics.json#relationship-metadata-keyword-references-invalid"
+      ]
+    },
+    {
+      "id": "layer-metadata.sublayers-and-relocates",
+      "owner": "usda-spec-parser",
+      "status": "implemented",
+      "spec_refs": [
+        "file_formats/README.md:1507 SublayerItem",
+        "file_formats/README.md:1514 SublayerMetadata",
+        "file_formats/README.md:1519 RelocatesItem",
+        "file_formats/README.md:1523 RelocatesMetadata"
+      ],
+      "grammar_obligations": [
+        "subLayers accepts a list of asset refs with optional layer offset parameters.",
+        "relocates accepts path-ref to path-ref pairs and path-ref to None deletes."
+      ],
+      "quality_floor": [
+        "subLayers/subLayerOffsets and Relocates are native domain values.",
+        "Parsing sublayers does not load or resolve referenced layers."
+      ],
+      "positive_goldens": [
+        "goldens/integration/usda-single-layer/layer-metadata.json"
+      ],
+      "negative_goldens": []
+    },
+    {
+      "id": "variant-specs.storage",
+      "owner": "usda-spec-parser",
+      "status": "implemented",
+      "spec_refs": [
+        "file_formats/README.md:1294 VariantStatement",
+        "file_formats/README.md:1299 VariantSetStatement",
+        "document_data_model/README.md:105 Variant and Variant Set Specs"
+      ],
+      "grammar_obligations": [
+        "variantSet statements create variant set specs and variant specs.",
+        "variant contents parse with prim-like contents but do not perform variant selection."
+      ],
+      "quality_floor": [
+        "Variant specs and children are stored in the document model; stage population is not performed."
+      ],
+      "positive_goldens": [
+        "goldens/integration/usda-single-layer/variant-specs.json"
+      ],
+      "negative_goldens": []
+    },
+    {
+      "id": "deferred.composition-value-resolution-stage-population",
+      "owner": "future-composition-and-stage-skills",
+      "status": "deferred",
+      "spec_refs": [
+        "document_data_model/README.md",
+        "composition sections outside the current single-layer open scope"
+      ],
+      "deferred_reason": "This subgraph opens and stores one layer. It intentionally does not compose sublayers, references, payloads, inherits, specializes, variants, relocates, or resolved values.",
+      "positive_goldens": [],
+      "negative_goldens": []
+    },
+    {
+      "id": "out-of-scope.usdc-usdz",
+      "owner": "future-format-skills",
+      "status": "out_of_scope",
+      "spec_refs": [
+        "file_formats/README.md#crate-file-format",
+        "USDZ package specification"
+      ],
+      "deferred_reason": "This scope covers USDA text only. USDC and USDZ should be separate format skills that consume the same document-model contracts.",
+      "positive_goldens": [],
+      "negative_goldens": []
+    }
+  ]
+}

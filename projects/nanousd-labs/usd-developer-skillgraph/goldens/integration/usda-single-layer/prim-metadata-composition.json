@@ -1,0 +1,88 @@
+{
+  "suite": "usda-prim-metadata-composition-storage",
+  "contract": "contracts/usda-productions/prim-specs.contract.json",
+  "spec_commit": "v1.0.1",
+  "cases": [
+    {
+      "id": "references-payload-inherits-specializes-variants-kind",
+      "spec_refs": [
+        "file_formats/README.md:1189 InheritsOrSpecializesList",
+        "file_formats/README.md:1226 ReferencesMetadata",
+        "file_formats/README.md:1249 PayloadMetadata",
+        "file_formats/README.md:1253 VariantsMetadata",
+        "file_formats/README.md:1257 VariantSetsMetadata",
+        "document_data_model/README.md:714 references",
+        "document_data_model/README.md:741 payload",
+        "schemas/README.md:37 apiSchemas"
+      ],
+      "input": {
+        "usda": "#usda 1.0\n\ndef \"World\" (\n    prepend references = @asset.usda@</Model> (offset = 24; scale = 0.5; customData = { string note = \"ignored\" })\n    append payload = @payload.usda@</PayloadRoot> (offset = 10; scale = 2)\n    inherits = </_Class>\n    delete specializes = [</OldClass>]\n    variantSets = [\"modelingVariant\", \"lookVariant\"]\n    prepend apiSchemas = [\"CollectionAPI:lights\", \"ColorSpaceAPI\"]\n    variants = {\n        string modelingVariant = \"high\"\n        string lookVariant = \"\"\n    }\n    kind = \"component\"\n)\n{\n}\n"
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "layer": {
+          "fields": {
+            "primChildren": {"type": "token[]", "value": ["World"]}
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "primChildren": {"type": "token[]", "value": ["World"]}
+              }
+            },
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "references": {
+                  "type": "listop<Reference>",
+                  "value": {
+                    "explicit": [],
+                    "prepend": [{"asset": "asset.usda", "path": "/Model", "offset": 24.0, "scale": 0.5}],
+                    "append": [],
+                    "delete": []
+                  }
+                },
+                "payload": {
+                  "type": "listop<Payload>",
+                  "value": {
+                    "explicit": [],
+                    "prepend": [],
+                    "append": [{"asset": "payload.usda", "path": "/PayloadRoot", "offset": 10.0, "scale": 2.0}],
+                    "delete": []
+                  }
+                },
+                "inheritPaths": {
+                  "type": "listop<ObjectPath>",
+                  "value": {"explicit": ["/_Class"], "prepend": [], "append": [], "delete": []}
+                },
+                "specializes": {
+                  "type": "listop<ObjectPath>",
+                  "value": {"explicit": [], "prepend": [], "append": [], "delete": ["/OldClass"]}
+                },
+                "variantSetNames": {
+                  "type": "listop<string>",
+                  "value": {"explicit": ["modelingVariant", "lookVariant"], "prepend": [], "append": [], "delete": []}
+                },
+                "apiSchemas": {
+                  "type": "listop<token>",
+                  "value": {"explicit": [], "prepend": ["CollectionAPI:lights", "ColorSpaceAPI"], "append": [], "delete": []}
+                },
+                "variantSelection": {
+                  "type": "VariantSetMap",
+                  "value": {"modelingVariant": "high", "lookVariant": ""}
+                },
+                "kind": {"type": "string", "value": "component"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

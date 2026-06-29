@@ -1,0 +1,800 @@
+{
+  "suite": "usd-schema-namespace-source",
+  "contract": "contracts/handles/schema-namespace-source.handle.json",
+  "cases": [
+    {
+      "id": "typed-schema-property-injection",
+      "input": {
+        "rootLayer": {
+          "identifier": "root.usda",
+          "fields": {"primChildren": {"type": "token[]", "value": ["World"]}},
+          "specs": {
+            "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["World"]}}},
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "typeName": {"type": "token", "value": "Sphere"},
+                "propertyOrder": {"type": "token[]", "value": ["displayColor", "radius"]},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        },
+        "schemaRegistry": {
+          "Gprim": {
+            "kind": "typed",
+            "abstract": true,
+            "properties": {
+              "displayColor": {
+                "kind": "attribute",
+                "fields": {
+                  "typeName": {"type": "token", "value": "color3f[]"},
+                  "custom": {"type": "bool", "value": false},
+                  "variability": {"type": "variability", "value": "varying"},
+                  "default": {"type": "array", "value": []}
+                }
+              }
+            }
+          },
+          "Sphere": {
+            "kind": "typed",
+            "base": "Gprim",
+            "properties": {
+              "radius": {
+                "kind": "attribute",
+                "fields": {
+                  "typeName": {"type": "token", "value": "double"},
+                  "custom": {"type": "bool", "value": false},
+                  "variability": {"type": "variability", "value": "varying"},
+                  "default": {"type": "double", "value": 1.0}
+                }
+              }
+            }
+          }
+        },
+        "ops": [
+          {"op": "build_source"},
+          {"op": "inspect_source"},
+          {"op": "schema_summary", "path": "/World"},
+          {"op": "prim_input", "path": "/World"},
+          {"op": "property_input", "path": "/World.radius"},
+          {"op": "property_input", "path": "/World.displayColor"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "build_source", "ok": true},
+          {
+            "op": "inspect_source",
+            "ok": true,
+            "mode": "composed_namespace",
+            "composition": "partial",
+            "value_resolution": "partial",
+            "payload_loading": "absent",
+            "instancing": "absent",
+            "schema_fallbacks": "full",
+            "child_ordering": "composed",
+            "property_ordering": "composed"
+          },
+          {
+            "op": "schema_summary",
+            "ok": true,
+            "path": "/World",
+            "exists": true,
+            "authoredType": "Sphere",
+            "effectiveType": "Sphere",
+            "typeless": false,
+            "appliedSchemas": [],
+            "schemaOrder": ["Sphere", "Gprim"],
+            "properties": ["displayColor", "radius"]
+          },
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/World",
+            "exists": true,
+            "kind": "prim",
+            "fields": {
+              "specifier": {"type": "specifier", "value": "def"},
+              "typeName": {"type": "token", "value": "Sphere"},
+              "propertyOrder": {"type": "token[]", "value": ["displayColor", "radius"]},
+              "primChildren": {"type": "token[]", "value": []},
+              "propertyChildren": {"type": "token[]", "value": []},
+              "variantSetChildren": {"type": "token[]", "value": []}
+            },
+            "childNames": [],
+            "propertyNames": ["displayColor", "radius"]
+          },
+          {
+            "op": "property_input",
+            "ok": true,
+            "path": "/World.radius",
+            "exists": true,
+            "kind": "attribute",
+            "schemaDefined": true,
+            "authored": false,
+            "fields": {
+              "typeName": {"type": "token", "value": "double"},
+              "custom": {"type": "bool", "value": false},
+              "variability": {"type": "variability", "value": "varying"},
+              "default": {"type": "double", "value": 1.0}
+            }
+          },
+          {
+            "op": "property_input",
+            "ok": true,
+            "path": "/World.displayColor",
+            "exists": true,
+            "kind": "attribute",
+            "schemaDefined": true,
+            "authored": false,
+            "fields": {
+              "typeName": {"type": "token", "value": "color3f[]"},
+              "custom": {"type": "bool", "value": false},
+              "variability": {"type": "variability", "value": "varying"},
+              "default": {"type": "array", "value": []}
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "multiple-applied-schema-instance-property",
+      "input": {
+        "rootLayer": {
+          "identifier": "root.usda",
+          "fields": {"primChildren": {"type": "token[]", "value": ["World"]}},
+          "specs": {
+            "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["World"]}}},
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "apiSchemas": {"type": "token[]", "value": ["CollectionAPI:rooms"]},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        },
+        "schemaRegistry": {
+          "CollectionAPI": {
+            "kind": "applied",
+            "multiplicity": "multiple",
+            "properties": {
+              "<instance_name>:expansionRule": {
+                "kind": "attribute",
+                "fields": {
+                  "typeName": {"type": "token", "value": "token"},
+                  "custom": {"type": "bool", "value": false},
+                  "variability": {"type": "variability", "value": "uniform"},
+                  "default": {"type": "token", "value": "expandPrims"}
+                }
+              },
+              "<instance_name>:includes": {
+                "kind": "relationship",
+                "fields": {
+                  "targetPaths": {
+                    "type": "PathListOp",
+                    "value": {"explicit": []}
+                  }
+                }
+              }
+            }
+          }
+        },
+        "ops": [
+          {"op": "build_source"},
+          {"op": "schema_summary", "path": "/World"},
+          {"op": "prim_input", "path": "/World"},
+          {"op": "property_input", "path": "/World.rooms:expansionRule"},
+          {"op": "property_input", "path": "/World.rooms:includes"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "build_source", "ok": true},
+          {
+            "op": "schema_summary",
+            "ok": true,
+            "path": "/World",
+            "exists": true,
+            "authoredType": "",
+            "effectiveType": "",
+            "typeless": true,
+            "appliedSchemas": ["CollectionAPI:rooms"],
+            "schemaOrder": ["CollectionAPI:rooms"],
+            "properties": ["rooms:expansionRule", "rooms:includes"]
+          },
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/World",
+            "exists": true,
+            "kind": "prim",
+            "fields": {
+              "specifier": {"type": "specifier", "value": "def"},
+              "apiSchemas": {"type": "token[]", "value": ["CollectionAPI:rooms"]},
+              "primChildren": {"type": "token[]", "value": []},
+              "propertyChildren": {"type": "token[]", "value": []},
+              "variantSetChildren": {"type": "token[]", "value": []}
+            },
+            "childNames": [],
+            "propertyNames": ["rooms:expansionRule", "rooms:includes"]
+          },
+          {
+            "op": "property_input",
+            "ok": true,
+            "path": "/World.rooms:expansionRule",
+            "exists": true,
+            "kind": "attribute",
+            "schemaDefined": true,
+            "authored": false,
+            "fields": {
+              "typeName": {"type": "token", "value": "token"},
+              "custom": {"type": "bool", "value": false},
+              "variability": {"type": "variability", "value": "uniform"},
+              "default": {"type": "token", "value": "expandPrims"}
+            }
+          },
+          {
+            "op": "property_input",
+            "ok": true,
+            "path": "/World.rooms:includes",
+            "exists": true,
+            "kind": "relationship",
+            "schemaDefined": true,
+            "authored": false,
+            "fields": {
+              "targetPaths": {
+                "type": "PathListOp",
+                "value": {"explicit": []}
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "fallback-prim-type-substitution",
+      "input": {
+        "rootLayer": {
+          "identifier": "root.usda",
+          "fields": {
+            "primChildren": {"type": "token[]", "value": ["World"]},
+            "fallbackPrimTypes": {
+              "type": "dictionary",
+              "value": {"DepartmentSphere": {"type": "token[]", "value": ["Sphere"]}}
+            }
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "primChildren": {"type": "token[]", "value": ["World"]},
+                "fallbackPrimTypes": {
+                  "type": "dictionary",
+                  "value": {"DepartmentSphere": {"type": "token[]", "value": ["Sphere"]}}
+                }
+              }
+            },
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "typeName": {"type": "token", "value": "DepartmentSphere"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        },
+        "schemaRegistry": {
+          "Sphere": {
+            "kind": "typed",
+            "properties": {
+              "radius": {
+                "kind": "attribute",
+                "fields": {
+                  "typeName": {"type": "token", "value": "double"},
+                  "custom": {"type": "bool", "value": false},
+                  "default": {"type": "double", "value": 1.0}
+                }
+              }
+            }
+          }
+        },
+        "ops": [
+          {"op": "build_source"},
+          {"op": "schema_summary", "path": "/World"},
+          {"op": "prim_input", "path": "/World"},
+          {"op": "property_input", "path": "/World.radius"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "build_source", "ok": true},
+          {
+            "op": "schema_summary",
+            "ok": true,
+            "path": "/World",
+            "exists": true,
+            "authoredType": "DepartmentSphere",
+            "effectiveType": "Sphere",
+            "typeless": false,
+            "appliedSchemas": [],
+            "schemaOrder": ["Sphere"],
+            "properties": ["radius"]
+          },
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/World",
+            "exists": true,
+            "kind": "prim",
+            "fields": {
+              "specifier": {"type": "specifier", "value": "def"},
+              "typeName": {"type": "token", "value": "DepartmentSphere"},
+              "primChildren": {"type": "token[]", "value": []},
+              "propertyChildren": {"type": "token[]", "value": []},
+              "variantSetChildren": {"type": "token[]", "value": []}
+            },
+            "childNames": [],
+            "propertyNames": ["radius"]
+          },
+          {
+            "op": "property_input",
+            "ok": true,
+            "path": "/World.radius",
+            "exists": true,
+            "kind": "attribute",
+            "schemaDefined": true,
+            "authored": false,
+            "fields": {
+              "typeName": {"type": "token", "value": "double"},
+              "custom": {"type": "bool", "value": false},
+              "default": {"type": "double", "value": 1.0}
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "authored-property-overrides-schema-fields",
+      "input": {
+        "rootLayer": {
+          "identifier": "root.usda",
+          "fields": {"primChildren": {"type": "token[]", "value": ["World"]}},
+          "specs": {
+            "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["World"]}}},
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "typeName": {"type": "token", "value": "Sphere"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": ["radius"]},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World.radius": {
+              "kind": "attribute",
+              "fields": {
+                "default": {"type": "double", "value": 2.0}
+              }
+            }
+          }
+        },
+        "schemaRegistry": {
+          "Sphere": {
+            "kind": "typed",
+            "properties": {
+              "radius": {
+                "kind": "attribute",
+                "fields": {
+                  "typeName": {"type": "token", "value": "double"},
+                  "custom": {"type": "bool", "value": false},
+                  "variability": {"type": "variability", "value": "varying"},
+                  "default": {"type": "double", "value": 1.0}
+                }
+              }
+            }
+          }
+        },
+        "ops": [
+          {"op": "build_source"},
+          {"op": "schema_summary", "path": "/World"},
+          {"op": "property_input", "path": "/World.radius"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "build_source", "ok": true},
+          {
+            "op": "schema_summary",
+            "ok": true,
+            "path": "/World",
+            "exists": true,
+            "authoredType": "Sphere",
+            "effectiveType": "Sphere",
+            "typeless": false,
+            "appliedSchemas": [],
+            "schemaOrder": ["Sphere"],
+            "properties": ["radius"]
+          },
+          {
+            "op": "property_input",
+            "ok": true,
+            "path": "/World.radius",
+            "exists": true,
+            "kind": "attribute",
+            "schemaDefined": true,
+            "authored": true,
+            "fields": {
+              "default": {"type": "double", "value": 2.0},
+              "typeName": {"type": "token", "value": "double"},
+              "custom": {"type": "bool", "value": false},
+              "variability": {"type": "variability", "value": "varying"}
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "schema-inclusions-builtins-auto-applies-and-instance-propagation",
+      "input": {
+        "rootLayer": {
+          "identifier": "root.usda",
+          "fields": {"primChildren": {"type": "token[]", "value": ["World"]}},
+          "specs": {
+            "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["World"]}}},
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "apiSchemas": {"type": "token[]", "value": ["FooBar"]},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        },
+        "schemaRegistry": {
+          "BarBaz": {
+            "kind": "applied",
+            "multiplicity": "multiple",
+            "properties": {
+              "<instance_name>:barbazprop": {
+                "kind": "attribute",
+                "fields": {
+                  "typeName": {"type": "token", "value": "string"},
+                  "custom": {"type": "bool", "value": false},
+                  "default": {"type": "string", "value": ""}
+                }
+              }
+            }
+          },
+          "BazFoo": {
+            "kind": "applied",
+            "multiplicity": "multiple",
+            "builtins": ["BarBaz", "LabelAPI:child"],
+            "properties": {
+              "bazfooprop:<instance_name>": {
+                "kind": "attribute",
+                "fields": {
+                  "typeName": {"type": "token", "value": "int"},
+                  "custom": {"type": "bool", "value": false},
+                  "default": {"type": "int", "value": 1}
+                }
+              }
+            }
+          },
+          "FooBar": {
+            "kind": "applied",
+            "autoApplies": ["BazFoo:bazfooinstance"],
+            "properties": {
+              "foobarprop": {
+                "kind": "attribute",
+                "fields": {
+                  "typeName": {"type": "token", "value": "half"},
+                  "custom": {"type": "bool", "value": false},
+                  "default": {"type": "half", "value": 0.5}
+                }
+              }
+            }
+          },
+          "LabelAPI": {
+            "kind": "applied",
+            "multiplicity": "multiple",
+            "properties": {
+              "<instance_name>:label": {
+                "kind": "attribute",
+                "fields": {
+                  "typeName": {"type": "token", "value": "token"},
+                  "custom": {"type": "bool", "value": false},
+                  "default": {"type": "token", "value": "none"}
+                }
+              }
+            }
+          }
+        },
+        "ops": [
+          {"op": "build_source"},
+          {"op": "schema_summary", "path": "/World"},
+          {"op": "prim_input", "path": "/World"},
+          {"op": "property_input", "path": "/World.bazfooprop:bazfooinstance"},
+          {"op": "property_input", "path": "/World.bazfooinstance:barbazprop"},
+          {"op": "property_input", "path": "/World.bazfooinstance:child:label"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "build_source", "ok": true},
+          {
+            "op": "schema_summary",
+            "ok": true,
+            "path": "/World",
+            "exists": true,
+            "authoredType": "",
+            "effectiveType": "",
+            "typeless": true,
+            "appliedSchemas": ["FooBar"],
+            "schemaOrder": ["FooBar", "BazFoo:bazfooinstance", "BarBaz:bazfooinstance", "LabelAPI:bazfooinstance:child"],
+            "properties": ["foobarprop", "bazfooprop:bazfooinstance", "bazfooinstance:barbazprop", "bazfooinstance:child:label"]
+          },
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/World",
+            "exists": true,
+            "kind": "prim",
+            "fields": {
+              "specifier": {"type": "specifier", "value": "def"},
+              "apiSchemas": {"type": "token[]", "value": ["FooBar"]},
+              "primChildren": {"type": "token[]", "value": []},
+              "propertyChildren": {"type": "token[]", "value": []},
+              "variantSetChildren": {"type": "token[]", "value": []}
+            },
+            "childNames": [],
+            "propertyNames": ["bazfooinstance:barbazprop", "bazfooinstance:child:label", "bazfooprop:bazfooinstance", "foobarprop"]
+          },
+          {
+            "op": "property_input",
+            "ok": true,
+            "path": "/World.bazfooprop:bazfooinstance",
+            "exists": true,
+            "kind": "attribute",
+            "schemaDefined": true,
+            "authored": false,
+            "fields": {
+              "typeName": {"type": "token", "value": "int"},
+              "custom": {"type": "bool", "value": false},
+              "default": {"type": "int", "value": 1}
+            }
+          },
+          {
+            "op": "property_input",
+            "ok": true,
+            "path": "/World.bazfooinstance:barbazprop",
+            "exists": true,
+            "kind": "attribute",
+            "schemaDefined": true,
+            "authored": false,
+            "fields": {
+              "typeName": {"type": "token", "value": "string"},
+              "custom": {"type": "bool", "value": false},
+              "default": {"type": "string", "value": ""}
+            }
+          },
+          {
+            "op": "property_input",
+            "ok": true,
+            "path": "/World.bazfooinstance:child:label",
+            "exists": true,
+            "kind": "attribute",
+            "schemaDefined": true,
+            "authored": false,
+            "fields": {
+              "typeName": {"type": "token", "value": "token"},
+              "custom": {"type": "bool", "value": false},
+              "default": {"type": "token", "value": "none"}
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "override-properties-sparsely-strengthen-included-property",
+      "input": {
+        "rootLayer": {
+          "identifier": "root.usda",
+          "fields": {"primChildren": {"type": "token[]", "value": ["World"]}},
+          "specs": {
+            "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["World"]}}},
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "typeName": {"type": "token", "value": "Renderable"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        },
+        "schemaRegistry": {
+          "MaterialAPI": {
+            "kind": "applied",
+            "properties": {
+              "material:bindingStrength": {
+                "kind": "attribute",
+                "fields": {
+                  "typeName": {"type": "token", "value": "token"},
+                  "custom": {"type": "bool", "value": false},
+                  "variability": {"type": "variability", "value": "varying"},
+                  "default": {"type": "token", "value": "weakerThanDescendants"}
+                }
+              }
+            }
+          },
+          "Renderable": {
+            "kind": "typed",
+            "builtins": ["MaterialAPI"],
+            "properties": {
+              "renderable:name": {
+                "kind": "attribute",
+                "fields": {
+                  "typeName": {"type": "token", "value": "string"},
+                  "custom": {"type": "bool", "value": false},
+                  "default": {"type": "string", "value": ""}
+                }
+              }
+            },
+            "overrideProperties": {
+              "material:bindingStrength": {
+                "kind": "attribute",
+                "fields": {
+                  "typeName": {"type": "token", "value": "token"},
+                  "custom": {"type": "bool", "value": true},
+                  "variability": {"type": "variability", "value": "uniform"},
+                  "default": {"type": "token", "value": "strongerThanDescendants"}
+                }
+              }
+            }
+          }
+        },
+        "ops": [
+          {"op": "build_source"},
+          {"op": "schema_summary", "path": "/World"},
+          {"op": "property_input", "path": "/World.material:bindingStrength"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "build_source", "ok": true},
+          {
+            "op": "schema_summary",
+            "ok": true,
+            "path": "/World",
+            "exists": true,
+            "authoredType": "Renderable",
+            "effectiveType": "Renderable",
+            "typeless": false,
+            "appliedSchemas": [],
+            "schemaOrder": ["Renderable", "MaterialAPI"],
+            "properties": ["material:bindingStrength", "renderable:name"]
+          },
+          {
+            "op": "property_input",
+            "ok": true,
+            "path": "/World.material:bindingStrength",
+            "exists": true,
+            "kind": "attribute",
+            "schemaDefined": true,
+            "authored": false,
+            "fields": {
+              "typeName": {"type": "token", "value": "token"},
+              "custom": {"type": "bool", "value": true},
+              "variability": {"type": "variability", "value": "varying"},
+              "default": {"type": "token", "value": "strongerThanDescendants"}
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "invalid-override-property-diagnostic",
+      "input": {
+        "rootLayer": {
+          "identifier": "root.usda",
+          "fields": {"primChildren": {"type": "token[]", "value": ["World"]}},
+          "specs": {
+            "/": {"kind": "layer", "fields": {"primChildren": {"type": "token[]", "value": ["World"]}}},
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "typeName": {"type": "token", "value": "BadSchema"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        },
+        "schemaRegistry": {
+          "BadSchema": {
+            "kind": "typed",
+            "overrideProperties": {
+              "missing": {
+                "kind": "attribute",
+                "fields": {
+                  "typeName": {"type": "token", "value": "double"},
+                  "default": {"type": "double", "value": 1.0}
+                }
+              }
+            }
+          }
+        },
+        "ops": [
+          {"op": "build_source"},
+          {"op": "schema_summary", "path": "/World"},
+          {"op": "diagnostics"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [
+          {
+            "code": "InvalidSchemaOverride",
+            "message": "Schema BadSchema override property missing does not target an included property"
+          }
+        ],
+        "results": [
+          {"op": "build_source", "ok": true},
+          {
+            "op": "schema_summary",
+            "ok": true,
+            "path": "/World",
+            "exists": true,
+            "authoredType": "BadSchema",
+            "effectiveType": "BadSchema",
+            "typeless": false,
+            "appliedSchemas": [],
+            "schemaOrder": ["BadSchema"],
+            "properties": []
+          },
+          {
+            "op": "diagnostics",
+            "ok": true,
+            "diagnostics": [
+              {
+                "code": "InvalidSchemaOverride",
+                "message": "Schema BadSchema override property missing does not target an included property"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

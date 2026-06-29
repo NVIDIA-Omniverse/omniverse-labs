@@ -1,0 +1,34 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    upAxis = "Y"
+)
+
+def Xform "World"
+{
+    class Xform "_ProtoClass"
+    {
+        def Mesh "Geom"
+        {
+            point3f[] points = [(0, 0, 0), (1, 0, 0), (1, 1, 0), (0, 1, 0)]
+            int[] faceVertexCounts = [4]
+            int[] faceVertexIndices = [0, 1, 2, 3]
+        }
+    }
+    def Xform "A" (
+        instanceable = true
+        prepend inherits = </World/_ProtoClass>
+    )
+    {
+        double3 xformOp:translate = (5, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+    def Xform "B" (
+        instanceable = true
+        prepend inherits = </World/_ProtoClass>
+    )
+    {
+        double3 xformOp:translate = (-5, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+}

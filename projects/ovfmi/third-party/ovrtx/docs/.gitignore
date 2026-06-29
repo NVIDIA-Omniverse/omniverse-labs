@@ -1,0 +1,2 @@
+# Override parent gitignore to include _static directory
+!_static/

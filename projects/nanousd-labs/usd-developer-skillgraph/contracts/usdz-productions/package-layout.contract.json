@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/usdz-productions/package-layout.contract.json",
+  "title": "USDZ Package Layout Productions",
+  "version": "0.1",
+  "summary": "ZIP/USDZ structure rules required before a package entry can be handed to a layer-format parser.",
+  "productions": [
+    {
+      "name": "zip_eocd_and_central_directory",
+      "requires": [
+        "find the end-of-central-directory record within the ZIP comment search window",
+        "read the non-Zip64 central directory range",
+        "reject multi-disk archives and out-of-bounds central directory ranges"
+      ],
+      "errata_ref": "docs/usdz-spec-errata.md#2-eocd-comment-length-leniency",
+      "errata_note": "AOUSD §16.4.1.4 requires the EOCD comment length to be zero. §16.4.2 permits readers to accept out-of-spec files such as a package carrying a comment. This reader accepts any comment length that is consistent with the file size (eocd_offset + 22 + comment_length == file_size); it still requires the EOCD to run to end-of-file with no trailing padding. Reader-only leniency; USDZ writing is out of scope."
+    },
+    {
+      "name": "central_entry_to_local_data",
+      "requires": [
+        "read central directory file headers",
+        "validate the corresponding local file header",
+        "compute file data offset as local header offset plus fixed header, name, and local extra lengths",
+        "validate compressed-size bounds against the opened package bytes"
+      ]
+    },
+    {
+      "name": "usdz_entry_constraints",
+      "requires": [
+        "compression method is stored",
+        "general-purpose encryption bit is unset",
+        "stored compressed and uncompressed sizes match",
+        "file data offset is 64-byte aligned"
+      ],
+      "errata_ref": "docs/usdz-spec-errata.md#1-64-byte-alignment-applies-to-entry-data-not-the-local-file-header",
+      "errata_note": "AOUSD §16.4.1.3 prose says 'every file header starts at a multiple of 64 bytes'. The reference USD writer (pxr UsdZipFileWriter) instead aligns the entry DATA to 64 bytes via local-header extra-field padding; the header offset may be unaligned. The data-aligned reading is normative for this repository: the alignment check applies to data_offset = local_header_offset + 30 + local_name_len + local_extra_len, computed from the local header. A reader must not require the local-header offset itself to be 64-aligned."
+    },
+    {
+      "name": "entry_ordering",
+      "requires": [
+        "entries exposed by UsdzArchiveIndex are ordered by physical local-header offset",
+        "default-layer selection returns the first ordered entry without scanning for a later USD extension"
+      ],
+      "errata_ref": "docs/usdz-spec-errata.md#3-default-layer-is-the-first-physical-entry",
+      "errata_note": "AOUSD §16.4.1.2 requires the root layer to be both the first central-directory entry and the first file physically; a conformant writer makes these coincide. This reader selects the default layer by physical order (lowest local-header offset) and does not separately verify central-directory order, nor scan past the first entry for a USD extension. Reader-only leniency; §16.4.2 permits it."
+    }
+  ],
+  "laws": [
+    "local file payload bytes are never copied into a new package-entry buffer when a byte view into the opened package is available",
+    "directory traversal or platform-specific path reinterpretation must not happen during entry lookup"
+  ]
+}

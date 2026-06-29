@@ -1,0 +1,107 @@
+#usda 1.0
+
+def "Instance" (
+    references = @./path_remap_source.usda@</Model>
+)
+{
+}
+
+def "Model" (
+    references = @./path_remap_source.usda@</Model>
+)
+{
+}
+
+def "PayloadInstance" (
+    payload = @./path_remap_source.usda@</PayloadModel>
+)
+{
+}
+
+def "PayloadModel" (
+    payload = @./path_remap_source.usda@</PayloadModel>
+)
+{
+}
+
+def "LocalSource"
+{
+    float localInput.connect = </Outside.outputs:value>
+    rel localTarget = </Outside>
+}
+
+def "Outside"
+{
+    float outputs:value = 2
+}
+
+def "LocalInstance" (
+    references = </LocalSource>
+)
+{
+}
+
+def "LocalPayloadInstance" (
+    payload = </LocalSource>
+)
+{
+}
+
+def "ClassSource"
+{
+    float classInput.connect = </ClassSource/Shader.outputs:value>
+    float classExternalInput.connect = </Outside.outputs:value>
+
+    rel classTarget = </ClassSource/Materials/Preview>
+    rel classExternalTarget = </Outside>
+
+    def "Shader"
+    {
+        float outputs:value = 5
+    }
+
+    def "Materials"
+    {
+        def "Preview"
+        {
+        }
+    }
+}
+
+def "InheritInstance" (
+    inherits = </ClassSource>
+)
+{
+}
+
+def "SpecializeInstance" (
+    specializes = </ClassSource>
+)
+{
+}
+
+def "VariantInstance" (
+    variantSets = "look"
+    variants = {
+        string look = "selected"
+    }
+)
+{
+    variantSet "look" = {
+        "selected" {
+            float variantInput.connect = </VariantInstance/VariantChild.outputs:value>
+            float variantExternalInput.connect = </Outside.outputs:value>
+
+            rel variantTarget = </VariantInstance/VariantChild>
+            rel variantExternalTarget = </Outside>
+
+            def "VariantChild"
+            {
+                float outputs:value = 6
+            }
+        }
+        "unused" {
+            rel variantTarget = </ShouldNotAppear>
+        }
+    }
+}

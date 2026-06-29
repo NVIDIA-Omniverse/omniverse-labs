@@ -1,0 +1,12 @@
+#usda 1.0
+(
+    startTimeCode = 10
+    endTimeCode = 20
+    framesPerSecond = 120
+    timeCodesPerSecond = 120
+    metersPerUnit = 100
+    upAxis = "Z"
+)
+
+def Xform "WeakRoot" {
+}

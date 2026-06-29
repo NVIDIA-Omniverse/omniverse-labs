@@ -1,0 +1,80 @@
+{
+  "suite": "usd-resource-protocol-basic",
+  "contract": "contracts/handles/resource.handle.json",
+  "spec_commit": "v1.0.1",
+  "cases": [
+    {
+      "id": "classify-local-uri-and-package-locations",
+      "input": {
+        "ops": [
+          {"op": "classify_resolved", "location": "benchmarks/fixtures/tiny.usda"},
+          {"op": "classify_resolved", "location": "https://example.invalid/assets/root.usda"},
+          {"op": "classify_resolved", "location": "C:/assets/root.usda"},
+          {"op": "classify_resolved", "location": "C:relative/root.usda"},
+          {"op": "split_package", "location": "packages/root.usdz[scenes/root.usda]"},
+          {"op": "classify_resolved", "location": "packages/root.usdz[scenes/root.usda]"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "classify_resolved", "ok": true, "type": "LocalFile", "display": "benchmarks/fixtures/tiny.usda", "path": "benchmarks/fixtures/tiny.usda"},
+          {"op": "classify_resolved", "ok": true, "type": "Uri", "display": "https://example.invalid/assets/root.usda", "scheme": "https"},
+          {"op": "classify_resolved", "ok": true, "type": "LocalFile", "display": "C:/assets/root.usda", "path": "C:/assets/root.usda"},
+          {"op": "classify_resolved", "ok": true, "type": "LocalFile", "display": "C:relative/root.usda", "path": "C:relative/root.usda"},
+          {"op": "split_package", "ok": true, "outer": "packages/root.usdz", "entry": "scenes/root.usda"},
+          {"op": "classify_resolved", "ok": true, "type": "Package", "display": "packages/root.usdz[scenes/root.usda]", "outer": {"type": "LocalFile", "display": "packages/root.usdz", "path": "packages/root.usdz"}, "entry": "scenes/root.usda"}
+        ]
+      }
+    },
+    {
+      "id": "file-uri-local-subset",
+      "input": {
+        "ops": [
+          {"op": "classify_file_uri", "uri": "file:///tmp/usd%20asset.usda"},
+          {"op": "classify_file_uri", "uri": "file://localhost/tmp/root.usda"},
+          {"op": "classify_file_uri", "uri": "file:///tmp/root.usda?x=1"},
+          {"op": "classify_file_uri", "uri": "file:///tmp/root.usda#frag"},
+          {"op": "classify_file_uri", "uri": "file://server/share/root.usda"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "classify_file_uri", "ok": true, "type": "LocalFile", "path": "/tmp/usd asset.usda"},
+          {"op": "classify_file_uri", "ok": true, "type": "LocalFile", "path": "/tmp/root.usda"},
+          {"op": "classify_file_uri", "ok": false, "type": "Uri", "diagnostic": {"code": "UnsupportedResource", "message": "file URI query or fragment is unsupported"}},
+          {"op": "classify_file_uri", "ok": false, "type": "Uri", "diagnostic": {"code": "UnsupportedResource", "message": "file URI query or fragment is unsupported"}},
+          {"op": "classify_file_uri", "ok": false, "type": "Uri", "diagnostic": {"code": "UnsupportedResource", "message": "remote file URI authority is unsupported: server"}}
+        ]
+      }
+    },
+    {
+      "id": "resource-read-write-and-unsupported-diagnostics",
+      "input": {
+        "ops": [
+          {"op": "read_fixture", "path": "benchmarks/fixtures/tiny.usda"},
+          {"op": "read_fixture_as_file_uri", "path": "benchmarks/fixtures/tiny.usda"},
+          {"op": "unsupported_read", "location": "https://example.invalid/assets/root.usda"},
+          {"op": "write_temp_and_readback", "text": "#usda 1.0\n"},
+          {"op": "unsupported_write", "location": "https://example.invalid/assets/root.usda"},
+          {"op": "unsupported_write", "location": "packages/root.usdz[scenes/root.usda]"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {"op": "read_fixture", "ok": true, "bytes": 54, "file_backed": true, "prefix": "#usda 1.0\n"},
+          {"op": "read_fixture_as_file_uri", "ok": true, "bytes": 54, "file_backed": true, "prefix": "#usda 1.0\n"},
+          {"op": "unsupported_read", "ok": false, "diagnostic": {"code": "UnsupportedResource", "message": "Unsupported resource scheme for read: https"}},
+          {"op": "write_temp_and_readback", "ok": true, "bytes": 10, "file_backed": true, "text": "#usda 1.0\n"},
+          {"op": "unsupported_write", "ok": false, "diagnostic": {"code": "UnsupportedResource", "message": "Unsupported resource scheme for write: https"}},
+          {"op": "unsupported_write", "ok": false, "diagnostic": {"code": "UnsupportedResource", "message": "Package entry writes are unsupported"}}
+        ]
+      }
+    }
+  ]
+}

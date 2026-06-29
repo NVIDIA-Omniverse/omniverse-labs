@@ -1,0 +1,27 @@
+#usda 1.0
+(
+    defaultPrim = "Geo"
+)
+
+# Missing-value hold (§12.3.4.6, interpolateMissingClipValues=false
+# by default). Active sequence: 0→clip_has_radius, 10→clip_no_radius,
+# 20→clip_has_radius_late. Querying /Geo.radius during the middle
+# clip's active range must fall back to the nearer neighbouring clip
+# that does declare radius (held, not interpolated).
+
+def Scope "Geo" (
+    clips = {
+        dictionary default = {
+            string primPath = "/Geo"
+            asset[] assetPaths = [
+                @./clip_has_radius.usda@,
+                @./clip_no_radius.usda@,
+                @./clip_has_radius_late.usda@,
+            ]
+            double2[] active = [(0, 0), (10, 1), (20, 2)]
+        }
+    }
+)
+{
+    float radius
+}

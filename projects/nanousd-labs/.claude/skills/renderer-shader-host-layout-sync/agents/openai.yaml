@@ -1,0 +1,4 @@
+interface:
+  display_name: "Renderer Shader/Host Layout Sync"
+  short_description: "Keep host and shaders byte-identical"
+  default_prompt: "Use $renderer-shader-host-layout-sync to keep host structs and the shaders that read them byte-for-byte in sync — sizeof/offsetof static_asserts, one-file-authoritative bindings, shared push-constant blocks, block-layout rules — so layout drift fails the build, not the image."

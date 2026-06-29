@@ -1,0 +1,328 @@
+{
+  "suite": "usd-single-layer-namespace-source",
+  "contract": "contracts/handles/single-layer-namespace-source.handle.json",
+  "spec_commit": "v1.0.1",
+  "cases": [
+    {
+      "id": "source-capabilities-and-basic-lookups",
+      "input": {
+        "layer": {
+          "fields": {
+            "primChildren": {"type": "token[]", "value": ["World"]},
+            "defaultPrim": {"type": "token", "value": "World"}
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "primChildren": {"type": "token[]", "value": ["World"]},
+                "defaultPrim": {"type": "token", "value": "World"}
+              }
+            },
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "typeName": {"type": "token", "value": "Xform"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": ["points", "look"]},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World.points": {
+              "kind": "attribute",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "typeName": {"type": "token", "value": "point3f[]"},
+                "variability": {"type": "variability", "value": "varying"},
+                "default": {"type": "point3f[]", "value": [[0.0, 1.0, 2.0]]}
+              }
+            },
+            "/World.look": {
+              "kind": "relationship",
+              "fields": {
+                "custom": {"type": "bool", "value": false},
+                "targetPaths": {
+                  "type": "listop<ObjectPath>",
+                  "value": {
+                    "explicit": ["/Looks/Preview"],
+                    "prepend": [],
+                    "append": [],
+                    "delete": []
+                  }
+                }
+              }
+            }
+          }
+        },
+        "ops": [
+          {"op": "inspect_source"},
+          {"op": "prim_input", "path": "/"},
+          {"op": "prim_input", "path": "/World"},
+          {"op": "property_input", "path": "/World.points"},
+          {"op": "property_input", "path": "/World.look"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "inspect_source",
+            "ok": true,
+            "mode": "single_layer",
+            "composition": "absent",
+            "value_resolution": "absent",
+            "payload_loading": "absent",
+            "instancing": "absent",
+            "schema_fallbacks": "absent",
+            "child_ordering": "raw_single_layer",
+            "property_ordering": "raw_single_layer"
+          },
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/",
+            "exists": true,
+            "kind": "layer",
+            "fields": {
+              "primChildren": {"type": "token[]", "value": ["World"]},
+              "defaultPrim": {"type": "token", "value": "World"}
+            },
+            "childNames": ["World"],
+            "propertyNames": []
+          },
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/World",
+            "exists": true,
+            "kind": "prim",
+            "fields": {
+              "specifier": {"type": "specifier", "value": "def"},
+              "typeName": {"type": "token", "value": "Xform"},
+              "primChildren": {"type": "token[]", "value": []},
+              "propertyChildren": {"type": "token[]", "value": ["points", "look"]},
+              "variantSetChildren": {"type": "token[]", "value": []}
+            },
+            "childNames": [],
+            "propertyNames": ["points", "look"]
+          },
+          {
+            "op": "property_input",
+            "ok": true,
+            "path": "/World.points",
+            "exists": true,
+            "kind": "attribute",
+            "fields": {
+              "custom": {"type": "bool", "value": false},
+              "typeName": {"type": "token", "value": "point3f[]"},
+              "variability": {"type": "variability", "value": "varying"},
+              "default": {"type": "point3f[]", "value": [[0.0, 1.0, 2.0]]}
+            }
+          },
+          {
+            "op": "property_input",
+            "ok": true,
+            "path": "/World.look",
+            "exists": true,
+            "kind": "relationship",
+            "fields": {
+              "custom": {"type": "bool", "value": false},
+              "targetPaths": {
+                "type": "listop<ObjectPath>",
+                "value": {
+                  "explicit": ["/Looks/Preview"],
+                  "prepend": [],
+                  "append": [],
+                  "delete": []
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "missing-lookups-and-active-is-not-interpreted",
+      "input": {
+        "layer": {
+          "fields": {
+            "primChildren": {"type": "token[]", "value": ["World"]}
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "primChildren": {"type": "token[]", "value": ["World"]}
+              }
+            },
+            "/World": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "active": {"type": "bool", "value": false},
+                "primChildren": {"type": "token[]", "value": ["Hidden"]},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            },
+            "/World/Hidden": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        },
+        "ops": [
+          {"op": "prim_input", "path": "/World"},
+          {"op": "prim_input", "path": "/World/Hidden"},
+          {"op": "prim_input", "path": "/Missing"},
+          {"op": "property_input", "path": "/World.missing"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/World",
+            "exists": true,
+            "kind": "prim",
+            "fields": {
+              "specifier": {"type": "specifier", "value": "def"},
+              "active": {"type": "bool", "value": false},
+              "primChildren": {"type": "token[]", "value": ["Hidden"]},
+              "propertyChildren": {"type": "token[]", "value": []},
+              "variantSetChildren": {"type": "token[]", "value": []}
+            },
+            "childNames": ["Hidden"],
+            "propertyNames": []
+          },
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/World/Hidden",
+            "exists": true,
+            "kind": "prim",
+            "fields": {
+              "specifier": {"type": "specifier", "value": "def"},
+              "primChildren": {"type": "token[]", "value": []},
+              "propertyChildren": {"type": "token[]", "value": []},
+              "variantSetChildren": {"type": "token[]", "value": []}
+            },
+            "childNames": [],
+            "propertyNames": []
+          },
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/Missing",
+            "exists": false,
+            "kind": "missing",
+            "fields": {},
+            "childNames": [],
+            "propertyNames": []
+          },
+          {
+            "op": "property_input",
+            "ok": true,
+            "path": "/World.missing",
+            "exists": false,
+            "kind": "missing",
+            "fields": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "composition-fields-remain-inert-source-fields",
+      "input": {
+        "layer": {
+          "fields": {
+            "primChildren": {"type": "token[]", "value": ["Model"]}
+          },
+          "specs": {
+            "/": {
+              "kind": "layer",
+              "fields": {
+                "primChildren": {"type": "token[]", "value": ["Model"]}
+              }
+            },
+            "/Model": {
+              "kind": "prim",
+              "fields": {
+                "specifier": {"type": "specifier", "value": "def"},
+                "references": {
+                  "type": "listop<Reference>",
+                  "value": {
+                    "explicit": [
+                      {
+                        "asset": "./model.usda",
+                        "path": "/Asset",
+                        "offset": 0.0,
+                        "scale": 1.0
+                      }
+                    ],
+                    "prepend": [],
+                    "append": [],
+                    "delete": []
+                  }
+                },
+                "primChildren": {"type": "token[]", "value": []},
+                "propertyChildren": {"type": "token[]", "value": []},
+                "variantSetChildren": {"type": "token[]", "value": []}
+              }
+            }
+          }
+        },
+        "ops": [
+          {"op": "prim_input", "path": "/Model"}
+        ]
+      },
+      "expected": {
+        "ok": true,
+        "diagnostics": [],
+        "results": [
+          {
+            "op": "prim_input",
+            "ok": true,
+            "path": "/Model",
+            "exists": true,
+            "kind": "prim",
+            "fields": {
+              "specifier": {"type": "specifier", "value": "def"},
+              "references": {
+                "type": "listop<Reference>",
+                "value": {
+                  "explicit": [
+                    {
+                      "asset": "./model.usda",
+                      "path": "/Asset",
+                      "offset": 0.0,
+                      "scale": 1.0
+                    }
+                  ],
+                  "prepend": [],
+                  "append": [],
+                  "delete": []
+                }
+              },
+              "primChildren": {"type": "token[]", "value": []},
+              "propertyChildren": {"type": "token[]", "value": []},
+              "variantSetChildren": {"type": "token[]", "value": []}
+            },
+            "childNames": [],
+            "propertyNames": []
+          }
+        ]
+      }
+    }
+  ]
+}

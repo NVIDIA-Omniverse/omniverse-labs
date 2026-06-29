@@ -1,0 +1,33 @@
+#usda 1.0
+(
+    defaultPrim = "teapot"
+    metersPerUnit = 0.01
+    upAxis = "Y"
+    subLayers = [
+        @./teapot.usdc@
+    ]
+)
+
+def DomeLight "CompareDome"
+{
+    color3f inputs:color = (0.78, 0.82, 0.9)
+    float inputs:intensity = 450
+}
+
+def SphereLight "CompareKey"
+{
+    color3f inputs:color = (1, 0.95, 0.86)
+    float inputs:intensity = 6000
+    float inputs:radius = 26.5612466
+    double3 xformOp:translate = (41.9611565, 75.0572588, 31.8734945)
+    uniform token[] xformOpOrder = ["xformOp:translate"]
+}
+
+def SphereLight "CompareFill"
+{
+    color3f inputs:color = (0.68, 0.76, 1)
+    float inputs:intensity = 1200
+    float inputs:radius = 47.8102439
+    double3 xformOp:translate = (-45.6909574, 27.2470149, -37.1857467)
+    uniform token[] xformOpOrder = ["xformOp:translate"]
+}

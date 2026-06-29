@@ -1,0 +1,4 @@
+interface:
+  display_name: "Agentic Codebase Cartography"
+  short_description: "Map codebases before refactors"
+  default_prompt: "Map this codebase's modules, boundaries, APIs, ownership, overlap, and refactor risks before proposing changes."

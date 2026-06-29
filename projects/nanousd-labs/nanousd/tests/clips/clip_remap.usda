@@ -1,0 +1,9 @@
+#usda 1.0
+# Clip layer authored under /GeoClip — paired with a stage that uses
+# primPath="/GeoClip" to test the §12.3.4.5 stage-prim → clip-prim
+# path remap.
+
+def Scope "GeoClip"
+{
+    float radius = 99.0
+}

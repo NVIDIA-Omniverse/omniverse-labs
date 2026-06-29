@@ -1,0 +1,72 @@
+{
+  "suite": "usd-token-handle-performance",
+  "contract": "contracts/performance/token.performance.json",
+  "measurement_model": {
+    "id": "in_process_token_handle_ops",
+    "description": "Adapters pre-create token handles, then time equality, hashing, and assignment loops in-process. Adapter process startup, token construction, and JSON parsing are excluded from per-operation timings."
+  },
+  "targets": [
+    {
+      "id": "equal_short_tokens",
+      "op": "equal",
+      "token_length": 8,
+      "iterations": 1000000,
+      "max_ns_per_op": 750.0
+    },
+    {
+      "id": "equal_long_tokens",
+      "op": "equal",
+      "token_length": 4096,
+      "iterations": 1000000,
+      "max_ns_per_op": 750.0
+    },
+    {
+      "id": "hash_short_token",
+      "op": "hash",
+      "token_length": 8,
+      "iterations": 1000000,
+      "max_ns_per_op": 750.0
+    },
+    {
+      "id": "hash_long_token",
+      "op": "hash",
+      "token_length": 4096,
+      "iterations": 1000000,
+      "max_ns_per_op": 750.0
+    },
+    {
+      "id": "assign_short_token",
+      "op": "assign",
+      "token_length": 8,
+      "iterations": 1000000,
+      "max_ns_per_op": 750.0
+    },
+    {
+      "id": "assign_long_token",
+      "op": "assign",
+      "token_length": 4096,
+      "iterations": 1000000,
+      "max_ns_per_op": 750.0
+    }
+  ],
+  "ratios": [
+    {
+      "id": "equal_length_flatness",
+      "numerator": "equal_long_tokens",
+      "denominator": "equal_short_tokens",
+      "max_ratio": 1.5
+    },
+    {
+      "id": "hash_length_flatness",
+      "numerator": "hash_long_token",
+      "denominator": "hash_short_token",
+      "max_ratio": 1.5
+    },
+    {
+      "id": "assign_length_flatness",
+      "numerator": "assign_long_token",
+      "denominator": "assign_short_token",
+      "max_ratio": 1.5
+    }
+  ]
+}

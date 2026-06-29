@@ -1,0 +1,18 @@
+#usda 1.0
+
+over "class_Asset"
+{
+    int rootClassVal = 10
+    int conflictVal = 10
+
+    def "SharedChild"
+    {
+        int rootChildVal = 11
+    }
+}
+
+def "LeftGroup" (
+    references = @./implied_inherits_group.usda@
+)
+{
+}

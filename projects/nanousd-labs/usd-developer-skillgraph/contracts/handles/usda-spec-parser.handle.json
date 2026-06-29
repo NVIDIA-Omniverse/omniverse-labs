@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/usd-skillgraph/usda-spec-parser.handle.json",
+  "title": "USDA Spec Parser Contract",
+  "version": "0.1",
+  "spec_commit": "v1.0.1",
+  "dependency_contracts": [
+    "contracts/capabilities/usda-lexical-format.json",
+    "contracts/handles/usda-value-parser.handle.json",
+    "contracts/handles/document-model.handle.json",
+    "contracts/handles/path.handle.json",
+    "contracts/capabilities/semantic-runtime-types.json"
+  ],
+  "production_contracts": [
+    "contracts/usda-productions/common-metadata.contract.json",
+    "contracts/usda-productions/layer-structure.contract.json",
+    "contracts/usda-productions/layer-metadata.contract.json",
+    "contracts/usda-productions/prim-specs.contract.json",
+    "contracts/usda-productions/attribute-specs.contract.json",
+    "contracts/usda-productions/relationship-specs.contract.json",
+    "contracts/usda-productions/variant-specs.contract.json",
+    "contracts/usda-productions/parser-diagnostics.contract.json"
+  ],
+  "coverage_contracts": [
+    "contracts/spec-coverage/usda-single-layer.coverage.json"
+  ],
+  "adapter_contracts": [
+    "contracts/layer-dump.schema.json"
+  ],
+  "scope": {
+    "included": [
+      "parse one USDA text layer after resource opening",
+      "layer metadata block mapping to the layer spec",
+      "standalone layer documentation strings mapped to the layer documentation field",
+      "prim specs with def, over, and class specifiers",
+      "authored prim metadata fields, including composition arc fields as inert stored data",
+      "apiSchemas prim metadata as inert authored listOp<token> schema data",
+      "nested prim hierarchy",
+      "variant set and variant specs as stored layer specs",
+      "attribute specs with defaults, time samples, connections, and splines as stored fields",
+      "relationship specs with authored target listOps",
+      "root prim and property ordering fields",
+      "sublayer and relocate metadata as stored layer fields",
+      "relocate metadata entries with None targets for deleted source subtrees",
+      "duplicate spec path diagnostics",
+      "target-native document-model Layer result",
+      "canonical layer dump adapter from document-model storage"
+    ],
+    "deferred": [
+      "sublayer, reference, payload, inherits, specializes, and variant composition semantics",
+      "asset resolution and dependent layer loading",
+      "value resolution",
+      "stage population",
+      "schema fallback evaluation",
+      "USDC and USDZ parsing"
+    ]
+  },
+  "model": {
+    "ParserInput": "A UTF-8 USDA source text buffer handed off by a layer-format opener.",
+    "LayerMutation": "All created specs and fields are stored through usd-document-model APIs.",
+    "ParserOutput": "A target-native parse result containing either a document-model Layer or diagnostics. It is not a JSON object.",
+    "MetadataAssignments": "Metadata parsing produces target-native field assignments keyed by document-model field tokens, or directly mutates the document-model Layer. It is not a map from strings to Json.",
+    "SourceOfTruth": "The pinned USD specification is normative. This contract decomposes that specification and adds library quality/performance constraints; it must not relax grammar, context, or behavior from the spec.",
+    "GrammarFirstParsing": "The parser must match a valid USDA production in the current context before selecting document-model storage. Storage field names and known core-field tokens do not make an otherwise invalid token stream legal.",
+    "MetadataKeyClassification": "USDA metadata spellings are classified once at the parser boundary with the current metadata production context before selecting field storage or value typing. Known metadata must not be routed through extension-field lookup, and reserved USDA keywords must not be accepted as generic metadata identifiers.",
+    "PropertyProductionDispatch": "Property parsing must treat an optional leading ListOp token as shared syntax. After greedily consuming ListOp and optional custom, the parser must dispatch between ListOpRelationship and ListOpConnect by inspecting the following property declaration tokens; a ListOp prefix does not imply a relationship.",
+    "CanonicalDump": "The layer-dump JSON shape used only by adapters and integration goldens."
+  },
+  "operations": {
+    "parse_text_layer": {
+      "input": {
+        "text": "complete USDA source text"
+      },
+      "output": {
+        "result": "target-native parse result containing a document-model Layer or diagnostics"
+      }
+    }
+  },
+  "laws": [
+    "all specs and fields must be stored through usd-document-model before returning a successful parse result",
+    "spec path construction and parent/name construction must consume usd-paths",
+    "field keys, child/property names, type names, variant set names, and selected variant names that enter document-model or composition-facing storage must be converted to semantic runtime types",
+    "right-hand-side values must consume usda-value-parser",
+    "lexical recognition must consume usda-lexical-format",
+    "included production details are governed by the contracts/usda-productions/*.contract.json files referenced by this contract",
+    "spec coverage status and test obligations are governed by contracts/spec-coverage/usda-single-layer.coverage.json",
+    "grammar recognition must precede document-model mapping; generated code must not parse metadata by looking up a field name and then deciding whether the production is legal",
+    "authored composition arc fields must be parsed and stored even though their composition semantics are deferred",
+    "apiSchemas metadata must be parsed and stored as listOp<token> on prim specs without evaluating applied-schema semantics",
+    "layer relocates metadata must accept both path-to-path entries and path-to-None entries; None stores the deleted-relocate sentinel used by composition providers rather than causing a parse error",
+    "parse_text_layer must not return Json, dict, tagged JSON, or canonical dump trees as its domain result",
+    "internal metadata parsing helpers must not return map<string, Json>, Python dicts, tagged JSON, or any equivalent serialized object tree",
+    "parsed metadata, attribute, and relationship fields must be represented as document-model FieldValue-style typed values keyed by field tokens, or be applied directly through document-model field APIs",
+    "metadata key dispatch must use a centralized authored-spelling classifier with context before field storage; scattered hardcoded known-name comparisons inside value typing or storage logic are non-conformant",
+    "metadata parser context must distinguish at least layer, prim, attribute, and relationship metadata; a binary layer/non-layer distinction is non-conformant because prim-only keyword productions must not be accepted on attributes or relationships",
+    "variant statement metadata uses the prim metadata production family for grammar dispatch while storing the result on the variant spec",
+    "known document-model metadata spellings must resolve to usd-document-model core field tokens; authored aliases such as doc must resolve to their canonical core field token before storage",
+    "standalone layer documentation strings must be recognized before identifier-based metadata parsing and stored as the document-model documentation field",
+    "property dispatch after an optional ListOp/custom prefix must accept both relationship target listOps and attribute connect listOps without requiring parser backtracking",
+    "a ListOp token before a property declaration must not be treated as proof that the property is a relationship",
+    "JSON materialization is allowed only in explicit adapters, diagnostics serialization, and dump commands",
+    "the parser must not open resources or dispatch formats",
+    "the parser must not implement composition, value resolution, schemas, or stage population",
+    "inactive prims remain present in the layer data model"
+  ],
+  "adapter_protocol": {
+    "input": "Future unit adapters may accept a JSON case with complete USDA source text.",
+    "output": "Adapters convert parse results to the ok, diagnostics, and layer JSON shape in contracts/layer-dump.schema.json."
+  }
+}

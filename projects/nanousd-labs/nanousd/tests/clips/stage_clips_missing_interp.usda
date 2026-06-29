@@ -1,0 +1,28 @@
+#usda 1.0
+(
+    defaultPrim = "Geo"
+)
+
+# Missing-value linear interpolation (§12.3.4.7,
+# interpolateMissingClipValues=true). Same 3-clip sequence as
+# stage_clips_missing_hold.usda, but the clip set opts into
+# interpolation across clips — queries in the gap clip's active
+# range produce linearly-interpolated radius values.
+
+def Scope "Geo" (
+    clips = {
+        dictionary default = {
+            string primPath = "/Geo"
+            bool interpolateMissingClipValues = true
+            asset[] assetPaths = [
+                @./clip_has_radius.usda@,
+                @./clip_no_radius.usda@,
+                @./clip_has_radius_late.usda@,
+            ]
+            double2[] active = [(0, 0), (10, 1), (20, 2)]
+        }
+    }
+)
+{
+    float radius
+}

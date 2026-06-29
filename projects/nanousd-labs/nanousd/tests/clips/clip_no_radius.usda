@@ -1,0 +1,11 @@
+#usda 1.0
+# Deliberately empty of `radius` — paired with clip_has_radius.usda
+# and clip_has_radius_late.usda to exercise the §12.3.4.6 /
+# §12.3.4.7 missing-value recovery path: when the active clip at a
+# given stageTime doesn't author the attribute, the stage must fall
+# back to hold / interpolate from neighbouring clips that do.
+
+def Scope "Geo"
+{
+    int unrelated = 99
+}
