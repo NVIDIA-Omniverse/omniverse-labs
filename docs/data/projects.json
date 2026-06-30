@@ -3,7 +3,7 @@
     "title": "Omniverse Labs",
     "tagline": "Early Omniverse experiments you can run, fork, and learn from.",
     "description": "A Sketchpad built by NVIDIA Omniverse Teams \u2014 early samples, prototypes, and write-ups for developers exploring Omniverse.",
-    "dataVersion": "20260529a"
+    "dataVersion": "20260629"
   },
   "projects": [
     {
@@ -59,6 +59,25 @@
       "links": {
         "page": "projects/ovrtx-ovphysx-livestream/",
         "repo": "https://github.com/nvidia-omniverse/omniverse-labs/tree/main/samples/ovrtx_ovphysx_livestream"
+      }
+    },
+    {
+      "slug": "nanousd-labs",
+      "title": "nanousd-labs",
+      "subtitle": "An experimental fleet exploring agent-driven USD implementations from the Core Specification.",
+      "type": "project",
+      "status": "partial",
+      "date": "2026-06-29",
+      "image": "assets/images/card-nanousd-labs.png",
+      "accent": [
+        "#0a0c10",
+        "#5ce1e6"
+      ],
+      "featured": false,
+      "source": "projects/nanousd-labs",
+      "links": {
+        "page": "projects/nanousd-labs/",
+        "repo": "https://github.com/nvidia-omniverse/omniverse-labs/tree/main/projects/nanousd-labs"
       }
     },
     {

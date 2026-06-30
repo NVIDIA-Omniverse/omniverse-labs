@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="An experimental fleet exploring agent-driven USD implementations and renderer stacks from the USD Core Specification."
+    />
+    <title>nanousd-labs — Omniverse Labs</title>
+    <link rel="stylesheet" href="../../assets/css/main.css" />
+    <script src="https://assets.adobedtm.com/5d4962a43b79/814eb6e9b4e1/launch-4bc07f1e0b0b.min.js"></script>
+  </head>
+  <body data-base="../../">
+    <header class="site-header site-header--compact">
+      <div class="brand-row">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">OL</div>
+          <p class="brand-title"><a href="../../">Omniverse Labs</a></p>
+        </div>
+        <nav class="header-links" aria-label="Site">
+          <a
+            href="https://github.com/nvidia-omniverse/omniverse-labs/tree/main/projects/nanousd-labs"
+            target="_blank"
+            rel="noopener noreferrer"
+          >Fleet on GitHub</a>
+          <a href="../sample-catalog/">Samples</a>
+        </nav>
+      </div>
+    </header>
+
+    <article class="article-wrap">
+      <header class="article-hero">
+        <p class="article-kicker">Project</p>
+        <h1 class="article-title">nanousd-labs</h1>
+        <p class="article-deck">
+          Specs are durable. Agents are elastic — an experimental fleet for generating USD implementations and renderer stacks from the USD Core Specification.
+        </p>
+        <div class="article-meta">
+          <span>Status: Partial</span>
+          <span>June 2026</span>
+        </div>
+        <img
+          src="../../assets/images/card-nanousd-labs.png"
+          alt="Side-by-side renderer comparison of an Isaac Sim warehouse scene across OVRTX, Vulkan, OpenGL, and Metal backends"
+          width="720"
+          height="308"
+        />
+      </header>
+
+      <div class="prose">
+        <p>
+          <strong>nanousd-labs</strong> is an experimental fleet published under Omniverse Labs.
+          It explores how far agents can take generating spec-faithful USD implementations and stacks from the
+          <a href="https://github.com/aousd/specifications-public/tree/main/core" target="_blank" rel="noopener noreferrer">USD Core Specification</a>.
+          The spec is the durable reference; implementations are elastic outputs you can regenerate against your own constraints.
+          Your existing OpenUSD stack keeps working untouched — use what fits, file what doesn't.
+        </p>
+
+        <p>
+          <strong>Experimental.</strong> Pre-1.0, no stability or support guarantees. Each component's README carries its current status and gaps.
+        </p>
+
+        <h2>The fleet stack</h2>
+        <p>Each component is its own repo directory. The fleet is a stack — take as little or as much height as you need:</p>
+
+        <pre><code>          nanousdview          ·  interactive viewer
+    vulkan / opengl / metal    ·  renderer backends (headless)
+        nanousd-python         ·  Python bindings
+           nanousd             ·  core C ABI — the foundation
+  ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄   not wired yet
+  usd-developer-skillgraph     ·  the generator</code></pre>
+
+        <h2>What's included</h2>
+        <ul>
+          <li>
+            <strong><code>usd-developer-skillgraph</code></strong> — skills, prompts, contracts, and goldens pinned to the USD Core Spec; the method that drives generation
+          </li>
+          <li>
+            <strong><code>nanousd</code></strong> — flagship portable C-ABI implementation of the Core Spec (layering, composition, read/write)
+          </li>
+          <li>
+            <strong><code>nanousd-python</code></strong> — Python bindings and a <code>pxr_compat</code> shim over the C ABI
+          </li>
+          <li>
+            <strong>Renderer backends</strong> — headless Vulkan, OpenGL, and Metal renderers that load USD through <code>nanousd</code>
+          </li>
+          <li>
+            <strong><code>nanousdview</code></strong> — backend-agnostic interactive viewer and stage inspection over the C ABI
+          </li>
+        </ul>
+
+        <h2>Where we are</h2>
+        <p>
+          The flagship <code>nanousd</code> library and the renderer stack were built directly with agents and are the most complete part of the fleet today.
+          Driving those implementations <em>from</em> the skill graph — regenerating them from the spec — is the experiment, and it's earlier along.
+          Single-layer USDA/USDC read is generated and working; broader composition, variants, and full-library regeneration from skills are still in progress.
+          See
+          <a
+            href="https://github.com/nvidia-omniverse/omniverse-labs/blob/main/projects/nanousd-labs/STATE-OF-THE-FLEET.md"
+            target="_blank"
+            rel="noopener noreferrer"
+          ><code>STATE-OF-THE-FLEET.md</code></a>
+          for the honest current-state picture.
+        </p>
+
+        <h2>Renderer comparisons</h2>
+        <p>
+          The fleet ships visual and performance comparisons across OVRTX reference output and the nanousd renderer backends
+          (Vulkan RT/raster, OpenGL GLES, Metal RT/raster) on chess, Apple asset, and Isaac Sim warehouse scenes.
+          Gallery images and metrics live under
+          <code>projects/nanousd-labs/comparisons/</code>.
+        </p>
+
+        <h2>Prerequisites</h2>
+        <ul>
+          <li>Linux or macOS (Metal backend is Apple-only; Vulkan and OpenGL vary by platform)</li>
+          <li>C/C++ toolchain, CMake, and Python 3.10+</li>
+          <li>GPU suitable for the renderer backend you want to build</li>
+          <li>Vulkan SDK (Vulkan backend) or Xcode (Metal backend) as documented per component</li>
+        </ul>
+
+        <h2>How to explore</h2>
+        <p>Start from the fleet README, then follow each component's own build instructions:</p>
+
+        <pre><code>cd projects/nanousd-labs
+# Read README.md and STATE-OF-THE-FLEET.md
+# Build nanousd first, then bindings/renderers as needed</code></pre>
+
+        <p>
+          For the skill graph and generation workflow, start at
+          <code>usd-developer-skillgraph/</code> and its tutorial under
+          <code>usd-developer-skillgraph/docs/tutorial/</code>.
+        </p>
+
+        <h2>Repository path</h2>
+        <div class="callout">
+          <p>
+            <strong>Clone and explore:</strong>
+            <a
+              href="https://github.com/nvidia-omniverse/omniverse-labs/tree/main/projects/nanousd-labs"
+              target="_blank"
+              rel="noopener noreferrer"
+            ><code>projects/nanousd-labs/</code></a>
+          </p>
+          <p>
+            Fleet README:
+            <a
+              href="https://github.com/nvidia-omniverse/omniverse-labs/blob/main/projects/nanousd-labs/README.md"
+              target="_blank"
+              rel="noopener noreferrer"
+            ><code>projects/nanousd-labs/README.md</code></a>
+          </p>
+        </div>
+
+        <p>
+          These components are published as one experiment and are not set up to take inbound pull requests against these directories.
+          Feedback on the way of working — skills, contracts, spec-ambiguity reports — is welcome via
+          <a href="https://github.com/nvidia-omniverse/omniverse-labs/issues" target="_blank" rel="noopener noreferrer">GitHub issues</a>.
+        </p>
+      </div>
+    </article>
+
+    <footer class="site-footer">
+      <div class="site-footer__site">
+        <p class="site-footer__meta">
+          <a href="../../">← All projects</a>
+          <span class="site-footer__sep" aria-hidden="true">·</span>
+          <span>Apache 2.0</span>
+          <span class="site-footer__sep" aria-hidden="true">·</span>
+          <a href="https://github.com/nvidia-omniverse/omniverse-labs/issues">Site feedback</a>
+        </p>
+      </div>
+      <nav class="site-footer__policies" aria-label="NVIDIA legal and policies">
+        <ul>
+          <li>
+            <a href="https://www.nvidia.com/en-us/about-nvidia/privacy-policy/">Privacy Policy</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/about-nvidia/privacy-center/">Your Privacy Choices</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/about-nvidia/terms-of-service/">Terms of Service</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/about-nvidia/accessibility/">Accessibility</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/about-nvidia/company-policies/">Corporate Policies</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/about-nvidia/product-security/">Product Security</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/contact/">Contact</a>
+          </li>
+        </ul>
+      </nav>
+    </footer>
+    <script type="text/javascript">_satellite.pageBottom();</script>
+  </body>
+</html>
