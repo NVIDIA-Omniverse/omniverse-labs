@@ -91,6 +91,14 @@ root override.
      mesh/UV request, then import a UV-aligned bundle with
      `--material-provider external-pbr-atlas-v1 --material-bundle PATH`.
      Do not load DRAWER's CUDA/PyTorch3D stack into the M5 authoring process.
+   - For the released models, use the isolated Python 3.12 worker and the pinned
+     `generate-materials` action. `--backend matfuse` runs the official paper
+     weights with text plus the measured-front palette; `--backend
+     stablematerials --stable-variant lcm` runs the official four-step model with
+     tileability on MPS. Run `compare-materials` before importing either bundle.
+   - Preserve MatFuse's native `specular.png`; never relabel it as metallic.
+     StableMaterials' `height.png` is also retained even though the current
+     five-map renderer contract does not consume displacement yet.
    - Require `completions` and `verify` to hash-check every mesh, map, request,
      and binding sidecar. Keep each generated mesh asset below 4,096 Gaussians
      until the Metal large-scene sigma clamp is redesigned; split semantic roles
@@ -132,6 +140,23 @@ kitchen set before handoff:
 "$PYTHON" -m nanousd_rts experience-preview /tmp/nanousd-home-scan-rts --budget 16
 "$PYTHON" -m nanousd_rts serve-preview /tmp/nanousd-home-scan-rts \
   --host 127.0.0.1 --port 8765
+```
+
+Run official learned-material comparison in its isolated environment:
+
+```bash
+UV_PROJECT_ENVIRONMENT="$RENDERER/experiments/agentic_real_to_sim/.venv-materials" \
+  uv sync --project "$RENDERER/experiments/agentic_real_to_sim" \
+  --python 3.12 --extra learned-materials
+MATERIAL_PYTHON="$RENDERER/experiments/agentic_real_to_sim/.venv-materials/bin/python"
+REQUESTS=/tmp/nanousd-home-scan-rts/generated/mesh-pbr-completions/oven_door
+DEMO=/tmp/nanousd-home-scan-rts/learned-material-demos
+"$MATERIAL_PYTHON" -m nanousd_rts generate-materials "$REQUESTS" "$DEMO/matfuse" \
+  --backend matfuse --device mps --seed 42
+"$MATERIAL_PYTHON" -m nanousd_rts generate-materials "$REQUESTS" "$DEMO/stablematerials" \
+  --backend stablematerials --stable-variant lcm --device mps --seed 42
+"$MATERIAL_PYTHON" -m nanousd_rts compare-materials \
+  "$DEMO/matfuse" "$DEMO/stablematerials" "$DEMO/index.html"
 ```
 
 This deterministic profile contains both refrigerator doors, the oven door, upper

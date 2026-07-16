@@ -154,8 +154,59 @@ $PYTHON -m nanousd_rts fit-mesh-pbr /tmp/nanousd-home-scan-rts \
 The external bundle may contain maps at its root or in `static-cavity/` and
 `moving-interior/` subdirectories. `baseColor.png`, `roughness.png`, and
 `normal.png` are required; missing metallic and AO maps receive explicit neutral
-defaults. This keeps CUDA-only MatFuse inference out of the M5 process while
-preserving one deterministic artifact and provenance contract.
+defaults. This keeps DRAWER's legacy CUDA/PyTorch3D MatFuse stack out of the M5
+authoring process while preserving one deterministic artifact and provenance
+contract for the isolated MPS worker.
+
+### Official MatFuse and StableMaterials on Apple Metal
+
+The learned-material worker uses the authors' official Hugging Face weights,
+pinned by commit, through an isolated Python 3.12 environment. It does not use
+DRAWER's legacy CUDA/PyTorch3D environment and it never commits checkpoints to
+the repository:
+
+```bash
+UV_PROJECT_ENVIRONMENT=.venv-materials \
+  uv sync --project experiments/agentic_real_to_sim \
+  --python 3.12 --extra learned-materials
+
+MATERIAL_PYTHON=experiments/agentic_real_to_sim/.venv-materials/bin/python
+export PYTHONPATH="$PWD/experiments/agentic_real_to_sim/src"
+
+$MATERIAL_PYTHON -m nanousd_rts material-models
+```
+
+First run the deterministic provider once to preserve the fitted mesh, UV atlas,
+and `material-request.json` files. Then generate one bundle with each model:
+
+```bash
+REQUESTS=/tmp/nanousd-home-scan-rts/generated/mesh-pbr-completions/oven_door
+DEMO=/tmp/nanousd-home-scan-rts/learned-material-demos
+
+$MATERIAL_PYTHON -m nanousd_rts generate-materials \
+  "$REQUESTS" "$DEMO/matfuse" \
+  --backend matfuse --device mps --seed 42
+
+$MATERIAL_PYTHON -m nanousd_rts generate-materials \
+  "$REQUESTS" "$DEMO/stablematerials" \
+  --backend stablematerials --stable-variant lcm --device mps --seed 42
+
+$MATERIAL_PYTHON -m nanousd_rts compare-materials \
+  "$DEMO/matfuse" "$DEMO/stablematerials" "$DEMO/index.html"
+```
+
+MatFuse runs its native 256-pixel, 50-step paper pipeline and combines text with
+the measured front palette. StableMaterials defaults to the official 512-pixel,
+four-step LCM and enables its feature-rolling tileability path. The generated
+manifest records the exact model revision, device, dtype, prompt, seed, sampling
+settings, map hashes, and measured-to-generated boundary.
+
+The map adapter is intentionally explicit. MatFuse predicts diffuse, normal,
+roughness, and specular; `specular.png` is preserved, while metallic and AO get
+neutral values because specular is not the same quantity as metalness.
+StableMaterials predicts base color, normal, height, roughness, and metallic;
+`height.png` is preserved and only AO is neutral. Both outputs can then be
+imported through the existing `external-pbr-atlas-v1` provider.
 
 Verification hashes every mesh, binding sidecar, material request, and PBR map.
 USDA compilation carries portable references and checksums for the full bundle.

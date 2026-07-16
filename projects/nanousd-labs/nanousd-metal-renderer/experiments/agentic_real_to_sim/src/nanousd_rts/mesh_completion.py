@@ -25,6 +25,25 @@ EXTERNAL_MATERIAL_PROVIDER = "external-pbr-atlas-v1"
 PBR_MAPS = ("baseColor.png", "roughness.png", "metallic.png", "normal.png", "ao.png")
 MESH_GAUSSIAN_RENDER_SAFE_LIMIT = 4095
 
+LEARNED_MATERIAL_PROMPTS = {
+    "oven-door": (
+        "charcoal gray heat-resistant porcelain enamel for an oven interior, "
+        "fine orange-peel texture, subtle baked-on wear, seamless photorealistic PBR material"
+    ),
+    "refrigerator-door": (
+        "clean warm-white molded refrigerator interior plastic, very fine satin texture, "
+        "subtle manufacturing variation, seamless photorealistic PBR material"
+    ),
+    "cabinet-door": (
+        "warm off-white painted maple cabinet interior, fine wood grain beneath satin paint, "
+        "subtle realistic wear, seamless photorealistic PBR material"
+    ),
+    "drawer": (
+        "light maple wood drawer interior, fine straight grain, matte clear finish, "
+        "subtle realistic variation, seamless photorealistic PBR material"
+    ),
+}
+
 
 @dataclass(slots=True)
 class MeshSurface:
@@ -361,6 +380,40 @@ def _external_material_maps(
             Image.new("L", (width, height), color=value).save(destination / name)
     with Image.open(destination / "baseColor.png") as image:
         base_color = np.asarray(image.convert("RGB")).copy()
+    learned_provenance: dict[str, Any] | None = None
+    learned_manifest_path = root / "manifest.json"
+    if learned_manifest_path.is_file():
+        try:
+            learned_manifest = json.loads(learned_manifest_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            raise RealToSimError("external learned-material manifest is invalid JSON") from exc
+        if learned_manifest.get("contract") == "nanousd-rts-learned-pbr-bundle-v1":
+            role_manifest = next(
+                (
+                    item
+                    for item in learned_manifest.get("roles", [])
+                    if item.get("role", "").replace("_", "-") == role_slug
+                ),
+                None,
+            )
+            if role_manifest is None:
+                raise RealToSimError(
+                    f"learned-material manifest has no role matching {role_slug}"
+                )
+            for name in PBR_MAPS:
+                expected = role_manifest.get("maps", {}).get(name, {}).get("sha256")
+                if not expected or sha256_file(source / name) != expected:
+                    raise RealToSimError(
+                        f"learned-material map is missing or changed: {role_slug}/{name}"
+                    )
+            learned_provenance = {
+                "backend": learned_manifest.get("backend"),
+                "model": learned_manifest.get("model"),
+                "generation": learned_manifest.get("generation"),
+                "runtime": learned_manifest.get("runtime"),
+                "role": role_slug,
+                "manifest_sha256": sha256_file(learned_manifest_path),
+            }
     return {
         "provider": EXTERNAL_MATERIAL_PROVIDER,
         "texture_size": width,
@@ -368,9 +421,10 @@ def _external_material_maps(
         "provenance": {
             "measured_input": "provider-defined",
             "generated_output": "externally supplied UV-aligned PBR atlas",
-            "learned": None,
-            "provider_claim_unverified": True,
-            "source_bundle": str(source),
+            "learned": True if learned_provenance else None,
+            "provider_claim_unverified": learned_provenance is None,
+            "bundle_label": root.name,
+            "learned_bundle": learned_provenance,
         },
     }
 
@@ -651,6 +705,7 @@ def fit_mesh_pbr_completion(
                 "measured_palette": measured_palette,
                 "conditioning": material_conditioning,
                 "fit": fit_diagnostics,
+                "model_prompt": LEARNED_MATERIAL_PROMPTS[kind],
                 "prompt": (
                     f"Reconstruct a coherent high-quality {kind} hidden {role} material. "
                     "Match the observed front palette, preserve UV layout exactly, and "

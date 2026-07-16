@@ -13,6 +13,20 @@ dependencies = [
   "pillow>=11,<13",
 ]
 
+[project.optional-dependencies]
+learned-materials = [
+  "accelerate>=1,<2",
+  "diffusers==0.36.0",
+  "huggingface-hub>=0.34,<2",
+  "openai-clip>=1.0.1",
+  "safetensors>=0.5",
+  "sentence-transformers>=3,<6",
+  "setuptools<81",
+  "torch>=2.6",
+  "torchvision>=0.21",
+  "transformers>=4.46,<6",
+]
+
 [project.scripts]
 nanousd-rts = "nanousd_rts.cli:main"
 

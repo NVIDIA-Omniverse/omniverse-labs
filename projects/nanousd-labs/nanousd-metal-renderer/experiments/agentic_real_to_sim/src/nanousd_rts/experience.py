@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import html
 import json
+import os
 import shutil
 import subprocess
 import tarfile
@@ -523,7 +524,8 @@ def write_experience(
     if not budget > 0:
         raise RealToSimError("viewer budget must be positive")
     source, content_name, visual = _visual_source(workspace)
-    preview_root = workspace.root / "preview"
+    output = Path(output).resolve() if output else None
+    preview_root = output.parent if output else workspace.root / "preview"
     visual_root = preview_root / "visual"
     viewer_package = _materialize_supersplat_viewer(visual_root)
     if source.is_dir():
@@ -574,7 +576,7 @@ def write_experience(
     }
     voxel = workspace.root / "exports" / "voxel" / "scene" / "scene.voxel.json"
     if voxel.is_file():
-        query["collision"] = "../../exports/voxel/scene/scene.voxel.json"
+        query["collision"] = Path(os.path.relpath(voxel, visual_root)).as_posix()
     viewer_url = f"./visual/index.html?{urlencode(query)}"
     visual.update(
         {
@@ -590,7 +592,7 @@ def write_experience(
         sort_keys=True,
         separators=(",", ":"),
     ).replace("</", "<\\/")
-    output = Path(output).resolve() if output else preview_root / "index.html"
+    output = output or preview_root / "index.html"
     output.parent.mkdir(parents=True, exist_ok=True)
     document = (
         EXPERIENCE_HTML.replace("__VIEWER_URL__", html.escape(viewer_url, quote=True))

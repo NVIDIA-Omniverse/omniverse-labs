@@ -17,6 +17,8 @@ from .core import Bounds, RealToSimError, Workspace
 from .experience import serve_preview, write_experience
 from .gaussian import Camera, _renderer_root, ingest, load_gaussians, render, select_render_mask
 from .home_kitchen import author_home_scan_kitchen
+from .learned_materials import generate_material_bundle, learned_material_status
+from .material_preview import write_material_comparison
 from .mesh_completion import (
     EXTERNAL_MATERIAL_PROVIDER,
     LOCAL_MATERIAL_PROVIDER,
@@ -227,6 +229,56 @@ def build_parser() -> argparse.ArgumentParser:
     serve_parser.add_argument("--budget", type=float, default=16.0)
     serve_parser.add_argument("--open", action="store_true", dest="open_preview")
 
+    sub.add_parser(
+        "material-models",
+        help="Report pinned learned-material models, runtime dependencies, and MPS availability.",
+    )
+
+    generate_material_parser = sub.add_parser(
+        "generate-materials",
+        help="Run official MatFuse or StableMaterials weights into an external PBR bundle.",
+    )
+    generate_material_parser.add_argument("request_bundle", type=Path)
+    generate_material_parser.add_argument("output_bundle", type=Path)
+    generate_material_parser.add_argument(
+        "--backend",
+        choices=("matfuse", "stablematerials"),
+        required=True,
+    )
+    generate_material_parser.add_argument(
+        "--device", choices=("auto", "mps", "cuda", "cpu"), default="auto"
+    )
+    generate_material_parser.add_argument(
+        "--dtype", choices=("auto", "float32", "float16"), default="auto"
+    )
+    generate_material_parser.add_argument("--seed", type=int, default=42)
+    generate_material_parser.add_argument("--steps", type=int)
+    generate_material_parser.add_argument("--guidance-scale", type=float)
+    generate_material_parser.add_argument(
+        "--stable-variant", choices=("base", "lcm"), default="lcm"
+    )
+    generate_material_parser.add_argument("--prompt")
+    generate_material_parser.add_argument(
+        "--no-matfuse-palette",
+        action="store_true",
+        help="Use text-only MatFuse generation instead of the measured-front palette.",
+    )
+    generate_material_parser.add_argument(
+        "--local-files-only",
+        action="store_true",
+        help="Fail instead of downloading a missing pinned model snapshot.",
+    )
+
+    compare_material_parser = sub.add_parser(
+        "compare-materials",
+        help="Write a side-by-side PBR inspector for MatFuse and StableMaterials bundles.",
+    )
+    compare_material_parser.add_argument("matfuse_bundle", type=Path)
+    compare_material_parser.add_argument("stablematerials_bundle", type=Path)
+    compare_material_parser.add_argument("output", type=Path)
+    compare_material_parser.add_argument("--matfuse-scene")
+    compare_material_parser.add_argument("--stablematerials-scene")
+
     plan_parser = sub.add_parser("run-plan", help="Execute a bounded JSON agent action plan.")
     _add_common_workspace(plan_parser)
     plan_parser.add_argument("plan", type=Path)
@@ -284,6 +336,33 @@ def dispatch(args: argparse.Namespace) -> tuple[Any, int]:
     if args.command == "doctor":
         report = doctor()
         return report, 0 if report["passed"] else 1
+    if args.command == "material-models":
+        report = learned_material_status()
+        return report, 0 if report["runtime"]["dependencies"] else 1
+    if args.command == "generate-materials":
+        return generate_material_bundle(
+            args.request_bundle,
+            args.output_bundle,
+            backend=args.backend,
+            device=args.device,
+            dtype=args.dtype,
+            seed=args.seed,
+            steps=args.steps,
+            guidance_scale=args.guidance_scale,
+            stable_variant=args.stable_variant,
+            prompt_override=args.prompt,
+            use_matfuse_palette=not args.no_matfuse_palette,
+            local_files_only=args.local_files_only,
+        ), 0
+    if args.command == "compare-materials":
+        output = write_material_comparison(
+            args.matfuse_bundle,
+            args.stablematerials_bundle,
+            output=args.output,
+            matfuse_scene=args.matfuse_scene,
+            stablematerials_scene=args.stablematerials_scene,
+        )
+        return {"html": str(output)}, 0
     if args.command == "ingest":
         workspace = ingest(
             args.source,
