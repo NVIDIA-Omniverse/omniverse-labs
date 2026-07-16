@@ -33,7 +33,7 @@ Two rules thread through all of them:
 | `contract-first-ffi` | Keep native ABIs and Python/native bindings in exact sync. |
 | `portable-build-runtime-paths` | Make native builds, CLIs, viewers, plugins, shaders, and packaged artifacts run after relocation without `cwd`, username, or absolute build-path assumptions. |
 | `nanousd-renderer-scene-extraction` | Load USD files through NanoUSD and turn composed prims into renderer geometry, material, light, camera, transform, texture, and instancing representations. |
-| `nanousd-real-to-sim` | Turn Gaussian PLY or SOG/LOD assets into registered object selections, colliders, support graphs, drawer/door articulations, hidden-completion candidates, voxel collision meshes, USDA, interactive previews, and RLVR-ready traces on Apple Silicon. |
+| `nanousd-real-to-sim` | Turn Gaussian PLY or SOG/LOD assets into registered object selections, colliders, support graphs, drawer/door articulations, mesh-fitted PBR hidden completions with face-bound Gaussians, voxel collision meshes, USDA, interactive previews, and RLVR-ready traces on Apple Silicon. |
 | `graphics-debugging-lab` | Debug renderer, shader, material, camera, lighting, and viewer visual defects with captures. |
 | `physically-based-renderer-validation` | Validate PBR/path-traced/ray-traced behavior against reference renderer output, AOVs, USD semantics, transport invariants, and reduced physical fixtures. |
 | `renderer-image-comparison-testing` | Build and run golden-image harnesses for renderer/backend correctness and parity. |

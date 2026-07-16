@@ -22,7 +22,13 @@ from nanousd_rts.gaussian import (
     ingest,
     load_gaussians,
     make_drawer_fixture,
+    write_mesh_bound_gaussians,
     write_surface_patch_gaussians,
+)
+from nanousd_rts.mesh_completion import (
+    EXTERNAL_MATERIAL_PROVIDER,
+    LOCAL_MATERIAL_PROVIDER,
+    fit_mesh_pbr_completion,
 )
 from nanousd_rts.preview import write_preview
 from nanousd_rts.rlvr import EpisodeRequirements, RealToSimEpisode
@@ -233,6 +239,70 @@ class RealToSimCoreTests(unittest.TestCase):
         self.assertEqual(scene.count, 240)
         self.assertTrue(scene.report()["finite"])
 
+    def test_mesh_bound_writer_retains_face_barycentric_and_uv_associations(self) -> None:
+        output = self.root / "mesh-bound.ply"
+        sidecar = self.root / "mesh-bindings.npz"
+        vertices = np.asarray(
+            [
+                [0.0, 0.0, 0.0],
+                [1.0, 0.0, 0.2],
+                [1.0, 1.0, 0.4],
+                [0.0, 1.0, 0.2],
+            ],
+            dtype=np.float64,
+        )
+        faces = np.asarray([[0, 1, 2], [0, 2, 3]], dtype=np.uint32)
+        uvs = np.asarray(
+            [
+                [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0]],
+                [[0.0, 0.0], [1.0, 1.0], [0.0, 1.0]],
+            ],
+            dtype=np.float64,
+        )
+        texture = np.zeros((32, 32, 3), dtype=np.uint8)
+        texture[..., 0] = np.arange(32, dtype=np.uint8)[None, :] * 8
+        report = write_mesh_bound_gaussians(
+            output,
+            vertices,
+            faces,
+            face_colors=np.asarray([[0.5, 0.4, 0.3], [0.3, 0.4, 0.5]]),
+            count=120,
+            association_path=sidecar,
+            face_uvs=uvs,
+            base_color_texture=texture,
+            face_groups=np.asarray([4, 9], dtype=np.uint32),
+            seed=3,
+        )
+        self.assertEqual(report["gaussian_count"], 120)
+        scene = load_gaussians(output)
+        self.assertEqual(scene.count, 120)
+        self.assertTrue(scene.report()["finite"])
+        associations = np.load(sidecar, allow_pickle=False)
+        self.assertEqual(associations["face_indices"].shape, (120,))
+        self.assertEqual(associations["barycentric"].shape, (120, 3))
+        np.testing.assert_allclose(
+            associations["barycentric"].sum(axis=1),
+            np.ones(120),
+            atol=1e-6,
+        )
+        np.testing.assert_array_equal(associations["face_groups"], np.asarray([4, 9]))
+        self.assertTrue(np.isfinite(associations["uv"]).all())
+        quaternion = scene.orientations[0]
+        w, x, y, z = quaternion
+        renderer_rows = np.asarray(
+            [
+                [1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w)],
+                [2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w)],
+                [2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)],
+            ]
+        )
+        first_face = associations["face_indices"][0]
+        np.testing.assert_allclose(
+            renderer_rows,
+            associations["face_frames"][first_face].T,
+            atol=1e-6,
+        )
+
     def test_amodal_drawer_completion_separates_static_and_moving_assets(self) -> None:
         add_node(
             self.workspace,
@@ -287,6 +357,83 @@ class RealToSimCoreTests(unittest.TestCase):
                 "max": [0.45, 0.85, -0.35],
             },
         )
+        upgraded = fit_mesh_pbr_completion(
+            self.workspace,
+            node_id="drawer",
+            material_provider=LOCAL_MATERIAL_PROVIDER,
+            texture_size=128,
+        )
+        self.assertEqual(
+            upgraded["representation"]["type"],
+            "mesh-bound-gaussian-pbr",
+        )
+        self.assertTrue(upgraded["representation"]["mesh_face_association"])
+        self.assertEqual(len(upgraded["mesh_assets"]), 2)
+        for asset in upgraded["mesh_assets"]:
+            self.assertTrue((self.workspace.root / asset["mesh"]["path"]).is_file())
+            self.assertTrue(
+                (self.workspace.root / asset["associations"]["path"]).is_file()
+            )
+            self.assertEqual(set(asset["pbr_maps"]), {
+                "baseColor.png",
+                "roughness.png",
+                "metallic.png",
+                "normal.png",
+                "ao.png",
+            })
+        self.assertTrue(completion_report(self.workspace)["all_assets_valid"])
+        roughness = (
+            self.workspace.root
+            / upgraded["mesh_assets"][0]["pbr_maps"]["roughness.png"]["path"]
+        )
+        roughness_bytes = roughness.read_bytes()
+        roughness.unlink()
+        self.assertFalse(completion_report(self.workspace)["all_assets_valid"])
+        roughness.write_bytes(roughness_bytes)
+        self.assertTrue(completion_report(self.workspace)["all_assets_valid"])
+        mesh_usda = compile_usda(
+            self.workspace,
+            output=self.root / "mesh-pbr-export" / "scene.usda",
+        )
+        mesh_usda_text = Path(mesh_usda["usda"]).read_text()
+        self.assertIn("nanousdRts:staticCavityMesh", mesh_usda_text)
+        self.assertIn("nanousdRts:movingInteriorBaseColor", mesh_usda_text)
+        self.assertIn("nanousdRts:movingInteriorAssociations", mesh_usda_text)
+        self.assertEqual(
+            mesh_usda["mesh_pbr_completions"],
+            [completion["id"]],
+        )
+        external_bundle = (
+            self.workspace.root
+            / "generated"
+            / "mesh-pbr-completions"
+            / "drawer"
+        )
+        external = fit_mesh_pbr_completion(
+            self.workspace,
+            node_id="drawer",
+            material_provider=EXTERNAL_MATERIAL_PROVIDER,
+            external_material_bundle=external_bundle,
+            texture_size=128,
+        )
+        self.assertEqual(
+            external["representation"]["material_provider"],
+            EXTERNAL_MATERIAL_PROVIDER,
+        )
+        self.assertTrue(completion_report(self.workspace)["all_assets_valid"])
+        fidelity_episode = RealToSimEpisode(
+            self.workspace,
+            EpisodeRequirements(
+                required_nodes=("drawer",),
+                required_interactive_nodes=("drawer",),
+                required_mesh_pbr_nodes=("drawer",),
+                required_artifacts=(),
+            ),
+        )
+        fidelity_reward = fidelity_episode.reward_snapshot(final=True)
+        self.assertTrue(fidelity_reward.gates["required_mesh_pbr_nodes"])
+        self.assertEqual(fidelity_reward.components["mesh_pbr_fidelity"], 1.0)
+        self.assertTrue(fidelity_reward.terminal_passed)
 
 
 if __name__ == "__main__":

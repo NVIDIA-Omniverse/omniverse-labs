@@ -1,6 +1,6 @@
 ---
 name: nanousd-real-to-sim
-description: Turn Gaussian splat PLY or PlayCanvas SOG/LOD assets into registered interactive NanoUSD robotics scenes on Apple Silicon. Use when Codex must inspect a splat, select objects through stable IDs, build colliders and support graphs, fit drawer or door joints, propose hidden interiors, generate voxel collision meshes, compile USDA, verify gates, or prepare deterministic traces for visual-agent RLVR.
+description: Turn Gaussian splat PLY or PlayCanvas SOG/LOD assets into registered interactive NanoUSD robotics scenes on Apple Silicon. Use when Codex must inspect a splat, select objects through stable IDs, build colliders and support graphs, fit drawer or door joints, propose hidden interiors, fit DRAWER-inspired mesh/PBR completions, generate voxel collision meshes, compile USDA, verify gates, or prepare deterministic traces for visual-agent RLVR.
 ---
 
 # NanoUSD Gaussian Real-to-Sim
@@ -81,6 +81,20 @@ root override.
      measured moving-object extraction.
    - Accept one candidate explicitly. Acceptance must update the collider and pass
      the articulation sweep; otherwise leave all candidates unpromoted.
+   - For a fidelity-bearing accepted completion, run `fit-mesh-pbr --node ID`.
+     Require OBJ/MTL, five PBR maps, `material-request.json`, and a
+     `mesh-bindings.npz` sidecar containing face indices, barycentric coordinates,
+     UVs, and face frames.
+   - The local `measured-front-palette-pbr-v1` provider is a generated fallback,
+     not learned reconstruction. Keep `measured=false`.
+   - For MatFuse or another learned worker, first preserve the deterministic
+     mesh/UV request, then import a UV-aligned bundle with
+     `--material-provider external-pbr-atlas-v1 --material-bundle PATH`.
+     Do not load DRAWER's CUDA/PyTorch3D stack into the M5 authoring process.
+   - Require `completions` and `verify` to hash-check every mesh, map, request,
+     and binding sidecar. Keep each generated mesh asset below 4,096 Gaussians
+     until the Metal large-scene sigma clamp is redesigned; split semantic roles
+     rather than hiding a blank render behind a passing manifest.
 
 8. Build dense physical proxies when useful.
    - Run `voxelize` on the full scene or a stable-ID node selection.
@@ -112,6 +126,8 @@ kitchen set before handoff:
 
 ```bash
 "$PYTHON" -m nanousd_rts author-home-kitchen /tmp/nanousd-home-scan-rts
+"$PYTHON" -m nanousd_rts fit-mesh-pbr /tmp/nanousd-home-scan-rts \
+  --node oven_door --texture-size 512
 "$PYTHON" -m nanousd_rts verify /tmp/nanousd-home-scan-rts
 "$PYTHON" -m nanousd_rts experience-preview /tmp/nanousd-home-scan-rts --budget 16
 "$PYTHON" -m nanousd_rts serve-preview /tmp/nanousd-home-scan-rts \
@@ -140,6 +156,9 @@ Use `RealToSimEpisode` as the dependency-free local environment seam. Keep its
 `trainer_reward` evaluator-side; send only `observation` back to the policy.
 Attach per-turn `dense_score` values to Kevin-style future credit and use the
 fail-closed `terminal_reward` for submission.
+Use hidden `required_mesh_pbr_nodes` requirements for fidelity episodes so the
+trainer rewards the mesh/material stage explicitly instead of accepting a
+procedural surface completion as equivalent.
 
 Pair fidelity and stability rewards. Keep source integrity, provenance, graph
 validity, and simulator load success as hard gates.
@@ -162,6 +181,7 @@ Run one synthetic `demo` and one real-asset ingest/render before handing off.
 
 Report the source hash and LOD, camera, node/selection counts, support edges,
 joint candidates and overrides, accepted generated completions, voxel/GLB
-registration transform and residual, USDA hash/load result, hard-gate vector,
-interactive preview path, measured M5 timings, and the remaining Isaac/PhysX
-promotion work.
+registration transform and residual, mesh-fit diagnostics, PBR material provider,
+Gaussian-to-face binding counts, USDA hash/load result, hard-gate vector,
+interactive preview path, measured M5 timings, remaining learned-material work,
+and the remaining Isaac/PhysX promotion work.

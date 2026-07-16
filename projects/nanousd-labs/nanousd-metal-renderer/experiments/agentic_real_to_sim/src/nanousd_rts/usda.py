@@ -53,6 +53,68 @@ def _asset_reference(path: Path, *, relative_to: Path) -> str:
     ).as_posix()
 
 
+def _property_slug(value: str) -> str:
+    parts = [part for part in value.replace("_", "-").split("-") if part]
+    if not parts:
+        raise RealToSimError("completion artifact role cannot be empty")
+    return parts[0] + "".join(part[:1].upper() + part[1:] for part in parts[1:])
+
+
+def _completion_artifact_references(
+    workspace: Workspace,
+    completion: dict[str, Any],
+    *,
+    relative_to: Path,
+) -> list[tuple[str, str, str]]:
+    artifacts: list[tuple[str, str, str]] = []
+
+    def append(name: str, descriptor: Any) -> None:
+        if not isinstance(descriptor, dict):
+            raise RealToSimError(
+                f"mesh/PBR completion {completion['id']} has an invalid {name} descriptor"
+            )
+        relative = descriptor.get("path")
+        expected = descriptor.get("sha256")
+        if not isinstance(relative, str) or not isinstance(expected, str):
+            raise RealToSimError(
+                f"mesh/PBR completion {completion['id']} has an incomplete {name} descriptor"
+            )
+        path = workspace.root / relative
+        if not path.is_file() or sha256_file(path) != expected:
+            raise RealToSimError(
+                f"mesh/PBR completion artifact is missing or changed: {path}"
+            )
+        artifacts.append(
+            (
+                name,
+                _asset_reference(path, relative_to=relative_to),
+                expected,
+            )
+        )
+
+    bundle = completion.get("mesh_bundle_manifest")
+    if bundle is not None:
+        append("hiddenCompletionBundle", bundle)
+    map_names = {
+        "baseColor.png": "BaseColor",
+        "roughness.png": "Roughness",
+        "metallic.png": "Metallic",
+        "normal.png": "Normal",
+        "ao.png": "Ao",
+    }
+    for mesh_asset in completion.get("mesh_assets", []):
+        prefix = _property_slug(mesh_asset.get("role", "completion"))
+        append(f"{prefix}Manifest", mesh_asset.get("manifest"))
+        append(f"{prefix}Mesh", mesh_asset.get("mesh"))
+        append(f"{prefix}Material", mesh_asset.get("material"))
+        append(f"{prefix}Associations", mesh_asset.get("associations"))
+        append(f"{prefix}MaterialRequest", mesh_asset.get("material_request"))
+        pbr_maps = mesh_asset.get("pbr_maps", {})
+        for filename, suffix in map_names.items():
+            append(f"{prefix}{suffix}", pbr_maps.get(filename))
+    return artifacts
+
+
 def _body_schemas(node: SceneNode, joint_parents: set[str]) -> tuple[list[str], bool]:
     if node.role in {"movable", "articulated"} or node.node_id in joint_parents:
         return ["PhysicsRigidBodyAPI", "PhysicsMassAPI"], node.role == "static"
@@ -68,6 +130,7 @@ def _node_block(
     source_asset: str,
     selection_asset: str,
     completion_asset: str | None,
+    completion_artifacts: list[tuple[str, str, str]],
 ) -> list[str]:
     if node.collider is None:
         center = node.visual_bounds.center
@@ -123,6 +186,19 @@ def _node_block(
                 "            custom bool nanousdRts:hiddenCompletionMeasured = false",
             ]
         )
+        representation = accepted_completion.get("representation", {}).get("type")
+        if representation:
+            lines.append(
+                "            custom token nanousdRts:hiddenCompletionRepresentation = "
+                + _usd_string(representation)
+            )
+        for name, asset, digest in completion_artifacts:
+            lines.extend(
+                [
+                    f"            custom asset nanousdRts:{name} = @{asset}@",
+                    f"            custom string nanousdRts:{name}Sha256 = {_usd_string(digest)}",
+                ]
+            )
     if node.collider is not None:
         lines.extend(
             [
@@ -251,6 +327,15 @@ def compile_usda(workspace: Workspace, *, output: Path | None = None) -> dict[st
                     if accepted_completion
                     else None
                 ),
+                completion_artifacts=(
+                    _completion_artifact_references(
+                        workspace,
+                        accepted_completion,
+                        relative_to=output.parent,
+                    )
+                    if accepted_completion
+                    else []
+                ),
             )
         )
     lines.extend(["    }", "", '    def Scope "Joints"', "    {"])
@@ -273,7 +358,17 @@ def compile_usda(workspace: Workspace, *, output: Path | None = None) -> dict[st
         "representation": {
             "visual_truth": "immutable Gaussian PLY plus per-node source-row selections",
             "physical_truth": "registered box colliders, support graph, and USD Physics joints",
+            "generated_truth": (
+                "accepted non-measured completion PLYs plus portable mesh/PBR/binding "
+                "artifact references when fitted"
+            ),
         },
+        "mesh_pbr_completions": sorted(
+            item["id"]
+            for item in accepted_completions.values()
+            if item.get("representation", {}).get("type")
+            == "mesh-bound-gaussian-pbr"
+        ),
     }
     manifest_path = output.with_suffix(".manifest.json")
     manifest_path.write_text(json.dumps(manifest, sort_keys=True, indent=2) + "\n")

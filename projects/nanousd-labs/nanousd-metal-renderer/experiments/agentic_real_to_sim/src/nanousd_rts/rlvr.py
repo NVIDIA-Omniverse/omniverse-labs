@@ -21,6 +21,7 @@ class EpisodeRequirements:
 
     required_nodes: tuple[str, ...] = ()
     required_interactive_nodes: tuple[str, ...] = ()
+    required_mesh_pbr_nodes: tuple[str, ...] = ()
     required_artifacts: tuple[str, ...] = ("usda", "usda_render", "preview")
     minimum_interactive_nodes: int = 1
     max_turns: int = 12
@@ -39,6 +40,7 @@ class EpisodeRequirements:
         return cls(
             required_nodes=tuple(value.get("required_nodes", ())),
             required_interactive_nodes=tuple(value.get("required_interactive_nodes", ())),
+            required_mesh_pbr_nodes=tuple(value.get("required_mesh_pbr_nodes", ())),
             required_artifacts=tuple(
                 value.get("required_artifacts", ("usda", "usda_render", "preview"))
             ),
@@ -161,12 +163,23 @@ class RealToSimEpisode:
             and node.joint is not None
             and sweep_pass.get(node_id, False)
         }
+        mesh_pbr_nodes = {
+            item["node"]
+            for item in self.workspace.completions
+            if item.get("status") == "accepted"
+            and item.get("representation", {}).get("type")
+            == "mesh-bound-gaussian-pbr"
+        }
         required_nodes_ok = all(
             node_id in nodes for node_id in self.requirements.required_nodes
         )
         required_interactive_ok = all(
             node_id in interactive
             for node_id in self.requirements.required_interactive_nodes
+        )
+        required_mesh_pbr_ok = all(
+            node_id in mesh_pbr_nodes
+            for node_id in self.requirements.required_mesh_pbr_nodes
         )
         minimum_interactivity_ok = (
             len(interactive) >= self.requirements.minimum_interactive_nodes
@@ -197,6 +210,13 @@ class RealToSimEpisode:
             ) / len(self.requirements.required_artifacts)
         else:
             artifacts = 1.0
+        if self.requirements.required_mesh_pbr_nodes:
+            mesh_pbr_fidelity = sum(
+                node_id in mesh_pbr_nodes
+                for node_id in self.requirements.required_mesh_pbr_nodes
+            ) / len(self.requirements.required_mesh_pbr_nodes)
+        else:
+            mesh_pbr_fidelity = 1.0
         gate_values = list(verification_gates.values())
         local_verification = (
             sum(gate_values) / len(gate_values) if gate_values else 0.0
@@ -220,15 +240,17 @@ class RealToSimEpisode:
             "local_verification": float(local_verification),
             "artifact_completeness": float(artifacts),
             "visual_collider_fidelity": float(fidelity),
+            "mesh_pbr_fidelity": float(mesh_pbr_fidelity),
             "tool_efficiency": float(efficiency),
         }
         raw_dense_score = (
-            components["source_provenance"] * 0.15
-            + components["semantic_completeness"] * 0.15
-            + components["interactivity"] * 0.20
-            + components["local_verification"] * 0.20
-            + components["artifact_completeness"] * 0.15
-            + components["visual_collider_fidelity"] * 0.10
+            components["source_provenance"] * 0.13
+            + components["semantic_completeness"] * 0.13
+            + components["interactivity"] * 0.18
+            + components["local_verification"] * 0.18
+            + components["artifact_completeness"] * 0.13
+            + components["visual_collider_fidelity"] * 0.08
+            + components["mesh_pbr_fidelity"] * 0.12
             + components["tool_efficiency"] * 0.05
         )
         invariant_safety = all(
@@ -247,6 +269,7 @@ class RealToSimEpisode:
             "invariant_safety": invariant_safety,
             "required_nodes": required_nodes_ok,
             "required_interactive_nodes": required_interactive_ok,
+            "required_mesh_pbr_nodes": required_mesh_pbr_ok,
             "minimum_interactivity": minimum_interactivity_ok,
             "required_artifacts": required_artifacts_ok,
         }
@@ -254,6 +277,7 @@ class RealToSimEpisode:
             (
                 required_nodes_ok,
                 required_interactive_ok,
+                required_mesh_pbr_ok,
                 minimum_interactivity_ok,
                 required_artifacts_ok,
             )
@@ -275,6 +299,11 @@ class RealToSimEpisode:
     ) -> dict[str, Any]:
         snapshot = snapshot or self.reward_snapshot(final=False)
         artifacts = _artifact_gates(self.workspace)
+        completion_types = {
+            item["node"]: item.get("representation", {}).get("type")
+            for item in self.workspace.completions
+            if item.get("status") == "accepted"
+        }
         return {
             "schema_version": 1,
             "turn": self.turn,
@@ -290,6 +319,7 @@ class RealToSimEpisode:
                     "selected_gaussians": node.selected_gaussians,
                     "support_parent": node.support_parent,
                     "joint": node.joint.kind if node.joint else None,
+                    "completion_representation": completion_types.get(node.node_id),
                 }
                 for node in self.workspace.nodes
             ],

@@ -13,6 +13,7 @@ from .collision import voxelize
 from .completion import accept_completion, propose_hidden_interiors
 from .core import Bounds, RealToSimError, Workspace
 from .gaussian import Camera, ingest, make_drawer_fixture, render, select_render_mask
+from .mesh_completion import LOCAL_MATERIAL_PROVIDER, fit_mesh_pbr_completion
 from .preview import write_preview
 from .sim import (
     add_node,
@@ -36,6 +37,7 @@ TOOL_CATALOG = {
     "fit-joint": "Create a reviewable prismatic/revolute candidate with confidence and diagnostics.",
     "propose-hidden-interiors": "Generate multiple clearly labeled, non-measured Gaussian completion candidates.",
     "accept-completion": "Promote one completion only after its collider passes the articulation sweep.",
+    "fit-mesh-pbr": "Fit an accepted category template, UV/PBR texture it, and bind Gaussians to mesh faces.",
     "sweep-joint": "Sweep a joint through limits with fail-closed forbidden-overlap gates.",
     "settle": "Project movable AABBs onto supports under gravity.",
     "push-test": "Apply a deterministic kinematic push and report collisions.",
@@ -117,6 +119,22 @@ def execute_action(workspace: Workspace, action: dict[str, Any]) -> dict[str, An
         }
     if tool == "accept-completion":
         return accept_completion(workspace, completion_id=action["completion"])
+    if tool == "fit-mesh-pbr":
+        return fit_mesh_pbr_completion(
+            workspace,
+            node_id=action["node"],
+            material_provider=action.get(
+                "material_provider",
+                LOCAL_MATERIAL_PROVIDER,
+            ),
+            external_material_bundle=(
+                Path(action["material_bundle"])
+                if action.get("material_bundle")
+                else None
+            ),
+            texture_size=int(action.get("texture_size", 512)),
+            gaussian_multiplier=float(action.get("gaussian_multiplier", 1.0)),
+        )
     if tool == "sweep-joint":
         return sweep_joint(workspace, node_id=action["node"], samples=int(action.get("samples", 17)))
     if tool == "settle":

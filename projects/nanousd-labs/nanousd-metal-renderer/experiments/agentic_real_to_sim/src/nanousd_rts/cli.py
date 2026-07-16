@@ -17,6 +17,11 @@ from .core import Bounds, RealToSimError, Workspace
 from .experience import serve_preview, write_experience
 from .gaussian import Camera, _renderer_root, ingest, load_gaussians, render, select_render_mask
 from .home_kitchen import author_home_scan_kitchen
+from .mesh_completion import (
+    EXTERNAL_MATERIAL_PROVIDER,
+    LOCAL_MATERIAL_PROVIDER,
+    fit_mesh_pbr_completion,
+)
 from .preview import write_preview
 from .sim import (
     add_node,
@@ -146,6 +151,25 @@ def build_parser() -> argparse.ArgumentParser:
 
     completion_report_parser = sub.add_parser("completions", help="Inspect hidden-completion candidates.")
     _add_common_workspace(completion_report_parser)
+
+    mesh_completion_parser = sub.add_parser(
+        "fit-mesh-pbr",
+        help="Upgrade an accepted completion to a UV/PBR mesh with face-bound Gaussians.",
+    )
+    _add_common_workspace(mesh_completion_parser)
+    mesh_completion_parser.add_argument("--node", required=True)
+    mesh_completion_parser.add_argument(
+        "--material-provider",
+        choices=(LOCAL_MATERIAL_PROVIDER, EXTERNAL_MATERIAL_PROVIDER),
+        default=LOCAL_MATERIAL_PROVIDER,
+    )
+    mesh_completion_parser.add_argument(
+        "--material-bundle",
+        type=Path,
+        help="UV-aligned external PBR bundle; required by external-pbr-atlas-v1.",
+    )
+    mesh_completion_parser.add_argument("--texture-size", type=int, default=512)
+    mesh_completion_parser.add_argument("--gaussian-multiplier", type=float, default=1.0)
 
     sweep_parser = sub.add_parser("sweep", help="Sweep an articulation and fail on forbidden overlap.")
     _add_common_workspace(sweep_parser)
@@ -371,6 +395,15 @@ def dispatch(args: argparse.Namespace) -> tuple[Any, int]:
     if args.command == "completions":
         report = completion_report(workspace)
         return report, 0 if report["all_assets_valid"] else 1
+    if args.command == "fit-mesh-pbr":
+        return fit_mesh_pbr_completion(
+            workspace,
+            node_id=args.node,
+            material_provider=args.material_provider,
+            external_material_bundle=args.material_bundle,
+            texture_size=args.texture_size,
+            gaussian_multiplier=args.gaussian_multiplier,
+        ), 0
     if args.command == "sweep":
         report = sweep_joint(workspace, node_id=args.node, samples=args.samples)
         return report, 0 if report["passed"] else 1

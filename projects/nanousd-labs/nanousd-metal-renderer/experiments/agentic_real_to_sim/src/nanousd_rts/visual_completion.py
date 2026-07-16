@@ -51,6 +51,20 @@ def _patch(
     }
 
 
+def _patch_to_json(patch: dict[str, Any]) -> dict[str, Any]:
+    bounds = patch.get("bounds")
+    if not isinstance(bounds, Bounds):
+        raise RealToSimError("completion template patch is missing typed bounds")
+    return {
+        "bounds": bounds.to_json(),
+        "axis": int(patch["axis"]),
+        "side": int(patch["side"]),
+        "color": [float(value) for value in patch["color"]],
+        "weight": float(patch.get("weight", 1.0)),
+        "opacity": float(patch.get("opacity", 0.97)),
+    }
+
+
 def _box_patches(
     bounds: Bounds,
     color: tuple[float, float, float],
@@ -448,6 +462,39 @@ def author_visual_completion(
         "collider_bounds": geometry["collision_bounds"].to_json(),
         "generated_gaussians": static_gaussians + moving_gaussians,
         "confidence": confidence,
+        "template_kind": kind,
+        "representation": {
+            "type": "surface-gaussian",
+            "schema_version": 1,
+            "mesh_face_association": False,
+            "pbr_material_bundle": False,
+        },
+        "template": {
+            "schema_version": 1,
+            "fit_method": "measured-panel-bounds-category-template-v1",
+            "panel_bounds": original.collider.bounds.to_json(),
+            "joint_frame": (
+                {
+                    "kind": original.joint.kind,
+                    "axis": original.joint.axis,
+                    "axis_sign": original.joint.axis_sign,
+                    "origin": list(original.joint.origin),
+                    "lower": original.joint.lower,
+                    "upper": original.joint.upper,
+                }
+                if original.joint
+                else None
+            ),
+            "static_patches": [
+                _patch_to_json(patch) for patch in geometry["static_patches"]
+            ],
+            "moving_patches": [
+                _patch_to_json(patch) for patch in geometry["moving_patches"]
+            ],
+            "static_bounds": geometry["static_bounds"].to_json(),
+            "moving_bounds": geometry["moving_bounds"].to_json(),
+            "collision_bounds": geometry["collision_bounds"].to_json(),
+        },
         "visual_profile": {
             "front_axis": front_axis,
             "outward_sign": outward_sign,

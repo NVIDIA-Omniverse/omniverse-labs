@@ -27,6 +27,12 @@ source-row selection and collider atomically, and every operation appends to
   diagnostics.
 - Hidden-interior Gaussian completion candidates with candidate/accepted/rejected
   lifecycle.
+- DRAWER-inspired category-template fitting into explicit OBJ meshes, deterministic
+  UV atlases, five-map PBR bundles, and mesh-bound Gaussians that retain triangle,
+  barycentric, UV, and face-frame associations.
+- A material-provider seam with an M5-local measured-front palette fallback and an
+  importer for UV-aligned learned PBR bundles produced by MatFuse or another
+  external worker.
 - Deterministic gravity settle, push, and articulation-sweep checks.
 - Full-scene or per-node voxel occupancy and collision GLB generation.
 - Explicit registration of `splat-transform` GLBs back into NanoUSD PLY coordinates,
@@ -103,6 +109,8 @@ $PYTHON -m nanousd_rts voxelize /tmp/nanousd-home-scan-rts \
   --voxel-size 0.15 --opacity-threshold 0.2 --mesh-shape faces
 
 $PYTHON -m nanousd_rts author-home-kitchen /tmp/nanousd-home-scan-rts
+$PYTHON -m nanousd_rts fit-mesh-pbr /tmp/nanousd-home-scan-rts \
+  --node oven_door --texture-size 512
 $PYTHON -m nanousd_rts verify /tmp/nanousd-home-scan-rts
 $PYTHON -m nanousd_rts experience-preview /tmp/nanousd-home-scan-rts \
   --budget 16
@@ -124,8 +132,37 @@ The oven also demonstrates full-cavity background replacement. Unobserved dark
 source splats inside the aperture are opacity-masked only in the streamed
 background derivative, while the measured door extraction remains untouched and
 the accepted generated cavity/racks stay labeled `measured=false`. This is the
-local procedural analogue of amodal completion; it is not a claim that the hidden
-surfaces were reconstructed from scan evidence.
+local category-template analogue of amodal completion; it is not a claim that the
+hidden surfaces were measured from scan evidence.
+
+`fit-mesh-pbr` is the first DRAWER fidelity bridge. It turns the accepted cavity and
+moving interior into UV-mapped meshes, writes base color, roughness, metallic,
+normal, and AO maps, then resamples the visible completion as anisotropic
+face-aligned Gaussians. Every Gaussian retains its mesh triangle, barycentric
+coordinates, UV, and face frame in `mesh-bindings.npz`. The default
+`measured-front-palette-pbr-v1` provider runs locally on Apple Silicon and is still
+generated, not learned. A learned worker can consume each `material-request.json`
+and return the same UV-aligned map contract:
+
+```bash
+$PYTHON -m nanousd_rts fit-mesh-pbr /tmp/nanousd-home-scan-rts \
+  --node oven_door \
+  --material-provider external-pbr-atlas-v1 \
+  --material-bundle /absolute/path/to/oven-material-bundle
+```
+
+The external bundle may contain maps at its root or in `static-cavity/` and
+`moving-interior/` subdirectories. `baseColor.png`, `roughness.png`, and
+`normal.png` are required; missing metallic and AO maps receive explicit neutral
+defaults. This keeps CUDA-only MatFuse inference out of the M5 process while
+preserving one deterministic artifact and provenance contract.
+
+Verification hashes every mesh, binding sidecar, material request, and PBR map.
+USDA compilation carries portable references and checksums for the full bundle.
+The current Metal RT path also keeps each generated mesh asset below 4,096
+Gaussians because its large-scene sigma clamp is tuned for naturally dense source
+splats; split a completion into more role assets instead of silently crossing that
+limit.
 
 The high-fidelity preview deliberately does not use `file://`: streamed
 `lod-meta.json` assets and their WebP chunks require local HTTP. It pins
@@ -166,6 +203,8 @@ $PYTHON -m nanousd_rts propose-completions /tmp/nanousd-home-scan-rts --node dra
 $PYTHON -m nanousd_rts completions /tmp/nanousd-home-scan-rts
 $PYTHON -m nanousd_rts accept-completion /tmp/nanousd-home-scan-rts \
   --completion drawer.interior.01
+$PYTHON -m nanousd_rts fit-mesh-pbr /tmp/nanousd-home-scan-rts \
+  --node drawer
 $PYTHON -m nanousd_rts sweep /tmp/nanousd-home-scan-rts --node drawer
 $PYTHON -m nanousd_rts compile /tmp/nanousd-home-scan-rts
 $PYTHON -m nanousd_rts render-usda /tmp/nanousd-home-scan-rts
@@ -190,10 +229,12 @@ The expected loop is:
 4. Infer or author support.
 5. Fit joints; override uncertain axes, origins, or limits explicitly.
 6. Propose hidden completions; never relabel generated content as measured.
-7. Sweep, settle, push, and voxelize.
-8. Compile USDA and render the proxy scene through NanoUSD.
-9. Run `verify`; do not promote a scene with a failed hard gate.
-10. Inspect the interactive preview and package the evidence.
+7. Fit accepted category templates into mesh/PBR bundles and preserve each
+   Gaussian-to-face association.
+8. Sweep, settle, push, and voxelize.
+9. Compile USDA and render the proxy scene through NanoUSD.
+10. Run `verify`; do not promote a scene with a failed hard gate.
+11. Inspect the interactive preview and package the evidence.
 
 ## Workspace contract
 
@@ -203,6 +244,16 @@ workspace/
   source/source.ply
   selections/<node>.npy
   generated/completions/<node>/*.ply
+  generated/visual-completions/<node>/*.ply
+  generated/mesh-pbr-completions/<node>/
+    manifest.json
+    {static-cavity,moving-interior}/
+      mesh.obj
+      material.mtl
+      material-request.json
+      {baseColor,roughness,metallic,normal,ao}.png
+      mesh-bound.ply
+      mesh-bindings.npz
   evidence/render/<name>/{rgb,depth,normal,id,...}
   evidence/sweeps/<node>/sweep.json
   evidence/verification/report.json
@@ -229,6 +280,7 @@ summaries and failed gates back to the policy, and score:
 - joint sweep and forbidden-overlap gates;
 - USDA load/render success;
 - completion provenance and accepted-candidate linkage;
+- mesh-fit diagnostics, PBR bundle completeness, and Gaussian-to-face binding;
 - task-specific robot evaluation from the external simulator lane.
 
 Use paired fidelity and stability scores. Never reward stability alone, because an
@@ -245,6 +297,7 @@ episode = RealToSimEpisode(
     EpisodeRequirements(
         required_nodes=("cabinet", "drawer"),
         required_interactive_nodes=("drawer",),
+        required_mesh_pbr_nodes=("drawer",),
     ),
 )
 initial = episode.public_observation()
@@ -254,6 +307,10 @@ turn = episode.step({"tool": "render", "name": "policy-view"})
 Attach each turn's `trainer_reward.dense_score` to Kevin-style discounted future
 credit. Use `terminal_reward` for submission; it is zero unless all local hard
 gates, hidden semantic/interactivity requirements, and required artifacts pass.
+Mesh/PBR tasks can name exact nodes in `required_mesh_pbr_nodes`; the evaluator then
+requires the accepted `mesh-bound-gaussian-pbr` representation and exposes a
+separate `mesh_pbr_fidelity` reward component without revealing the hidden target
+list to the policy.
 
 ## Verification
 

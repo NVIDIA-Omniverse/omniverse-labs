@@ -183,6 +183,34 @@ def accept_completion(workspace: Workspace, *, completion_id: str) -> dict[str, 
 
 
 def completion_report(workspace: Workspace) -> dict[str, Any]:
+    def artifact_validity(
+        descriptor: Any,
+        *,
+        role: str,
+        artifact_kind: str,
+    ) -> dict[str, Any]:
+        if not isinstance(descriptor, dict):
+            return {
+                "role": role,
+                "artifact_kind": artifact_kind,
+                "asset": None,
+                "valid": False,
+            }
+        relative = descriptor.get("path")
+        expected = descriptor.get("sha256")
+        path = workspace.root / relative if isinstance(relative, str) else None
+        return {
+            "role": role,
+            "artifact_kind": artifact_kind,
+            "asset": relative,
+            "valid": bool(
+                path is not None
+                and path.is_file()
+                and isinstance(expected, str)
+                and sha256_file(path) == expected
+            ),
+        }
+
     records = []
     for candidate in workspace.completions:
         assets = candidate.get("assets") or [
@@ -205,11 +233,46 @@ def completion_report(workspace: Workspace) -> dict[str, Any]:
                     ),
                 }
             )
+        mesh_asset_validity = []
+        for mesh_asset in candidate.get("mesh_assets", []):
+            role = mesh_asset.get("role", "mesh-completion")
+            for key in (
+                "manifest",
+                "mesh",
+                "material",
+                "associations",
+                "material_request",
+            ):
+                mesh_asset_validity.append(
+                    artifact_validity(
+                        mesh_asset.get(key),
+                        role=role,
+                        artifact_kind=key,
+                    )
+                )
+            for name, descriptor in mesh_asset.get("pbr_maps", {}).items():
+                mesh_asset_validity.append(
+                    artifact_validity(
+                        descriptor,
+                        role=role,
+                        artifact_kind=f"pbr:{name}",
+                    )
+                )
+        if candidate.get("mesh_bundle_manifest") is not None:
+            mesh_asset_validity.append(
+                artifact_validity(
+                    candidate["mesh_bundle_manifest"],
+                    role="bundle",
+                    artifact_kind="mesh_bundle_manifest",
+                )
+            )
+        all_valid = all(item["valid"] for item in asset_validity + mesh_asset_validity)
         records.append(
             {
                 **candidate,
-                "asset_valid": all(item["valid"] for item in asset_validity),
+                "asset_valid": all_valid,
                 "asset_validity": asset_validity,
+                "mesh_asset_validity": mesh_asset_validity,
             }
         )
     return {

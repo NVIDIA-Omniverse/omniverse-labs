@@ -833,6 +833,318 @@ def write_surface_patch_gaussians(
     return path
 
 
+def _quaternion_wxyz_from_matrix(matrix: np.ndarray) -> np.ndarray:
+    """Convert one proper 3x3 rotation matrix to a normalized wxyz quaternion."""
+
+    rotation = np.asarray(matrix, dtype=np.float64)
+    if rotation.shape != (3, 3) or not np.isfinite(rotation).all():
+        raise RealToSimError("Gaussian face frame must be a finite 3x3 matrix")
+    trace = float(np.trace(rotation))
+    if trace > 0.0:
+        scale = math.sqrt(trace + 1.0) * 2.0
+        quaternion = np.asarray(
+            [
+                0.25 * scale,
+                (rotation[2, 1] - rotation[1, 2]) / scale,
+                (rotation[0, 2] - rotation[2, 0]) / scale,
+                (rotation[1, 0] - rotation[0, 1]) / scale,
+            ],
+            dtype=np.float64,
+        )
+    else:
+        diagonal = np.diag(rotation)
+        axis = int(np.argmax(diagonal))
+        if axis == 0:
+            scale = math.sqrt(
+                max(1.0 + rotation[0, 0] - rotation[1, 1] - rotation[2, 2], 0.0)
+            ) * 2.0
+            quaternion = np.asarray(
+                [
+                    (rotation[2, 1] - rotation[1, 2]) / scale,
+                    0.25 * scale,
+                    (rotation[0, 1] + rotation[1, 0]) / scale,
+                    (rotation[0, 2] + rotation[2, 0]) / scale,
+                ],
+                dtype=np.float64,
+            )
+        elif axis == 1:
+            scale = math.sqrt(
+                max(1.0 + rotation[1, 1] - rotation[0, 0] - rotation[2, 2], 0.0)
+            ) * 2.0
+            quaternion = np.asarray(
+                [
+                    (rotation[0, 2] - rotation[2, 0]) / scale,
+                    (rotation[0, 1] + rotation[1, 0]) / scale,
+                    0.25 * scale,
+                    (rotation[1, 2] + rotation[2, 1]) / scale,
+                ],
+                dtype=np.float64,
+            )
+        else:
+            scale = math.sqrt(
+                max(1.0 + rotation[2, 2] - rotation[0, 0] - rotation[1, 1], 0.0)
+            ) * 2.0
+            quaternion = np.asarray(
+                [
+                    (rotation[1, 0] - rotation[0, 1]) / scale,
+                    (rotation[0, 2] + rotation[2, 0]) / scale,
+                    (rotation[1, 2] + rotation[2, 1]) / scale,
+                    0.25 * scale,
+                ],
+                dtype=np.float64,
+            )
+    norm = float(np.linalg.norm(quaternion))
+    if norm <= 1e-12 or not math.isfinite(norm):
+        raise RealToSimError("could not derive a valid Gaussian face quaternion")
+    return quaternion / norm
+
+
+def _weighted_counts(
+    scores: np.ndarray,
+    *,
+    count: int,
+    minimum: int,
+) -> np.ndarray:
+    if count < len(scores) * minimum:
+        raise RealToSimError(
+            f"mesh-bound Gaussian export requires at least {len(scores) * minimum} Gaussians"
+        )
+    raw = scores / scores.sum() * count
+    allocated = np.maximum(np.floor(raw).astype(np.int64), minimum)
+    while int(allocated.sum()) > count:
+        candidates = np.flatnonzero(allocated > minimum)
+        if not candidates.size:
+            raise RealToSimError("mesh-bound Gaussian allocation exceeded its budget")
+        index = int(candidates[np.argmax(allocated[candidates] - raw[candidates])])
+        allocated[index] -= 1
+    order = np.argsort(-(raw - np.floor(raw)))
+    cursor = 0
+    while int(allocated.sum()) < count:
+        allocated[int(order[cursor % len(order)])] += 1
+        cursor += 1
+    return allocated
+
+
+def _sample_texture(
+    texture: np.ndarray,
+    uv: np.ndarray,
+) -> np.ndarray:
+    image = np.asarray(texture)
+    if image.ndim != 3 or image.shape[2] < 3:
+        raise RealToSimError("base-color texture must have shape HxWx3 or HxWx4")
+    if image.dtype == np.uint8:
+        colors = image[..., :3].astype(np.float64) / 255.0
+    else:
+        colors = image[..., :3].astype(np.float64)
+        if not np.isfinite(colors).all():
+            raise RealToSimError("base-color texture contains non-finite values")
+        colors = np.clip(colors, 0.0, 1.0)
+    height, width = colors.shape[:2]
+    coordinates = np.clip(np.asarray(uv, dtype=np.float64), 0.0, 1.0)
+    x = np.rint(coordinates[:, 0] * (width - 1)).astype(np.int64)
+    # OBJ UVs use a bottom-left origin; image arrays use a top-left origin.
+    y = np.rint((1.0 - coordinates[:, 1]) * (height - 1)).astype(np.int64)
+    return colors[y, x]
+
+
+def write_mesh_bound_gaussians(
+    path: Path,
+    vertices: np.ndarray,
+    faces: np.ndarray,
+    *,
+    face_colors: np.ndarray,
+    count: int,
+    association_path: Path | None = None,
+    face_uvs: np.ndarray | None = None,
+    base_color_texture: np.ndarray | None = None,
+    face_weights: np.ndarray | None = None,
+    face_opacities: np.ndarray | None = None,
+    face_groups: np.ndarray | None = None,
+    seed: int = 0,
+) -> dict[str, Any]:
+    """Sample face-bound Gaussians and retain DRAWER-style mesh associations."""
+
+    vertex_values = np.asarray(vertices, dtype=np.float64)
+    face_values = np.asarray(faces, dtype=np.int64)
+    color_values = np.asarray(face_colors, dtype=np.float64)
+    if (
+        vertex_values.ndim != 2
+        or vertex_values.shape[1] != 3
+        or not np.isfinite(vertex_values).all()
+    ):
+        raise RealToSimError("mesh vertices must have finite shape Nx3")
+    if face_values.ndim != 2 or face_values.shape[1] != 3 or not len(face_values):
+        raise RealToSimError("mesh faces must have non-empty shape Mx3")
+    if int(face_values.min()) < 0 or int(face_values.max()) >= len(vertex_values):
+        raise RealToSimError("mesh face indices are out of range")
+    if color_values.shape != (len(face_values), 3) or not np.isfinite(color_values).all():
+        raise RealToSimError("mesh face colors must have finite shape Mx3")
+    color_values = np.clip(color_values, 0.0, 1.0)
+
+    triangles = vertex_values[face_values]
+    first_edges = triangles[:, 1] - triangles[:, 0]
+    second_edges = triangles[:, 2] - triangles[:, 0]
+    cross = np.cross(first_edges, second_edges)
+    double_areas = np.linalg.norm(cross, axis=1)
+    if np.any(double_areas <= 1e-12):
+        raise RealToSimError("mesh contains a degenerate triangle")
+    areas = double_areas * 0.5
+    normals = cross / double_areas[:, None]
+    tangents = first_edges / np.linalg.norm(first_edges, axis=1)[:, None]
+    bitangents = np.cross(normals, tangents)
+    bitangents /= np.linalg.norm(bitangents, axis=1)[:, None]
+    frames = np.stack((tangents, bitangents, normals), axis=2)
+    quaternions = np.stack(
+        [
+            # NanoUSD Metal expands a wxyz quaternion into three matrix rows
+            # and treats those rows as ellipsoid axes. Transpose the conventional
+            # column-basis face frame so the renderer receives tangent,
+            # bitangent, and normal in that order.
+            _quaternion_wxyz_from_matrix(frame.T)
+            for frame in frames
+        ],
+        axis=0,
+    )
+
+    weights = (
+        np.ones(len(face_values), dtype=np.float64)
+        if face_weights is None
+        else np.asarray(face_weights, dtype=np.float64)
+    )
+    opacities = (
+        np.full(len(face_values), 0.97, dtype=np.float64)
+        if face_opacities is None
+        else np.asarray(face_opacities, dtype=np.float64)
+    )
+    if (
+        weights.shape != (len(face_values),)
+        or not np.isfinite(weights).all()
+        or np.any(weights <= 0.0)
+    ):
+        raise RealToSimError("mesh face weights must be finite and positive")
+    if (
+        opacities.shape != (len(face_values),)
+        or not np.isfinite(opacities).all()
+        or np.any((opacities <= 0.0) | (opacities >= 1.0))
+    ):
+        raise RealToSimError("mesh face opacities must lie strictly within (0, 1)")
+    uv_values = None
+    if face_uvs is not None:
+        uv_values = np.asarray(face_uvs, dtype=np.float64)
+        if uv_values.shape != (len(face_values), 3, 2) or not np.isfinite(uv_values).all():
+            raise RealToSimError("mesh face UVs must have finite shape Mx3x2")
+    if base_color_texture is not None and uv_values is None:
+        raise RealToSimError("texture sampling requires mesh face UVs")
+    group_values = (
+        np.arange(len(face_values), dtype=np.uint32)
+        if face_groups is None
+        else np.asarray(face_groups, dtype=np.uint32)
+    )
+    if group_values.shape != (len(face_values),):
+        raise RealToSimError("mesh face groups must have shape M")
+
+    allocations = _weighted_counts(areas * weights, count=count, minimum=4)
+    dtype = np.dtype(
+        [
+            (name, "<f4")
+            for name in (
+                "x",
+                "y",
+                "z",
+                "scale_0",
+                "scale_1",
+                "scale_2",
+                "f_dc_0",
+                "f_dc_1",
+                "f_dc_2",
+                "opacity",
+                "rot_0",
+                "rot_1",
+                "rot_2",
+                "rot_3",
+            )
+        ]
+    )
+    records = np.zeros(count, dtype=dtype)
+    association_faces = np.empty(count, dtype=np.uint32)
+    association_barycentric = np.empty((count, 3), dtype=np.float32)
+    association_uv = np.full((count, 2), np.nan, dtype=np.float32)
+    rng = np.random.default_rng(seed)
+    c0 = 0.28209479177387814
+    cursor = 0
+    for face_index, face_count in enumerate(allocations):
+        stop = cursor + int(face_count)
+        sequence = np.arange(int(face_count), dtype=np.float64)
+        phase = rng.random(2)
+        first = np.mod(phase[0] + sequence * 0.7548776662466927, 1.0)
+        second = np.mod(phase[1] + sequence * 0.5698402909980532, 1.0)
+        root = np.sqrt(first)
+        barycentric = np.column_stack(
+            (1.0 - root, root * (1.0 - second), root * second)
+        )
+        points = barycentric @ triangles[face_index]
+        records["x"][cursor:stop] = points[:, 0]
+        records["y"][cursor:stop] = points[:, 1]
+        records["z"][cursor:stop] = points[:, 2]
+
+        spacing = math.sqrt(max(areas[face_index], 1e-12) / max(int(face_count), 1))
+        tangent_sigma = float(np.clip(spacing * 0.56, 0.0028, 0.024))
+        normal_sigma = max(tangent_sigma * 0.10, 0.0008)
+        records["scale_0"][cursor:stop] = math.log(tangent_sigma)
+        records["scale_1"][cursor:stop] = math.log(tangent_sigma)
+        records["scale_2"][cursor:stop] = math.log(normal_sigma)
+
+        colors = np.repeat(color_values[[face_index]], int(face_count), axis=0)
+        if uv_values is not None:
+            sampled_uv = barycentric @ uv_values[face_index]
+            association_uv[cursor:stop] = sampled_uv
+            if base_color_texture is not None:
+                colors = _sample_texture(base_color_texture, sampled_uv)
+        records["f_dc_0"][cursor:stop] = (colors[:, 0] - 0.5) / c0
+        records["f_dc_1"][cursor:stop] = (colors[:, 1] - 0.5) / c0
+        records["f_dc_2"][cursor:stop] = (colors[:, 2] - 0.5) / c0
+        opacity = float(opacities[face_index])
+        records["opacity"][cursor:stop] = math.log(opacity / (1.0 - opacity))
+        quaternion = quaternions[face_index]
+        records["rot_0"][cursor:stop] = quaternion[0]
+        records["rot_1"][cursor:stop] = quaternion[1]
+        records["rot_2"][cursor:stop] = quaternion[2]
+        records["rot_3"][cursor:stop] = quaternion[3]
+        association_faces[cursor:stop] = face_index
+        association_barycentric[cursor:stop] = barycentric
+        cursor = stop
+
+    output = Path(path).resolve()
+    output.parent.mkdir(parents=True, exist_ok=True)
+    _write_binary_ply(output, records)
+    sidecar = (
+        Path(association_path).resolve()
+        if association_path is not None
+        else output.with_suffix(".mesh-bindings.npz")
+    )
+    sidecar.parent.mkdir(parents=True, exist_ok=True)
+    np.savez_compressed(
+        sidecar,
+        schema_version=np.asarray([1], dtype=np.uint32),
+        face_indices=association_faces,
+        barycentric=association_barycentric,
+        uv=association_uv,
+        mesh_vertices=vertex_values.astype(np.float32),
+        mesh_faces=face_values.astype(np.uint32),
+        face_normals=normals.astype(np.float32),
+        face_frames=frames.astype(np.float32),
+        face_groups=group_values,
+    )
+    return {
+        "ply": output,
+        "associations": sidecar,
+        "gaussian_count": int(count),
+        "face_count": int(len(face_values)),
+        "vertex_count": int(len(vertex_values)),
+        "face_area": float(areas.sum()),
+    }
+
+
 def make_drawer_fixture(path: Path, *, seed: int = 7) -> dict[str, Bounds]:
     """Write a deterministic colored Gaussian cabinet, drawer, door, and floor."""
     rng = np.random.default_rng(seed)
