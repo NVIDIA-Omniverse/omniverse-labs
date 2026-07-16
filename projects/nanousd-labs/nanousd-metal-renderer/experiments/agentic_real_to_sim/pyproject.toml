@@ -1,0 +1,20 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "nanousd-agentic-real-to-sim"
+version = "0.1.0"
+description = "Local Apple-Metal Gaussian-to-interactive-USD development oracle."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "numpy>=2.0,<3",
+  "pillow>=11,<13",
+]
+
+[project.scripts]
+nanousd-rts = "nanousd_rts.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/nanousd_rts"]

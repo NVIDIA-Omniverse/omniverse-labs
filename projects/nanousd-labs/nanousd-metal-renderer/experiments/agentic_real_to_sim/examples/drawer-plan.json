@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "actions": [
+    {
+      "tool": "add-node-bounds",
+      "id": "floor",
+      "label": "floor",
+      "role": "static",
+      "bounds": {"min": [-3.0, -0.15, -2.0], "max": [3.0, 0.0, 2.0]},
+      "collision_mode": "support"
+    },
+    {
+      "tool": "add-node-bounds",
+      "id": "cabinet",
+      "label": "cabinet shell",
+      "role": "static",
+      "bounds": {"min": [-1.2, 0.0, -0.6], "max": [1.2, 2.0, 0.6]},
+      "collision_mode": "shell",
+      "tags": ["cabinet"]
+    },
+    {
+      "tool": "add-node-bounds",
+      "id": "drawer",
+      "label": "lower drawer",
+      "role": "movable",
+      "bounds": {"min": [0.1, 0.55, -0.75], "max": [1.0, 1.15, -0.45]},
+      "tags": ["drawer", "handle-bearing"]
+    },
+    {"tool": "set-support", "child": "cabinet", "parent": "floor"},
+    {"tool": "set-support", "child": "drawer", "parent": "cabinet"},
+    {"tool": "fit-joint", "node": "drawer", "kind": "auto"},
+    {
+      "tool": "propose-hidden-interiors",
+      "node": "drawer",
+      "factors": [0.75, 0.9, 1.0],
+      "gaussian_count": 600
+    },
+    {"tool": "accept-completion", "completion": "drawer.interior.01"},
+    {"tool": "sweep-joint", "node": "drawer", "samples": 17},
+    {"tool": "compile-usda"},
+    {"tool": "render-usda"},
+    {"tool": "verify"},
+    {"tool": "preview"}
+  ]
+}
