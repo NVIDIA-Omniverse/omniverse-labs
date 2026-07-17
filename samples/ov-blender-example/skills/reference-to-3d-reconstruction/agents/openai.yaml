@@ -1,0 +1,4 @@
+interface:
+  display_name: "Reference to 3D Reconstruction"
+  short_description: "Reconstruct Blender assets from image references"
+  default_prompt: "Reconstruct this asset from references with measurable camera and fit checks."

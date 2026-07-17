@@ -1,0 +1,4 @@
+interface:
+  display_name: "OVRTX Add-on Install & Preflight"
+  short_description: "Install the add-on and verify the OVRTX runtime is usable"
+  default_prompt: "Install or preflight the OVRTX Blender add-on and report actionable blockers."

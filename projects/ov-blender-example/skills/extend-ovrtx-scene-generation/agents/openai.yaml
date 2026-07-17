@@ -1,0 +1,4 @@
+interface:
+  display_name: "Extend OVRTX Scene Generation"
+  short_description: "Extend evaluated geometry and USD scene export"
+  default_prompt: "Use $extend-ovrtx-scene-generation to add evaluated geometry, topology, or instance support to the OVRTX add-on."

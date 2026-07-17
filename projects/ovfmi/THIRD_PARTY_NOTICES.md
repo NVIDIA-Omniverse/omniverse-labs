@@ -83,7 +83,7 @@ package index at setup time and are not vendored in this repository.
 
 | Package | Version/source in setup | License | Scope |
 |---|---|---|---|
-| `ovrtx` | `ovrtx==0.3.0.312915` from `https://pypi.nvidia.com`, unless `OVRTX_DIR` is supplied | `LicenseRef-NvidiaProprietary` / NVIDIA Software License Agreement | Required renderer runtime |
+| `ovrtx` | `ovrtx==0.3.0.312915` from `https://pypi.nvidia.com` | `LicenseRef-NvidiaProprietary` / NVIDIA Software License Agreement | Required renderer runtime |
 | `ovphysx` | `ovphysx==0.4.9` from `https://pypi.nvidia.com`, unless skipped | `LicenseRef-NVIDIA-Omniverse` | Optional physics runtime |
 | `usd-core` | Unpinned PyPI package installed into isolated `apps/ov-fmi/.usd_venv` | `LicenseRef-TOST-1.0` | USD parsing fallback subprocess |
 | `cuda-python` | Unpinned PyPI package installed only when `INSTALL_CUDA_PYTHON=1` or `-InstallCudaPython` is used | `LicenseRef-NVIDIA-SOFTWARE-LICENSE` | Optional CUDA/OpenGL zero-copy display path |
@@ -111,26 +111,6 @@ Notes:
 | `ovphysx` | `LICENSE.txt`; `ovphysx-LICENSES.zip` |
 | `usd-core` | `usd_core-*.dist-info/licenses/LICENSE.txt` |
 | `cuda-python` | `cuda_python-*.dist-info/licenses/LICENSE` |
-
----
-
-## 3. Source/reference submodules
-
-This repository declares a pinned `ovrtx` source/reference submodule for
-matching source/reference code and offline override workflows. Normal setup
-installs the `ovrtx` wheel and does not build the submodule from source.
-
-| Component | Pinned ref | License | Distribution | Source |
-|---|---|---|---|---|
-| `ovrtx` | `556ceb6a41e4bf6f4ff7b4526943a9366386543c` | `LicenseRef-NvidiaProprietary` | In-tree submodule at `third-party/ovrtx` when initialized | <https://github.com/NVIDIA-Omniverse/ovrtx> |
-
-Notes:
-- The `ovrtx` submodule's top-level metadata identifies the project as NVIDIA
-  proprietary software governed by the NVIDIA Software License Agreement and
-  product-specific NVIDIA terms.
-- If the submodule is initialized and redistributed, include its top-level
-  `LICENSE` file and any third-party notices included by the checked-out
-  commit.
 
 ---
 

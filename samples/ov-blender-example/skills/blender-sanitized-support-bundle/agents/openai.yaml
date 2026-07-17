@@ -1,0 +1,4 @@
+interface:
+  display_name: "Build a sanitized support bundle"
+  short_description: "Create shareable diagnostics without private data"
+  default_prompt: "Use $blender-sanitized-support-bundle to prepare a sanitized support bundle."

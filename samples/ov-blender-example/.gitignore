@@ -1,0 +1,20 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+dist/
+out/
+fixtures/assets/
+tests/fixtures/assets/
+tests/fixtures/data/*
+!tests/fixtures/data/demo_stair_drop_1280x720/
+tests/fixtures/data/demo_stair_drop_1280x720/*
+!tests/fixtures/data/demo_stair_drop_1280x720/fixture/
+tests/fixtures/data/demo_stair_drop_1280x720/fixture/*
+!tests/fixtures/data/demo_stair_drop_1280x720/fixture/stair_drop_ovrtx_ovphysx.usda
+*.blend1
+
+# Stray validation output created when an exit code is used as a path
+/1
+
+*.egg-info

@@ -1,0 +1,4 @@
+interface:
+  display_name: "OVRTX Render Settings"
+  short_description: "Configure OVRTX render settings and primvars safely"
+  default_prompt: "Configure the OVRTX render mode, background, sampling, exposure, color, and primvar overrides for this Blender scene."

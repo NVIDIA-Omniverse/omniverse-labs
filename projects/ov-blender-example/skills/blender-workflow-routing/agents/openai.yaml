@@ -1,0 +1,4 @@
+interface:
+  display_name: "Blender Workflow Routing"
+  short_description: "Route Blender and OVRTX scene tasks"
+  default_prompt: "Plan and execute a Blender scene task through MCP and the installed OVRTX add-on."

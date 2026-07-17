@@ -1,0 +1,4 @@
+interface:
+  display_name: "Usd Copy and Flatten"
+  short_description: "Package and flatten USD safely"
+  default_prompt: "Use $usd-copy-and-flatten to make a self-contained USD handoff from my Blender scene."

@@ -2,7 +2,7 @@
 
 > **`bash apps/ov-fmi/setup.sh` → `python apps/ov-fmi/main.py <stage>.usda`** · Load FMI behavior models straight from a USD stage, step them with FMPy, render with RTX, and close the loop with rigid-body physics — all from a standalone Python app. Built on the disaggregated ov libraries (**ovrtx** rendering + **ovphysx** physics) plus the open **FMI**, **SSP**, and **OpenUSD** standards.
 >
-> *Pre-release / internal Omniverse Labs project (ov-fmi v0.1.0; ovrtx 0.3, ovphysx 0.4.9, fmpy 0.3.25). APIs and the USD-FMI schema may change; open-sourcing is on the roadmap.*
+> *Pre-release Omniverse Labs project (ov-fmi v0.1.0; ovrtx 0.3, ovphysx 0.4.9, fmpy 0.3.25). APIs and the USD-FMI schema may change.*
 
 ```bash
 # Conveyor-belt digital twin: ovphysx rollers + package sensor + SSP controller
@@ -44,9 +44,7 @@ ovfmi exposes a Python runtime (the `ov-fmi` app) plus a USD-FMI schema: you aut
 
 ## 3. Documentation and reference links
 
-- **Project README & quick start:** <https://github.com/NVIDIA-Omniverse/omniverse-labs-internal/tree/main/projects/ovfmi>
-- **USD-FMI Schema Reference:** <https://github.com/NVIDIA-Omniverse/omniverse-labs-internal/blob/main/projects/ovfmi/docs/USD-FMI-SCHEMA.md>
-- **Source (GitHub):** <https://github.com/NVIDIA-Omniverse/omniverse-labs-internal/tree/main/projects/ovfmi>
+- **USD-FMI Schema Reference:** [docs/USD-FMI-SCHEMA.md](docs/USD-FMI-SCHEMA.md)
 - **FMI standard:** <https://fmi-standard.org/> · **SSP standard:** <https://ssp-standard.org/> · **OpenUSD:** <https://openusd.org/>
 - **FMPy (FMI runtime):** <https://github.com/CATIA-Systems/FMPy>
 - **Background talk:** GTC 2025 — "Build Physics-Based Digital Twins for Co-Simulation" (S71963, with SoftServe), since extended with SSP support.
@@ -69,7 +67,7 @@ ovfmi exposes a Python runtime (the `ov-fmi` app) plus a USD-FMI schema: you aut
 - **Pre-built binaries** of the underlying ov libraries (ovrtx, ovphysx wheels): distributed under the **NVIDIA Omniverse License**; installs additional third-party open-source components (FMPy, OpenUSD, etc.) — review their terms.
 - **Third-party notices:** See [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md) for the project-specific notices and license references.
 
-> **Note:** Pre-release Omniverse Labs project — currently hosted in an internal repository with open-sourcing planned ("get in touch for early access"). Known constraints: co-simulation only (no Model Exchange); SSP internal FMUs limited to FMI 1.0/2.0; single shared time step (no multi-rate); no algebraic-loop detection; declarative scene-query sensors (overlap/raycast) still need an app-level workaround.
+> **Known constraints:** co-simulation only (no Model Exchange); SSP internal FMUs limited to FMI 1.0/2.0; single shared time step (no multi-rate); no algebraic-loop detection; declarative scene-query sensors (overlap/raycast) still need an app-level workaround.
 
 ---
 
@@ -141,16 +139,12 @@ libraries.
 
 ### 6.2 Clone the repository
 
-Clone down the repository, and then in the repository directory, run: 
+Clone the public repository and change to the ovfmi project directory:
 
 ```bash
-git submodule update --init --depth=1
+git clone https://github.com/NVIDIA-Omniverse/omniverse-labs.git
+cd omniverse-labs/projects/ovfmi
 ```
-
-Why the submodule exists: `third-party/ovrtx` is pinned to the ovrtx 0.3 source
-snapshot. Normal Python setup installs the ovrtx wheel from NVIDIA's Python
-package index. The submodule is used for matching source/reference files and
-for explicit offline/native package override workflows.
 
 ### 6.3 Set up Python dependencies
 
@@ -223,6 +217,10 @@ SKIP_FMU_BUILD=1 bash apps/ov-fmi/setup.sh
 ```
 
 ### 6.4 Run the demos
+
+The first launch can take several minutes while ovrtx compiles and caches RTX
+shaders. Little or no terminal output may appear during this one-time step; leave
+the process running. Subsequent launches are normally much faster.
 
 The app opens a live window by default. Close the window or press `Ctrl+C` to
 stop. In the live viewer:
@@ -421,9 +419,6 @@ apps/ov-fmi/.venv/bin/python -m pytest apps/ov-fmi/tests
 - On Windows, the app exits directly after a physics run to avoid native DLL
   unload crashes during process shutdown. The simulation has already completed
   at that point.
-- `third-party/ovrtx` is a pinned submodule for matching source/reference code
-  and offline override workflows. Normal users do not build ovrtx from source.
-
 ## 12. USD-FMI schema used by the demos
 
 The app looks for `FmuInstance` and `SspInstance` prims in a USD stage.
@@ -501,24 +496,6 @@ center from its world transform. A child `Sphere` can supply the query radius.
 
 ## 13. Optional developer workflows
 
-### Offline ovrtx package override
-
-Normal setup installs the ovrtx wheel. To test an extracted native ovrtx package
-instead, pass its root directory. The directory must contain `bin/`.
-
-Windows:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File apps\ov-fmi\setup.ps1 `
-    -OVRTX_DIR C:\path\to\ovrtx-0.3.0.windows-x86_64
-```
-
-Linux:
-
-```bash
-OVRTX_DIR=/path/to/ovrtx-0.3.0.linux-x86_64 bash apps/ov-fmi/setup.sh
-```
-
 ### Optional `fmi_usd_helper`
 
 Do not build this for normal demo use. The default USD parser path is enough.
@@ -536,7 +513,6 @@ ovfmi/
   ssp/                          SSP source folders
   usd/ov-fmi/                   Small demo stages and generated FMU/SSP outputs
   usd/conveyor/                 Conveyor USD asset and FMI overlay stage
-  third-party/ovrtx/            Pinned ovrtx source submodule
 ```
 
 ---

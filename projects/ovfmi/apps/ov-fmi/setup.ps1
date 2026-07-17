@@ -1,5 +1,4 @@
 param(
-    [string]$OVRTX_DIR = "",
     [switch]$SkipOvphysx,
     [switch]$SkipFmuBuild,
     [switch]$InstallCudaPython
@@ -8,10 +7,8 @@ param(
 $ErrorActionPreference = "Stop"
 
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$RepoRoot = Resolve-Path (Join-Path $ScriptDir "..\..")
 $AppVenv = Join-Path $ScriptDir ".venv"
 $UsdVenv = Join-Path $ScriptDir ".usd_venv"
-$OvrtxPython = Join-Path $RepoRoot "third-party\ovrtx\python"
 $OvrtxWheelVersion = "0.3.0.312915"
 $OvphysxVersion = "0.4.9"
 
@@ -144,18 +141,8 @@ $AppPython = Join-Path $AppVenv "Scripts\python.exe"
 $UsdPython = Join-Path $UsdVenv "Scripts\python.exe"
 
 & $AppPython -m pip install --upgrade pip
-if ($OVRTX_DIR) {
-    $OvrtxBin = Join-Path $OVRTX_DIR "bin"
-    $OvrtxDll = Join-Path $OvrtxBin "ovrtx-dynamic.dll"
-    if (-not (Test-Path -LiteralPath $OvrtxDll)) {
-        throw "-OVRTX_DIR must point to an extracted ovrtx package root containing bin\ovrtx-dynamic.dll"
-    }
-    $OvrtxBin = (Resolve-Path $OvrtxBin).Path
-    & $AppPython -m pip install -e $OvrtxPython
-} else {
-    & $AppPython -m pip install "ovrtx==$OvrtxWheelVersion" --extra-index-url https://pypi.nvidia.com
-    $OvrtxBin = Get-InstalledOvrtxBin $AppPython
-}
+& $AppPython -m pip install "ovrtx==$OvrtxWheelVersion" --extra-index-url https://pypi.nvidia.com
+$OvrtxBin = Get-InstalledOvrtxBin $AppPython
 & $AppPython -m pip install -e $ScriptDir
 Write-Host "Using ovrtx native library from: $OvrtxBin"
 

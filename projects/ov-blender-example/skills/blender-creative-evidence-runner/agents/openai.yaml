@@ -1,0 +1,4 @@
+interface:
+  display_name: "Run creative Blender evidence loops"
+  short_description: "Iterate and review Blender OVRTX shots"
+  default_prompt: "Use $blender-creative-evidence-runner to iterate and review a Blender OVRTX shot."

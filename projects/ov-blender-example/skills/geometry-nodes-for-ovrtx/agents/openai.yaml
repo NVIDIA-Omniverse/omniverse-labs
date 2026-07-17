@@ -1,0 +1,4 @@
+interface:
+  display_name: "Geometry Nodes for OVRTX"
+  short_description: "Prepare procedural geometry for OVRTX export"
+  default_prompt: "Make this Geometry Nodes asset render and export predictably through OVRTX."

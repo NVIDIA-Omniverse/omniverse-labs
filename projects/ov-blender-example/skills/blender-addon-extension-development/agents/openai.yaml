@@ -1,0 +1,4 @@
+interface:
+  display_name: "Blender Add-on Extension Development"
+  short_description: "Extend and test the OVRTX Blender add-on safely"
+  default_prompt: "Extend the OVRTX Blender add-on with a tested feature using its documented source and runtime interfaces."

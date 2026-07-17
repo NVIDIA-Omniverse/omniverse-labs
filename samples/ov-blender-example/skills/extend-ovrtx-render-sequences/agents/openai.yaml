@@ -1,0 +1,4 @@
+interface:
+  display_name: "Extend OVRTX Render Sequences"
+  short_description: "Add persistent OVRTX sequence capture"
+  default_prompt: "Use $extend-ovrtx-render-sequences to extend the OVRTX Blender add-on with persistent-session sequence capture and validate temporal continuity."

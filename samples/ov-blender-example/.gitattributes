@@ -1,0 +1,2 @@
+tests/fixtures/**/*.mdl -text -diff
+tests/fixtures/**/*.usda text eol=lf

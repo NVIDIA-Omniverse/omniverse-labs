@@ -1,0 +1,4 @@
+interface:
+  display_name: "Extend OVRTX Interactive Edits"
+  short_description: "Implement typed live Blender edits safely"
+  default_prompt: "Use $extend-ovrtx-interactive-edits to implement a typed interactive edit in the OVRTX Blender add-on with safe scheduling, topology fallback, diagnostics, and tests."

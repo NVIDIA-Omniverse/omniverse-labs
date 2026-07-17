@@ -1,0 +1,4 @@
+interface:
+  display_name: "OVRTX MaterialX/OpenPBR"
+  short_description: "Prepare and diagnose Blender materials for OVRTX"
+  default_prompt: "Prepare this Blender material for OVRTX MaterialX/OpenPBR rendering and diagnose any binding or color issues."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Simready Addon Install and Authoring"
+  short_description: "Author validated SimReady assets"
+  default_prompt: "Use $simready-addon-install-and-authoring to prepare and validate my Blender asset with the SimReady add-on."

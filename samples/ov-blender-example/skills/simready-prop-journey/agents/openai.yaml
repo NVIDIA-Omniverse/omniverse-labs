@@ -1,0 +1,4 @@
+interface:
+  display_name: "SimReady Prop Journey"
+  short_description: "Take a prop from authoring to validated handoff"
+  default_prompt: "Use $simready-prop-journey to prepare, validate, behavior-check, and package this Blender prop for handoff."

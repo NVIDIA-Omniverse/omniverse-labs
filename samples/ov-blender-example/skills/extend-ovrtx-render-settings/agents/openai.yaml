@@ -1,0 +1,4 @@
+interface:
+  display_name: "Extend OVRTX Render Settings"
+  short_description: "Add and validate OVRTX render controls"
+  default_prompt: "Use $extend-ovrtx-render-settings to add and validate a renderer setting through the OVRTX Blender add-on's documented interfaces."

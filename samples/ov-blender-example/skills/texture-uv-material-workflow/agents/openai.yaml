@@ -1,0 +1,4 @@
+interface:
+  display_name: "Texture and UV Workflow"
+  short_description: "Author and validate UVs and PBR textures"
+  default_prompt: "Set up UVs and textures for a Blender asset and validate the OVRTX material result."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Handle Blender content safely"
+  short_description: "Protect untrusted content and private artifacts"
+  default_prompt: "Use $blender-content-safety-and-privacy to handle these Blender assets safely."

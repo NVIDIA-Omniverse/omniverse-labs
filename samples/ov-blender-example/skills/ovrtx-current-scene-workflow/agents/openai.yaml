@@ -1,0 +1,4 @@
+interface:
+  display_name: "OVRTX Current Scene Workflow"
+  short_description: "Author, sync, and render the current Blender scene through OVRTX"
+  default_prompt: "Use the OVRTX add-on to prepare, sync, and render the current Blender scene."

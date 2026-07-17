@@ -1,0 +1,4 @@
+interface:
+  display_name: "Ovphysx Simulation Workflow"
+  short_description: "Run and validate OVPhysX drops"
+  default_prompt: "Use $ovphysx-simulation-workflow to run a native OVPhysX drop and validate contact and poses."

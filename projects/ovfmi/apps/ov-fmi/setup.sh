@@ -10,7 +10,6 @@
 #   - build generated FMU and SSP archives into usd/ov-fmi/
 #
 # Optional environment variables:
-#   OVRTX_DIR=/path/to/extracted/ovrtx-package
 #   SKIP_OVPHYSX=1
 #   SKIP_FMU_BUILD=1
 #   INSTALL_CUDA_PYTHON=1
@@ -22,12 +21,10 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 APP_VENV="$SCRIPT_DIR/.venv"
 APP_PYTHON="$APP_VENV/bin/python"
 USD_VENV="$SCRIPT_DIR/.usd_venv"
 USD_PYTHON="$USD_VENV/bin/python"
-OVRTX_PYTHON_SRC="$REPO_ROOT/third-party/ovrtx/python"
 OVRTX_WHEEL_VERSION="${OVRTX_WHEEL_VERSION:-0.3.0.312915}"
 OVPHYSX_VERSION="${OVPHYSX_VERSION:-0.4.9}"
 
@@ -39,30 +36,19 @@ fi
 echo "Installing Python packages..."
 "$APP_PYTHON" -m pip install --upgrade pip
 
-if [ -n "${OVRTX_DIR:-}" ]; then
-    OVRTX_BIN="$OVRTX_DIR/bin"
-    if [ ! -f "$OVRTX_BIN/libovrtx-dynamic.so" ]; then
-        echo ""
-        echo "ERROR: OVRTX_DIR must point to an extracted ovrtx package root containing bin/libovrtx-dynamic.so."
-        echo ""
-        exit 1
-    fi
-    "$APP_PYTHON" -m pip install -e "$OVRTX_PYTHON_SRC"
-else
-    "$APP_PYTHON" -m pip install "ovrtx==$OVRTX_WHEEL_VERSION" --extra-index-url https://pypi.nvidia.com
-    OVRTX_BIN="$("$APP_PYTHON" - <<'EOF'
+"$APP_PYTHON" -m pip install "ovrtx==$OVRTX_WHEEL_VERSION" --extra-index-url https://pypi.nvidia.com
+OVRTX_BIN="$("$APP_PYTHON" - <<'EOF'
 from pathlib import Path
 import ovrtx
 
 print(Path(ovrtx.__file__).resolve().parent / "bin")
 EOF
 )"
-    if [ ! -f "$OVRTX_BIN/libovrtx-dynamic.so" ]; then
-        echo ""
-        echo "ERROR: Installed ovrtx package does not contain libovrtx-dynamic.so at $OVRTX_BIN."
-        echo ""
-        exit 1
-    fi
+if [ ! -f "$OVRTX_BIN/libovrtx-dynamic.so" ]; then
+    echo ""
+    echo "ERROR: Installed ovrtx package does not contain libovrtx-dynamic.so at $OVRTX_BIN."
+    echo ""
+    exit 1
 fi
 
 echo "Using ovrtx native library from: $OVRTX_BIN"

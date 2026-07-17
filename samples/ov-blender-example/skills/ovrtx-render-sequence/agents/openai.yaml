@@ -1,0 +1,4 @@
+interface:
+  display_name: "OVRTX Render Sequence"
+  short_description: "Render warm-session OVRTX frame sequences"
+  default_prompt: "Render this animated Blender scene through OVRTX as a contiguous, validated frame sequence or movie."

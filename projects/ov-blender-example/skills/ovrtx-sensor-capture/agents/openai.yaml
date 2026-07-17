@@ -1,0 +1,4 @@
+interface:
+  display_name: "OVRTX Sensor Capture"
+  short_description: "Capture OVRTX sensors and AOV products with provenance"
+  default_prompt: "Capture the requested OVRTX sensor or AOV outputs with raw, review, and provenance artifacts."

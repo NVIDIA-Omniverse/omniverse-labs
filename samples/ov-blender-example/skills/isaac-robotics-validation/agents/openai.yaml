@@ -1,0 +1,4 @@
+interface:
+  display_name: "Isaac Robotics Validation"
+  short_description: "Validate robots in Blender-derived scenes"
+  default_prompt: "Use $isaac-robotics-validation to validate a robot task in a Blender-derived Isaac Sim scene."
