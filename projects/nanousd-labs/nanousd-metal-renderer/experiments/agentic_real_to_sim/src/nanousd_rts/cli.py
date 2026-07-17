@@ -20,6 +20,7 @@ from .home_kitchen import author_home_scan_kitchen
 from .learned_materials import generate_material_bundle, learned_material_status
 from .material_preview import write_material_comparison
 from .mesh_completion import (
+    ART_DIRECTED_OVEN_PROVIDER,
     EXTERNAL_MATERIAL_PROVIDER,
     LOCAL_MATERIAL_PROVIDER,
     fit_mesh_pbr_completion,
@@ -168,7 +169,11 @@ def build_parser() -> argparse.ArgumentParser:
     mesh_completion_parser.add_argument("--node", required=True)
     mesh_completion_parser.add_argument(
         "--material-provider",
-        choices=(LOCAL_MATERIAL_PROVIDER, EXTERNAL_MATERIAL_PROVIDER),
+        choices=(
+            LOCAL_MATERIAL_PROVIDER,
+            EXTERNAL_MATERIAL_PROVIDER,
+            ART_DIRECTED_OVEN_PROVIDER,
+        ),
         default=LOCAL_MATERIAL_PROVIDER,
     )
     mesh_completion_parser.add_argument(

@@ -22,6 +22,40 @@ The default end state is a local Metal development oracle. Passing it does not
 claim Isaac/PhysX contact fidelity or robot-task success; those belong to the
 external promotion lane.
 
+## Recipe: request an independent result review
+
+Use this as a separate, fresh-context assignment after implementation. Do not
+include the implementing agent's diagnosis or a statement of what should pass.
+
+```text
+Independently review the real-to-sim result at <WORKSPACE> / commit <COMMIT>.
+Use only the artifacts and commands below; do not assume any implementation
+intent. Return exactly `pass`, `fail`, or `inconclusive`, followed by paths and
+observations that support the verdict.
+
+Acceptance rubric:
+- source/source.ply remains immutable;
+- measured-only closed, half, and open poses are coherent before generated
+  interiors are considered;
+- joint sweeps, segmentation review, and verify all pass;
+- every generated completion/material is labelled measured=false;
+- mesh, map, and binding hashes are present and valid;
+- report source count, live budget, LOD0 count, and completion count separately.
+
+Reproduce with:
+<COMMANDS>
+
+Inspect these paths:
+<ARTIFACT_PATHS>
+
+Known limitations that must remain explicit:
+<LIMITS>
+```
+
+Save the verdict in `evidence/independent-review/`. If no fresh reviewer can be
+launched, save this packet there and mark the independent verdict as pending;
+local implementation checks are not a substitute.
+
 ## Recipe: author a scan into an interactive scene
 
 Use this prompt when starting from a PLY or SOG/LOD scan:

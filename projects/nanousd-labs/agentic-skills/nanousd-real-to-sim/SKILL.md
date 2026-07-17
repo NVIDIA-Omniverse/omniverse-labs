@@ -149,6 +149,14 @@ root override.
     - Keep original streamed SOG visual truth and reduced NanoUSD evidence/physics
       truth as separate registered lanes.
     - Check that stability was not achieved by freezing movable parts.
+    - Before promotion, request an **independent fresh-context review** whenever a
+      subagent surface is available. Give the reviewer raw artifact paths, the
+      acceptance rubric, expected invariants, and reproduction commands only; do
+      not give it this agent's diagnosis or intended fix. Require an explicit
+      pass/fail/inconclusive verdict with paths to the evidence used. Persist it
+      under `evidence/independent-review/`. If no subagent is available, write the
+      same artifact-only review packet and report the independent verdict as
+      pending—never as passed.
 
 For the pinned Home Scan kitchen profile, author and scrub the complete visible
 kitchen set before handoff:
@@ -236,4 +244,5 @@ joint candidates and overrides, accepted generated completions, voxel/GLB
 registration transform and residual, mesh-fit diagnostics, PBR material provider,
 Gaussian-to-face binding counts, USDA hash/load result, hard-gate vector,
 measured-only segmentation triplet/acceptance, interactive preview path, measured M5 timings, remaining learned-material work,
-and the remaining Isaac/PhysX promotion work.
+the independent-review verdict (or explicit pending packet), and the remaining
+Isaac/PhysX promotion work.

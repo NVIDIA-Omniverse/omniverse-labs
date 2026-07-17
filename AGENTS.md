@@ -83,6 +83,14 @@ Then fill frontmatter, implement under `source/`, and complete the pre-PR checkl
 - Binary assets **> 5 MB**: flag for maintainer review before adding.
 - Update `version` in frontmatter on breaking changes (SemVer).
 - When adding skills, keep definitions in `skills/` and document them under README **Skills**.
+- Verify claimed results with an independent, fresh-context reviewer before marking
+  a non-trivial task ready. Give that reviewer the artifact paths, acceptance
+  rubric, expected invariants, and reproduction commands—but not the implementing
+  agent's diagnosis, intended answer, or private reasoning. Record the reviewer
+  verdict and any failed evidence in the handoff or PR. If no subagent surface is
+  available, prepare that artifact-only review packet and state that the
+  independent pass is still pending; do not self-certify it as independently
+  verified.
 
 ---
 

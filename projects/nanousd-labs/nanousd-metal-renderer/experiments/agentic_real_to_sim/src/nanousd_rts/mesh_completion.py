@@ -22,8 +22,15 @@ MESH_COMPLETION_SCHEMA = 1
 MESH_COMPLETION_GENERATOR = "nanousd-rts mesh-bound PBR completion v1"
 LOCAL_MATERIAL_PROVIDER = "measured-front-palette-pbr-v1"
 EXTERNAL_MATERIAL_PROVIDER = "external-pbr-atlas-v1"
+ART_DIRECTED_OVEN_PROVIDER = "art-directed-oven-interior-v1"
 PBR_MAPS = ("baseColor.png", "roughness.png", "metallic.png", "normal.png", "ao.png")
 MESH_GAUSSIAN_RENDER_SAFE_LIMIT = 4095
+ART_DIRECTED_OVEN_BASE_COLOR = (
+    Path(__file__).resolve().parents[2]
+    / "assets"
+    / "oven-interior-art-directed-v1"
+    / "baseColor.png"
+)
 
 LEARNED_MATERIAL_PROMPTS = {
     "oven-door": (
@@ -429,6 +436,46 @@ def _external_material_maps(
     }
 
 
+def _art_directed_oven_material_maps(destination: Path) -> dict[str, Any]:
+    """Install the explicit non-measured oven-interior atlas shipped with this lab."""
+
+    if not ART_DIRECTED_OVEN_BASE_COLOR.is_file():
+        raise RealToSimError(
+            "art-directed oven material is missing its checked-in base-color atlas"
+        )
+    destination.mkdir(parents=True, exist_ok=True)
+    with Image.open(ART_DIRECTED_OVEN_BASE_COLOR) as image:
+        base_color = image.convert("RGB")
+        width, height = base_color.size
+        if width != height or not 128 <= width <= 4096:
+            raise RealToSimError("art-directed oven atlas must be square within [128, 4096]")
+        base_array = np.asarray(base_color).copy()
+    base_color.save(destination / "baseColor.png")
+    # The streamed Gaussian viewer currently consumes base color. These neutral
+    # maps preserve the renderer's five-map contract until native PBR shading is
+    # enabled, without pretending that this art-directed atlas was measured.
+    Image.new("L", (width, height), color=148).save(destination / "roughness.png")
+    Image.new("L", (width, height), color=78).save(destination / "metallic.png")
+    Image.new("L", (width, height), color=232).save(destination / "ao.png")
+    Image.new("RGB", (width, height), color=(128, 128, 255)).save(
+        destination / "normal.png"
+    )
+    return {
+        "provider": ART_DIRECTED_OVEN_PROVIDER,
+        "texture_size": width,
+        "base_color": base_array,
+        "provenance": {
+            "measured_input": "none",
+            "generated_output": "art-directed generated oven-interior atlas",
+            "learned": False,
+            "measured": False,
+            "asset": ART_DIRECTED_OVEN_BASE_COLOR.name,
+            "asset_sha256": sha256_file(ART_DIRECTED_OVEN_BASE_COLOR),
+            "limitations": "base-color only in current streamed Gaussian viewer",
+        },
+    }
+
+
 def _write_obj(
     path: Path,
     mesh: MeshSurface,
@@ -631,10 +678,18 @@ def fit_mesh_pbr_completion(
 ) -> dict[str, Any]:
     """Upgrade one accepted completion to a UV/PBR mesh with face-bound Gaussians."""
 
-    if material_provider not in {LOCAL_MATERIAL_PROVIDER, EXTERNAL_MATERIAL_PROVIDER}:
+    if material_provider not in {
+        LOCAL_MATERIAL_PROVIDER,
+        EXTERNAL_MATERIAL_PROVIDER,
+        ART_DIRECTED_OVEN_PROVIDER,
+    }:
         raise RealToSimError(f"unsupported material provider: {material_provider}")
     if material_provider == EXTERNAL_MATERIAL_PROVIDER and external_material_bundle is None:
         raise RealToSimError("external-pbr-atlas-v1 requires --material-bundle")
+    if material_provider == ART_DIRECTED_OVEN_PROVIDER and node_id != "oven_door":
+        raise RealToSimError(
+            "art-directed-oven-interior-v1 is intentionally limited to oven_door"
+        )
     if not math.isfinite(gaussian_multiplier) or not 0.5 <= gaussian_multiplier <= 8.0:
         raise RealToSimError("Gaussian multiplier must be within [0.5, 8.0]")
     completion = _accepted_completion(workspace, node_id)
@@ -736,12 +791,14 @@ def fit_mesh_pbr_completion(
                         16,
                     ),
                 )
-            else:
+            elif material_provider == EXTERNAL_MATERIAL_PROVIDER:
                 material = _external_material_maps(
                     Path(external_material_bundle),
                     role_directory,
                     role_slug=role_slug,
                 )
+            else:
+                material = _art_directed_oven_material_maps(role_directory)
             gaussian_path = role_directory / "mesh-bound.ply"
             association_path = role_directory / "mesh-bindings.npz"
             gaussian_count = int(

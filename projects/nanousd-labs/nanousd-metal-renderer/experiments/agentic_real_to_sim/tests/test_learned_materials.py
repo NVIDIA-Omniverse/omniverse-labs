@@ -19,7 +19,12 @@ from nanousd_rts.learned_materials import (
     _save_stablematerials,
 )
 from nanousd_rts.material_preview import write_material_comparison
-from nanousd_rts.mesh_completion import PBR_MAPS, _external_material_maps
+from nanousd_rts.mesh_completion import (
+    ART_DIRECTED_OVEN_PROVIDER,
+    PBR_MAPS,
+    _art_directed_oven_material_maps,
+    _external_material_maps,
+)
 
 
 def _rgb(color: tuple[int, int, int], size: int = 128) -> Image.Image:
@@ -31,6 +36,21 @@ def _scalar(value: int, size: int = 128) -> Image.Image:
 
 
 class LearnedMaterialTests(unittest.TestCase):
+    def test_art_directed_oven_atlas_preserves_non_measured_provenance(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            destination = Path(temporary) / "oven"
+            material = _art_directed_oven_material_maps(destination)
+            self.assertEqual(material["provider"], ART_DIRECTED_OVEN_PROVIDER)
+            self.assertFalse(material["provenance"]["learned"])
+            self.assertFalse(material["provenance"]["measured"])
+            self.assertEqual(
+                set(path.name for path in destination.iterdir()), set(PBR_MAPS)
+            )
+            self.assertEqual(
+                Image.open(destination / "normal.png").getpixel((0, 0)),
+                (128, 128, 255),
+            )
+
     def test_request_discovery_and_measured_palette_expansion(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

@@ -204,6 +204,17 @@ defaults. This keeps DRAWER's legacy CUDA/PyTorch3D MatFuse stack out of the M5
 authoring process while preserving one deterministic artifact and provenance
 contract for the isolated MPS worker.
 
+For the Home Scan oven only, `art-directed-oven-interior-v1` is also available as
+a checked-in generated atlas that makes the previously black aperture readable in
+the streamed viewer. It is explicitly **not measured** and is not presented as a
+learned reconstruction; current streaming consumes its base color while retaining
+the five-map contract for future native PBR shading.
+
+```bash
+$PYTHON -m nanousd_rts fit-mesh-pbr /tmp/nanousd-home-scan-rts \
+  --node oven_door --material-provider art-directed-oven-interior-v1
+```
+
 ### Official MatFuse and StableMaterials on Apple Metal
 
 The learned-material worker uses the authors' official Hugging Face weights,
