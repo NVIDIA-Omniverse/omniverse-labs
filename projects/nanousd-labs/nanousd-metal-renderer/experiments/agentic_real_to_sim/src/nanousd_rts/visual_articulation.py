@@ -19,7 +19,7 @@ from .gaussian import GaussianScene, load_gaussians, write_gaussians
 
 
 SPLAT_TRANSFORM_PACKAGE = "@playcanvas/splat-transform@2.7.1"
-ARTICULATION_ASSET_SCHEMA = 4
+ARTICULATION_ASSET_SCHEMA = 5
 REFERENCE_BOUNDS_EPSILON = 1e-4
 REFERENCE_LABEL_BATCH_SIZE = 1024
 
@@ -133,8 +133,13 @@ def _load_articulation_references(
         if len(selected_indices) == 0 or selected_indices[0] < 0 or selected_indices[-1] >= working_scene.count:
             raise RealToSimError(f"visual articulation selection is out of range: {node.node_id}")
 
-        minimum = np.asarray(node.visual_bounds.minimum, dtype=np.float32) - REFERENCE_BOUNDS_EPSILON
-        maximum = np.asarray(node.visual_bounds.maximum, dtype=np.float32) + REFERENCE_BOUNDS_EPSILON
+        # The coarse proposal is deliberately retained as the negative transfer
+        # neighborhood. Using only the positive selection's visual AABB causes
+        # high-resolution points outside that AABB to snap to a boundary positive,
+        # which is exactly how walls and neighboring cabinetry followed doors.
+        neighborhood = node.selection_bounds or node.visual_bounds
+        minimum = np.asarray(neighborhood.minimum, dtype=np.float32) - REFERENCE_BOUNDS_EPSILON
+        maximum = np.asarray(neighborhood.maximum, dtype=np.float32) + REFERENCE_BOUNDS_EPSILON
         inside = np.all(
             (working_scene.positions >= minimum) & (working_scene.positions <= maximum),
             axis=1,
@@ -501,7 +506,7 @@ def materialize_articulated_sog(
                     "selection_method": (
                         "direct high-resolution source bounds"
                         if node.selection_mode == "bounds"
-                        else "nearest labeled working-PLY reference within measured visual bounds"
+                        else "nearest positive/negative working-PLY reference within proposal bounds"
                     ),
                     "selection_references": reference_reports[node.node_id],
                 }
@@ -523,7 +528,7 @@ def materialize_articulated_sog(
                 for identifier, bounds in occlusions
             ],
             "selection_method": (
-                "per-node direct bounds or nearest labeled working-PLY references"
+                "per-node direct bounds or nearest positive/negative working-PLY references"
             ),
             "objects": object_reports,
             "masked_gaussians_by_lod": masked_by_lod,

@@ -113,10 +113,39 @@ $PYTHON -m nanousd_rts fit-mesh-pbr /tmp/nanousd-home-scan-rts \
   --node oven_door --texture-size 512
 $PYTHON -m nanousd_rts verify /tmp/nanousd-home-scan-rts
 $PYTHON -m nanousd_rts experience-preview /tmp/nanousd-home-scan-rts \
-  --budget 16
+  --budget 32
 $PYTHON -m nanousd_rts serve-preview /tmp/nanousd-home-scan-rts \
-  --budget 16 --open
+  --budget 32 --open
 ```
+
+### Measured-only segmentation review and viewer quality
+
+The source contains 42.3M Gaussians across six streamed LODs; the 671,787-point
+LOD used for deterministic selection is deliberately not the beauty source. The
+experience viewer now defaults to a 32M live budget. Click **Hide inspector** to
+use the full browser canvas before judging sharpness. Its header reports four
+different counts: immutable source, live budget, measured LOD0 articulation, and
+generated completion. Do not confuse a thumbnail/contact sheet or generated
+interior with the source reconstruction.
+
+Every kitchen front is reviewed without generated surfaces before it is accepted:
+
+```bash
+$PYTHON -m nanousd_rts segmentation-review-plan /tmp/nanousd-home-scan-rts
+# Browse /preview/index.html?segmentation-review=1 and inspect closed, half, open.
+$PYTHON -m nanousd_rts check-segmentation-review /tmp/nanousd-home-scan-rts
+$PYTHON -m nanousd_rts accept-segmentation-review /tmp/nanousd-home-scan-rts \
+  --reviewer codex --note "Measured-only pose triplets accepted."
+$PYTHON -m nanousd_rts verify /tmp/nanousd-home-scan-rts
+```
+
+The review rejects stale scene revisions and verifies a visible pose delta. It is
+particularly important for narrow trim-heavy or partially occluded fronts: refine
+the planar selection using tangent occupancy plus positive/negative references,
+then reauthor and recapture rather than masking a bad extraction with an interior.
+The Home Scan’s 28 articulated fronts have this gate; their accepted visual review
+also supplies explicit registration evidence when a sparse splat selection makes a
+pure AABB-overlap diagnostic pessimistic.
 
 The background role deliberately keeps the measured scan collider-free. The
 voxel command produces a separate derived collision GLB, preserving the visual

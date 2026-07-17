@@ -19,11 +19,18 @@ from nanousd_rts.completion import (
 )
 from nanousd_rts.core import Bounds, RealToSimError, Workspace
 from nanousd_rts.gaussian import (
+    GaussianScene,
     ingest,
     load_gaussians,
     make_drawer_fixture,
     write_mesh_bound_gaussians,
     write_surface_patch_gaussians,
+)
+from nanousd_rts.segmentation import PLANAR_REFINER, refine_planar_selection
+from nanousd_rts.segmentation_review import (
+    accept_segmentation_review,
+    create_segmentation_review_plan,
+    segmentation_review_status,
 )
 from nanousd_rts.mesh_completion import (
     EXTERNAL_MATERIAL_PROVIDER,
@@ -199,6 +206,118 @@ class RealToSimCoreTests(unittest.TestCase):
             _nearest_reference_labels(queries, references, labels, batch_size=2),
             np.asarray([True, False, True]),
         )
+
+    def test_planar_refinement_keeps_positive_and_negative_references(self) -> None:
+        rng = np.random.default_rng(7)
+        front_yz = rng.uniform(-0.8, 0.8, size=(180, 2))
+        front = np.column_stack(
+            (rng.normal(0.10, 0.0015, size=180), front_yz)
+        )
+        carcass_yz = rng.uniform(-0.8, 0.8, size=(90, 2))
+        carcass = np.column_stack(
+            (rng.normal(-0.08, 0.004, size=90), carcass_yz)
+        )
+        floaters_yz = rng.uniform(-0.8, 0.8, size=(12, 2))
+        floaters = np.column_stack(
+            (rng.normal(0.22, 0.002, size=12), floaters_yz)
+        )
+        positions = np.asarray(
+            np.concatenate((front, carcass, floaters), axis=0),
+            dtype=np.float32,
+        )
+        count = len(positions)
+        scene = GaussianScene(
+            source_path=self.root / "planar-fixture.ply",
+            source_sha256="sha256:fixture",
+            positions=positions,
+            scales=np.tile(np.asarray([[0.002, 0.018, 0.021]], dtype=np.float32), (count, 1)),
+            orientations=np.tile(np.asarray([[1.0, 0.0, 0.0, 0.0]], dtype=np.float32), (count, 1)),
+            opacities=np.ones(count, dtype=np.float32),
+            sh_coefficients=np.zeros((count, 3), dtype=np.float32),
+            sh_degree=0,
+        )
+        refined = refine_planar_selection(
+            scene,
+            Bounds((-0.2, -1.0, -1.0), (0.25, 1.0, 1.0)),
+            front_axis="X",
+            outward_sign=1,
+            kind="cabinet-door",
+        )
+        self.assertEqual(refined.diagnostics["refiner"], PLANAR_REFINER)
+        self.assertGreater(refined.diagnostics["positive_references"], 150)
+        self.assertGreater(refined.diagnostics["negative_references"], 80)
+        self.assertAlmostEqual(refined.diagnostics["front_plane"], 0.10, delta=0.015)
+        self.assertGreater(refined.diagnostics["front_alignment_median"], 0.95)
+
+    def test_segmentation_review_is_pose_complete_and_digest_bound(self) -> None:
+        add_node(
+            self.workspace,
+            node_id="review_parent",
+            label="review parent",
+            role="static",
+            source_indices=np.arange(900, 2100, dtype=np.uint32),
+            collision_mode="shell",
+        )
+        add_node(
+            self.workspace,
+            node_id="review_door",
+            label="review door",
+            role="movable",
+            source_indices=np.arange(2100, 2750, dtype=np.uint32),
+            tags=("visual-refined", PLANAR_REFINER, "cabinet-door"),
+        )
+        set_support(self.workspace, child_id="review_door", parent_id="review_parent")
+        fit_joint(
+            self.workspace,
+            node_id="review_door",
+            parent_id="review_parent",
+            kind="revolute",
+            axis="Y",
+            axis_sign=1,
+            origin=(0.0, 0.0, 0.0),
+            lower=0.0,
+            upper=90.0,
+        )
+        plan = create_segmentation_review_plan(self.workspace)
+        self.assertEqual([part["id"] for part in plan["parts"]], ["review_door"])
+        gradient = np.tile(
+            np.linspace(25, 225, 800, dtype=np.uint8),
+            (500, 1),
+        )
+        for index, pose in enumerate(("closed", "half", "open")):
+            rgb = np.repeat(gradient[:, :, None], 3, axis=2)
+            rgb[120:360, 80 + index * 120 : 200 + index * 120, :] = (35, 120, 210)
+            path = (
+                self.workspace.root
+                / "evidence"
+                / "segmentation"
+                / "review"
+                / "review_door"
+                / f"{pose}.png"
+            )
+            path.parent.mkdir(parents=True, exist_ok=True)
+            from PIL import Image
+
+            Image.fromarray(rgb).save(path)
+        accepted = accept_segmentation_review(
+            self.workspace,
+            reviewer="codex-browser-test",
+            note="Door remains coherent across all three articulated poses.",
+        )
+        self.assertTrue(accepted["passed"])
+        open_path = (
+            self.workspace.root
+            / "evidence"
+            / "segmentation"
+            / "review"
+            / "review_door"
+            / "open.png"
+        )
+        with open_path.open("ab") as stream:
+            stream.write(b"changed")
+        stale = segmentation_review_status(self.workspace)
+        self.assertFalse(stale["passed"])
+        self.assertEqual(stale["stale_or_invalid_nodes"], ["review_door"])
 
     def test_source_is_immutable(self) -> None:
         with self.workspace.source_path.open("ab") as stream:

@@ -1,4 +1,4 @@
 interface:
   display_name: "NanoUSD Gaussian Real-to-Sim"
   short_description: "Build interactive robotics scenes from Gaussian splats"
-  default_prompt: "Use $nanousd-real-to-sim to ingest this Gaussian asset, create registered object selections and colliders, fit and sweep articulations, keep generated hidden geometry explicit, compile and render USDA, and fail closed on verification gates."
+  default_prompt: "Use $nanousd-real-to-sim to ingest this Gaussian asset, create registered selections and colliders, fit/sweep articulations, and keep generated hidden geometry explicit. For every articulated front, use the measured-only streamed viewer to capture and accept closed/half/open evidence before verification; report source, live-budget, measured-LOD0, and generated Gaussian counts separately."

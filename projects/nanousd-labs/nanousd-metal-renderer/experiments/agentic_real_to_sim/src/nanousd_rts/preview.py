@@ -26,7 +26,12 @@ def _latest_render(workspace: Workspace) -> Path | None:
 
 def _verification(workspace: Workspace) -> dict[str, Any] | None:
     path = workspace.root / "evidence" / "verification" / "report.json"
-    return json.loads(path.read_text()) if path.is_file() else None
+    if not path.is_file():
+        return None
+    report = json.loads(path.read_text())
+    if report.get("scene_digest") != workspace.state["logical_digest"]:
+        return None
+    return report
 
 
 def write_preview(workspace: Workspace, *, output: Path | None = None) -> Path:

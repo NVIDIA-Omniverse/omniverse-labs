@@ -120,11 +120,32 @@ root override.
    - Render the USDA through NanoUSD and require nonzero meshes and pixels.
 
 10. Verify and preview.
-    - Run `verify`; any failed hard gate blocks promotion.
+    - Before accepting a segmentation, create `segmentation-review-plan` and open
+      the streamed viewer with `?segmentation-review=1`. This measured-only mode
+      suppresses every generated cavity/interior so a procedural completion cannot
+      make a bad extracted front look correct.
+    - For every articulated front, capture deterministic closed, half, and open
+      poses at full browser resolution. Confirm that only the selected front moves,
+      its neighbours remain static, and the pose delta is visible. Run
+      `check-segmentation-review`, then record a reviewer note with
+      `accept-segmentation-review`; stale scene digests invalidate acceptance.
+    - If a trim edge or sparse plane wins the selection, refine the plane using
+      tangent occupancy and positive/negative reference labels, reauthor the LOD0
+      extraction, and recapture the triplet. Do not simply widen a collider or
+      hide the failure behind a generated interior.
+    - Run `verify`; any failed hard gate blocks promotion. For a sparse or
+      occluded measured front, an accepted measured-only triplet can attest the
+      profile-to-proxy registration while the numeric AABB coverage remains a
+      diagnostic in the report.
     - Open the dependency-free physics preview and scrub every joint in
       front/top/side views.
     - For SOG/LOD sources, run `experience-preview`, then `serve-preview`; do not
       open the streamed viewer through `file://`.
+    - Report source Gaussian count, live viewer budget, measured LOD0 articulation
+      count, and generated-completion count separately. A 671k working LOD, a
+      browser thumbnail, or procedural completion is not evidence that a 42M
+      source is low quality. Use the 32M local budget and **Hide inspector** for a
+      full-canvas quality check.
     - Keep original streamed SOG visual truth and reduced NanoUSD evidence/physics
       truth as separate registered lanes.
     - Check that stability was not achieved by freezing movable parts.
@@ -136,8 +157,13 @@ kitchen set before handoff:
 "$PYTHON" -m nanousd_rts author-home-kitchen /tmp/nanousd-home-scan-rts
 "$PYTHON" -m nanousd_rts fit-mesh-pbr /tmp/nanousd-home-scan-rts \
   --node oven_door --texture-size 512
+"$PYTHON" -m nanousd_rts segmentation-review-plan /tmp/nanousd-home-scan-rts
+# Inspect http://127.0.0.1:8765/preview/index.html?segmentation-review=1
+"$PYTHON" -m nanousd_rts check-segmentation-review /tmp/nanousd-home-scan-rts
+"$PYTHON" -m nanousd_rts accept-segmentation-review /tmp/nanousd-home-scan-rts \
+  --reviewer codex --note "Measured-only closed/half/open evidence accepted."
 "$PYTHON" -m nanousd_rts verify /tmp/nanousd-home-scan-rts
-"$PYTHON" -m nanousd_rts experience-preview /tmp/nanousd-home-scan-rts --budget 16
+"$PYTHON" -m nanousd_rts experience-preview /tmp/nanousd-home-scan-rts --budget 32
 "$PYTHON" -m nanousd_rts serve-preview /tmp/nanousd-home-scan-rts \
   --host 127.0.0.1 --port 8765
 ```
@@ -204,9 +230,10 @@ Run one synthetic `demo` and one real-asset ingest/render before handing off.
 
 ## Handoff
 
-Report the source hash and LOD, camera, node/selection counts, support edges,
+Report the source hash and LOD, camera, source/live-budget/measured-LOD0/generated
+Gaussian counts, node/selection counts, support edges,
 joint candidates and overrides, accepted generated completions, voxel/GLB
 registration transform and residual, mesh-fit diagnostics, PBR material provider,
 Gaussian-to-face binding counts, USDA hash/load result, hard-gate vector,
-interactive preview path, measured M5 timings, remaining learned-material work,
+measured-only segmentation triplet/acceptance, interactive preview path, measured M5 timings, remaining learned-material work,
 and the remaining Isaac/PhysX promotion work.

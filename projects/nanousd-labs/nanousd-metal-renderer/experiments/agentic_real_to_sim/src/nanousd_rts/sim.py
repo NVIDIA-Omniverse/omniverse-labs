@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 import math
 from dataclasses import asdict, replace
-from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -524,6 +523,14 @@ def verify(workspace: Workspace, *, run_sweeps: bool = True) -> dict[str, Any]:
     scene = load_gaussians(workspace.source_path)
     errors = []
     node_reports = []
+    # A sparse or partially occluded measured front can have a poor AABB overlap
+    # score even when its deterministic closed/half/open evidence is accepted.
+    # Keep the numeric score as a diagnostic, but let that explicit review attest
+    # to the profile-to-proxy registration instead of rejecting a reviewed front.
+    from .segmentation_review import segmentation_review_status
+
+    segmentation_reviews = segmentation_review_status(workspace)
+    reviewed_nodes = set(segmentation_reviews["accepted_nodes"])
     ids = {node.node_id for node in workspace.nodes}
     try:
         _assert_acyclic(workspace)
@@ -548,6 +555,7 @@ def verify(workspace: Workspace, *, run_sweeps: bool = True) -> dict[str, Any]:
             )
         )
         link_score = _collider_visual_score(node)
+        link_ok = link_score >= 0.5 or node.node_id in reviewed_nodes
         collider_ok = node.role == "background" or node.collider is not None
         node_report = {
             "id": node.node_id,
@@ -556,7 +564,10 @@ def verify(workspace: Workspace, *, run_sweeps: bool = True) -> dict[str, Any]:
             "joint_ok": joint_ok,
             "collider_ok": collider_ok,
             "visual_collider_coverage": link_score,
-            "visual_collider_link_ok": link_score >= 0.5,
+            "visual_collider_link_ok": link_ok,
+            "visual_collider_link_mode": (
+                "aabb-coverage" if link_score >= 0.5 else "accepted-visual-review"
+            ),
         }
         node_reports.append(node_report)
         if not all(
@@ -607,9 +618,17 @@ def verify(workspace: Workspace, *, run_sweeps: bool = True) -> dict[str, Any]:
         "all_joint_sweeps": all(report["passed"] for report in sweep_reports),
         "completion_assets_valid": completions["all_assets_valid"],
         "accepted_completions_linked": completion_links_ok,
+        "visual_segmentation_review": segmentation_reviews["passed"],
     }
+    if not segmentation_reviews["passed"]:
+        errors.append(
+            "visual segmentation review is pending for: "
+            + ", ".join(segmentation_reviews["pending_nodes"])
+        )
     report = {
         "schema_version": 1,
+        "scene_revision": workspace.state["scene_revision"],
+        "scene_digest": workspace.state["logical_digest"],
         "gates": gates,
         "passed": all(gates.values()),
         "errors": errors,
@@ -624,6 +643,7 @@ def verify(workspace: Workspace, *, run_sweeps: bool = True) -> dict[str, Any]:
             for item in sweep_reports
         ],
         "completions": completions,
+        "segmentation_reviews": segmentation_reviews,
         "continuous_scores": {
             "mean_visual_collider_coverage": float(
                 np.mean([item["visual_collider_coverage"] for item in node_reports])
@@ -638,6 +658,7 @@ def verify(workspace: Workspace, *, run_sweeps: bool = True) -> dict[str, Any]:
                 "support graph",
                 "visual-collider registration",
                 "conservative AABB settle/push/sweep",
+                "closed/half/open visual segmentation evidence",
             ],
             "requires_external_simulator": [
                 "PhysX contact fidelity",

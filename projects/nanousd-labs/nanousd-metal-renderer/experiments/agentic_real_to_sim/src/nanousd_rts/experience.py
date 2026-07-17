@@ -194,6 +194,8 @@ def _experience_payload(workspace: Workspace, visual: dict[str, Any], budget: fl
         if verification_path.is_file()
         else None
     )
+    if verification and verification.get("scene_digest") != workspace.state["logical_digest"]:
+        verification = None
     return {
         "scene": {
             "up_axis": workspace.up_axis,
@@ -221,11 +223,15 @@ EXPERIENCE_HTML = """<!doctype html>
 html,body { width:100%; height:100%; margin:0; overflow:hidden; background:var(--bg); color:var(--text); font:13px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace; }
 body { display:grid; grid-template-rows:auto minmax(0,1fr); }
 header { min-width:0; display:flex; justify-content:space-between; gap:16px; align-items:center; padding:12px 16px; border-bottom:1px solid var(--line); background:#0b1018; }
+.header-actions { display:flex; align-items:center; gap:8px; }
+.header-actions button { width:auto; padding:5px 9px; }
 h1 { margin:0; font:600 17px/1.2 system-ui,sans-serif; }
 .sub { color:var(--muted); margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .badge { flex:none; padding:5px 9px; border:1px solid var(--line); border-radius:999px; }
 .ok { color:var(--green); } .bad { color:var(--red); } .muted { color:var(--muted); }
 main { min-width:0; min-height:0; display:grid; grid-template-columns:minmax(0,1fr) 350px; }
+main.inspector-hidden { grid-template-columns:minmax(0,1fr); }
+main.inspector-hidden aside { display:none; }
 .visual { min-width:0; min-height:0; position:relative; background:#020305; }
 iframe { display:block; width:100%; height:100%; border:0; }
 .protocol-warning { display:none; position:absolute; inset:24px; z-index:4; place-items:center; text-align:center; padding:24px; background:#101722ee; border:1px solid var(--orange); border-radius:12px; }
@@ -241,6 +247,9 @@ button:disabled,input:disabled { cursor:not-allowed; opacity:.45; }
 .controls { display:grid; grid-template-columns:1fr auto; gap:9px; align-items:center; }
 .controls select,.controls input { grid-column:1/-1; }
 .joint-buttons { grid-column:1/-1; display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.joint-buttons #frameJoint { grid-column:1/-1; }
+.review-toggle { grid-column:1/-1; display:flex; align-items:center; gap:8px; color:var(--muted); }
+.review-toggle input { width:auto; margin:0; }
 output { color:var(--orange); }
 .proxy-frame { height:230px; overflow:hidden; border:1px solid var(--line); border-radius:8px; background:radial-gradient(circle at 50% 45%,#172235,#090d14 72%); }
 canvas { display:block; width:100%; height:100%; }
@@ -258,7 +267,7 @@ a { color:#76b9ff; }
 <body>
 <header>
   <div><h1>Home Scan · articulated real-to-sim</h1><div class="sub" id="qualityLine"></div></div>
-  <div class="badge" id="status">verification pending</div>
+  <div class="header-actions"><button id="toggleInspector" type="button">Hide inspector</button><div class="badge" id="status">verification pending</div></div>
 </header>
 <main>
   <div class="visual">
@@ -276,7 +285,8 @@ a { color:#76b9ff; }
       <div class="controls">
         <select id="joint"></select>
         <input id="state" type="range" min="0" max="1000" value="0">
-        <div class="joint-buttons"><button id="closeJoint" type="button">Close</button><button id="openJoint" type="button">Open</button></div>
+        <div class="joint-buttons"><button id="closeJoint" type="button">Close</button><button id="openJoint" type="button">Open</button><button id="frameJoint" type="button">Frame selected for review</button></div>
+        <label class="review-toggle"><input id="segmentationOnly" type="checkbox">Measured-only segmentation QA</label>
         <span class="muted">joint state</span><output id="value">closed</output>
       </div>
       <div class="note" id="visualState" style="margin-top:10px">Loading measured fronts and generated interiors…</div>
@@ -300,19 +310,28 @@ const slider=document.querySelector("#state");
 const valueOut=document.querySelector("#value");
 const closeButton=document.querySelector("#closeJoint");
 const openButton=document.querySelector("#openJoint");
+const frameButton=document.querySelector("#frameJoint");
+const segmentationOnly=document.querySelector("#segmentationOnly");
 const visualState=document.querySelector("#visualState");
 const viewerFrame=document.querySelector("#viewer");
 const canvas=document.querySelector("#proxy");
 const proxyFrame=document.querySelector("#proxyFrame");
+const mainLayout=document.querySelector("main");
+const inspectorButton=document.querySelector("#toggleInspector");
 const ctx=canvas.getContext("2d");
+const forcedSegmentationReview=new URLSearchParams(location.search).get("segmentation-review")==="1";
+segmentationOnly.checked=forcedSegmentationReview;
+segmentationOnly.disabled=forcedSegmentationReview;
 let resizeRequest=0;
 let visualReady=false;
 const visualJoints={};
 const jointStates=Object.fromEntries(Object.keys(data.sweeps).map(id=>[id,0]));
 
 const fmtCount=n=>new Intl.NumberFormat().format(n||0);
+const measuredArticulationCount=(data.visual.articulation?.objects||[]).reduce((sum,item)=>sum+(item.gaussian_count||0),0);
+const generatedCompletionCount=data.visual.generated?.generated_gaussians||0;
 document.querySelector("#qualityLine").textContent=
-  `${fmtCount(data.visual.gaussian_count)} source Gaussians · ${data.visual.lod_levels} LODs · ${data.visual.viewer_budget_millions}M live budget · ${data.visual.articulation?.objects?.length||0} measured fronts · ${data.visual.generated?.assets?.length||0} generated interior parts`;
+  `${fmtCount(data.visual.gaussian_count)} measured source · ${data.visual.lod_levels} LODs · ${data.visual.viewer_budget_millions}M live budget · ${fmtCount(measuredArticulationCount)} measured LOD0 articulation · ${fmtCount(generatedCompletionCount)} generated completion`;
 if(location.protocol==="file:"){
   document.querySelector("#protocolWarning").style.display="grid";
   document.querySelector("#viewer").style.visibility="hidden";
@@ -389,12 +408,66 @@ async function waitForViewer(){
     const frameWindow=viewerFrame.contentWindow;
     const viewer=frameWindow?.nanousdViewer;
     const classes=frameWindow?.nanousdPlayCanvas;
-    if(viewer?.global?.app&&classes?.Asset&&classes?.Entity)return {viewer,classes};
+    if(viewer?.global?.app&&classes?.Asset&&classes?.Entity)return {viewer,classes,frameWindow};
     await delay(100);
   }
   throw new Error("Timed out waiting for the streamed Gaussian viewer");
 }
-function loadSplatEntity(app,classes,item,{parent,enginePivot=null,name}){
+function reviewCameraState(node){
+  const completion=(data.scene.completion_candidates||[]).find(item=>item.node===node.id);
+  const profile=completion?.visual_profile;
+  if(!profile)throw new Error(`No visual profile is available for ${node.id}`);
+  const bounds=node.collider?boundsFromCenterSize(node.collider.center,node.collider.size):node.visual_bounds;
+  const center=bounds.min.map((value,index)=>(value+bounds.max[index])*0.5);
+  const size=bounds.min.map((value,index)=>bounds.max[index]-value);
+  const axis={X:0,Y:1,Z:2}[profile.front_axis];
+  const up={X:0,Y:1,Z:2}[data.scene.up_axis];
+  const horizontal=[0,1,2].find(index=>index!==axis&&index!==up);
+  const tangent=Math.max(...size.filter((_,index)=>index!==axis));
+  // Anchor the target to the closed part. Using the swept-volume center moved
+  // several small drawers and fridge doors out of frame. Peninsula/base fronts
+  // still need a camera between the cabinet and scanned foreground furniture.
+  const foregroundOccluded=
+    node.id.startsWith("peninsula_outer_door_")||node.id==="oven_right_base_door";
+  const narrowOven=node.id==="oven_upper_right";
+  const distance=Math.max(
+    foregroundOccluded?0.42:0.62,
+    tangent*(foregroundOccluded?0.72:(narrowOven?1.25:1.02))
+  );
+  const eye=[...center];
+  eye[axis]+=profile.outward_sign*distance;
+  eye[horizontal]+=size[horizontal]*0.18;
+  const engineEye=enginePoint(eye),engineTarget=enginePoint(center);
+  const direction=engineTarget.map((value,index)=>value-engineEye[index]);
+  const length=Math.hypot(...direction);
+  const unit=direction.map(value=>value/length);
+  const radToDeg=180/Math.PI;
+  return {
+    position:engineEye,
+    angles:[Math.asin(Math.max(-1,Math.min(1,unit[1])))*radToDeg,Math.atan2(-unit[0],-unit[2])*radToDeg,0],
+    distance:length,
+    fov:foregroundOccluded?72:(narrowOven?60:56),
+    mode:"orbit"
+  };
+}
+async function frameVisualJoint(id){
+  const node=data.nodes.find(item=>item.id===id);
+  if(!node)throw new Error(`Unknown review node: ${id}`);
+  const {viewer}=await waitForViewer();
+  const manager=viewer.cameraManager;
+  if(!manager?.camera?.position?.set||!manager?.camera?.angles?.set){
+    throw new Error("The pinned viewer did not expose its deterministic camera manager");
+  }
+  const snapshot=reviewCameraState(node);
+  manager.camera.position.set(...snapshot.position);
+  manager.camera.angles.set(...snapshot.angles);
+  manager.camera.distance=snapshot.distance;
+  manager.camera.fov=snapshot.fov;
+  viewer.global.state.cameraMode=snapshot.mode;
+  manager.snap();
+  viewer.global.app.renderNextFrame=true;
+}
+function loadSplatEntity(app,classes,item,{parent,enginePivot=null,name,enabled=true}){
   const {Asset,Entity}=classes;
   const url=new URL(item.url,viewerFrame.contentWindow.location.href).toString();
   return new Promise((resolve,reject)=>{
@@ -405,6 +478,7 @@ function loadSplatEntity(app,classes,item,{parent,enginePivot=null,name}){
       entity.setLocalEulerAngles(0,0,180);
       entity.addComponent("gsplat",{unified:true,asset});
       parent.addChild(entity);
+      entity.enabled=enabled;
       resolve(entity);
     });
     asset.once("error",error=>reject(new Error(`${item.id}: ${error}`)));
@@ -423,7 +497,20 @@ async function loadVisualObject(app,classes,item){
     enginePivot,
     name:`measured-splats:${item.id}`
   });
-  return {app,pivot,entity,enginePivot,joint:item.joint,gaussianCount:item.gaussian_count};
+  return {
+    app,pivot,entity,enginePivot,joint:item.joint,
+    gaussianCount:item.gaussian_count,
+    generatedStatic:[],generatedMoving:[],generatedGaussianCount:0
+  };
+}
+function visualJointSummary(id){
+  const visual=visualJoints[id];
+  if(!visual)return "Loading measured fronts and generated interiors…";
+  const fraction=jointStates[id]||0;
+  const visibility=segmentationOnly.checked
+    ?"hidden for measured-only QA"
+    :(fraction>0.01?"visible while articulated":"hidden while closed");
+  return `${fmtCount(visual.gaussianCount)} measured LOD0 Gaussians · ${fmtCount(visual.generatedGaussianCount)} generated completion Gaussians (${visibility})`;
 }
 function applyVisualJoint(id){
   const visual=visualJoints[id];
@@ -447,6 +534,10 @@ function applyVisualJoint(id){
       visual.enginePivot[2]+delta[2]
     );
   }
+  const completionVisible=fraction>0.01&&!segmentationOnly.checked;
+  for(const entity of [...visual.generatedStatic,...visual.generatedMoving]){
+    entity.enabled=completionVisible;
+  }
   visual.app.renderNextFrame=true;
 }
 async function setupVisualArticulations(){
@@ -460,28 +551,46 @@ async function setupVisualArticulations(){
     const {viewer,classes}=await waitForViewer();
     const loaded=await Promise.all(assets.map(item=>loadVisualObject(viewer.global.app,classes,item)));
     for(let index=0;index<assets.length;index++)visualJoints[assets[index].id]=loaded[index];
-    await Promise.all((generated.static_assets||[]).map(item=>
-      loadSplatEntity(viewer.global.app,classes,item,{
-        parent:viewer.global.app.root,
-        name:`generated-static:${item.id}`
-      })
-    ));
-    await Promise.all((generated.moving_assets||[]).map(item=>{
+    for(const item of generated.assets||[]){
       const visual=visualJoints[item.node];
-      if(!visual)throw new Error(`Generated moving asset has no measured joint: ${item.node}`);
-      return loadSplatEntity(viewer.global.app,classes,item,{
-        parent:visual.pivot,
-        enginePivot:visual.enginePivot,
-        name:`generated-moving:${item.id}`
-      });
-    }));
+      if(!visual)throw new Error(`Generated asset has no measured joint: ${item.node}`);
+      visual.generatedGaussianCount+=item.gaussian_count||0;
+    }
+    // Measured-only QA intentionally never uploads the generated SOG assets.
+    // Besides keeping the evidence representation-pure, this avoids loading 56
+    // unrelated completion assets before every segmentation screenshot.
+    if(!segmentationOnly.checked){
+      const loadedStatic=await Promise.all((generated.static_assets||[]).map(async item=>({
+        item,
+        entity:await loadSplatEntity(viewer.global.app,classes,item,{
+          parent:viewer.global.app.root,
+          name:`generated-static:${item.id}`,
+          enabled:false
+        })
+      })));
+      for(const {item,entity} of loadedStatic){
+        visualJoints[item.node].generatedStatic.push(entity);
+      }
+      const loadedMoving=await Promise.all((generated.moving_assets||[]).map(async item=>{
+        const visual=visualJoints[item.node];
+        return {
+          item,
+          entity:await loadSplatEntity(viewer.global.app,classes,item,{
+            parent:visual.pivot,
+            enginePivot:visual.enginePivot,
+            name:`generated-moving:${item.id}`,
+            enabled:false
+          })
+        };
+      }));
+      for(const {item,entity} of loadedMoving){
+        visualJoints[item.node].generatedMoving.push(entity);
+      }
+    }
     visualReady=true;
-    slider.disabled=false;closeButton.disabled=false;openButton.disabled=false;
+    slider.disabled=false;closeButton.disabled=false;openButton.disabled=false;frameButton.disabled=false;
     for(const id of Object.keys(visualJoints))applyVisualJoint(id);
-    setVisualStatus(
-      `${assets.length} measured fronts · ${fmtCount(assets.reduce((sum,item)=>sum+item.gaussian_count,0))} measured LOD0 Gaussians · ${fmtCount(generated.generated_gaussians||0)} generated interior Gaussians`,
-      "ok"
-    );
+    setVisualStatus(visualJointSummary(jointSelect.value),"ok");
   }catch(error){
     console.error(error);
     setVisualStatus(`Visual articulation failed: ${error.message}`,"bad");
@@ -490,7 +599,7 @@ async function setupVisualArticulations(){
 function setupJoints(){
   const ids=Object.keys(data.sweeps);
   jointSelect.innerHTML=ids.map(id=>`<option value="${id}">${id}</option>`).join("");
-  slider.disabled=true;closeButton.disabled=true;openButton.disabled=true;updateJoint();
+  slider.disabled=true;closeButton.disabled=true;openButton.disabled=true;frameButton.disabled=true;updateJoint();
 }
 function updateJoint(){
   const sweep=data.sweeps[jointSelect.value];
@@ -499,13 +608,25 @@ function updateJoint(){
   jointStates[jointSelect.value]=fraction;
   const i=Math.round(fraction*(sweep.samples.length-1)),sample=sweep.samples[i];
   valueOut.textContent=`${sample.value.toFixed(3)} ${sweep.joint.kind==="revolute"?"deg":"m"}`;
-  if(visualReady)applyVisualJoint(jointSelect.value);
+  if(visualReady){
+    applyVisualJoint(jointSelect.value);
+    setVisualStatus(visualJointSummary(jointSelect.value),"ok");
+  }
   draw();
 }
 jointSelect.addEventListener("change",()=>{slider.value=Math.round((jointStates[jointSelect.value]||0)*1000);updateJoint();});
 slider.addEventListener("input",updateJoint);
 closeButton.addEventListener("click",()=>{slider.value=0;updateJoint();});
 openButton.addEventListener("click",()=>{slider.value=1000;updateJoint();});
+frameButton.addEventListener("click",()=>frameVisualJoint(jointSelect.value).catch(error=>setVisualStatus(`Review camera failed: ${error.message}`,"bad")));
+segmentationOnly.addEventListener("change",()=>{
+  for(const id of Object.keys(visualJoints))applyVisualJoint(id);
+  if(visualReady)setVisualStatus(visualJointSummary(jointSelect.value),"ok");
+});
+inspectorButton.addEventListener("click",()=>{
+  const hidden=mainLayout.classList.toggle("inspector-hidden");
+  inspectorButton.textContent=hidden?"Show inspector":"Hide inspector";
+});
 new ResizeObserver(resize).observe(proxyFrame);
 window.addEventListener("resize",resize);
 gates();tree();completions();setupJoints();resize();setupVisualArticulations();
@@ -519,7 +640,7 @@ def write_experience(
     workspace: Workspace,
     *,
     output: Path | None = None,
-    budget: float = 16.0,
+    budget: float = 32.0,
 ) -> dict[str, Any]:
     if not budget > 0:
         raise RealToSimError("viewer budget must be positive")
@@ -540,14 +661,27 @@ def write_experience(
             and isinstance(item.get("visual_profile"), dict)
             and item["visual_profile"].get("background_occlusion_bounds")
         ]
+        shared_articulation = workspace.root / "preview" / "visual" / "articulated"
+        articulation_destination = visual_root / "articulated"
+        # Material-comparison previews have different generated completions but
+        # exactly the same 42M measured source and articulated selections. Keep
+        # one validated extraction cache instead of decoding/re-encoding every
+        # SOG LOD for each PBR variant (which can exhaust memory on a laptop).
+        cache_destination = (
+            shared_articulation
+            if articulation_destination != shared_articulation
+            else articulation_destination
+        )
         articulation = materialize_articulated_sog(
             source,
-            visual_root / "articulated",
+            cache_destination,
             workspace.nodes,
             working_ply=workspace.source_path,
             selection_root=workspace.root,
             background_occlusions=background_occlusions,
         )
+        if articulation_destination != cache_destination:
+            _replace_link(articulation_destination, cache_destination)
         content_url = articulation.get("background_url") or f"./content/{content_name}"
     else:
         _replace_link(visual_root / content_name, source)
@@ -630,7 +764,7 @@ def serve_preview(
     *,
     host: str = "127.0.0.1",
     port: int = 8765,
-    budget: float = 16.0,
+    budget: float = 32.0,
     open_browser: bool = False,
 ) -> dict[str, Any]:
     report = write_experience(workspace, budget=budget)

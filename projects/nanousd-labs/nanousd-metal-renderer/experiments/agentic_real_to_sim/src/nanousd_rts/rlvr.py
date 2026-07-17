@@ -108,6 +108,7 @@ def _failed_verification(error: Exception) -> dict[str, Any]:
         "all_joint_sweeps": False,
         "completion_assets_valid": False,
         "accepted_completions_linked": False,
+        "visual_segmentation_review": False,
     }
     return {
         "passed": False,

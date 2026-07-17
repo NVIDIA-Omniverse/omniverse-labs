@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -10,12 +11,13 @@ import numpy as np
 
 from .core import AXES, Bounds, RealToSimError, Workspace
 from .gaussian import GaussianScene, load_gaussians, select_bounds
+from .segmentation import PLANAR_REFINER, refine_planar_selection
 from .sim import add_node, fit_joint
 from .visual_completion import author_visual_completion
 
 
 HOME_SCAN_WORKING_GAUSSIANS = 671_787
-HOME_KITCHEN_PROFILE = "home-scan-kitchen-v1"
+HOME_KITCHEN_PROFILE = "home-scan-kitchen-v2"
 
 
 @dataclass(frozen=True, slots=True)
@@ -32,6 +34,8 @@ class PanelProfile:
     hinge_side: int | None = None
     upper: float | None = None
     shelf_count: int = 1
+    segmentation_inward_band: float | None = None
+    segmentation_outward_band: float | None = None
 
 
 def _bounds(values: tuple[float, float, float, float, float, float]) -> Bounds:
@@ -133,6 +137,12 @@ PANELS: tuple[PanelProfile, ...] = (
         1,
         0.38,
         hinge_side=1,
+        # Closed/half/open measured-only review showed that the narrower band
+        # captured trim but left most of this narrow corner front in the static
+        # background. Keep twelve negative LOD5 references while spanning the
+        # two depth lobes that visually form the complete front.
+        segmentation_inward_band=0.14,
+        segmentation_outward_band=0.14,
     ),
     # Corner upper cabinets facing the refrigerator.
     PanelProfile(
@@ -516,7 +526,16 @@ def _add_panel(
     scene: GaussianScene,
     profile: PanelProfile,
 ) -> dict[str, Any]:
-    selected = _indices(scene, profile.selection, label=profile.node_id)
+    segmentation = refine_planar_selection(
+        scene,
+        profile.selection,
+        front_axis=profile.front_axis,
+        outward_sign=profile.outward_sign,
+        kind=profile.kind,
+        inward_band=profile.segmentation_inward_band,
+        outward_band=profile.segmentation_outward_band,
+    )
+    selected = segmentation.indices
     collider = _physical_panel_collider(profile)
     add_node(
         workspace,
@@ -531,11 +550,12 @@ def _add_panel(
         tags=(
             "measured",
             "kitchen",
-            "panel-bounds",
+            "visual-refined",
+            PLANAR_REFINER,
             HOME_KITCHEN_PROFILE,
             profile.kind,
         ),
-        selection_mode="bounds",
+        selection_mode="stable-reference",
         selection_bounds=profile.selection,
     )
     if profile.kind == "drawer":
@@ -581,6 +601,7 @@ def _add_panel(
         "selected_gaussians": int(len(selected)),
         "joint": joint.kind,
         "completion": completion["id"],
+        "segmentation": segmentation.diagnostics,
     }
 
 
@@ -596,13 +617,30 @@ def author_home_scan_kitchen(workspace: Workspace) -> dict[str, Any]:
 
     try:
         existing_oven = workspace.node("oven_door")
-        oven_indices = workspace.load_selection(existing_oven).astype(np.uint32)
-        oven_selection_mode = existing_oven.selection_mode
-        oven_selection_bounds = existing_oven.selection_bounds
+        if existing_oven.selection_mode == "stable-reference":
+            oven_indices = workspace.load_selection(existing_oven).astype(np.uint32)
+            oven_selection_mode = "stable-reference"
+            oven_selection_bounds = existing_oven.selection_bounds or OVEN_SELECTION
+            oven_segmentation: dict[str, Any] = {
+                "schema_version": 1,
+                "refiner": "preserved-existing-stable-reference",
+                "positive_references": int(len(oven_indices)),
+                "proposal_bounds": oven_selection_bounds.to_json(),
+            }
+        else:
+            raise RealToSimError("replace bounds-selected oven with planar references")
     except RealToSimError:
-        oven_indices = _indices(scene, OVEN_SELECTION, label="oven_door")
-        oven_selection_mode = "bounds"
+        refined_oven = refine_planar_selection(
+            scene,
+            OVEN_SELECTION,
+            front_axis="X",
+            outward_sign=1,
+            kind="oven-door",
+        )
+        oven_indices = refined_oven.indices
+        oven_selection_mode = "stable-reference"
         oven_selection_bounds = OVEN_SELECTION
+        oven_segmentation = refined_oven.diagnostics
 
     panel_ids = {profile.node_id for profile in PANELS}
     cleanup_ids = panel_ids | {
@@ -643,7 +681,14 @@ def author_home_scan_kitchen(workspace: Workspace) -> dict[str, Any]:
         collider_bounds=OVEN_COLLIDER,
         collider_confidence=0.88,
         collider_provenance=f"{HOME_KITCHEN_PROFILE}:stable-oven-front",
-        tags=("measured", "kitchen", HOME_KITCHEN_PROFILE, "door", "oven"),
+        tags=(
+            "measured",
+            "kitchen",
+            "visual-refined",
+            HOME_KITCHEN_PROFILE,
+            "door",
+            "oven",
+        ),
         selection_mode=oven_selection_mode,
         selection_bounds=oven_selection_bounds,
     )
@@ -679,6 +724,7 @@ def author_home_scan_kitchen(workspace: Workspace) -> dict[str, Any]:
             "selected_gaussians": int(len(oven_indices)),
             "joint": oven_joint.kind,
             "completion": oven_completion["id"],
+            "segmentation": oven_segmentation,
         }
     ]
     for profile in PANELS:
@@ -696,7 +742,34 @@ def author_home_scan_kitchen(workspace: Workspace) -> dict[str, Any]:
             "measured": "source selections and extracted LOD0 door/drawer fronts",
             "generated": "separate static cavity and joint-attached interior PLY assets",
         },
+        "segmentation": {
+            "method": PLANAR_REFINER,
+            "bounds_are_proposals_only": True,
+            "high_resolution_transfer": "positive and negative working-PLY references",
+            "visual_feedback_required": ["closed", "half-open", "fully-open"],
+        },
     }
+    segmentation_root = workspace.root / "evidence" / "segmentation"
+    segmentation_root.mkdir(parents=True, exist_ok=True)
+    (segmentation_root / "refinement.json").write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "profile": HOME_KITCHEN_PROFILE,
+                "parts": [
+                    {
+                        "id": item["id"],
+                        "segmentation": item["segmentation"],
+                    }
+                    for item in authored
+                ],
+            },
+            sort_keys=True,
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
     workspace.trace(
         "author-home-scan-kitchen",
         {"profile": HOME_KITCHEN_PROFILE},

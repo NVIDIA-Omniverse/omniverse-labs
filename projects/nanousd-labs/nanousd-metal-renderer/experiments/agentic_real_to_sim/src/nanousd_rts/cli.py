@@ -25,6 +25,12 @@ from .mesh_completion import (
     fit_mesh_pbr_completion,
 )
 from .preview import write_preview
+from .segmentation_review import (
+    accept_segmentation_review,
+    check_segmentation_review_evidence,
+    create_segmentation_review_plan,
+    segmentation_review_status,
+)
 from .sim import (
     add_node,
     add_node_from_bounds,
@@ -211,13 +217,42 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _add_common_workspace(experience_parser)
     experience_parser.add_argument("--output", type=Path)
-    experience_parser.add_argument("--budget", type=float, default=16.0)
+    experience_parser.add_argument("--budget", type=float, default=32.0)
 
     home_kitchen_parser = sub.add_parser(
         "author-home-kitchen",
         help="Author the full visible Home Scan kitchen with generated amodal interiors.",
     )
     _add_common_workspace(home_kitchen_parser)
+
+    segmentation_plan_parser = sub.add_parser(
+        "segmentation-review-plan",
+        help="Write closed/half/open visual-review requirements for refined articulations.",
+    )
+    _add_common_workspace(segmentation_plan_parser)
+    segmentation_plan_parser.add_argument("--node", action="append")
+
+    segmentation_accept_parser = sub.add_parser(
+        "accept-segmentation-review",
+        help="Accept captured closed/half/open evidence after semantic inspection.",
+    )
+    _add_common_workspace(segmentation_accept_parser)
+    segmentation_accept_parser.add_argument("--node", action="append")
+    segmentation_accept_parser.add_argument("--reviewer", required=True)
+    segmentation_accept_parser.add_argument("--note", required=True)
+
+    segmentation_status_parser = sub.add_parser(
+        "segmentation-reviews",
+        help="Report the fail-closed visual segmentation review gate.",
+    )
+    _add_common_workspace(segmentation_status_parser)
+
+    segmentation_check_parser = sub.add_parser(
+        "check-segmentation-review",
+        help="Check every captured pose triplet before semantic acceptance.",
+    )
+    _add_common_workspace(segmentation_check_parser)
+    segmentation_check_parser.add_argument("--node", action="append")
 
     serve_parser = sub.add_parser(
         "serve-preview",
@@ -226,7 +261,7 @@ def build_parser() -> argparse.ArgumentParser:
     _add_common_workspace(serve_parser)
     serve_parser.add_argument("--host", default="127.0.0.1")
     serve_parser.add_argument("--port", type=int, default=8765)
-    serve_parser.add_argument("--budget", type=float, default=16.0)
+    serve_parser.add_argument("--budget", type=float, default=32.0)
     serve_parser.add_argument("--open", action="store_true", dest="open_preview")
 
     sub.add_parser(
@@ -518,6 +553,28 @@ def dispatch(args: argparse.Namespace) -> tuple[Any, int]:
         ), 0
     if args.command == "author-home-kitchen":
         return author_home_scan_kitchen(workspace), 0
+    if args.command == "segmentation-review-plan":
+        return create_segmentation_review_plan(
+            workspace,
+            node_ids=args.node,
+        ), 0
+    if args.command == "accept-segmentation-review":
+        report = accept_segmentation_review(
+            workspace,
+            reviewer=args.reviewer,
+            note=args.note,
+            node_ids=args.node,
+        )
+        return report, 0 if report["passed"] else 1
+    if args.command == "segmentation-reviews":
+        report = segmentation_review_status(workspace)
+        return report, 0 if report["passed"] else 1
+    if args.command == "check-segmentation-review":
+        report = check_segmentation_review_evidence(
+            workspace,
+            node_ids=args.node,
+        )
+        return report, 0 if report["passed"] else 1
     if args.command == "serve-preview":
         return serve_preview(
             workspace,

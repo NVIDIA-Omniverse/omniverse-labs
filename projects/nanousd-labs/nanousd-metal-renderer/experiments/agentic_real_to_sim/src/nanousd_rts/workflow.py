@@ -15,6 +15,10 @@ from .core import Bounds, RealToSimError, Workspace
 from .gaussian import Camera, ingest, make_drawer_fixture, render, select_render_mask
 from .mesh_completion import LOCAL_MATERIAL_PROVIDER, fit_mesh_pbr_completion
 from .preview import write_preview
+from .segmentation_review import (
+    accept_segmentation_review,
+    create_segmentation_review_plan,
+)
 from .sim import (
     add_node,
     add_node_from_bounds,
@@ -38,6 +42,8 @@ TOOL_CATALOG = {
     "propose-hidden-interiors": "Generate multiple clearly labeled, non-measured Gaussian completion candidates.",
     "accept-completion": "Promote one completion only after its collider passes the articulation sweep.",
     "fit-mesh-pbr": "Fit an accepted category template, UV/PBR texture it, and bind Gaussians to mesh faces.",
+    "segmentation-review-plan": "Require visual evidence before, during, and after articulation.",
+    "accept-segmentation-review": "Record an auditable semantic verdict over closed/half/open evidence.",
     "sweep-joint": "Sweep a joint through limits with fail-closed forbidden-overlap gates.",
     "settle": "Project movable AABBs onto supports under gravity.",
     "push-test": "Apply a deterministic kinematic push and report collisions.",
@@ -134,6 +140,18 @@ def execute_action(workspace: Workspace, action: dict[str, Any]) -> dict[str, An
             ),
             texture_size=int(action.get("texture_size", 512)),
             gaussian_multiplier=float(action.get("gaussian_multiplier", 1.0)),
+        )
+    if tool == "segmentation-review-plan":
+        return create_segmentation_review_plan(
+            workspace,
+            node_ids=action.get("nodes"),
+        )
+    if tool == "accept-segmentation-review":
+        return accept_segmentation_review(
+            workspace,
+            reviewer=action["reviewer"],
+            note=action["note"],
+            node_ids=action.get("nodes"),
         )
     if tool == "sweep-joint":
         return sweep_joint(workspace, node_id=action["node"], samples=int(action.get("samples", 17)))
