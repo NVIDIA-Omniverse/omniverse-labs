@@ -17,6 +17,23 @@ No tool silently replaces the Gaussian scene with a mesh. Every node stores its
 source-row selection and collider atomically, and every operation appends to
 `trace/operations.jsonl`.
 
+## Home Scan gallery
+
+These are captures from the local Metal experience preview. The photographs and
+measured fronts are Gaussian-splat evidence; articulated interiors are explicitly
+generated, non-measured completion assets. The pose reels are deterministic
+closed/half/open review captures, not a claim of continuous learned animation.
+
+| Kitchen scan | Oven interaction | Refrigerator interaction |
+| --- | --- | --- |
+| ![Closed Home Scan kitchen](docs/media/home-scan/kitchen-closed.png) | ![Oven open with accepted generated interior](docs/media/home-scan/oven-open.png) | ![Refrigerator door open](docs/media/home-scan/fridge-open.png) |
+
+| Oven pose reel | Refrigerator pose reel |
+| --- | --- |
+| ![Measured-only oven closed half open reel](docs/media/home-scan/oven-pose-reel.gif) | ![Measured-only refrigerator closed half open reel](docs/media/home-scan/fridge-pose-reel.gif) |
+
+Run the live experience locally at [http://127.0.0.1:8765/preview/index.html](http://127.0.0.1:8765/preview/index.html). Use **Hide inspector** for the full scene and the articulated selector to drive doors and drawers.
+
 ## What works locally
 
 - PLY ingest and PlayCanvas SOG/LOD ingest through `splat-transform`.
@@ -315,6 +332,49 @@ The expected loop is:
 9. Compile USDA and render the proxy scene through NanoUSD.
 10. Run `verify`; do not promote a scene with a failed hard gate.
 11. Inspect the interactive preview and package the evidence.
+
+## Agent recipes for humans
+
+The system works best when an AI agent is treated as a bounded scene author:
+give it the source location, the desired interaction, and the hard evidence you
+expect back. Do not ask it to "make it look good" without requiring source
+provenance, a measured-only visual review, and a verification report.
+
+The complete copy/paste recipes are in [docs/AGENT_RECIPES.md](docs/AGENT_RECIPES.md).
+These are the three most useful starting prompts:
+
+**1. Build an interactive scene from a scan**
+
+```text
+Use the nanousd-real-to-sim workflow on <SOURCE> and create a workspace at
+<WORKSPACE>. Preserve the source immutably. Render RGB/depth/normal/stable-ID
+evidence before selecting objects. Author support, colliders, and joints for the
+visible drawers and cabinet doors. For every movable front, capture measured-only
+closed/half/open evidence, accept it only if the selection moves independently,
+then run verify and report every hard gate plus source/live/LOD0/generated counts.
+```
+
+**2. Repair a bad articulated extraction**
+
+```text
+The front for <NODE> looks wrong when opened. Work only from measured evidence:
+open the streamed preview in measured-only segmentation QA mode, inspect closed,
+half, and open poses, and refine the planar selection using tangent occupancy and
+positive/negative references. Reauthor the LOD0 extraction, recapture the pose
+triplet, run check-segmentation-review and verify. Do not conceal a bad measured
+selection with a generated interior or widened collider.
+```
+
+**3. Add learned materials without laundering provenance**
+
+```text
+For accepted completion <NODE>, fit the mesh/PBR request and run both official
+MatFuse and StableMaterials workers in the isolated materials environment. Compare
+their UV-aligned bundles, import the selected bundle as external-pbr-atlas-v1,
+and verify every map/binding hash. Keep all learned maps and resampled interior
+Gaussians marked measured=false; report the model revision, prompt, seed, and the
+measured-to-generated boundary.
+```
 
 ## Workspace contract
 
