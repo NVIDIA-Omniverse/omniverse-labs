@@ -1,0 +1,4 @@
+interface:
+  display_name: "Blender Mesh Authoring"
+  short_description: "Build and audit Blender meshes safely"
+  default_prompt: "Use $blender-mesh-authoring to create or modify the named Blender mesh with evaluated-geometry validation."

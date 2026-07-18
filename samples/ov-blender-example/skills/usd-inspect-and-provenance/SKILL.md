@@ -38,9 +38,18 @@ Use this skill when inspect a Blender-exported or supplied USD stage for composi
 
 ## Instructions
 
-Use the installed USD inspector (`usdcat`, `usdchecker`, a DCC inspector, or
-the add-on's documented validation action) and capture machine-readable output
-when available. Check:
+Run `scripts/inspect_usd.py` through Blender's bundled Python when standalone
+`pxr` is unavailable. It emits a read-only `usd_stage_inspection.v1` result and
+checks composition dependencies, stage metadata, prim identity, finite
+transforms, and mesh topology. For example:
+
+```text
+blender --background --python scripts/inspect_usd.py -- \
+  --stage /absolute/caller-owned/scene.usdc --require-resolved
+```
+
+Use `usdcat`, `usdchecker`, a DCC inspector, or the add-on's documented
+validation action for additional schema-specific checks. Check:
 
 - layer stack, sublayers, references, payloads, clips, variants, relocates,
   asset paths, and unresolved external files;
@@ -69,20 +78,7 @@ flattened variants when flattening changes opinions. Do not silently rotate or
 rescale geometry because metadata appears surprising; compare representative
 transforms first and report any corrective policy explicitly.
 
-## Report and acceptance
-
-Write `usd-inspection-report.json` with:
-
-```json
-{
-  "status": "pass|blocked|fail",
-  "stages": [{"role": "source", "path": "...", "sha256": "..."}],
-  "dependencies": [{"path": "...", "kind": "layer|texture", "sha256": "...", "status": "present"}],
-  "metadata": {"default_prim": "...", "up_axis": "Z", "meters_per_unit": 1.0},
-  "checks": {"opens": "pass", "paths": "pass", "transforms": "pass", "bindings": "pass", "physics": "not_applicable"},
-  "mappings": [], "blockers": [], "limitations": []
-}
-```
+## Acceptance
 
 Pass requires all required dependencies resolved, no non-finite transform or
 identity errors, expected bindings/products present, and unchanged source
@@ -90,6 +86,6 @@ hashes. `blocked` means an inspector, optional USD schema, add-on export, or
 runtime capability is unavailable; report the exact capability and continue
 only with checks that remain valid. A preview rendered by Blender is not proof
 of OVRTX ownership; label render class explicitly.
-Keep absolute paths and raw diagnostics local. Use relative, sanitized paths in
-shareable manifests and process reports, logs, and screenshots through
-`blender-sanitized-support-bundle` before sharing.
+Return the failed checks and relevant stage/dependency paths. Create a full JSON
+inventory only for batch or reproducible handoff. Keep absolute paths and raw
+diagnostics local and sanitize anything shared.

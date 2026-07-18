@@ -1,0 +1,4 @@
+interface:
+  display_name: "OVRTX Color Management"
+  short_description: "Validate one-owner OVRTX display presentation"
+  default_prompt: "Use $ovrtx-color-management to choose one display-transform owner, probe the installed presentation enum, and diagnose this OVRTX color mismatch."

@@ -1,4 +1,4 @@
 interface:
   display_name: "OVRTX Sensor Capture"
-  short_description: "Capture OVRTX sensors and AOV products with provenance"
-  default_prompt: "Capture the requested OVRTX sensor or AOV outputs with raw, review, and provenance artifacts."
+  short_description: "Customize and validate native multi-sensor routing"
+  default_prompt: "Use $ovrtx-sensor-capture to probe the current sensor surface and implement or validate exact native sensor selection, stepping, readback, and cleanup."

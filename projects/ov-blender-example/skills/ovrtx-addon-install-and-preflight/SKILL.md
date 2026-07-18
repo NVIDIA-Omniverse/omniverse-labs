@@ -81,8 +81,9 @@ Only claim “ready” when all required checks pass. A missing runtime, client 
   that absolute directory as **Install Runtime From**. Do not invent an offline
   package or substitute a different renderer while claiming OVRTX success.
 
-## Closeout report
+## Closeout
 
-Return Blender version, add-on version/source revision, runtime state, preflight checks, platform/GPU if available, smoke output path, and blockers. Never include credentials in the report.
-Keep the full report local; use relative or sanitized paths and
-`blender-sanitized-support-bundle` before sharing logs or diagnostics.
+Return the readiness decision, Blender/add-on version, runtime state, smoke
+result, and first actionable blocker. Create or share a diagnostic bundle only
+when troubleshooting requires it; never include credentials, and sanitize logs
+before sharing.

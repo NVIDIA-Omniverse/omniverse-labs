@@ -89,5 +89,6 @@ product UI, parsing, or overlays is add-on work.
 
 ## Handoff
 
-Return the focused commit, semantic fixture, unit and runtime tests, raw products,
-ID maps, aligned previews, provenance report, and the boundary decision.
+Return the changed files, semantic fixture result, unit/runtime tests, raw
+product identity, and any add-on/runtime boundary finding. Add previews or a
+provenance bundle only when requested.

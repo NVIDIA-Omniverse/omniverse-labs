@@ -35,7 +35,7 @@ to substitute Blender rigid bodies or hand-authored keyframes.
 ## Instructions
 
 1. Work from a copy of the `.blend` or USD and write artifacts to a unique
-   caller-selected directory such as `.cache/ovphysx-drop-YYYYMMDD-HHMMSS/`.
+   unique caller-selected working directory.
    Hash the source before and after the run.
 2. Choose one support (floor, stair, shelf, or collider) and one or more
    dynamic roots. Record stable Blender object names, exported USD prim paths,
@@ -86,25 +86,11 @@ For a non-contact scenario, explicitly mark contact/settling gates as
 `not_applicable`; never silently omit them. A short-lived contact followed by
 continued unbounded motion is a failure, not a settled result.
 
-## Evidence package
+## Result
 
-Write `ovphysx-drop-report.json` beside the captures. Include at least:
-
-```json
-{
-  "status": "pass|blocked|fail",
-  "source": {"path": "...", "sha256": "..."},
-  "runtime": {"addon": "...", "ovrtx": "...", "ovphysx": "...", "gpu": "..."},
-  "settings": {"dt": 0.0166667, "duration_s": 4.0, "gravity": [0, 0, -9.81]},
-  "bodies": {"expected": 0, "discovered": 0, "identity": "pass|fail"},
-  "poses": {"samples": 0, "finite": "pass|fail", "state_hash": "..."},
-  "contact": {"events": 0, "settled_fraction": 0.0, "visible_gap_m": null},
-  "replay": {"mapping": "pass|fail", "render_class": "ovrtx|blender|diagnostic"},
-  "artifacts": [], "blockers": [], "limitations": []
-}
-```
-
-Retain pose samples, collision/proxy audit, initial/contact/settled previews,
-camera metadata, output hashes, and the exact command or UI actions. If native
-readback or the runtime is unavailable, return `blocked` with the first exact
-status/log message and do not generate a passing movie from fake poses.
+Return the body identities, timestep/gravity, finite pose/contact/settling
+metrics, and whether replay mapping passed. Keep raw pose samples when they are
+the requested deliverable or needed to reproduce a failure; create previews or
+a machine-readable result only when useful to the caller. If native readback or
+the runtime is unavailable, return the first exact status message and do not
+generate a passing movie from fake poses.

@@ -87,5 +87,5 @@ composition, or missing fallback logic is add-on work, not worker work.
 
 ## Handoff
 
-Return a focused commit, tests, visual A/B evidence, compatibility notes,
-and an explicit `addon-only` or `client/server-escalation-required` decision.
+Return the changed files, tests, one representative A/B result, compatibility
+notes, and any add-on/runtime boundary finding. Commit only when requested.

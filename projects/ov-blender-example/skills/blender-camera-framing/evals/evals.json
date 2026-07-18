@@ -1,0 +1,33 @@
+[
+  {
+    "query": "Frame CAM-product tightly around GEO-product with eight percent margin for a 1920x1080 render, including its modifier output.",
+    "should_trigger": true
+  },
+  {
+    "query": "My object is cropped after changing the Blender render from landscape to portrait. Refit the perspective camera with the correct aspect ratio.",
+    "should_trigger": true
+  },
+  {
+    "query": "Fit these collection instances into an orthographic Blender camera and set safe near and far clipping.",
+    "should_trigger": true
+  },
+  {
+    "query": "Use this Empty as the camera look target while ensuring all named objects project inside a 10 percent safe frame.",
+    "should_trigger": true
+  },
+  {
+    "query": "Press Home in my current Blender viewport so I can see the whole scene while modeling.",
+    "should_trigger": false,
+    "rationale": "This is interactive viewport framing, not render-camera fitting."
+  },
+  {
+    "query": "Create a cinematic camera move and animate depth of field.",
+    "should_trigger": false,
+    "rationale": "This skill fits static evaluated bounds; it does not design camera animation or focus behavior."
+  },
+  {
+    "query": "Render the active camera through OVRTX at 64 samples.",
+    "should_trigger": false,
+    "rationale": "The camera is already chosen; use an OVRTX render workflow."
+  }
+]

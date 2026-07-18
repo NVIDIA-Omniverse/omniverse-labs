@@ -1,68 +1,33 @@
 ---
 name: ovrtx-color-management
-description: Keep Blender, OVRTX, and review-tool color handling explicit and single-applied. Use when choosing Scene Linear HDR versus LDR display passthrough, setting view transform/look/exposure/gamma, diagnosing washed-out or dark renders, or comparing OVRTX with Blender references.
-license: "Apache-2.0"
-metadata:
-  author: "Max Bickley"
-  version: "0.1"
-  team: "omniverse"
-  domain: "physical-ai"
-  tags:
-    - blender
-    - omniverse
-    - ovrtx
-    - color-management
+description: Choose and validate ownership of OVRTX display presentation between scene-linear HDR and display-encoded LDR, using the installed add-on enum and the official color-presentation probe. Use for double-transform, washed-out, too-dark, or Blender-versus-OVRTX display differences.
 ---
+
 # OVRTX color management
 
-Color correctness is a data-contract problem before it is a look-development
-problem. Treat the installed add-on/runtime as authoritative for available
-frame formats and keep source, native, and display derivatives separate.
+Keep exactly one display-transform owner:
 
-## When to Use
+- `scene_linear_hdr`: OVRTX supplies scene-linear data and the consumer applies
+  Blender/OCIO view settings once.
+- `ldr_rgba8_display_passthrough`: OVRTX supplies display-encoded pixels and the
+  consumer must not apply Blender's display transform again.
 
-Use when choosing Scene Linear HDR versus LDR display passthrough, setting view transform/look/exposure/gamma, diagnosing washed-out or dark renders, or comparing OVRTX with Blender references.
+Probe the allowed `color_presentation_mode` enum through
+`ovrtx-current-scene-workflow`, then set it with `ovrtx-render-settings`.
+Do not assume these identifiers exist in another add-on revision.
 
-## Choose one presentation mode
+For the pinned official example, run the public ownership regression:
 
-- `scene_linear_hdr`: request `HdrColor`/RGBA16F when available. The consumer
-  owns the display transform; record the OCIO/display device and transform used
-  for every review derivative.
-- `ldr_rgba8_display_passthrough`: request `LdrColor`/RGBA8 when the OVRTX
-  render product already applies its display transform. Do not apply Blender's
-  view transform again.
-- `ocio_baked_display`: treat as unavailable unless the add-on/runtime reports
-  an explicit implementation. Never silently substitute it.
+```text
+python3 scripts/run_ovrtx_color_presentation_probe.py \
+  --output-dir /absolute/caller-owned/color-probe
+```
 
-The example's documented color-presentation diagnostics expose the requested and
-active mode, frame format, RenderVar, conversion, display-transform owner, and
-Blender view settings. Include those fields in the capture report.
+For a real scene, render the same camera/light/material state with both the
+requested native mode and a clearly labeled Blender control. Diagnose runtime
+readback and dimensions first, then camera/stage, then light/world, then color
+ownership, and only then material values. Never fix a double transform by
+editing albedo, light energy, or exposure invisibly.
 
-## Instructions
-
-1. Freeze the scene camera, resolution, world/light settings, render engine,
-   view transform, look, exposure, gamma, display device, and output format.
-2. Render a neutral gray/chrome or checker control before tuning materials.
-   Capture the same frame as HDR and/or LDR when supported and retain raw data.
-3. Apply a view/exposure change once, render again, and verify the pixel data or
-   measured luma changes in the expected direction. Never diagnose a double
-   transform from a screenshot alone.
-4. Compare Blender/Cycles and OVRTX only after camera, geometry, light units,
-   world, and material identity are documented. Label comparisons as look
-   review, not pixel parity, when cameras or transforms differ.
-5. If output is black, clipped, flat, or over-bright, diagnose in order:
-   runtime/readback, product/RenderVar, frame format, transform ownership,
-   exposure/tone map, then lights/materials. Do not recolor albedo to hide a
-   display error.
-
-## Evidence requirements
-
-For every image write a sidecar containing source/runtime identity, requested
-and active color mode, frame format, RenderVar, transform owner, Blender view
-settings, and any conversion code/version. Keep source-linear EXR/NPY and
-display PNG separate. State whether a derivative is native, consumer-converted,
-or postprocessed review output.
-
-If the requested mode or RenderVar is unsupported, report `unavailable` with the
-runtime diagnostic. Do not claim color-managed OVRTX output from an EEVEE or
-Cycles fallback.
+Summarize the chosen owner, enum, native result, and first mismatch. Generate
+comparison sheets or numeric image reports only when requested.

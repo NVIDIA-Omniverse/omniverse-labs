@@ -1,83 +1,26 @@
 ---
 name: ovrtx-semantic-aov-capture
-description: Request and validate OVRTX semantic, instance, depth, normal, mask, and other render-product AOVs from Blender while preserving ID maps, camera alignment, output-variable provenance, and raw-versus-display distinctions. Use when training data, compositing, segmentation, or sensor evaluation needs more than an RGB beauty image.
-license: "Apache-2.0"
-metadata:
-  author: "Max Bickley"
-  version: "0.1"
-  team: "omniverse"
-  domain: "physical-ai"
-  tags:
-    - blender
-    - omniverse
-    - ovrtx
-    - aovs
+description: Develop and validate semantic or ID RenderVar capture through the public OVRTX add-on and native client. Use when developers customize semantic class, instance, segmentation, or ID AOV support. This skill requires typed native readback and durable USD semantics; it does not treat colored postprocessing as native evidence.
 ---
-# OVRTX semantic and AOV capture
 
-Treat each AOV as a typed render product with explicit ownership and
-provenance. A colorized screenshot, Blender viewport overlay, or postprocessed
-mask is not a native semantic/instance product unless the report says so.
+# OVRTX semantic AOV capture
 
-## When to Use
+Use `ovrtx-render-products-and-aovs` for product/readback mechanics and
+`extend-ovrtx-semantic-aovs` for implementation.
 
-Use when training data, compositing, segmentation, or sensor evaluation needs more than an RGB beauty image.
+1. Define durable semantic class/instance ownership in USD separately from the
+   visualization. Preserve stable prim identity through composition.
+2. Add an explicit product/RenderVar path and typed native builder/decoder.
+   Probe the installed native module's capabilities; fail as unsupported when
+   the semantic builder or decoder is absent.
+3. Preserve dtype, dimensions, background/unlabeled value, class/instance
+   mapping, sample time, product identity, and terminal status.
+4. Test duplicate labels, missing labels, hidden/excluded prims, remapped prim
+   paths, iterator pages, wrong dtype/shape, terminal errors, and cleanup.
+5. Validate a tiny fixture with two known labeled objects and one unlabeled
+   background before a real scene. Require exact pixel IDs at known regions and
+   stable mapping across repeated reads.
 
-## Runtime boundary
-
-Use the add-on's documented render
-product/output-variable controls and documented capability probes. If a requested
-variable is unsupported, return `blocked` and preserve the exact capability
-message.
-
-## Instructions
-
-1. Work on a copy and record source hash, Blender/add-on/runtime versions,
-   camera matrix/intrinsics, resolution, frame/time, and color-management.
-2. Assign stable object/prim identities before capture. For semantic labels,
-   choose a documented namespace and record label token → prim/object mapping.
-   For instance IDs, ensure each independently addressable instance has a
-   stable ID across frames; do not derive IDs from selection order or pixel
-   colors.
-3. Verify visibility, collection exclusions, material/GeomSubset bindings, and
-   evaluated geometry before requesting products. Record whether IDs come from
-   authored USD primvars, add-on metadata, or runtime-generated identity.
-
-## Request native products
-
-Request only variables exposed by the installed add-on/runtime, such as RGB,
-depth, normals, motion vectors, semantic IDs, instance IDs, masks, or custom
-render variables. Retain the render-product path, variable name/type, channel
-shape, numeric encoding, units/range, orientation, frame/timestamp, and
-content checksum. Keep direct children/order constraints explicit when the
-runtime requires them; do not assume every output variable can be reordered.
-
-Capture native arrays/images before display conversion. Keep scene-linear/HDR,
-integer ID maps, metric depth, and display-ready colorized previews in separate
-files. Apply a color palette or normalization only to a derived review image;
-never overwrite raw IDs or depth with that presentation.
-
-## Validate geometry and camera
-
-- Render a tiny labeled fixture first: two objects with different semantic
-  labels and instance IDs, plus a depth-separated occluder.
-- Confirm every expected label/instance appears in the raw product and that
-  occlusion and depth ordering agree with the authored camera.
-- Compare image dimensions, orientation, intrinsics, frame/time, and camera
-  identity to the RGB product. Reject mirrored, transposed, stale-camera, or
-  stale-stage output.
-- For animated scenes, validate first/middle/last frames and ID stability;
-  record births/deletions explicitly.
-- Check integer IDs are lossless and depth units are documented. Do not infer
-  semantics from RGB or use a beauty render to fill absent pixels.
-
-## Evidence contract
-
-Write `ovrtx-aov-report.json` containing source/runtime/camera hashes,
-requested variables, product paths/types, shape/dtype/units, label and instance
-maps, frame checks, raw checksums, derived preview paths, render class, and
-`status: pass|blocked|fail`. Retain native products, a small labeled fixture,
-RGB/depth/ID previews, and any colorization palette. Mark outputs as native,
-reconciled, synthetic, viewport, or cache-only. A pass requires raw product
-availability, expected IDs/variables, camera/frame alignment, and unchanged
-source hashes.
+Colorizing an ID array is a derivative for inspection. Keep the raw typed array
+and mapping authoritative. Do not claim support from a beauty image, material
+color substitution, or screen-space postprocess.

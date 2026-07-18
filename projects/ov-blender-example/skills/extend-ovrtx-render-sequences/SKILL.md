@@ -81,5 +81,6 @@ or state management remains add-on work.
 
 ## Handoff
 
-Return the focused commit, unit and real-runtime tests, a short native sequence,
-manifest/contact sheet, lifecycle timings, and the boundary decision.
+Return the changed files, tests run, one representative native sequence result,
+and any add-on/runtime boundary finding. Commit or build review bundles only
+when the user requests them.

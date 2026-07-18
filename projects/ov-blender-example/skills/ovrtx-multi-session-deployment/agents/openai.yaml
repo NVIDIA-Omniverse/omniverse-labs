@@ -1,4 +1,0 @@
-interface:
-  display_name: "Deploy multiple OVRTX sessions"
-  short_description: "Isolate concurrent Blender OVRTX jobs"
-  default_prompt: "Use $ovrtx-multi-session-deployment to plan isolated concurrent OVRTX jobs."

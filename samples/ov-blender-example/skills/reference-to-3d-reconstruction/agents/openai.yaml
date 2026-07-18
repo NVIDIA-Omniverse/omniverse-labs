@@ -1,4 +1,4 @@
 interface:
   display_name: "Reference to 3D Reconstruction"
-  short_description: "Reconstruct Blender assets from image references"
-  default_prompt: "Reconstruct this asset from references with measurable camera and fit checks."
+  short_description: "Register references and reconstruct measured assets"
+  default_prompt: "Use $reference-to-3d-reconstruction to register these references, reconstruct the asset, and report measurable projection and depth assumptions."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "OVRTX Hero Render"
+  short_description: "Render a polished still through the official OVRTX client"
+  default_prompt: "Use $ovrtx-hero-render to frame and refine this scene, run a low-cost native OVRTX smoke, and produce the requested hero still through the official client."

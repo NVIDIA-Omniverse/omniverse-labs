@@ -28,17 +28,24 @@ Use when a user wants OVRTX output from a new or existing `.blend`, wants to dri
 
 1. Use `blender-mcp-setup` to verify the Blender control loop, then use the normal Blender MCP tools or UI to inspect the scene.
 2. Save a working copy when the scene is valuable or edits are destructive. Record the `.blend` path, active camera, resolution, frame, world, lights, and renderable objects.
-3. Set the scene camera explicitly. Check clipping, lens/orthographic scale, transform, resolution, and aspect ratio before debugging OVRTX.
+3. Set the scene camera explicitly. When named subjects must be wholly visible,
+   run `blender-camera-framing` at the final resolution and require its safe-UV
+   and clipping checks to pass. Otherwise check clipping, lens/orthographic
+   scale, transform, resolution, and aspect ratio before debugging OVRTX.
 4. For imported USD, retain the source path and import settings. For a generated scene, use stable object/material/light names so later edits can be resolved.
 5. Do not delete existing objects or reset the world unless the user requested a clean rebuild.
 
 ## 2. Select OVRTX and configure a first render
 
-After add-on preflight passes, set the scene render engine to `OVRTX_EXAMPLE` through Blender's Render Properties or Blender Python. The add-on settings are available as `scene.ovrtx_example`:
+After add-on preflight passes, read
+`references/blender-ovrtx-api.md` and run
+`scripts/probe_ovrtx_scene.py`. Set the scene render engine to
+`OVRTX_EXAMPLE` only when the probe confirms registration. The add-on settings
+are available as `scene.ovrtx_example`:
 
 - `min_samples`: first progressive sample count (use 1 for a smoke test);
 - `max_samples`: completion target (raise after the first valid frame);
-- `color_presentation`: `scene_linear_hdr` when the consumer owns display conversion, or `ldr_rgba8_display_passthrough` when OVRTX returns display-encoded pixels (the UI shows these as Scene Linear HDR and LDR Display Passthrough);
+- `color_presentation_mode`: `scene_linear_hdr` when the consumer owns display conversion, or `ldr_rgba8_display_passthrough` when OVRTX returns display-encoded pixels;
 - `sync_viewport_camera`: map Blender viewport orbit/pan/zoom to the OVRTX preview camera when the scene camera mapping is valid.
 
 Use Blender's Render Image/Render Animation action or the MCP's Blender-Python execution to request the frame.
@@ -80,4 +87,8 @@ Record render mode, sample range, resolution, camera, color mode, output path, a
 
 ## Closeout
 
-Report the source `.blend` (or “unsaved”), camera, engine, sample range, color presentation, output files, session status, and any unsupported or approximate features. Distinguish OVRTX-rendered artifacts from Blender fallback renders and from postprocessed images.
+Summarize whether the requested native operation succeeded and the first
+actionable blocker or approximation. Include camera, engine, sampling, color,
+paths, and session details only when they help reproduce or review the result.
+Always distinguish OVRTX-rendered artifacts from Blender fallback renders and
+postprocessed images.

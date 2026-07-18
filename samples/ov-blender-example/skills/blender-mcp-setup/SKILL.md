@@ -42,11 +42,32 @@ user's deployment, and do not connect to an endpoint whose owner is unknown.
 2. Make one non-destructive probe: read the Blender version, current file path (if any), active render engine, active camera, and object count. Do not clear or alter the scene during setup.
 3. If the provider exposes a screenshot call, capture the current viewport and report whether it is a 3D View, camera view, or another editor.
 4. Confirm the control loop with a harmless read-only Blender expression (for example, `bpy.app.version_string`). Only after the user asks for scene work should you execute mutations.
-5. Return a compact readiness report: connection status, Blender version, current `.blend` path or “unsaved,” engine, active camera, object count, and any missing capability.
+5. Summarize the facts needed for the next requested action: connection status,
+   Blender version, current file or “unsaved,” engine, active camera, and any
+   missing capability. Do not create a separate report artifact unless asked.
+
+## Concrete adapter calls
+
+Discover equivalent tools when a provider uses other names. With the common
+Blender MCP adapter, use this exact sequence:
+
+```text
+mcp__blender__get_scene_info({})
+mcp__blender__execute_blender_code({"code": "import bpy, json\nprint(json.dumps({'blender': bpy.app.version_string, 'file': bpy.data.filepath or None, 'engine': bpy.context.scene.render.engine, 'camera': bpy.context.scene.camera.name if bpy.context.scene.camera else None, 'objects': len(bpy.data.objects)}))"})
+mcp__blender__get_object_info({"object_name": "GEO-target"})
+mcp__blender__get_viewport_screenshot({"max_size": 800})
+```
+
+The object-info call is conditional on a known target. Load
+`blender-python-execution` for the complete provider contract, paste-ready
+probes, mutation transactions, and recovery rules.
 
 ## Working rules
 
 - Execute Blender Python in small, independently verifiable chunks. Re-import modules in each call; do not rely on variables surviving between calls.
+- Never call `time.sleep()` inside executed Blender Python. It blocks Blender's
+  main thread and prevents redraw or renderer progress. Split write, external
+  wait/poll, and read into separate tool calls.
 - Address objects and datablocks by stable names, not selection order. Preserve existing user content unless deletion is explicitly requested.
 - After every meaningful mutation, inspect the resulting object/camera/render state and take a viewport or render screenshot when available.
 - Save a user-requested copy before destructive operations. Keep generated renders in a user-selected output directory.

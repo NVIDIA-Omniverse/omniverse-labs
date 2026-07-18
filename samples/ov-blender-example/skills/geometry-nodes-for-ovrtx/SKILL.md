@@ -44,6 +44,23 @@ Use for procedural geometry, instances, fields, modifiers, or geometry that must
 6. Change topology or node inputs in a controlled copy, restart scene generation
    when required, and compare object/prim identity and bounds before and after.
 
+Author node groups through `blender-python-execution` with stable modifier,
+node-group, socket, and object names. After each graph mutation call
+`view_layer.update()`, obtain the evaluated object from
+`bpy.context.evaluated_depsgraph_get()`, and report evaluated bounds and mesh
+counts as JSON. Use upstream `blender-modeling` for deterministic mesh helpers
+and modifier/instance realization patterns when it is already installed;
+otherwise obtain it through `blender-community-skill-bootstrap`.
+
+Read `references/blender-5-node-api.md` before authoring a graph. It contains a
+Blender 5.x idempotent node-group transaction using the current interface API,
+plus modifier-input and evaluated-mesh rules. Run
+`scripts/audit_geometry_nodes.py` with `GN_AUDIT_REQUEST = {"objects":
+["GEO-subject"]}` through MCP, or with `--objects` in background Blender.
+Require every named object, NODES modifier, node group, geometry interface, and
+evaluated mesh check to pass before testing OVRTX. A modifier existing is not
+proof that the graph evaluates useful geometry.
+
 ## Compatibility checks
 
 - Avoid relying on unsupported custom attributes, anonymous attributes,
@@ -54,12 +71,12 @@ Use for procedural geometry, instances, fields, modifiers, or geometry that must
   conversion/evaluation failure, not a reason to substitute a manually modeled
   mesh without disclosure.
 - Keep collision proxies and visual geometry separate for OVPhysX; validate
-  evaluated collider coverage with `simready-addon-install-and-authoring`.
+  official authoring and conversion with `simready-addon-install-and-authoring`.
+  This skill proves Blender evaluated geometry only.
 
 ## Closeout
 
-Report source `.blend`, node-group/modifier names, frame and seed, evaluated
-geometry counts/bounds, material/attribute notes, engine, output paths, and
-which outputs are procedural, baked, native OVRTX, Blender preview, or
-postprocessed. Escalate unsupported nodes through the add-on's documented issue or
-diagnostic path; Use the documented setup and runtime diagnostics.
+Summarize the node group/modifier changed, whether evaluated geometry passed,
+and any unsupported node or attribute. Add counts, bounds, seeds, paths, or a
+full audit only when they help the requested handoff. Clearly label procedural,
+baked, native OVRTX, Blender-preview, and postprocessed outputs.

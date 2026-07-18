@@ -1,0 +1,4 @@
+interface:
+  display_name: "Blender Community Skill Bootstrap"
+  short_description: "Install optional Blender skills from upstream"
+  default_prompt: "Use $blender-community-skill-bootstrap to identify and install only the upstream Blender production skills this request needs."

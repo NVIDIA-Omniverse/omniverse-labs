@@ -1,20 +1,34 @@
 ---
 name: simready-prop-journey
-description: "Take one Blender prop through a concise SimReady happy path: preserve a safe working copy, author and validate with the official SimReady add-on, review native OVPhysX behavior, and produce a traceable USD handoff. Use when an artist wants an end-to-end prop workflow without loading every specialist skill at once."
+description: "Take one Blender prop through a concise SimReady workflow: preserve the source, author and validate it with the official SimReady add-on, check the supported OVRTX conversion boundary, run a native OVPhysX drop/contact test when appropriate, and prepare a portable USD handoff. Use when an artist wants an end-to-end physics-ready prop workflow rather than an infrastructure or validation-report project."
 ---
 
 # SimReady prop journey
 
-Use this as the short orchestrator. Delegate detailed work and acceptance checks to the named public skills; do not duplicate or weaken their gates.
+Use this as the user-facing orchestrator. Keep each specialist gate independent;
+later physics success does not repair failed authoring or export.
 
-## Happy path
+## Workflow
 
-1. Run `blender-content-safety-and-privacy`, then create a unique working directory, copy the supplied source into it, hash the original and copy, and leave the original unchanged. Keep dependencies with the working copy and stop if the source or required assets cannot be handled safely.
-2. Run `simready-addon-install-and-authoring`. Inventory the prop, author semantics and physics through the official add-on, run every required validator, export with the add-on, reopen the USD, and retain its source-to-prim map. Stop as `blocked` when the required add-on capability is unavailable; never manufacture a passing label or export.
-3. Run `ovphysx-drop-contact-acceptance` for the smallest behavior test that represents the prop's intended use. Review authoritative motion, contact, settling, collision fit, and stable identity. Keep diagnostic, Blender, and native OVRTX imagery clearly distinguished.
-4. Run `usd-copy-and-flatten` only when the recipient needs a dependency-complete or flattened package. Then run `usd-inspect-and-provenance` on the exact handoff candidate.
-5. Deliver the validated `.blend`, localized and optional flattened USD, copied dependencies, validator and OVPhysX reports, source-to-prim map, checksums, and a concise limitations list. Use relative paths in shareable manifests and include only cleared assets.
+1. Preserve the supplied source and work on a caller-owned derivative. Use
+   `blender-content-safety-and-privacy` for untrusted inputs.
+2. Run `simready-addon-install-and-authoring`. Require the real add-on surface,
+   its supported authoring structure, named validators, and a reopened USD.
+3. Run the pinned OVRTX SimReady conversion test described by that skill. The
+   current public example supports a deliberately narrow uni-body shape; stop
+   on its structured unsupported cases rather than rewriting the asset silently.
+4. When the prop needs a behavior check, run
+   `ovphysx-drop-contact-acceptance` through the official
+   `run_ovphysx_drop_probe.py --require-real` path. Authoring eligibility and
+   runtime behavior remain separate results.
+5. Use `usd-copy-and-flatten` only when the recipient needs localization or a
+   flat derivative, then inspect the exact candidate with
+   `usd-inspect-and-provenance`.
 
-## Completion gate
+## Completion
 
-Call the journey complete only when the SimReady validators and reopened export pass, the applicable OVPhysX behavior gates pass, the handoff opens with resolved dependencies, and all artifacts trace back to the unchanged source. Otherwise return `blocked` or `fail` with the first actionable reason and preserve the partial evidence.
+Call the requested journey complete when the add-on validators pass, the USD
+reopens, the current conversion boundary accepts the prop, and any requested
+native behavior check passes. Summarize the prop, outputs, pass/blocker, and
+important limitation. Produce a manifest, hashes, screenshots, or full reports
+only when the caller needs a reproducible handoff or review artifact.

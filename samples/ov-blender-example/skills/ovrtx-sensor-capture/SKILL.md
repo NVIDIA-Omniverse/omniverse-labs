@@ -1,57 +1,26 @@
 ---
 name: ovrtx-sensor-capture
-description: Capture OVRTX sensor and render-product outputs with camera alignment, provenance, and separated raw versus review products. Use for LiDAR, multi-sensor render variables, semantic/instance products, depth, normals, or other AOV requests supported by the installed add-on/runtime.
-license: "Apache-2.0"
-metadata:
-  author: "Max Bickley"
-  version: "0.1"
-  team: "omniverse"
-  domain: "physical-ai"
-  tags:
-    - blender
-    - omniverse
-    - ovrtx
-    - sensors
+description: Customize and validate OVRTX sensor declaration, selection, stepping, and native readback for one or multiple render products. Use when developers add camera-like sensors or debug sensor identity and output routing in the add-on. This skill probes capabilities and does not claim every sensor family is already implemented.
 ---
-# OVRTX Sensor Capture
 
-Capture OVRTX sensor and render-product outputs with camera alignment,
-provenance, and clearly separated raw versus review products.
+# OVRTX sensor capture
 
-## When to Use
+Use the public client in `addon/` and its tests. Sensor identity is
+the USD product path, not a Blender object name or output filename.
 
-Use for LiDAR, multi-sensor render variables, semantic/instance products, depth, normals, or other AOV requests supported by the installed add-on/runtime.
+1. Run the focused `tests/test_ovrtx_runtime_client.py` and
+   `tests/test_ovrtx_session.py` controls, then inspect a compatible native
+   probe under `scripts/` before adapting it.
+2. Supply an explicit fixture, worker, native-client path, sensor paths, matching
+   RenderVar paths, dimensions, time, and caller-owned output JSON.
+3. Require successful worker start, simulation creation with every requested
+   sensor, one bounded sample step, exact per-RenderVar reads, decoded frames,
+   finite dimensions/data, deletion, and shutdown.
+4. Run `test_ovrtx_runtime_client.py` and `test_ovrtx_session.py`; retain tests
+   for deduplication, changed-sensor session identity, selected-product routing,
+   iterator pages, and terminal errors.
 
-## Boundary
-
-- Use the add-on and supported runtime through their documented interfaces.
-- Do not invent sensor returns, fill missing points, or call a Blender overlay a
-  native sensor product.
-- Keep acquisition, geometric visibility filtering, and display compositing as
-  separate stages with separate labels.
-
-## Instructions
-
-1. Record source scene, camera matrix/intrinsics, sensor/render-product paths,
-   output variables, frame/time, runtime/add-on identity, and configuration hash.
-2. Validate the requested sensor profile and restart requirements before capture.
-   A profile that changes immutable emitter-array shape must use an explicit new
-   session rather than a silent live mutation.
-3. Capture native arrays/products first. Preserve timestamps, sensor pose,
-   return/instance identity, dimensions, orientation, and checksums.
-4. For camera-visible views, project raw world points through the exact selected
-   camera and apply an evaluated-geometry first-surface test before reducing or
-   drawing points.
-5. If accumulating point history, label it as visualization history. Retain
-   genuine world-space returns; never turn it into synthetic sensor data.
-6. Produce raw-only, depth-tested, and optional beauty-overlay outputs separately.
-   For semantic/AOV products, retain native arrays/ID maps alongside colored
-   review images.
-
-## Acceptance bundle
-
-Return native arrays or render variables, sensor/camera configuration, raw and
-filtered counts, first/middle/last previews, requested images/movie,
-projection/alignment report, checksums, and a classification of native,
-reconciled, synthetic, viewport, or cache-only artifacts. Stop on missing or
-unsupported output variables instead of substituting a screenshot.
+The current public probes cover LdrColor camera products. For depth,
+semantic, LiDAR, or another sensor schema, first probe native capabilities and
+then use the corresponding extension skill. Do not synthesize output from mesh
+sampling or postprocessing while labeling it native sensor readback.

@@ -37,13 +37,12 @@ separate findings.
 
 ### 1. Freeze source and destination
 
-1. Choose an empty output directory such as
-   `.cache/usd-handoff-YYYYMMDD-HHMMSS/` and refuse to write inside the source
+1. Choose an empty, unique caller-owned handoff directory and refuse to write inside the source
    tree. Copy the source `.blend` or USD file and all explicitly supplied
    textures/references into `source/`.
-2. Record absolute input paths, file sizes, SHA-256 hashes, Blender version,
-   add-on version, USD tool version, and the requested stage/default prim in a
-   local-only report. Use relative, sanitized paths in the shareable manifest.
+2. Record the input identities, Blender/add-on/USD tool versions, and requested
+   stage/default prim needed to reproduce the handoff. Keep absolute paths local
+   and use relative paths in the dependency manifest.
 3. If Blender is the source, save a copy first. Export USD with the user's
    stated axis, unit, frame range, material, animation, and visibility options;
    do not silently rotate or rescale geometry.

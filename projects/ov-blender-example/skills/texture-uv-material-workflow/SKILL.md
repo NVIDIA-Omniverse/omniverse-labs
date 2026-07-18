@@ -42,6 +42,17 @@ Use when textures stretch, colors are wrong, alpha is black, baking fails, or a 
    UV map. Preserve cage, margin, resolution, and color-space settings in the
    report; save the bake as a derived artifact.
 
+Read `references/bpy-recipes.md` before authoring or repairing UVs and image
+materials. It contains Blender 5.1 patterns for context-free planar UVs,
+context-prepared unwraps, reachable Principled materials, normal maps, alpha,
+polygon material assignment, and bake targets. Run each pattern as its own
+`blender-python-execution` transaction and verify its JSON postcondition.
+
+Use `blender-community-skill-bootstrap` to install upstream
+`blender-uv-texturing` and `blender-materials` when detailed optional recipes
+are needed. Execute them through `blender-python-execution` so active-object,
+mode, color-space, and output-path state are explicit and checked.
+
 ## Validation loop
 
 - Apply a checker or numbered UV test and inspect a camera render for stretching,
@@ -55,10 +66,25 @@ Use when textures stretch, colors are wrong, alpha is black, baking fails, or a 
   path/UV/color space → light/exposure/display transform → individual lobe.
   Do not alter albedo to conceal a tone-map or lighting problem.
 
+Run the read-only `scripts/audit_material_uv.py` through Blender Python after
+authoring and before render/export. Require `status: pass` for the visible meshes
+in scope. A pass requires at least one renderable mesh, valid reachable material
+outputs and image files, role-appropriate image color spaces, assigned polygon
+materials, required UV layers, finite UV coordinates, no non-UDIM coordinates
+outside the unit tile, and no nonzero-area face collapsed to zero UV area.
+Treat orphan image nodes and unused material slots as cleanup warnings; inspect
+them even though they do not fail the audit. Declare UDIM use with a reachable
+tiled image or the object boolean property `uv_allow_udim`.
+
+For MCP, prepend `MATERIAL_UV_AUDIT_REQUEST = {}` and append the complete audit
+script in the same execution call; require the printed JSON to pass. For a
+saved caller-owned scene, use `blender --background scene.blend --python
+scripts/audit_material_uv.py`; a failing audit exits with status 2.
+
 ## Handoff
 
-Return source and output hashes, UV-layer/material mapping, texture color-space
-table, checker/bake previews, exported dependency closure, and native versus
-Blender/postprocessed classifications. Keep source references and image planes
-out of final USD/GLB unless requested. Use documented add-on diagnostics for
-material-conversion failures.
+Summarize the objects/materials changed, whether the audit passed, and any
+remaining color-space, UV, or dependency issue. Include hashes, the complete
+JSON audit, checker/bake previews, or a dependency inventory only when the
+caller needs a reproducible handoff or review artifact. Keep source references
+and image planes out of final USD/GLB unless requested.

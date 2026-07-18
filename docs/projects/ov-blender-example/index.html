@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Bring NVIDIA RTX rendering into Blender. Review your scene through ovrtx and render a final image without leaving Blender."
+    />
+    <title>ovrtx Blender Example — Omniverse Labs</title>
+    <link rel="stylesheet" href="../../assets/css/main.css" />
+    <script src="https://assets.adobedtm.com/5d4962a43b79/814eb6e9b4e1/launch-4bc07f1e0b0b.min.js"></script>
+  </head>
+  <body data-base="../../">
+    <header class="site-header site-header--compact">
+      <div class="brand-row">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">OL</div>
+          <p class="brand-title"><a href="../../">Omniverse Labs</a></p>
+        </div>
+        <nav class="header-links" aria-label="Site">
+          <a
+            href="https://github.com/nvidia-omniverse/omniverse-labs/tree/main/projects/ov-blender-example"
+            target="_blank"
+            rel="noopener noreferrer"
+          >Project on GitHub</a>
+          <a href="../sample-catalog/">Samples</a>
+        </nav>
+      </div>
+    </header>
+
+    <article class="article-wrap">
+      <header class="article-hero">
+        <p class="article-kicker">Sample</p>
+        <h1 class="article-title">ovrtx Blender Example</h1>
+        <p class="article-deck">
+          Bring NVIDIA RTX rendering into Blender. Keep creating in the workflows you already know,
+          review your scene through ovrtx, and render a final image without moving your work into a separate application.
+        </p>
+        <div class="article-meta">
+          <span>Status: Working</span>
+          <span>July 2026</span>
+        </div>
+        <img
+          src="../../assets/images/card-ov-blender-example.png"
+          alt="The Junk Shop scene rendered with NVIDIA ovrtx in Blender"
+          width="720"
+          height="405"
+        />
+      </header>
+
+      <div class="prose">
+        <p>
+          This public example for <strong>Blender 5.1</strong> packages a Blender add-on that connects your
+          open scene to <strong>NVIDIA ovrtx</strong> for real-time rendered viewport review and final-frame
+          rendering. When supported SimReady physics properties are present,
+          <strong>NVIDIA OVPhysX</strong> drives rigid-body motion in the Timeline before you take an asset
+          into a larger Isaac or Omniverse workflow.
+        </p>
+
+        <p>
+          It demonstrates focused creative rendering and SimReady prop review workflows on supported NVIDIA RTX
+          workstations. It is not a supported production renderer and does not reproduce every Cycles, EEVEE,
+          or Blender feature.
+        </p>
+
+        <h2>What you can do</h2>
+        <ul>
+          <li>View the current Blender scene through ovrtx in the rendered viewport</li>
+          <li>Orbit, pan, and frame your work while the ovrtx image updates</li>
+          <li>Render a final image using the active Blender camera</li>
+          <li>Adjust supported materials, lights, cameras, and object transforms without leaving Blender</li>
+          <li>Play supported SimReady rigid-body motion with OVPhysX in the Blender Timeline</li>
+        </ul>
+
+        <p>
+          The add-on works with the scene already open in Blender — whether you created it in Blender,
+          opened a <code>.blend</code> file, or imported USD through Blender's normal import workflow.
+        </p>
+
+        <h2>Prerequisites</h2>
+        <ul>
+          <li>Blender 5.1</li>
+          <li>A supported 64-bit release platform (see the project
+            <a
+              href="https://github.com/nvidia-omniverse/omniverse-labs/blob/main/projects/ov-blender-example/docs/support-platforms.md"
+              target="_blank"
+              rel="noopener noreferrer"
+            >Support Platforms</a> doc)</li>
+          <li>A compatible NVIDIA RTX GPU and driver</li>
+          <li>Internet access if installing the runtime from GitHub</li>
+        </ul>
+
+        <h2>Install</h2>
+        <ol>
+          <li>
+            From the
+            <a
+              href="https://github.com/nvidia-omniverse/omniverse-labs/tree/main/projects/ov-blender-example"
+              target="_blank"
+              rel="noopener noreferrer"
+            >ov-blender-example project</a>,
+            download <code>ov-blender-example-&lt;platform&gt;.zip</code> and copy the paired Release page URL
+            for an online runtime install, or download all assets for your platform into one directory for a local install.
+          </li>
+          <li>In Blender, choose <strong>Edit → Preferences → Add-ons</strong> and install the ZIP with
+            <strong>Install from Disk</strong>.</li>
+          <li>Enable <strong>ovrtx Blender Example</strong> if Blender does not enable it automatically.</li>
+          <li>For an online install, enable <strong>System → Allow Online Access</strong> in Blender preferences.</li>
+          <li>
+            Open the add-on's <strong>View Details</strong> panel. Paste the paired Release page URL or select
+            the absolute directory containing all downloaded release assets, then choose <strong>Install Runtime</strong>.
+          </li>
+          <li>Wait until the panel shows <strong>Runtime: ready</strong> and <strong>Preflight: pass</strong>
+            before selecting the render engine.</li>
+        </ol>
+
+        <p>
+          The runtime installs separately from the Blender add-on. NVIDIA rendering and physics components run
+          outside the Blender process while the add-on provides the Blender experience.
+        </p>
+
+        <h2>Render your first scene</h2>
+        <ol>
+          <li>Open a <code>.blend</code> file or create a scene in Blender.</li>
+          <li>In <strong>Render Properties</strong>, set <strong>Render Engine</strong> to <strong>ovrtx Example</strong>.</li>
+          <li>In the 3D Viewport, select <strong>Rendered</strong> shading.</li>
+          <li>Use Blender's normal orbit, pan, zoom, camera, selection, and transform controls.</li>
+          <li>Press <strong>F12</strong> to render the active camera.</li>
+        </ol>
+
+        <p>
+          The first image can take longer while the runtime starts and prepares rendering resources.
+          Later viewport updates reuse the active rendering session.
+        </p>
+
+        <h2>How it works</h2>
+        <p>
+          Blender remains where you create, edit, and view your scene. The add-on translates the current Blender
+          scene to USD and sends it to the separately installed NVIDIA Library Worker. ovrtx renders the scene
+          and returns pixels to the Blender viewport. When supported physics properties are present, OVPhysX
+          supplies updated poses for ovrtx to render.
+        </p>
+
+        <h2>Repository path</h2>
+        <p>
+          Full source, agent skills, validation suites, and troubleshooting live in the project folder:
+        </p>
+
+        <div class="callout">
+          <p>
+            <strong>Clone and install:</strong>
+            <a
+              href="https://github.com/nvidia-omniverse/omniverse-labs/tree/main/projects/ov-blender-example"
+              target="_blank"
+              rel="noopener noreferrer"
+            ><code>projects/ov-blender-example/</code></a>
+          </p>
+          <p>
+            Scene credit: <em>The Junk Shop</em> by Alex Treviño, original concept by Anaïs Maamar,
+            licensed <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>.
+            Rendered with NVIDIA ovrtx.
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <footer class="site-footer">
+      <div class="site-footer__site">
+        <p class="site-footer__meta">
+          <a href="../../">← All projects</a>
+          <span class="site-footer__sep" aria-hidden="true">·</span>
+          <span>Apache 2.0</span>
+          <span class="site-footer__sep" aria-hidden="true">·</span>
+          <a href="https://github.com/nvidia-omniverse/omniverse-labs/issues">Site feedback</a>
+        </p>
+      </div>
+      <nav class="site-footer__policies" aria-label="NVIDIA legal and policies">
+        <ul>
+          <li>
+            <a href="https://www.nvidia.com/en-us/about-nvidia/privacy-policy/">Privacy Policy</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/about-nvidia/privacy-center/">Your Privacy Choices</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/about-nvidia/terms-of-service/">Terms of Service</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/about-nvidia/accessibility/">Accessibility</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/about-nvidia/company-policies/">Corporate Policies</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/about-nvidia/product-security/">Product Security</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/contact/">Contact</a>
+          </li>
+        </ul>
+      </nav>
+    </footer>
+    <script type="text/javascript">_satellite.pageBottom();</script>
+  </body>
+</html>

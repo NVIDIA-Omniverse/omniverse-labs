@@ -1,4 +1,4 @@
 interface:
   display_name: "Animation Quality and Frame Range"
-  short_description: "Build and validate animated OVRTX sequences"
+  short_description: "Build and validate Blender animation sequences"
   default_prompt: "Animate this Blender scene, render a validated frame range, and review the motion."

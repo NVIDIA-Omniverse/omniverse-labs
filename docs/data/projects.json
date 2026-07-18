@@ -3,7 +3,7 @@
     "title": "Omniverse Labs",
     "tagline": "Early Omniverse experiments you can run, fork, and learn from.",
     "description": "A Sketchpad built by NVIDIA Omniverse Teams \u2014 early samples, prototypes, and write-ups for developers exploring Omniverse.",
-    "dataVersion": "20260629"
+    "dataVersion": "20260717"
   },
   "projects": [
     {
@@ -59,6 +59,25 @@
       "links": {
         "page": "projects/ovrtx-ovphysx-livestream/",
         "repo": "https://github.com/nvidia-omniverse/omniverse-labs/tree/main/samples/ovrtx_ovphysx_livestream"
+      }
+    },
+    {
+      "slug": "ov-blender-example",
+      "title": "ovrtx Blender Example",
+      "subtitle": "Bring NVIDIA RTX rendering into Blender — review and render without leaving your scene.",
+      "type": "sample",
+      "status": "working",
+      "date": "2026-07-17",
+      "image": "assets/images/card-ov-blender-example.png",
+      "accent": [
+        "#1a1f3d",
+        "#76b900"
+      ],
+      "featured": false,
+      "source": "projects/ov-blender-example",
+      "links": {
+        "page": "projects/ov-blender-example/",
+        "repo": "https://github.com/nvidia-omniverse/omniverse-labs/tree/main/projects/ov-blender-example"
       }
     },
     {

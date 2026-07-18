@@ -88,5 +88,5 @@ protocol, client, or worker changes.
 
 ## Handoff
 
-Return the focused commit, authoring/parser tests, raw arrays, alignment fixture,
-review images, capture report, and the boundary decision.
+Return the changed files, authoring/parser tests, one raw-array alignment result,
+and any add-on/runtime boundary finding. Add review bundles only when requested.

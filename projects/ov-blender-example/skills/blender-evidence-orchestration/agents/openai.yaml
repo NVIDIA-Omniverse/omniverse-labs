@@ -1,4 +1,0 @@
-interface:
-  display_name: "Orchestrate reproducible Blender/OVRTX evidence"
-  short_description: "Plan reproducible Blender and OVRTX evidence runs"
-  default_prompt: "Use $blender-evidence-orchestration to plan reproducible Blender and OVRTX evidence runs."

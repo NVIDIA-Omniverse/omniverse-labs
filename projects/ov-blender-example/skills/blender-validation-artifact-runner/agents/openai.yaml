@@ -1,4 +1,0 @@
-interface:
-  display_name: "Collect validation artifacts"
-  short_description: "Run decided checks and collect evidence"
-  default_prompt: "Use $blender-validation-artifact-runner to run a decided Blender validation and collect evidence."

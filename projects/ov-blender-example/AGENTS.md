@@ -17,7 +17,8 @@ complete catalog; every listed path must resolve inside that directory.
 - Use `skills/blender-sanitized-support-bundle/` before sharing logs, reports,
   screenshots, manifests, or reproduction artifacts.
 - Start artist journeys with `skills/ovrtx-creative-hero-journey/` or
-  `skills/simready-prop-journey/` when the request matches one of those personas.
+  `skills/simready-prop-journey/` when the requested outcome matches one of
+  those workflows.
 - For source changes, start with
   `skills/blender-addon-extension-development/`, then use the narrowest matching
   `skills/extend-ovrtx-*/` skill for the implementation map and required tests.

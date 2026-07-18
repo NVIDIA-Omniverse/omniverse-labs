@@ -59,8 +59,8 @@ exists.
 
 ## Handoff
 
-Return source/output hashes, material-to-USD mapping, UV/texture evidence,
-neutral and material fixture renders, raw versus display comparisons,
-conversion classification, and explicit runtime limitations. Pair with
-`ovrtx-render-settings` for exposure/tone-map controls and a contributor parity
-skill for graph-family regression tests.
+Summarize the material changed, conversion class, native result, and any
+unsupported node or texture. Add hashes, mapping tables, fixture renders, or
+raw/display comparisons only when the caller needs a reproducible handoff or
+review artifact. Pair with `ovrtx-render-settings` for probed scene
+controls and a contributor parity skill for graph-family regression tests.

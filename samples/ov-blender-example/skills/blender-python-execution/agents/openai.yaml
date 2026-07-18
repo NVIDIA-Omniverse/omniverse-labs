@@ -1,0 +1,4 @@
+interface:
+  display_name: "Blender Python Execution"
+  short_description: "Run safe, verifiable bpy transactions through Blender MCP"
+  default_prompt: "Use $blender-python-execution to execute this Blender task as small, idempotent Python transactions and verify structured state plus the visible result."

@@ -1,4 +1,0 @@
-interface:
-  display_name: "Separate creative and simulation artifacts"
-  short_description: "Keep creative and simready evidence distinct"
-  default_prompt: "Use $blender-persona-artifact-separation to separate creative and simulation evidence."
