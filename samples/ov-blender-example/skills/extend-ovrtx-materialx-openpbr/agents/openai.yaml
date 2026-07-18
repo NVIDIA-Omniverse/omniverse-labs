@@ -1,4 +1,0 @@
-interface:
-  display_name: "Extend OVRTX MaterialX/OpenPBR"
-  short_description: "Extend material conversion safely"
-  default_prompt: "Use $extend-ovrtx-materialx-openpbr to implement and test a Blender material conversion feature."

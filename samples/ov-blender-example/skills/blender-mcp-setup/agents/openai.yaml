@@ -1,4 +1,0 @@
-interface:
-  display_name: "Blender MCP Setup"
-  short_description: "Connect Blender MCP and verify a usable scene session"
-  default_prompt: "Set up or verify Blender MCP for this scene and report any missing prerequisites."

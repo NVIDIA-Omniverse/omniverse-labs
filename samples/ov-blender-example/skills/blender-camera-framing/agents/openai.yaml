@@ -1,4 +1,0 @@
-interface:
-  display_name: "Blender Camera Framing"
-  short_description: "Fit evaluated objects into Blender render cameras exactly"
-  default_prompt: "Use $blender-camera-framing to fit the named evaluated subject into the requested perspective or orthographic render camera, then verify safe-frame projection and clipping as structured JSON."

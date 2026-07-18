@@ -1,4 +1,0 @@
-interface:
-  display_name: "Extend OVRTX Semantic AOVs"
-  short_description: "Add semantic identity and AOV support"
-  default_prompt: "Use $extend-ovrtx-semantic-aovs to add stable semantic identities and native semantic AOV capture to the OVRTX Blender add-on."

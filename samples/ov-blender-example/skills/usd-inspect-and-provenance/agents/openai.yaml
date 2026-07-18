@@ -1,4 +1,0 @@
-interface:
-  display_name: "USD Inspect and Provenance"
-  short_description: "Audit USD structure and provenance"
-  default_prompt: "Use $usd-inspect-and-provenance to inspect this USD package without mutating its source."

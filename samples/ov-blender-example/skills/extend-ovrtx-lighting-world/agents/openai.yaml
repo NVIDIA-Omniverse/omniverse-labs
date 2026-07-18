@@ -1,4 +1,0 @@
-interface:
-  display_name: "Extend OVRTX Lighting and World"
-  short_description: "Extend light and world conversion and live edits"
-  default_prompt: "Use $extend-ovrtx-lighting-world to add OVRTX light or world conversion and live-edit support."

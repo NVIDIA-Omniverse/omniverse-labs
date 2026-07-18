@@ -1,4 +1,0 @@
-interface:
-  display_name: "OVRTX LiDAR Runtime Capture"
-  short_description: "Develop typed native LiDAR readback for OVRTX"
-  default_prompt: "Use $ovrtx-lidar-runtime-capture to probe sensor routing and develop or validate truthful typed native LiDAR returns in the public add-on."

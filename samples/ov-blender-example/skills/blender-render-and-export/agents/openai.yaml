@@ -1,4 +1,0 @@
-interface:
-  display_name: "Blender Render and Export"
-  short_description: "Render and export Blender scenes reliably"
-  default_prompt: "Use $blender-render-and-export to render or export this Blender scene with explicit paths and validation."

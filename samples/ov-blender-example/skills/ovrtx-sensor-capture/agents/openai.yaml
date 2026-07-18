@@ -1,4 +1,0 @@
-interface:
-  display_name: "OVRTX Sensor Capture"
-  short_description: "Customize and validate native multi-sensor routing"
-  default_prompt: "Use $ovrtx-sensor-capture to probe the current sensor surface and implement or validate exact native sensor selection, stepping, readback, and cleanup."

@@ -1,4 +1,0 @@
-interface:
-  display_name: "OVRTX Lighting and World"
-  short_description: "Author and audit OVRTX lighting inputs"
-  default_prompt: "Use $ovrtx-lighting-and-world to author and audit this Blender lighting setup before checking its native OVRTX result."

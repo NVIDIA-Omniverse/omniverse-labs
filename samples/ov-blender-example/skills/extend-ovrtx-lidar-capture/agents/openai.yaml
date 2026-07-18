@@ -1,4 +1,0 @@
-interface:
-  display_name: "Extend OVRTX LiDAR Capture"
-  short_description: "Add native LiDAR capture workflows"
-  default_prompt: "Use $extend-ovrtx-lidar-capture to add native LiDAR authoring, capture, and raw-return validation to the OVRTX Blender add-on."

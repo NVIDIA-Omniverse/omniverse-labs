@@ -1,4 +1,0 @@
-interface:
-  display_name: "SimReady Prop Journey"
-  short_description: "Prepare and validate one physics-ready Blender prop"
-  default_prompt: "Use $simready-prop-journey to take this prop through official SimReady authoring, supported conversion, native behavior validation, and USD handoff."

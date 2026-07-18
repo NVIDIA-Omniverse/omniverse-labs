@@ -1,4 +1,0 @@
-interface:
-  display_name: "OVRTX Creative Hero Journey"
-  short_description: "Take a Blender scene to a polished native OVRTX still"
-  default_prompt: "Use $ovrtx-creative-hero-journey to take this scene through camera and look refinement, a native smoke, and a polished OVRTX hero still."

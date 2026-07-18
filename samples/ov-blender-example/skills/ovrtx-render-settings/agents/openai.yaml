@@ -1,4 +1,0 @@
-interface:
-  display_name: "OVRTX Render Settings"
-  short_description: "Probe and set supported OVRTX Blender scene controls"
-  default_prompt: "Use $ovrtx-render-settings to probe the installed OVRTX scene RNA, change only the requested supported settings, and verify the resulting values."

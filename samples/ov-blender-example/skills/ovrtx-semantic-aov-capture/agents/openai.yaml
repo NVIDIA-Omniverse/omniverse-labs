@@ -1,4 +1,0 @@
-interface:
-  display_name: "OVRTX Semantic AOV Capture"
-  short_description: "Develop typed semantic and ID RenderVars"
-  default_prompt: "Use $ovrtx-semantic-aov-capture to implement or validate durable semantics and exact typed native semantic/ID RenderVar readback."

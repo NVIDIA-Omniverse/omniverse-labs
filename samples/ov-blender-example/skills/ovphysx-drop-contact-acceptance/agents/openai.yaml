@@ -1,4 +1,0 @@
-interface:
-  display_name: "OVPhysX Drop Contact Acceptance"
-  short_description: "Validate native drop and contact"
-  default_prompt: "Use $ovphysx-drop-contact-acceptance to validate this native OVPhysX drop and contact test."

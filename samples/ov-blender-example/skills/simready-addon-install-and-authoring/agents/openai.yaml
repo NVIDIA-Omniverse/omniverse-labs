@@ -1,4 +1,0 @@
-interface:
-  display_name: "SimReady Add-on Authoring"
-  short_description: "Author props through the official SimReady Blender add-on"
-  default_prompt: "Use $simready-addon-install-and-authoring to probe the real SimReady add-on, author this prop through its supported surface, validate it, and reopen the exported USD."

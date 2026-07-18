@@ -1,4 +1,0 @@
-interface:
-  display_name: "OVRTX Render Products and AOVs"
-  short_description: "Customize and validate typed OVRTX RenderVar readback"
-  default_prompt: "Use $ovrtx-render-products-and-aovs to probe the current product/readback capability and implement or validate the requested typed AOV without adding another bridge."
