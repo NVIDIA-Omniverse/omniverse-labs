@@ -318,6 +318,165 @@ class _FakeNativeRenderModule(ModuleType):
             self.events.append("shutdown")
 
 
+class _FakeAsyncReadTicket:
+    def __init__(
+        self,
+        module: "_AsyncNativeRenderModule",
+        handle: dict[str, object],
+        source: str,
+    ) -> None:
+        self._module = module
+        self._handle = handle
+        self._source = source
+        self._pending = True
+        self._consumed = False
+        self._cancel_requested = False
+        self._cancel_pending_polls = int(module.cancel_pending_polls)
+
+    def poll(self) -> Mapping[str, object] | None:
+        assert not self._consumed
+        request = self._handle["request"]
+        assert isinstance(request, dict)
+        self._module.calls.append(
+            (
+                "poll_ReadWorldState",
+                {"request": dict(request), "source": self._source},
+            )
+        )
+        if self._cancel_requested:
+            if self._cancel_pending_polls > 0:
+                self._cancel_pending_polls -= 1
+                if self._module.events is not None:
+                    self._module.events.append("cancel_pending")
+                return None
+            self._consumed = True
+            if self._module.events is not None:
+                self._module.events.append("cancel_terminal")
+            raise self._module.rpc_status_error(
+                {
+                    "ok": False,
+                    "protocol_method": "WorldStateService.ReadWorldState",
+                    "grpc_status": "CANCELLED",
+                    "grpc_status_code": 1,
+                    "grpc_message": "cancelled for test",
+                    "elapsed_ms": 0.25,
+                    "request": {
+                        "builder_name": self._handle["builder"],
+                    },
+                }
+            )
+        if self._pending:
+            self._pending = False
+            return None
+        self._consumed = True
+        return self._module.async_read_result(self._handle, self._source)
+
+    def cancel(self) -> bool:
+        assert not self._consumed
+        if self._cancel_requested:
+            return False
+        self._cancel_requested = True
+        request = self._handle["request"]
+        assert isinstance(request, dict)
+        self._module.calls.append(
+            ("cancel_ReadWorldState", {"request": dict(request)})
+        )
+        if self._module.events is not None:
+            self._module.events.append("cancel")
+        return True
+
+
+class _AsyncNativeRenderModule(_FakeNativeRenderModule):
+    def __init__(
+        self,
+        name: str,
+        *,
+        sources: list[str] | None = None,
+        cancel_pending_polls: int = 0,
+    ) -> None:
+        super().__init__(name)
+        self.async_sources = list(sources or ["frame"])
+        self.cancel_pending_polls = int(cancel_pending_polls)
+
+    def capabilities(self) -> dict[str, object]:
+        capabilities = dict(super().capabilities())
+        capabilities["async_rpcs"] = ["ReadWorldState"]
+        return capabilities
+
+    def begin_ReadWorldState(
+        self,
+        handle: dict[str, object],
+    ) -> _FakeAsyncReadTicket:
+        source = self.async_sources.pop(0) if self.async_sources else "frame"
+        self.calls.append(("begin_ReadWorldState", dict(handle)))
+        return _FakeAsyncReadTicket(self, handle, source)
+
+    def async_read_result(
+        self,
+        handle: dict[str, object],
+        source: str,
+    ) -> Mapping[str, object]:
+        if source == "deadline":
+            raise self.rpc_status_error(
+                {
+                    "ok": False,
+                    "protocol_method": "WorldStateService.ReadWorldState",
+                    "grpc_status": "DEADLINE_EXCEEDED",
+                    "grpc_status_code": 4,
+                    "grpc_message": "read deadline",
+                    "elapsed_ms": float(
+                        ovrtx_runtime_client.RENDER_READ_POLL_TIMEOUT_MS
+                    ),
+                    "request": {"builder_name": handle["builder"]},
+                }
+            )
+        has_iterator = source == "iterator"
+        return {
+            "response_handle": {"source": source},
+            "result_column_count": 0 if has_iterator else 1,
+            "has_iterator": has_iterator,
+            **({"iterator": "next-page"} if has_iterator else {}),
+            "read_world_state_ms": 0.75 if has_iterator else 1.25,
+            "builder_name": handle["builder"],
+            "protocol_method": "WorldStateService.ReadWorldState",
+            "grpc_status": "OK",
+        }
+
+    def decode_ldr_color_frame(
+        self,
+        read_handle: dict[str, object],
+        response_handle: dict[str, object],
+    ) -> dict[str, object]:
+        if response_handle.get("source") == "iterator":
+            request = read_handle["request"]
+            assert isinstance(request, dict)
+            return {
+                "frames": {},
+                "frame_count": 0,
+                "render_var_paths": list(request["render_var_paths"]),
+                "statuses": {},
+                "simulation_id": request["simulation_id"],
+                "simulation_time_ns": request["simulation_time_ns"],
+            }
+        decoded = super().decode_ldr_color_frame(read_handle, response_handle)
+        if response_handle.get("source") == "mismatch":
+            request = read_handle["request"]
+            assert isinstance(request, dict)
+            frame = next(iter(decoded["frames"].values()))  # type: ignore[union-attr]
+            assert isinstance(frame, dict)
+            frame["render_output_simulation_time_ns"] = (
+                int(request["simulation_time_ns"]) + 10
+            )
+        return decoded
+
+
+class _AdvertisedAsyncWithoutBeginNativeRenderModule(_FakeNativeRenderModule):
+    def capabilities(self) -> dict[str, object]:
+        capabilities = dict(super().capabilities())
+        capabilities["async_rpcs"] = ["ReadWorldState"]
+        return capabilities
+
+
 class _AttributeValueBuilderNativeRenderModule(_FakeNativeRenderModule):
     def capabilities(self) -> dict[str, object]:
         capabilities = dict(super().capabilities())
@@ -732,6 +891,367 @@ def test_ovrtx_runtime_client_raw_native_render_result_and_updates(
     assert native_module.client_endpoints == ["127.0.0.1:50051"]
     assert ("close_client", {}) in native_module.calls
     assert lifecycle_events == ["delete:sim", "close", "shutdown"]
+
+
+def test_ovrtx_runtime_client_split_render_submits_ahead_and_reads_exact_times(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    module_name = "fake_ovsensors_worker_client_split_render"
+    native_module = _FakeNativeRenderModule(module_name)
+    monkeypatch.setitem(sys.modules, module_name, native_module)
+    request = _request(tmp_path, module_name)
+    client = _client(module_name)
+    simulation_id = _start(client, request)
+    native_module.calls.clear()
+
+    first = client.submit_render_sample(
+        simulation_id,
+        selected_sensor_paths=request.selected_sensor_paths,
+        render_var=color_presentation.RENDER_VAR_LDR_COLOR,
+    )
+    second = client.submit_render_sample(
+        simulation_id,
+        selected_sensor_paths=request.selected_sensor_paths,
+        render_var=color_presentation.RENDER_VAR_LDR_COLOR,
+    )
+    first_result = client.complete_render_sample(first)
+    second_result = client.complete_render_sample(second)
+
+    timeline = [
+        (name, payload["request"]["simulation_time_ns"])
+        for name, payload in native_module.calls
+        if (
+            name == "WriteWorldState"
+            and payload.get("builder") == "build_render_sample_step"
+        )
+        or (
+            name == "ReadWorldState"
+            and isinstance(payload.get("request"), dict)
+            and int(payload["request"].get("timeout_ms", 0)) > 0
+        )
+    ]
+    assert timeline == [
+        ("WriteWorldState", 10),
+        ("WriteWorldState", 20),
+        ("ReadWorldState", 10),
+        ("ReadWorldState", 20),
+    ]
+    assert (first.completed_samples, second.completed_samples) == (1, 2)
+    assert (first_result.simulation_time_ns, second_result.simulation_time_ns) == (10, 20)
+    assert (first_result.completed_samples, second_result.completed_samples) == (1, 2)
+
+
+def test_ovrtx_runtime_client_split_render_discard_is_local_and_one_shot(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    module_name = "fake_ovsensors_worker_client_split_discard"
+    native_module = _FakeNativeRenderModule(module_name)
+    monkeypatch.setitem(sys.modules, module_name, native_module)
+    request = _request(tmp_path, module_name)
+    client = _client(module_name)
+    simulation_id = _start(client, request)
+    native_module.calls.clear()
+
+    discarded = client.submit_render_sample(
+        simulation_id,
+        selected_sensor_paths=request.selected_sensor_paths,
+        render_var=color_presentation.RENDER_VAR_LDR_COLOR,
+    )
+    client.discard_render_sample(discarded)
+    retained = client.submit_render_sample(
+        simulation_id,
+        selected_sensor_paths=request.selected_sensor_paths,
+        render_var=color_presentation.RENDER_VAR_LDR_COLOR,
+    )
+    result = client.complete_render_sample(retained)
+
+    positive_read_times = [
+        int(payload["request"]["simulation_time_ns"])
+        for name, payload in native_module.calls
+        if name == "ReadWorldState"
+        and isinstance(payload.get("request"), dict)
+        and int(payload["request"].get("timeout_ms", 0)) > 0
+    ]
+    assert positive_read_times == [20]
+    assert result.simulation_time_ns == 20
+    with pytest.raises(RenderClientError, match="already completed or discarded"):
+        client.complete_render_sample(retained)
+    with pytest.raises(RenderClientError, match="already completed or discarded"):
+        client.discard_render_sample(discarded)
+
+
+def test_ovrtx_runtime_client_split_render_rejects_foreign_and_stale_tickets(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    module_name = "fake_ovsensors_worker_client_split_lifetime"
+    native_module = _FakeNativeRenderModule(module_name)
+    monkeypatch.setitem(sys.modules, module_name, native_module)
+    request = _request(tmp_path, module_name)
+    client = _client(module_name)
+    simulation_id = _start(client, request)
+    submission = client.submit_render_sample(
+        simulation_id,
+        selected_sensor_paths=request.selected_sensor_paths,
+        render_var=color_presentation.RENDER_VAR_LDR_COLOR,
+    )
+
+    with pytest.raises(RenderClientError, match="another client"):
+        _client(module_name).complete_render_sample(submission)
+
+    assert client.delete_simulation(simulation_id) == "stopped"
+    _start(client, request, simulation_id=simulation_id)
+    with pytest.raises(RenderClientError, match="inactive session"):
+        client.complete_render_sample(submission)
+
+
+def test_async_render_read_preserves_exact_time_iterator_and_diagnostics(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    module_name = "fake_ovsensors_worker_client_async_iterator"
+    native_module = _AsyncNativeRenderModule(
+        module_name,
+        sources=["iterator", "frame"],
+    )
+    monkeypatch.setitem(sys.modules, module_name, native_module)
+    request = _request(tmp_path, module_name)
+    client = _client(module_name)
+    simulation_id = _start(client, request)
+    native_module.calls.clear()
+
+    submission = client.submit_render_sample(
+        simulation_id,
+        selected_sensor_paths=request.selected_sensor_paths,
+        render_var=color_presentation.RENDER_VAR_LDR_COLOR,
+    )
+    assert client.supports_async_render_read() is True
+    ticket = client.begin_render_sample_read(submission)
+
+    assert client.poll_render_sample_read(ticket) is None
+    # Terminal iterator page starts a second native async RPC without blocking.
+    assert client.poll_render_sample_read(ticket) is None
+    assert client.poll_render_sample_read(ticket) is None
+    result = client.poll_render_sample_read(ticket)
+
+    assert result is not None
+    assert result.simulation_time_ns == submission.simulation_time_ns == 10
+    assert result.completed_samples == submission.completed_samples == 1
+    assert result.native_timings["read_strategy"] == "long_poll"
+    assert result.native_timings["read_transport"] == "async_ticket"
+    assert result.native_timings["read_poll_count"] == 2
+    assert result.native_timings["read_iterator_count"] == 1
+    assert result.native_timings["read_world_state_ms"] == 2.0
+    async_requests = [
+        payload["request"]
+        for name, payload in native_module.calls
+        if name == "begin_ReadWorldState"
+    ]
+    assert [request["simulation_time_ns"] for request in async_requests] == [10, 10]
+    assert "iterator" not in async_requests[0]
+    assert async_requests[1]["iterator"] == "next-page"
+    assert not any(
+        name == "ReadWorldState"
+        and int(payload["request"].get("timeout_ms", 0)) > 0
+        for name, payload in native_module.calls
+    )
+    with pytest.raises(RenderClientError, match="already completed or cancelled"):
+        client.poll_render_sample_read(ticket)
+
+
+def test_async_read_allows_one_newer_camera_sample_without_losing_exact_time(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    module_name = "fake_ovsensors_worker_client_async_camera_successor"
+    native_module = _AsyncNativeRenderModule(module_name)
+    monkeypatch.setitem(sys.modules, module_name, native_module)
+    request = _request(tmp_path, module_name)
+    client = _client(module_name)
+    simulation_id = _start(client, request)
+    native_module.calls.clear()
+
+    first = client.submit_render_sample(
+        simulation_id,
+        selected_sensor_paths=request.selected_sensor_paths,
+        render_var=color_presentation.RENDER_VAR_LDR_COLOR,
+    )
+    first_ticket = client.begin_render_sample_read(first)
+    assert client.poll_render_sample_read(first_ticket) is None
+
+    camera_update = client.update_transforms(
+        simulation_id,
+        [
+            OvrtxTransformValue(
+                "/World/Camera",
+                ((1.0, 0.0, 0.0, 5.0),),
+            )
+        ],
+    )
+    second = client.submit_render_sample(
+        simulation_id,
+        selected_sensor_paths=request.selected_sensor_paths,
+        render_var=color_presentation.RENDER_VAR_LDR_COLOR,
+    )
+
+    first_result = client.poll_render_sample_read(first_ticket)
+    assert first_result is not None
+    second_ticket = client.begin_render_sample_read(second)
+    assert client.poll_render_sample_read(second_ticket) is None
+    second_result = client.poll_render_sample_read(second_ticket)
+
+    assert camera_update.pending_simulation_time_ns == 20
+    assert first.simulation_time_ns == first_result.simulation_time_ns == 10
+    assert second_result is not None
+    assert second.simulation_time_ns == second_result.simulation_time_ns == 20
+    timeline = [
+        (
+            name,
+            int(payload["request"]["simulation_time_ns"]),
+        )
+        for name, payload in native_module.calls
+        if name
+        in {
+            "WriteWorldState",
+            "begin_ReadWorldState",
+        }
+        and isinstance(payload.get("request"), dict)
+        and "simulation_time_ns" in payload["request"]
+    ]
+    assert timeline == [
+        ("WriteWorldState", 10),
+        ("begin_ReadWorldState", 10),
+        ("WriteWorldState", 20),
+        ("WriteWorldState", 20),
+        ("begin_ReadWorldState", 20),
+    ]
+
+
+def test_async_render_read_restarts_transient_deadline_at_the_same_exact_time(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    module_name = "fake_ovsensors_worker_client_async_deadline"
+    native_module = _AsyncNativeRenderModule(
+        module_name,
+        sources=["deadline", "frame"],
+    )
+    monkeypatch.setitem(sys.modules, module_name, native_module)
+    request = _request(tmp_path, module_name)
+    client = _client(module_name)
+    simulation_id = _start(client, request)
+    submission = client.submit_render_sample(
+        simulation_id,
+        selected_sensor_paths=request.selected_sensor_paths,
+        render_var=color_presentation.RENDER_VAR_LDR_COLOR,
+    )
+    ticket = client.begin_render_sample_read(submission)
+
+    assert client.poll_render_sample_read(ticket) is None
+    assert client.poll_render_sample_read(ticket) is None
+    assert client.poll_render_sample_read(ticket) is None
+    result = client.poll_render_sample_read(ticket)
+
+    assert result is not None
+    assert result.simulation_time_ns == 10
+    assert result.native_timings["read_transient_status_count"] == 1
+    assert (
+        result.native_timings["read_transient_status_world_state_ms"]
+        == ovrtx_runtime_client.RENDER_READ_POLL_TIMEOUT_MS
+    )
+    assert result.native_timings["read_world_state"][0]["grpc_status"] == (
+        "DEADLINE_EXCEEDED"
+    )
+    begin_requests = [
+        payload["request"]
+        for name, payload in native_module.calls
+        if name == "begin_ReadWorldState"
+    ]
+    assert [request["simulation_time_ns"] for request in begin_requests] == [10, 10]
+
+
+def test_async_render_read_rejects_mismatched_render_output_time(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    module_name = "fake_ovsensors_worker_client_async_time_mismatch"
+    native_module = _AsyncNativeRenderModule(module_name, sources=["mismatch"])
+    monkeypatch.setitem(sys.modules, module_name, native_module)
+    request = _request(tmp_path, module_name)
+    client = _client(module_name)
+    simulation_id = _start(client, request)
+    submission = client.submit_render_sample(
+        simulation_id,
+        selected_sensor_paths=request.selected_sensor_paths,
+        render_var=color_presentation.RENDER_VAR_LDR_COLOR,
+    )
+    ticket = client.begin_render_sample_read(submission)
+
+    assert client.poll_render_sample_read(ticket) is None
+    with pytest.raises(RenderClientError, match="requested 10, received 20"):
+        client.poll_render_sample_read(ticket)
+    with pytest.raises(RenderClientError, match="already completed or cancelled"):
+        client.poll_render_sample_read(ticket)
+
+
+def test_async_render_read_cancel_precedes_simulation_delete(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    fake_control_plane: _FakeControlPlane,
+) -> None:
+    module_name = "fake_ovsensors_worker_client_async_cancel"
+    native_module = _AsyncNativeRenderModule(
+        module_name,
+        cancel_pending_polls=2,
+    )
+    events: list[str] = []
+    native_module.events = events
+    fake_control_plane.events = events
+    monkeypatch.setitem(sys.modules, module_name, native_module)
+    request = _request(tmp_path, module_name)
+    client = _client(module_name)
+    simulation_id = _start(client, request)
+    events.clear()
+    submission = client.submit_render_sample(
+        simulation_id,
+        selected_sensor_paths=request.selected_sensor_paths,
+        render_var=color_presentation.RENDER_VAR_LDR_COLOR,
+    )
+    ticket = client.begin_render_sample_read(submission)
+
+    assert client.delete_simulation(simulation_id) == "stopped"
+
+    assert events == [
+        "cancel",
+        "cancel_pending",
+        "cancel_pending",
+        "cancel_terminal",
+        "delete:sim",
+    ]
+    with pytest.raises(RenderClientError, match="already completed or cancelled"):
+        client.cancel_render_sample_read(ticket)
+
+
+def test_async_read_capability_requires_advertisement_and_begin_callable(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    fallback_name = "fake_ovsensors_worker_client_async_fallback"
+    fallback_module = _FakeNativeRenderModule(fallback_name)
+    monkeypatch.setitem(sys.modules, fallback_name, fallback_module)
+    fallback_client = _client(fallback_name)
+    _start(fallback_client, _request(tmp_path, fallback_name))
+    assert fallback_client.supports_async_render_read() is False
+    fallback_client.shutdown()
+
+    broken_name = "fake_ovsensors_worker_client_async_broken"
+    broken_module = _AdvertisedAsyncWithoutBeginNativeRenderModule(broken_name)
+    monkeypatch.setitem(sys.modules, broken_name, broken_module)
+    broken_client = _client(broken_name)
+    with pytest.raises(RenderClientError, match="missing callable begin_ReadWorldState"):
+        _start(broken_client, _request(tmp_path, broken_name))
 
 
 def test_ovrtx_runtime_client_aborts_cleanup_after_render_deadline(

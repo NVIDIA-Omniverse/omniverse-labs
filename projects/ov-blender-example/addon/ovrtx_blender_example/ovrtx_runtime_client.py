@@ -39,6 +39,8 @@ ATTACH_CLEANUP_SCOPE_FULL = "full"
 ATTACH_CLEANUP_SCOPE_DEAD_PID = "dead_pid"
 CONTROL_PLANE_RPC_TIMEOUT_SECONDS = 30
 RENDER_READ_POLL_TIMEOUT_MS = 30_000
+ASYNC_READ_CANCEL_DRAIN_TIMEOUT_SECONDS = 5.0
+ASYNC_READ_CANCEL_POLL_INTERVAL_SECONDS = 0.001
 RENDER_TIMEOUT_ENV = "OV_BLENDER_EXAMPLE_RENDER_TIMEOUT_S"
 DEFAULT_CONTROL_PLANE_ADDRESS = "127.0.0.1"
 DEFAULT_CONTROL_PLANE_PORT = "50051"
@@ -79,6 +81,35 @@ class RenderResult:
     native_timings: Mapping[str, Any] = field(default_factory=dict)
 
 
+@dataclass(frozen=True)
+class RenderSubmission:
+    """One exact-time render write that may be completed or discarded later."""
+
+    owner_id: int
+    submission_id: int
+    session_token: int
+    simulation_id: str
+    selected_sensor_paths: tuple[str, ...]
+    render_var: str
+    simulation_time_ns: int
+    completed_samples: int
+    session_completed_samples: int
+    selection_diagnostics: tuple[Mapping[str, Any], ...]
+    write_diagnostics: tuple[Mapping[str, Any], ...]
+    submitted_monotonic_ns: int
+
+
+@dataclass(frozen=True)
+class RenderReadTicket:
+    """Opaque ownership token for one in-progress asynchronous framebuffer read."""
+
+    owner_id: int
+    read_id: int
+    session_token: int
+    simulation_id: str
+    submission_id: int
+
+
 @dataclass
 class _OvrtxSessionCursor:
     simulation_time_ns: int = 0
@@ -92,8 +123,10 @@ class _OvrtxSessionState:
     sensor_paths: tuple[str, ...]
     width: int
     height: int
+    session_token: int
     cursor: _OvrtxSessionCursor = field(default_factory=_OvrtxSessionCursor)
     selected_render_var_paths: set[str] = field(default_factory=set)
+    pending_submission_ids: set[int] = field(default_factory=set)
 
 
 @dataclass(frozen=True)
@@ -102,6 +135,7 @@ class _RenderNativeBindings:
     create_simulation: Callable[[Mapping[str, Any]], Mapping[str, Any]]
     write_world_state: Callable[[Any], Mapping[str, Any]]
     read_world_state: Callable[[Any], Mapping[str, Any]]
+    begin_read_world_state: Callable[[Any], Any] | None
     build_write_world_state_columns: Callable[[Mapping[str, Any]], Any]
     build_render_sample_step: Callable[[Mapping[str, Any]], Any]
     build_attribute_values_update: Callable[[Mapping[str, Any]], Any]
@@ -110,6 +144,42 @@ class _RenderNativeBindings:
     decode_ldr_color_frame: Callable[[Any, Any], Any]
     decode_hdr_color_frame: Callable[[Any, Any], Any] | None
     rpc_status_error: type[BaseException] | None
+
+
+@dataclass
+class _AsyncRenderReadState:
+    """Incremental form of ``_read_color_frame`` for one exact-time read."""
+
+    ticket: RenderReadTicket
+    submission: RenderSubmission
+    width: int
+    height: int
+    render_var_paths: tuple[str, ...]
+    render_var: str
+    build_read: Callable[[Mapping[str, Any]], Any]
+    decode_frame: Callable[[Any, Any], Any]
+    timeout_seconds: int
+    deadline: float
+    read_started_at: int
+    path_index: int = 0
+    iterator: str = ""
+    path_frame: Mapping[str, Any] | None = None
+    path_status: str | None = None
+    selected_frame: Mapping[str, Any] | None = None
+    request_handle: Any | None = None
+    native_ticket: Any | None = None
+    remaining_ms: int = 0
+    poll_timeout_ms: int = 0
+    read_diagnostics: list[dict[str, Any]] = field(default_factory=list)
+    read_poll_count: int = 0
+    read_iterator_count: int = 0
+    read_empty_ok_count: int = 0
+    read_world_state_ms: float = 0.0
+    read_iterator_world_state_ms: float = 0.0
+    read_empty_ok_world_state_ms: float = 0.0
+    read_success_world_state_ms: float = 0.0
+    read_transient_status_count: int = 0
+    read_transient_status_world_state_ms: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -268,6 +338,10 @@ class OvrtxRuntimeClient:
         self._native_bindings: _RenderNativeBindings | None = None
         self._control_plane_bindings: _ControlPlaneBindings | None = None
         self._session_states: dict[str, _OvrtxSessionState] = {}
+        self._next_session_token = 1
+        self._next_submission_id = 1
+        self._next_read_id = 1
+        self._active_render_read: _AsyncRenderReadState | None = None
         self._abort_cleanup = False
         self._gpu_lease: ovrtx_gpu_lease.OvrtxGpuLease | None = None
         self.last_render_timings: dict[str, Any] = {}
@@ -493,11 +567,14 @@ class OvrtxRuntimeClient:
             )
         self.startup_diagnostics["render_worker"]["worker_owned"] = self._worker_owned
         result_sensor_paths = _normalised_sensor_paths(_result_value(result, "sensor_paths")) or sensor_paths
+        session_token = self._next_session_token
+        self._next_session_token += 1
         self._session_states[simulation_id] = _OvrtxSessionState(
             spec=spec,
             sensor_paths=result_sensor_paths,
             width=int(_result_value(result, "width", spec.width)),
             height=int(_result_value(result, "height", spec.height)),
+            session_token=session_token,
         )
         return simulation_id
 
@@ -509,6 +586,222 @@ class OvrtxRuntimeClient:
         render_var: str,
         additional_samples: int,
     ) -> RenderResult:
+        submission = self._submit_render_samples(
+            simulation_id,
+            selected_sensor_paths=selected_sensor_paths,
+            render_var=render_var,
+            additional_samples=additional_samples,
+        )
+        return self.complete_render_sample(submission)
+
+    def supports_async_render_read(self) -> bool:
+        """Whether the bound native client offers the complete async-read seam."""
+
+        bindings = self._native_bindings
+        return bool(bindings and callable(bindings.begin_read_world_state))
+
+    def submit_render_sample(
+        self,
+        simulation_id: str,
+        *,
+        selected_sensor_paths: Sequence[str],
+        render_var: str,
+    ) -> RenderSubmission:
+        """Submit one sample step without waiting for its framebuffer."""
+
+        return self._submit_render_samples(
+            simulation_id,
+            selected_sensor_paths=selected_sensor_paths,
+            render_var=render_var,
+            additional_samples=1,
+        )
+
+    def begin_render_sample_read(
+        self,
+        submission: RenderSubmission,
+    ) -> RenderReadTicket:
+        """Begin nonblocking readback for one exact-time render submission."""
+
+        if self._active_render_read is not None:
+            raise RenderClientError("Another asynchronous render read is already active")
+        bindings = self._require_bindings()
+        if not callable(bindings.begin_read_world_state):
+            raise RenderClientError(
+                "Active native OVRTX client does not support asynchronous ReadWorldState"
+            )
+        state = self._claim_render_submission(submission)
+        try:
+            render_var = (
+                submission.render_var or color_presentation.RENDER_VAR_LDR_COLOR
+            )
+            render_var_paths = _render_var_paths(
+                submission.selected_sensor_paths,
+                render_var,
+            )
+            if render_var == color_presentation.RENDER_VAR_HDR_COLOR:
+                build_read = bindings.build_read_world_state_hdr_color
+                decode_frame = bindings.decode_hdr_color_frame
+                if build_read is None or decode_frame is None:
+                    raise RenderClientError(
+                        "Native ovrtx client does not support HdrColor readback"
+                    )
+            elif render_var == color_presentation.RENDER_VAR_LDR_COLOR:
+                build_read = bindings.build_read_world_state_ldr_color
+                decode_frame = bindings.decode_ldr_color_frame
+            else:
+                raise RenderClientError(
+                    f"Unsupported OVRTX render var: {render_var}"
+                )
+            timeout_seconds = max(
+                1,
+                int(os.environ.get(RENDER_TIMEOUT_ENV, "600")),
+            )
+            ticket = RenderReadTicket(
+                owner_id=id(self),
+                read_id=self._next_read_id,
+                session_token=submission.session_token,
+                simulation_id=submission.simulation_id,
+                submission_id=submission.submission_id,
+            )
+            self._next_read_id += 1
+            read_state = _AsyncRenderReadState(
+                ticket=ticket,
+                submission=submission,
+                width=state.width,
+                height=state.height,
+                render_var_paths=render_var_paths,
+                render_var=render_var,
+                build_read=build_read,
+                decode_frame=decode_frame,
+                timeout_seconds=timeout_seconds,
+                deadline=time.monotonic() + timeout_seconds,
+                read_started_at=time.perf_counter_ns(),
+            )
+            self._active_render_read = read_state
+            self._start_async_render_read(read_state, bindings)
+            return ticket
+        except RenderClientError:
+            self._active_render_read = None
+            self._abort_cleanup = True
+            raise
+        except Exception as exc:
+            self._active_render_read = None
+            self._abort_cleanup = True
+            raise RenderClientError(
+                f"Native ovrtx client failed before OVRTX render result: {exc}"
+            ) from exc
+
+    def poll_render_sample_read(
+        self,
+        ticket: RenderReadTicket,
+    ) -> RenderResult | None:
+        """Advance one native async read without blocking; return a terminal frame."""
+
+        read_state = self._render_read_state(ticket)
+        bindings = self._require_bindings()
+        try:
+            result = self._advance_async_render_read(read_state, bindings)
+            if result is not None:
+                self._active_render_read = None
+            return result
+        except RenderClientError:
+            self._active_render_read = None
+            self._abort_cleanup = True
+            raise
+        except Exception as exc:
+            self._active_render_read = None
+            self._abort_cleanup = True
+            raise RenderClientError(
+                f"Native ovrtx client failed before OVRTX render result: {exc}"
+            ) from exc
+
+    def cancel_render_sample_read(self, ticket: RenderReadTicket) -> None:
+        """Cancel, drain, and consume one active native async read ticket."""
+
+        read_state = self._render_read_state(ticket)
+        native_ticket = read_state.native_ticket
+        cancel = getattr(native_ticket, "cancel", None)
+        if not callable(cancel):
+            self._active_render_read = None
+            self._abort_cleanup = True
+            raise RenderClientError(
+                "Native asynchronous ReadWorldState ticket is missing callable cancel"
+            )
+        try:
+            cancel()
+        except Exception as exc:
+            self._active_render_read = None
+            self._abort_cleanup = True
+            raise self._async_cancel_error(exc) from exc
+
+        # Native cancellation is deliberately best-effort/nonblocking.  Keep
+        # ownership until its callback is terminal so DeleteSimulation,
+        # replacement, or a successor read cannot overtake the cancelled RPC.
+        drain_deadline = (
+            time.monotonic() + ASYNC_READ_CANCEL_DRAIN_TIMEOUT_SECONDS
+        )
+        while True:
+            try:
+                result = native_ticket.poll()
+            except Exception as exc:
+                bindings = self._native_bindings
+                if (
+                    bindings is not None
+                    and bindings.rpc_status_error is not None
+                    and isinstance(exc, bindings.rpc_status_error)
+                ):
+                    diagnostics = (
+                        native_client_support.exception_protocol_diagnostics(exc)
+                        or {}
+                    )
+                    self._active_render_read = None
+                    if str(diagnostics.get("grpc_status", "")) == "CANCELLED":
+                        return
+                else:
+                    self._active_render_read = None
+                self._abort_cleanup = True
+                raise self._async_cancel_error(exc) from exc
+            if result is not None:
+                # Completion won the cancellation race. Consuming and dropping
+                # that response is terminal and intentionally publishes no frame.
+                self._active_render_read = None
+                return
+            if time.monotonic() >= drain_deadline:
+                # Retain the active state so shutdown may retry the drain; no
+                # control-plane deletion is allowed beneath this RPC.
+                self._abort_cleanup = True
+                raise RenderClientError(
+                    "Native asynchronous ReadWorldState cancellation did not "
+                    "reach a terminal callback within "
+                    f"{ASYNC_READ_CANCEL_DRAIN_TIMEOUT_SECONDS:.1f}s"
+                )
+            time.sleep(ASYNC_READ_CANCEL_POLL_INTERVAL_SECONDS)
+
+    def _async_cancel_error(self, exc: BaseException) -> RenderClientError:
+        bindings = self._native_bindings
+        if (
+            bindings is not None
+            and bindings.rpc_status_error is not None
+            and isinstance(exc, bindings.rpc_status_error)
+        ):
+            return native_client_support.rpc_status_exception(
+                "ReadWorldState",
+                exc,
+                client_label=RENDER_NATIVE_CLIENT_LABEL,
+                error_type=RenderClientError,
+            )
+        return RenderClientError(
+            f"Native ovrtx client failed while cancelling render read: {exc}"
+        )
+
+    def _submit_render_samples(
+        self,
+        simulation_id: str,
+        *,
+        selected_sensor_paths: Sequence[str],
+        render_var: str,
+        additional_samples: int,
+    ) -> RenderSubmission:
         if self._native_client is None:
             raise RenderClientError("No active OVRTX session")
         bindings = self._require_bindings()
@@ -523,10 +816,13 @@ class OvrtxRuntimeClient:
                 "selected_sensor_paths must be declared by the OVRTX service: "
                 + ", ".join(undeclared)
             )
+        additional_samples = int(additional_samples)
+        if additional_samples < 1:
+            raise ValueError("additional_samples must be at least 1")
         cursor = state.cursor
 
         try:
-            native_started_ns = time.perf_counter_ns()
+            submitted_monotonic_ns = time.perf_counter_ns()
             render_var = render_var or color_presentation.RENDER_VAR_LDR_COLOR
             render_var_paths = _render_var_paths(selected_sensor_paths, render_var)
             if render_var == color_presentation.RENDER_VAR_HDR_COLOR:
@@ -570,7 +866,7 @@ class OvrtxRuntimeClient:
                     selection_diagnostics.append(native_client_support.native_response_diagnostics(selection_result))
                 state.selected_render_var_paths.add(render_var_path)
             step_results: list[Mapping[str, Any]] = []
-            for _index in range(max(1, additional_samples)):
+            for _index in range(additional_samples):
                 next_simulation_time_ns = cursor.simulation_time_ns + DEFAULT_RENDER_SIMULATION_STEP_NS
                 write_handle = bindings.build_render_sample_step(
                     {
@@ -582,27 +878,74 @@ class OvrtxRuntimeClient:
                 cursor.simulation_time_ns = next_simulation_time_ns
                 cursor.snapshot_completed_samples += 1
                 cursor.session_completed_samples += 1
-            result = self._read_color_frame(
-                bindings,
-                simulation_id,
-                state,
-                cursor,
-                selected_sensor_paths=selected_sensor_paths,
+            submission_id = self._next_submission_id
+            self._next_submission_id += 1
+            state.pending_submission_ids.add(submission_id)
+            return RenderSubmission(
+                owner_id=id(self),
+                submission_id=submission_id,
+                session_token=state.session_token,
+                simulation_id=str(simulation_id),
+                selected_sensor_paths=tuple(selected_sensor_paths),
                 render_var=render_var,
+                simulation_time_ns=cursor.simulation_time_ns,
+                completed_samples=cursor.snapshot_completed_samples,
+                session_completed_samples=cursor.session_completed_samples,
+                selection_diagnostics=tuple(dict(item) for item in selection_diagnostics),
+                write_diagnostics=tuple(
+                    native_client_support.native_response_diagnostics(item)
+                    for item in step_results
+                ),
+                submitted_monotonic_ns=submitted_monotonic_ns,
             )
-            if step_results:
-                native_timings = _native_timings_from_result(result)
-                native_timings["read_selection"] = [dict(item) for item in selection_diagnostics]
-                native_timings["write_world_state"] = [native_client_support.native_response_diagnostics(item) for item in step_results]
-                result = dict(result)
-                result["native_timings"] = native_timings
-            native_completed_ns = time.perf_counter_ns()
         except RenderClientError:
             self._abort_cleanup = True
             raise
         except Exception as exc:
             self._abort_cleanup = True
-            raise RenderClientError(f"Native ovrtx client failed before OVRTX render result: {exc}") from exc
+            raise RenderClientError(
+                f"Native ovrtx client failed before OVRTX render submission: {exc}"
+            ) from exc
+
+    def complete_render_sample(self, submission: RenderSubmission) -> RenderResult:
+        """Read and decode exactly one previously submitted render time."""
+
+        if self._active_render_read is not None:
+            raise RenderClientError("Another asynchronous render read is already active")
+        state = self._claim_render_submission(submission)
+        bindings = self._require_bindings()
+        cursor = _OvrtxSessionCursor(
+            simulation_time_ns=submission.simulation_time_ns,
+            snapshot_completed_samples=submission.completed_samples,
+            session_completed_samples=submission.session_completed_samples,
+        )
+        try:
+            result = self._read_color_frame(
+                bindings,
+                submission.simulation_id,
+                state,
+                cursor,
+                selected_sensor_paths=submission.selected_sensor_paths,
+                render_var=submission.render_var,
+            )
+            native_completed_ns = time.perf_counter_ns()
+            native_timings = _native_timings_from_result(result)
+            native_timings["read_selection"] = [
+                dict(item) for item in submission.selection_diagnostics
+            ]
+            native_timings["write_world_state"] = [
+                dict(item) for item in submission.write_diagnostics
+            ]
+            result = dict(result)
+            result["native_timings"] = native_timings
+        except RenderClientError:
+            self._abort_cleanup = True
+            raise
+        except Exception as exc:
+            self._abort_cleanup = True
+            raise RenderClientError(
+                f"Native ovrtx client failed before OVRTX render result: {exc}"
+            ) from exc
 
         try:
             convert_started_ns = time.perf_counter_ns()
@@ -611,15 +954,325 @@ class OvrtxRuntimeClient:
         except Exception:
             self._abort_cleanup = True
             raise
-        native_timings = _native_timings_from_result(result)
+        actual_time_ns = int(render_result.render_output_simulation_time_ns or 0)
+        if actual_time_ns and actual_time_ns != submission.simulation_time_ns:
+            self._abort_cleanup = True
+            raise RenderClientError(
+                "OVRTX render result time mismatch: "
+                f"requested {submission.simulation_time_ns}, received {actual_time_ns}"
+            )
         self.last_render_timings = {
-            "native_render_ms": (native_completed_ns - native_started_ns) / 1_000_000.0,
+            "native_render_ms": (
+                native_completed_ns - submission.submitted_monotonic_ns
+            )
+            / 1_000_000.0,
             "result_convert_ms": (convert_completed_ns - convert_started_ns) / 1_000_000.0,
         }
         if native_timings:
             self.last_render_timings["native_timings"] = native_timings
-        if step_results:
-            self.last_render_timings["write_world_state"] = [dict(result) for result in step_results]
+        if submission.write_diagnostics:
+            self.last_render_timings["write_world_state"] = [
+                dict(item) for item in submission.write_diagnostics
+            ]
+        return render_result
+
+    def discard_render_sample(self, submission: RenderSubmission) -> None:
+        """Forget one speculative result without transferring its pixels."""
+
+        self._claim_render_submission(submission)
+
+    def _claim_render_submission(
+        self, submission: RenderSubmission
+    ) -> _OvrtxSessionState:
+        if not isinstance(submission, RenderSubmission):
+            raise TypeError("render submission must be a RenderSubmission")
+        if submission.owner_id != id(self):
+            raise RenderClientError("Render submission belongs to another client")
+        state = self._session_state(submission.simulation_id)
+        if submission.session_token != state.session_token:
+            raise RenderClientError("Render submission belongs to an inactive session")
+        if submission.submission_id not in state.pending_submission_ids:
+            raise RenderClientError("Render submission was already completed or discarded")
+        state.pending_submission_ids.remove(submission.submission_id)
+        return state
+
+    def _render_read_state(
+        self,
+        ticket: RenderReadTicket,
+    ) -> _AsyncRenderReadState:
+        if not isinstance(ticket, RenderReadTicket):
+            raise TypeError("render read ticket must be a RenderReadTicket")
+        if ticket.owner_id != id(self):
+            raise RenderClientError("Render read ticket belongs to another client")
+        read_state = self._active_render_read
+        if read_state is None or read_state.ticket.read_id != ticket.read_id:
+            raise RenderClientError("Render read ticket was already completed or cancelled")
+        state = self._session_state(ticket.simulation_id)
+        if ticket.session_token != state.session_token:
+            raise RenderClientError("Render read ticket belongs to an inactive session")
+        if ticket.submission_id != read_state.submission.submission_id:
+            raise RenderClientError("Render read ticket does not match its submission")
+        return read_state
+
+    def _start_async_render_read(
+        self,
+        read_state: _AsyncRenderReadState,
+        bindings: _RenderNativeBindings,
+    ) -> None:
+        remaining_ms = int((read_state.deadline - time.monotonic()) * 1000)
+        if remaining_ms <= 0:
+            raise RenderClientError(
+                "Native ovrtx client returned no "
+                f"{read_state.render_var} render result before deadline"
+            )
+        poll_timeout_ms = min(remaining_ms, RENDER_READ_POLL_TIMEOUT_MS)
+        render_var_path = read_state.render_var_paths[read_state.path_index]
+        submission = read_state.submission
+        request: dict[str, Any] = {
+            "simulation_id": submission.simulation_id,
+            "render_var_paths": [render_var_path],
+            "simulation_time_ns": submission.simulation_time_ns,
+            "timeout_ms": poll_timeout_ms,
+            "timeout_seconds": max(1, (poll_timeout_ms + 999) // 1000),
+            "width": read_state.width,
+            "height": read_state.height,
+            "completed_samples": submission.completed_samples,
+            "session_completed_samples": submission.session_completed_samples,
+        }
+        if read_state.iterator:
+            request["iterator"] = read_state.iterator
+        request_handle = read_state.build_read(request)
+        begin = bindings.begin_read_world_state
+        if not callable(begin):
+            raise RenderClientError(
+                "Active native OVRTX client does not support asynchronous ReadWorldState"
+            )
+        try:
+            native_ticket = begin(request_handle)
+        except Exception as exc:
+            if (
+                bindings.rpc_status_error is not None
+                and isinstance(exc, bindings.rpc_status_error)
+            ):
+                raise native_client_support.rpc_status_exception(
+                    "ReadWorldState",
+                    exc,
+                    client_label=RENDER_NATIVE_CLIENT_LABEL,
+                    error_type=RenderClientError,
+                ) from exc
+            raise
+        if not callable(getattr(native_ticket, "poll", None)) or not callable(
+            getattr(native_ticket, "cancel", None)
+        ):
+            cancel = getattr(native_ticket, "cancel", None)
+            if callable(cancel):
+                try:
+                    cancel()
+                except Exception:
+                    pass
+            raise RenderClientError(
+                "Native asynchronous ReadWorldState ticket must expose callable "
+                "poll and cancel methods"
+            )
+        read_state.request_handle = request_handle
+        read_state.native_ticket = native_ticket
+        read_state.remaining_ms = remaining_ms
+        read_state.poll_timeout_ms = poll_timeout_ms
+
+    def _advance_async_render_read(
+        self,
+        read_state: _AsyncRenderReadState,
+        bindings: _RenderNativeBindings,
+    ) -> RenderResult | None:
+        native_ticket = read_state.native_ticket
+        poll = getattr(native_ticket, "poll", None)
+        if not callable(poll):
+            raise RenderClientError(
+                "Native asynchronous ReadWorldState ticket is missing callable poll"
+            )
+        try:
+            native_result = poll()
+        except Exception as exc:
+            if (
+                bindings.rpc_status_error is not None
+                and isinstance(exc, bindings.rpc_status_error)
+            ):
+                translated = native_client_support.rpc_status_exception(
+                    "ReadWorldState",
+                    exc,
+                    client_label=RENDER_NATIVE_CLIENT_LABEL,
+                    error_type=RenderClientError,
+                )
+                diagnostics = (
+                    native_client_support.exception_protocol_diagnostics(translated)
+                    or {}
+                )
+                if (
+                    str(diagnostics.get("grpc_status", ""))
+                    == "DEADLINE_EXCEEDED"
+                    and read_state.remaining_ms > read_state.poll_timeout_ms
+                ):
+                    read_state.read_transient_status_count += 1
+                    read_state.read_transient_status_world_state_ms += (
+                        native_client_support.coerce_mapping_float(
+                            diagnostics,
+                            "elapsed_ms",
+                            0.0,
+                        )
+                    )
+                    read_state.read_diagnostics.append(dict(diagnostics))
+                    self._start_async_render_read(read_state, bindings)
+                    return None
+                raise translated from exc
+            raise
+        if native_result is None:
+            return None
+        read_result = dict(native_result) if isinstance(native_result, Mapping) else {}
+        read_state.read_poll_count += 1
+        poll_ms = native_client_support.coerce_mapping_float(
+            read_result,
+            "read_world_state_ms",
+            0.0,
+        )
+        read_state.read_world_state_ms += poll_ms
+        read_state.read_diagnostics.append(
+            native_client_support.native_response_diagnostics(read_result)
+        )
+        response_handle = read_result.get("response_handle")
+        decoded = read_state.decode_frame(read_state.request_handle, response_handle)
+        render_var_path = read_state.render_var_paths[read_state.path_index]
+        frame = _selected_color_frame(
+            decoded,
+            [render_var_path],
+            read_state.render_var,
+        )
+        if frame is not None:
+            read_state.path_frame = frame
+            read_state.read_success_world_state_ms += poll_ms
+        statuses = (
+            _result_value(decoded, "statuses", {})
+            if isinstance(decoded, Mapping)
+            else {}
+        )
+        status = statuses.get(render_var_path) if isinstance(statuses, Mapping) else None
+        if status and str(status) != "OK":
+            read_state.path_status = str(status)
+        read_state.iterator = str(_result_value(read_result, "iterator", ""))
+        if read_state.iterator:
+            read_state.read_iterator_count += 1
+            read_state.read_iterator_world_state_ms += poll_ms
+            self._start_async_render_read(read_state, bindings)
+            return None
+        if read_state.path_status is not None:
+            error = RenderClientError(
+                "OVRTX render output "
+                f"{render_var_path} terminated with {read_state.path_status}"
+            )
+            error.render_var_path = render_var_path  # type: ignore[attr-defined]
+            error.render_status = read_state.path_status  # type: ignore[attr-defined]
+            error.simulation_time_ns = read_state.submission.simulation_time_ns  # type: ignore[attr-defined]
+            error.read_diagnostics = tuple(read_state.read_diagnostics)  # type: ignore[attr-defined]
+            error.read_world_state_ms = read_state.read_world_state_ms  # type: ignore[attr-defined]
+            raise error
+        if read_state.path_frame is None:
+            read_state.read_empty_ok_count += 1
+            read_state.read_empty_ok_world_state_ms += poll_ms
+            error = RenderClientError(
+                "OVRTX render output "
+                f"{render_var_path} sealed without {read_state.render_var} data"
+            )
+            error.render_var_path = render_var_path  # type: ignore[attr-defined]
+            error.render_status = None  # type: ignore[attr-defined]
+            error.simulation_time_ns = read_state.submission.simulation_time_ns  # type: ignore[attr-defined]
+            error.read_diagnostics = tuple(read_state.read_diagnostics)  # type: ignore[attr-defined]
+            error.read_world_state_ms = read_state.read_world_state_ms  # type: ignore[attr-defined]
+            raise error
+        if read_state.selected_frame is None:
+            read_state.selected_frame = read_state.path_frame
+        read_state.path_index += 1
+        if read_state.path_index < len(read_state.render_var_paths):
+            read_state.iterator = ""
+            read_state.path_frame = None
+            read_state.path_status = None
+            self._start_async_render_read(read_state, bindings)
+            return None
+        return self._finish_async_render_read(read_state)
+
+    def _finish_async_render_read(
+        self,
+        read_state: _AsyncRenderReadState,
+    ) -> RenderResult:
+        selected_frame = read_state.selected_frame
+        if selected_frame is None:
+            raise RenderClientError(
+                "Native ovrtx client returned no "
+                f"{read_state.render_var} render result"
+            )
+        result = dict(selected_frame)
+        native_timings = _native_timings_from_result(result)
+        native_timings.update(
+            {
+                "read_strategy": "long_poll",
+                "read_transport": "async_ticket",
+                "read_timeout_ms": read_state.timeout_seconds * 1000,
+                "read_poll_count": read_state.read_poll_count,
+                "read_iterator_count": read_state.read_iterator_count,
+                "read_empty_ok_count": read_state.read_empty_ok_count,
+                "read_world_state_ms": read_state.read_world_state_ms,
+                "read_success_world_state_ms": read_state.read_success_world_state_ms,
+                "read_iterator_world_state_ms": read_state.read_iterator_world_state_ms,
+                "read_empty_ok_world_state_ms": read_state.read_empty_ok_world_state_ms,
+                "read_transient_status_count": read_state.read_transient_status_count,
+                "read_transient_status_world_state_ms": (
+                    read_state.read_transient_status_world_state_ms
+                ),
+                "read_sleep_ms": 0.0,
+                "read_empty_ok_sleep_ms": 0.0,
+                "read_transient_status_sleep_ms": 0.0,
+                "ldr_wait_ms": (
+                    time.perf_counter_ns() - read_state.read_started_at
+                )
+                / 1_000_000.0,
+                "read_world_state": read_state.read_diagnostics,
+            }
+        )
+        submission = read_state.submission
+        native_timings["read_selection"] = [
+            dict(item) for item in submission.selection_diagnostics
+        ]
+        native_timings["write_world_state"] = [
+            dict(item) for item in submission.write_diagnostics
+        ]
+        result["native_timings"] = native_timings
+        native_completed_ns = time.perf_counter_ns()
+        convert_started_ns = time.perf_counter_ns()
+        render_result = render_result_from_native(
+            result,
+            read_state.width,
+            read_state.height,
+        )
+        convert_completed_ns = time.perf_counter_ns()
+        actual_time_ns = int(render_result.render_output_simulation_time_ns or 0)
+        if actual_time_ns and actual_time_ns != submission.simulation_time_ns:
+            raise RenderClientError(
+                "OVRTX render result time mismatch: "
+                f"requested {submission.simulation_time_ns}, received {actual_time_ns}"
+            )
+        self.last_render_timings = {
+            "native_render_ms": (
+                native_completed_ns - submission.submitted_monotonic_ns
+            )
+            / 1_000_000.0,
+            "result_convert_ms": (
+                convert_completed_ns - convert_started_ns
+            )
+            / 1_000_000.0,
+            "native_timings": native_timings,
+        }
+        if submission.write_diagnostics:
+            self.last_render_timings["write_world_state"] = [
+                dict(item) for item in submission.write_diagnostics
+            ]
         return render_result
 
     def update_transforms(
@@ -738,6 +1391,12 @@ class OvrtxRuntimeClient:
         if simulation_id not in self._session_states:
             self.last_delete_diagnostics = {"status": "not_found", "simulation_id": simulation_id}
             return "not_found"
+        active_read = self._active_render_read
+        if (
+            active_read is not None
+            and active_read.ticket.simulation_id == simulation_id
+        ):
+            self.cancel_render_sample_read(active_read.ticket)
         if self._abort_cleanup:
             return self.shutdown()
         bindings = self._control_plane_bindings
@@ -774,6 +1433,15 @@ class OvrtxRuntimeClient:
         reset_startup_diagnostics: bool = True,
         release_gpu_lease: bool = True,
     ) -> str:
+        active_read = self._active_render_read
+        if active_read is not None:
+            try:
+                self.cancel_render_sample_read(active_read.ticket)
+            except RenderClientError:
+                # Cancellation failure sets ``_abort_cleanup``. Continue into
+                # native close without issuing DeleteSimulation beneath an RPC
+                # whose terminal completion could not be confirmed.
+                pass
         abort_cleanup = self._abort_cleanup
         simulation_ids = tuple(self._session_states)
         if abort_cleanup:
@@ -1184,6 +1852,18 @@ def _bind_render_native_client(native_module: Any, native_client: Any) -> _Rende
         if "build_ReadWorldState_hdr_color" in generic_builders
         else None
     )
+    async_rpcs = native_client_support.capability_names(capabilities, "async_rpcs")
+    begin_read_world_state = None
+    if "ReadWorldState" in async_rpcs:
+        begin_read_world_state = native_client_support.optional_callable(
+            native_client,
+            "begin_ReadWorldState",
+        )
+        if begin_read_world_state is None:
+            raise RenderClientError(
+                "Native ovrtx client advertises asynchronous ReadWorldState "
+                "but is missing callable begin_ReadWorldState"
+            )
 
     return _RenderNativeBindings(
         start_worker=require("start_worker"),
@@ -1196,6 +1876,7 @@ def _bind_render_native_client(native_module: Any, native_client: Any) -> _Rende
         read_world_state=native_client_support.require_callable(
             native_client, "ReadWorldState", client_label=RENDER_NATIVE_CLIENT_LABEL, error_type=RenderClientError
         ),
+        begin_read_world_state=begin_read_world_state,
         build_write_world_state_columns=generic_write_builder,
         build_render_sample_step=_builder_or_generic(
             native_module,
@@ -1891,7 +2572,9 @@ def _valid_port(value: str) -> str:
 __all__ = [
     "OvrtxRuntimeClient",
     "RenderClientError",
+    "RenderReadTicket",
     "RenderResult",
+    "RenderSubmission",
     "apply_worker_runtime_environment",
     "apply_srtx_server_port_env",
     "materialx_mdl_search_path_from_worker_command",

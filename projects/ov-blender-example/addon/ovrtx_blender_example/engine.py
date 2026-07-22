@@ -975,22 +975,37 @@ def _engine_signal_id(engine: Any) -> str:
     return f"{ENGINE_ID}:{identity:x}"
 
 
+#: Main-thread poll cadence for render-thread publication notifications.
+#: Blender's application-timer registry is a lock-free global list, so timer
+#: registration itself must stay on the main thread. Returning zero keeps the
+#: callback due for the next event-loop cycle. BLI executes each registered
+#: callback at most once per cycle, so this does not recurse or prevent the
+#: notifier/draw phases that follow timer execution.
+PUBLICATION_REDRAW_POLL_INTERVAL_SECONDS = 0.0
+
+#: A Blender WindowManager timer produces real window events, unlike an
+#: application timer, whose callbacks are only serviced opportunistically.
+#: One session-scoped wake at 120 Hz keeps publication polling responsive in
+#: an otherwise idle viewport without limiting the render cadence below the
+#: expected display rate.
+PUBLICATION_REDRAW_WAKE_INTERVAL_SECONDS = 1.0 / 120.0
+
+
 class _PublicationRedrawSignaler:
     """Coalesced publication→redraw signaling for one engine (task02-05).
 
     The render thread announces frame publications; Blender presents on the
-    main thread. ``bpy.app.timers.register`` is the documented thread-safe
-    entry to main-thread execution and is the only Blender API this class
-    touches from the render thread — the single crossing. ``signal()`` sets
-    an atomic ``redraw_pending`` flag and registers a one-shot timer only on
-    the False→True transition, so any burst of publications before the timer
-    fires collapses into one main-thread redraw request (the next draw reads
-    the newest frame anyway). The timer callback clears the flag, tags the
-    owning viewport's redraw through a weakref to the engine (a dead
-    reference makes the callback a no-op), and returns ``None`` so the timer
-    unregisters itself. When ``engine.tag_redraw()`` raises (engine freed
-    between the reference check and the call), the exception-guarded VIEW_3D
-    area scan (``_tag_viewport_redraws``) is the fallback.
+    main thread. Blender 5.2's ``BLI_timer_register`` mutates a global
+    lock-free list and does not wake the window event loop, so registering a
+    ``bpy.app.timers`` callback from the render thread is neither a safe nor a
+    prompt thread crossing. ``start`` is called on Blender's main thread once
+    per viewport session and installs a small recurring poller. ``signal``
+    then touches only this object's lock-protected state: it latches one
+    pending redraw and timestamps the first publication in the burst. The
+    main-thread poller consumes the latch, tags the owning viewport through a
+    weakref, and keeps polling until ``stop`` retires its generation. Bursts
+    still collapse onto the latest frame, but no Blender API or timer registry
+    is touched by the render thread.
 
     ``redraw_requested_monotonic_ns`` is stamped when the pending flag
     latches (publication time, render-thread side) so the publish→draw span
@@ -1002,58 +1017,170 @@ class _PublicationRedrawSignaler:
         self._engine_ref = weakref.ref(engine)
         self._lock = threading.Lock()
         self._pending = False
+        self._poller_active = False
+        self._poller_generation = 0
+        self._poller_callback: Callable[[], float | None] | None = None
+        self._event_timer: Any | None = None
+        self._event_timer_manager: Any | None = None
         self._requested_monotonic_ns = 0
         self._signal_count = 0
         self._timer_registrations = 0
         self._timer_fires = 0
+        self._redraw_dispatches = 0
+        self._area_redraw_dispatches = 0
+        self._area_redraw_failures = 0
         self._fallback_redraws = 0
         self._registration_failures = 0
+        self._event_timer_additions = 0
+        self._event_timer_removals = 0
+        self._event_timer_failures = 0
 
-    def signal(self) -> None:
-        """Request one coalesced main-thread redraw; safe from any thread."""
+    def start(self) -> None:
+        """Install the session poller; must be called on Blender's main thread."""
 
         with self._lock:
-            self._signal_count += 1
-            if self._pending:
-                # Absorbed: a redraw is already pending and the next draw
-                # reads the newest published frame anyway.
+            if self._poller_active:
                 return
-            self._pending = True
-            self._requested_monotonic_ns = time.perf_counter_ns()
+            self._poller_active = True
+            self._poller_generation += 1
+            generation = self._poller_generation
+        signaler_ref = weakref.ref(self)
+
+        def _poll() -> float | None:
+            signaler = signaler_ref()
+            if signaler is None:
+                return None
+            return signaler._poll_redraw(generation)
+
+        with self._lock:
+            self._poller_callback = _poll
+        event_timer = None
+        event_timer_manager = None
         try:
             if bpy is None:
                 raise RuntimeError("bpy is unavailable")
-            bpy.app.timers.register(self._fire_redraw, first_interval=0.0)
+            event_timer_manager = bpy.context.window_manager
+            event_timer = event_timer_manager.event_timer_add(
+                PUBLICATION_REDRAW_WAKE_INTERVAL_SECONDS,
+                window=bpy.context.window,
+            )
         except Exception:
-            # Best-effort registration (Blender shutting down, or timers
-            # unavailable under test): release the latch so the next
-            # publication retries instead of wedging redraws forever.
+            # Headless/fake contexts can lack a window timer. The app-timer
+            # poller remains functional when some other event source drives
+            # Blender; record the reduced wake capability explicitly.
             with self._lock:
-                self._pending = False
+                self._event_timer_failures += 1
+        else:
+            with self._lock:
+                if self._poller_generation == generation:
+                    self._event_timer = event_timer
+                    self._event_timer_manager = event_timer_manager
+                    self._event_timer_additions += 1
+        try:
+            if bpy is None:
+                raise RuntimeError("bpy is unavailable")
+            bpy.app.timers.register(_poll, first_interval=0.0)
+        except Exception:
+            with self._lock:
+                if self._poller_generation == generation:
+                    self._poller_active = False
+                    self._poller_callback = None
+                    self._pending = False
                 self._registration_failures += 1
+            if event_timer is not None and event_timer_manager is not None:
+                try:
+                    event_timer_manager.event_timer_remove(event_timer)
+                except Exception:
+                    with self._lock:
+                        self._event_timer_failures += 1
+                else:
+                    with self._lock:
+                        self._event_timer = None
+                        self._event_timer_manager = None
+                        self._event_timer_removals += 1
             return
         with self._lock:
             self._timer_registrations += 1
 
-    def _fire_redraw(self) -> None:
-        """Main-thread timer callback: clear the latch, tag, unregister."""
+    def stop(self) -> None:
+        """Retire the poller and remove its main-thread window wake timer."""
 
         with self._lock:
+            self._poller_active = False
+            self._poller_generation += 1
+            self._poller_callback = None
             self._pending = False
+            self._requested_monotonic_ns = 0
+            event_timer = self._event_timer
+            event_timer_manager = self._event_timer_manager
+            self._event_timer = None
+            self._event_timer_manager = None
+        if event_timer is not None and event_timer_manager is not None:
+            try:
+                event_timer_manager.event_timer_remove(event_timer)
+            except Exception:
+                with self._lock:
+                    self._event_timer_failures += 1
+            else:
+                with self._lock:
+                    self._event_timer_removals += 1
+
+    def signal(self) -> None:
+        """Latch one coalesced redraw request; safe from any thread."""
+
+        with self._lock:
+            self._signal_count += 1
+            if not self._poller_active:
+                # Teardown stops the main-thread poller before joining the
+                # render loop. Ignore a publication racing that boundary so
+                # it cannot leak a pending mark into the next session.
+                return
+            if self._pending:
+                # Absorbed: the next poll reads the newest published frame.
+                return
+            self._pending = True
+            self._requested_monotonic_ns = time.perf_counter_ns()
+
+    def _poll_redraw(self, generation: int) -> float | None:
+        """Main-thread timer callback: consume one coalesced publication."""
+
+        with self._lock:
+            if (
+                not self._poller_active
+                or generation != self._poller_generation
+            ):
+                return None
             self._timer_fires += 1
+            pending = self._pending
+            self._pending = False
+            if pending:
+                self._redraw_dispatches += 1
         engine = self._engine_ref()
         if engine is None:
+            # This callback runs on the main thread, so it can retire both
+            # timer mechanisms safely when the owning engine has vanished.
+            # Leaving the WindowManager timer behind would keep generating
+            # wake events after the viewport/session no longer exists.
+            self.stop()
             return None
-        try:
-            engine.tag_redraw()
-        except Exception:
-            with self._lock:
-                self._fallback_redraws += 1
+        if pending:
+            try:
+                engine.tag_redraw()
+            except Exception:
+                with self._lock:
+                    self._fallback_redraws += 1
+            # RenderEngine.tag_redraw() only sets RE_ENGINE_DO_DRAW; it does
+            # not enqueue a window/region redraw. The main-thread poller must
+            # also tag the VIEW_3D area so Blender actually invokes view_draw.
             try:
                 engine._tag_viewport_redraws()
             except Exception:
-                pass
-        return None
+                with self._lock:
+                    self._area_redraw_failures += 1
+            else:
+                with self._lock:
+                    self._area_redraw_dispatches += 1
+        return PUBLICATION_REDRAW_POLL_INTERVAL_SECONDS
 
     def consume_request_mark(self) -> int | None:
         """Return-and-clear the newest publication-side redraw stamp."""
@@ -1069,11 +1196,19 @@ class _PublicationRedrawSignaler:
         with self._lock:
             return {
                 "redraw_pending": self._pending,
+                "poller_active": self._poller_active,
                 "signals": self._signal_count,
                 "timer_registrations": self._timer_registrations,
                 "timer_fires": self._timer_fires,
+                "redraw_dispatches": self._redraw_dispatches,
+                "area_redraw_dispatches": self._area_redraw_dispatches,
+                "area_redraw_failures": self._area_redraw_failures,
                 "fallback_redraws": self._fallback_redraws,
                 "registration_failures": self._registration_failures,
+                "event_timer_active": self._event_timer is not None,
+                "event_timer_additions": self._event_timer_additions,
+                "event_timer_removals": self._event_timer_removals,
+                "event_timer_failures": self._event_timer_failures,
             }
 
 
@@ -2825,12 +2960,17 @@ if bpy is not None:
                 runtime["teardown_state"] = teardown_state
 
             try:
+                # Main-thread half of publication signaling. Install the
+                # poller before the render thread can publish; the thread
+                # itself only latches a Python-owned pending bit.
+                self._redraw_signaler.start()
                 new_thread.start()
                 # The loop is the thread's long-lived submit command; its
                 # first adopted snapshot triggers the startup ensure on the
                 # thread (session work never runs from view_draw).
                 new_thread.submit(loop.run, label="latest-view-loop")
             except Exception as exc:
+                self._redraw_signaler.stop()
                 self._stop_render_loop()
                 raise RenderClientError(
                     f"Viewport render thread could not start: {type(exc).__name__}: {exc}"
@@ -4182,6 +4322,7 @@ if bpy is not None:
             # One linear teardown: stop request → loop exit → exact-stage
             # scheduler/controller teardown → one bounded join. A current-
             # scene loop only detaches from its authoring runtime here.
+            self._redraw_signaler.stop()
             teardown, teardown_state = self._runtime_teardown_state()
             outcome = self._stop_render_loop(teardown=teardown)
             joined = bool(outcome.get("joined", False))

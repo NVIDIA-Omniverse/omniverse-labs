@@ -800,6 +800,7 @@ def test_artifact_embeds_live_thread_model_and_cleanup_keys(
             }
         ],
     )
+    engine._redraw_signaler.start()
     engine._redraw_signaler.signal()  # counts one signal (registration ok)
     engine._viewport_cleanup_diagnostics = {
         "status": "teardown_deadline_exceeded",

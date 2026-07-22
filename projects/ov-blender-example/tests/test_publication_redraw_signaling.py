@@ -2,16 +2,16 @@
 # SPDX-License-Identifier: Apache-2.0
 """Frame publication and redraw signaling (task02-05).
 
-Publication of a new frame (or resync/failure state) schedules exactly one
-pending main-thread redraw via a one-shot ``bpy.app.timers`` callback
-registered from the render thread — the documented thread-safe crossing.
-Duplicate publications before the timer fires are absorbed by an atomic
-``redraw_pending`` flag per engine; the timer holds a weakref to the
-engine (dead ref → no-op) and falls back to the VIEW_3D area scan when
-``tag_redraw`` raises. ``redraw_requested_monotonic_ns`` is stamped at
-publication (thread side) so the publish→draw span includes timer
-dispatch latency. The ``view_draw``-tail ``tag_redraw`` refinement
-polling is gone.
+Publication of a new frame (or resync/failure state) latches exactly one
+pending redraw for a recurring ``bpy.app.timers`` poller registered on the
+main thread at session start. The render thread never touches Blender's
+lock-free application-timer registry. Duplicate publications before a poll
+are absorbed by an atomic ``redraw_pending`` flag per engine; the poller
+holds a weakref to the engine (dead ref → no-op) and falls back to the
+VIEW_3D area scan when ``tag_redraw`` raises.
+``redraw_requested_monotonic_ns`` is stamped at publication (thread side)
+so the publish→draw span includes poll latency. The ``view_draw``-tail
+``tag_redraw`` refinement polling is gone.
 """
 
 from __future__ import annotations
@@ -79,19 +79,46 @@ class _FakeTimers:
         with self._lock:
             callbacks = list(self.pending)
             self.pending.clear()
+        recurring: list[object] = []
         for fn in callbacks:
-            # One-shot contract: the callback returns None to unregister.
-            assert fn() is None
+            interval = fn()
+            if interval is not None:
+                assert interval >= 0.0
+                recurring.append(fn)
+        with self._lock:
+            self.pending.extend(recurring)
         return len(callbacks)
+
+
+class _FakeWindowManager:
+    """Records session-scoped event timers that wake Blender's event loop."""
+
+    def __init__(self) -> None:
+        self.windows = ()
+        self.add_calls: list[tuple[float, object]] = []
+        self.remove_calls: list[object] = []
+        self.active: list[object] = []
+
+    def event_timer_add(self, interval: float, *, window: object) -> object:
+        timer = object()
+        self.add_calls.append((float(interval), window))
+        self.active.append(timer)
+        return timer
+
+    def event_timer_remove(self, timer: object) -> None:
+        self.remove_calls.append(timer)
+        self.active.remove(timer)
 
 
 def _load_engine_with_fake_bpy(monkeypatch: pytest.MonkeyPatch):
     module_name = "ovrtx_blender_example._engine_publication_redraw_test"
     module_path = ROOT / "addon" / "ovrtx_blender_example" / "engine.py"
+    window = object()
+    window_manager = _FakeWindowManager()
     fake_bpy = SimpleNamespace(
         types=SimpleNamespace(RenderEngine=_FakeRenderEngine),
         app=SimpleNamespace(timers=_FakeTimers()),
-        context=SimpleNamespace(window_manager=SimpleNamespace(windows=())),
+        context=SimpleNamespace(window=window, window_manager=window_manager),
     )
     monkeypatch.setitem(sys.modules, "bpy", fake_bpy)
     spec = importlib.util.spec_from_file_location(module_name, module_path)
@@ -230,31 +257,48 @@ def _engine_with_stubbed_session(module, monkeypatch: pytest.MonkeyPatch, reques
 def test_publications_coalesce_into_one_pending_timer(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """N publications → 1 pending redraw; redraw → next publication → next redraw."""
+    """N publications → one latch consumed by one main-thread poll."""
 
     module = _load_engine_with_fake_bpy(monkeypatch)
     timers = module.bpy.app.timers
     target = _DummyEngine()
     signaler = module._PublicationRedrawSignaler(target)
+    signaler.start()
+    window_manager = module.bpy.context.window_manager
+
+    assert window_manager.add_calls == [
+        (module.PUBLICATION_REDRAW_WAKE_INTERVAL_SECONDS, module.bpy.context.window)
+    ]
+    assert len(window_manager.active) == 1
+    assert signaler.diagnostics()["event_timer_active"] is True
 
     for _ in range(5):
         signaler.signal()
 
-    # Only the False→True transition registered a timer; the other four
-    # publications were absorbed by the pending flag.
+    # Session start registered one recurring main-thread poller; none of the
+    # render-thread publications touches the timer registry.
     assert timers.register_calls == 1
     assert signaler.diagnostics()["redraw_pending"] is True
     assert signaler.diagnostics()["signals"] == 5
 
     assert timers.run_pending() == 1
     assert target.tag_calls == 1
+    assert target.area_scan_calls == 1
     assert signaler.diagnostics()["redraw_pending"] is False
+    assert signaler.diagnostics()["redraw_dispatches"] == 1
 
-    # The next publication after the redraw schedules the next timer.
+    # The next publication reuses the same poller registration.
     signaler.signal()
-    assert timers.register_calls == 2
+    assert timers.register_calls == 1
     assert timers.run_pending() == 1
     assert target.tag_calls == 2
+    assert target.area_scan_calls == 2
+    signaler.stop()
+    assert window_manager.remove_calls
+    assert window_manager.active == []
+    assert signaler.diagnostics()["event_timer_removals"] == 1
+    assert timers.run_pending() == 1
+    assert signaler.diagnostics()["poller_active"] is False
 
 
 def test_redraw_mark_stamped_at_publication_and_consumed_once(
@@ -263,6 +307,7 @@ def test_redraw_mark_stamped_at_publication_and_consumed_once(
     module = _load_engine_with_fake_bpy(monkeypatch)
     target = _DummyEngine()
     signaler = module._PublicationRedrawSignaler(target)
+    signaler.start()
 
     before = time.perf_counter_ns()
     signaler.signal()
@@ -278,6 +323,70 @@ def test_redraw_mark_stamped_at_publication_and_consumed_once(
 
     assert signaler.consume_request_mark() == first_mark
     assert signaler.consume_request_mark() is None
+    signaler.stop()
+
+
+def test_signal_after_stop_does_not_leak_into_restarted_session(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    module = _load_engine_with_fake_bpy(monkeypatch)
+    timers = module.bpy.app.timers
+    target = _DummyEngine()
+    signaler = module._PublicationRedrawSignaler(target)
+    signaler.start()
+    signaler.stop()
+
+    signaler.signal()
+    assert signaler.diagnostics()["redraw_pending"] is False
+    assert signaler.consume_request_mark() is None
+
+    signaler.start()
+    assert timers.run_pending() == 2
+    assert target.tag_calls == 0
+
+
+def test_render_thread_signal_never_registers_a_blender_timer(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    module = _load_engine_with_fake_bpy(monkeypatch)
+    timers = module.bpy.app.timers
+    target = _DummyEngine()
+    signaler = module._PublicationRedrawSignaler(target)
+    signaler.start()
+
+    publisher = threading.Thread(
+        target=lambda: [signaler.signal() for _ in range(8)],
+        name="publication-test-thread",
+    )
+    publisher.start()
+    publisher.join(WAIT_S)
+
+    assert not publisher.is_alive()
+    assert timers.register_calls == 1
+    assert signaler.diagnostics()["signals"] == 8
+    assert timers.run_pending() == 1
+    assert target.tag_calls == 1
+    assert target.area_scan_calls == 1
+
+
+def test_stopped_poller_generation_cannot_consume_restarted_session(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    module = _load_engine_with_fake_bpy(monkeypatch)
+    timers = module.bpy.app.timers
+    target = _DummyEngine()
+    signaler = module._PublicationRedrawSignaler(target)
+    signaler.start()
+    signaler.stop()
+    signaler.start()
+    signaler.signal()
+
+    # Both callbacks are still queued in the fake registry. The retired one
+    # exits; only the current generation consumes and dispatches the frame.
+    assert timers.register_calls == 2
+    assert timers.run_pending() == 2
+    assert target.tag_calls == 1
+    assert len(timers.pending) == 1
 
 
 def test_timer_callback_with_dead_engine_is_noop(
@@ -287,6 +396,7 @@ def test_timer_callback_with_dead_engine_is_noop(
     timers = module.bpy.app.timers
     target = _DummyEngine()
     signaler = module._PublicationRedrawSignaler(target)
+    signaler.start()
     signaler.signal()
 
     del target
@@ -307,11 +417,12 @@ def test_tag_redraw_failure_falls_back_to_area_scan(
     timers = module.bpy.app.timers
     target = _DummyEngine(tag_raises=True)
     signaler = module._PublicationRedrawSignaler(target)
+    signaler.start()
     signaler.signal()
 
     assert timers.run_pending() == 1
-    # Engine freed between the ref check and the call: the VIEW_3D area
-    # scan tags the viewports instead.
+    # Setting the engine flag failed, but the required VIEW_3D area scan still
+    # tags the actual viewport redraw.
     assert target.tag_calls == 0
     assert target.area_scan_calls == 1
     assert signaler.diagnostics()["fallback_redraws"] == 1
@@ -330,7 +441,7 @@ def test_registration_failure_releases_latch_for_retry(
 
     original_register = timers.register
     timers.register = _broken_register
-    signaler.signal()
+    signaler.start()
     diagnostics = signaler.diagnostics()
     assert diagnostics["registration_failures"] == 1
     # The latch is released so the next publication retries registration
@@ -338,10 +449,12 @@ def test_registration_failure_releases_latch_for_retry(
     assert diagnostics["redraw_pending"] is False
 
     timers.register = original_register
+    signaler.start()
     signaler.signal()
     assert timers.pending
     assert timers.run_pending() == 1
     assert target.tag_calls == 1
+    assert target.area_scan_calls == 1
 
 
 # ---------------------------------------------------------------------------
@@ -402,6 +515,7 @@ def test_view_draw_records_publication_stamped_redraw_span(
     publisher = viewport_render_thread.RedrawSignalingFrameSlot(
         engine._frame_slot, engine._redraw_signaler.signal
     )
+    engine._redraw_signaler.start()
     snapshot_key = module.viewport_handoff.snapshot_from_render_request(request).key
     before = time.perf_counter_ns()
     publisher.publish(
@@ -424,6 +538,7 @@ def test_view_draw_records_publication_stamped_redraw_span(
     assert redraw_mark <= started_mark
     # Consumed once: a draw without a new publication has no request mark.
     assert engine._redraw_signaler.consume_request_mark() is None
+    engine._redraw_signaler.stop()
 
 
 def test_view_draw_does_not_poll_while_refinement_is_incomplete(
@@ -588,11 +703,9 @@ def test_loop_publications_register_one_coalesced_redraw_timer(
                 break
         assert newest is not None
         assert newest.completed_samples == request.max_samples
-        # Refinement published multiple steps (min-first then doubling) but
-        # the un-fired timer absorbed every publication after the first:
-        # exactly one pending main-thread redraw request. Counted at the
-        # signaler because the tick-result absorb timer (task02-07)
-        # registers separately from the same loop run.
+        # Refinement published multiple steps (min-first then doubling), but
+        # session start registered exactly one main-thread poller. Render-
+        # thread publications only update its pending bit.
         assert engine._frame_slot.latest_index() >= 2
         assert engine._redraw_signaler.diagnostics()["timer_registrations"] == 1
         assert timers.run_pending() >= 1

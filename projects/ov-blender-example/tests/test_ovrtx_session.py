@@ -191,10 +191,9 @@ def test_build_spec_uses_creation_inputs_only(tmp_path: Path) -> None:
 def test_render_var_joins_session_identity(tmp_path: Path) -> None:
     """task02-02: the resolved presentation render var is session identity.
 
-    Two requests differing only in the classified ``render_var`` build specs
-    that differ solely in that field, and ``reuse_decision`` returns a replace
-    with ``render_var_changed`` (both directions). An unset/empty mapping keeps
-    the LDR default so pre-task requests are unchanged.
+    The selected output also joins the authored render product, and
+    ``reuse_decision`` returns a replace with ``render_var_changed`` (both
+    directions). An unset/empty mapping keeps the LDR default.
     """
 
     ldr = ovrtx_session.build_spec(_request(tmp_path))
@@ -204,8 +203,13 @@ def test_render_var_joins_session_identity(tmp_path: Path) -> None:
 
     assert ldr.render_var == "LdrColor"
     assert hdr.render_var == "HdrColor"
-    # The render var is the only spec difference the mode flip introduces.
-    assert replace(hdr, render_var=ldr.render_var) == ldr
+    assert ldr.ovrtx_scene_composition.digest != hdr.ovrtx_scene_composition.digest
+    ldr_text = _presentation_text(ldr.ovrtx_scene_composition)
+    hdr_text = _presentation_text(hdr.ovrtx_scene_composition)
+    assert "rel orderedVars = [</Render/ProductA/LdrColor>]" in ldr_text
+    assert "HdrColor" not in ldr_text
+    assert "rel orderedVars = [</Render/ProductA/HdrColor>]" in hdr_text
+    assert "LdrColor" not in hdr_text
     assert ovrtx_session.reuse_decision(ldr, hdr) == ovrtx_session.OvrtxSessionReuseDecision(
         reuse=False,
         reason="render_var_changed",
@@ -362,10 +366,10 @@ def test_scene_composition_authors_every_declared_render_product(
     assert 'def RenderProduct "ProductB"' in text
     assert text.count("rel camera = </World/Camera>") == 2
     assert text.count("uniform int2 resolution = (320, 180)") == 2
-    assert "rel orderedVars = [</Render/ProductA/LdrColor>, </Render/ProductA/HdrColor>]" in text
-    assert "rel orderedVars = [</Render/ProductB/LdrColor>, </Render/ProductB/HdrColor>]" in text
+    assert "rel orderedVars = [</Render/ProductA/LdrColor>]" in text
+    assert "rel orderedVars = [</Render/ProductB/LdrColor>]" in text
     assert text.count('def RenderVar "LdrColor"') == 2
-    assert text.count('def RenderVar "HdrColor"') == 2
+    assert 'def RenderVar "HdrColor"' not in text
 
 
 def test_scene_composition_generates_fixed_render_products_for_resolved_camera(
@@ -390,10 +394,10 @@ def test_scene_composition_generates_fixed_render_products_for_resolved_camera(
     assert 'over "OVRTXCamera"' in text
     assert text.count("def RenderProduct") == 2
     assert "rel camera = </World/OVRTXCamera>" in text
-    assert "rel orderedVars = [</Render/ProductA/LdrColor>, </Render/ProductA/HdrColor>]" in text
-    assert "rel orderedVars = [</Render/ProductB/LdrColor>, </Render/ProductB/HdrColor>]" in text
+    assert "rel orderedVars = [</Render/ProductA/LdrColor>]" in text
+    assert "rel orderedVars = [</Render/ProductB/LdrColor>]" in text
     assert text.count('def RenderVar "LdrColor"') == 2
-    assert text.count('def RenderVar "HdrColor"') == 2
+    assert 'def RenderVar "HdrColor"' not in text
     assert 'uniform string sourceName = "LdrColor"' in text
 
 
@@ -602,6 +606,7 @@ def test_direct_composition_uses_canonical_empty_and_unordered_sensors(
         height=180,
         camera_projection=None,
         material_scene_layer=None,
+        render_vars=("LdrColor",),
     )
     unordered = ovrtx_scene_composition.compose(
         source_scene_path=str(tmp_path / "scene.usda"),
@@ -611,6 +616,7 @@ def test_direct_composition_uses_canonical_empty_and_unordered_sensors(
         height=180,
         camera_projection=None,
         material_scene_layer=None,
+        render_vars=("LdrColor",),
     )
     empty_evidence = ovrtx_scene_composition.diagnostics(
         empty,

@@ -84,9 +84,14 @@ class _FakeTimers:
         with self._lock:
             callbacks = list(self.pending)
             self.pending.clear()
+        recurring: list[object] = []
         for fn in callbacks:
-            # One-shot contract: the callback returns None to unregister.
-            assert fn() is None
+            interval = fn()
+            if interval is not None:
+                assert interval >= 0.0
+                recurring.append(fn)
+        with self._lock:
+            self.pending.extend(recurring)
         return len(callbacks)
 
 

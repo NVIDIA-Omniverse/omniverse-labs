@@ -238,6 +238,8 @@ def test_quality_values_survive_the_rekey(
         if item["source"] == "viewport_camera_projection"
     )
     text = Path(str(record["path"])).read_text(encoding="utf-8")
+    assert "rel orderedVars = [</Render/Product/HdrColor>]" in text
+    assert 'def RenderVar "LdrColor"' not in text
     assert "int omni:rtx:rtpt:maxBounces = 9" in text
     assert "bool omni:rtx:rtpt:fireflyFilter:enabled = false" in text
 
@@ -247,4 +249,6 @@ def test_quality_values_survive_the_rekey(
         if item["source"] == "viewport_camera_projection"
     )
     ldr_text = Path(str(ldr_record["path"])).read_text(encoding="utf-8")
+    assert "rel orderedVars = [</Render/Product/LdrColor>]" in ldr_text
+    assert 'def RenderVar "HdrColor"' not in ldr_text
     assert "int omni:rtx:rtpt:maxBounces = 9" in ldr_text

@@ -16,6 +16,10 @@ sys.path.insert(0, str(ROOT / "addon"))
 
 from ovrtx_blender_example import ovrtx_session_controller as controller_module
 from ovrtx_blender_example.ovrtx_runtime_client import RenderClientError, RenderResult
+from ovrtx_blender_example.ovrtx_value_updates import (
+    OvrtxTransformValue,
+    OvrtxValueUpdateResult,
+)
 from ovrtx_blender_example.render_requests import MaterialPresentationLayer, RenderRequest
 from ovrtx_blender_example.runtime_scheduler import RuntimeTickResult, RuntimeTickStatus
 from ovrtx_blender_example.viewport_render_thread import ViewportRenderThread
@@ -72,6 +76,107 @@ class _Client:
         assert simulation_id == self.simulation_id
         self.deletes += 1
         return self.delete_status
+
+
+class _SplitClient(_Client):
+    def __init__(self, simulation_id: str) -> None:
+        super().__init__(simulation_id)
+        self.split_events: list[tuple[str, object]] = []
+        self._next_ticket = 1
+        self.submit_failures_remaining = 0
+
+    def update_transforms(
+        self,
+        simulation_id: str,
+        values: object,
+    ) -> OvrtxValueUpdateResult:
+        self.call_thread_idents.append(threading.get_ident())
+        batch = tuple(values)  # type: ignore[arg-type]
+        self.split_events.append(("update", batch[0].matrix[0][3]))
+        return OvrtxValueUpdateResult(
+            len(batch),
+            pending_simulation_time_ns=5,
+        )
+
+    def submit_render_sample(self, simulation_id: str, **kwargs: object) -> object:
+        self.call_thread_idents.append(threading.get_ident())
+        if self.submit_failures_remaining:
+            self.submit_failures_remaining -= 1
+            raise RenderClientError("successor submit rejected_for_test")
+        ticket = self._next_ticket
+        self._next_ticket += 1
+        self.split_events.append(("submit", ticket))
+        return ticket
+
+    def complete_render_sample(self, ticket: object) -> RenderResult:
+        self.call_thread_idents.append(threading.get_ident())
+        self.split_events.append(("complete", ticket))
+        self.last_render_timings = {"native_render_ms": 1.25, "ticket": ticket}
+        return RenderResult(
+            width=1,
+            height=1,
+            rgba8=b"\x00\x00\x00\xff",
+            completed_samples=int(ticket),
+            session_completed_samples=int(ticket),
+            simulation_time_ns=int(ticket) * 10,
+        )
+
+    def discard_render_sample(self, ticket: object) -> None:
+        self.call_thread_idents.append(threading.get_ident())
+        self.split_events.append(("discard", ticket))
+
+
+class _AsyncSplitClient(_SplitClient):
+    def __init__(self, simulation_id: str) -> None:
+        super().__init__(simulation_id)
+        self._pending_reads: dict[object, bool] = {}
+        self.begin_failures_remaining = 0
+        self.poll_failures_remaining = 0
+
+    def begin_render_sample_read(self, submission: object) -> object:
+        self.call_thread_idents.append(threading.get_ident())
+        if self.begin_failures_remaining:
+            self.begin_failures_remaining -= 1
+            raise RenderClientError("read begin rejected_for_test")
+        ticket = ("read", submission)
+        self._pending_reads[ticket] = True
+        self.split_events.append(("begin", submission))
+        return ticket
+
+    def poll_render_sample_read(self, ticket: object) -> RenderResult | None:
+        self.call_thread_idents.append(threading.get_ident())
+        if self.poll_failures_remaining:
+            self.poll_failures_remaining -= 1
+            raise RenderClientError("read poll rejected_for_test")
+        pending = self._pending_reads[ticket]
+        self.split_events.append(("poll", ticket))
+        if pending:
+            self._pending_reads[ticket] = False
+            return None
+        self._pending_reads.pop(ticket)
+        submission = int(ticket[1])  # type: ignore[index]
+        self.last_render_timings = {
+            "native_render_ms": 0.75,
+            "ticket": submission,
+        }
+        return RenderResult(
+            width=1,
+            height=1,
+            rgba8=b"\x00\x00\x00\xff",
+            completed_samples=submission,
+            session_completed_samples=submission,
+            simulation_time_ns=submission * 10,
+        )
+
+    def cancel_render_sample_read(self, ticket: object) -> None:
+        self.call_thread_idents.append(threading.get_ident())
+        self._pending_reads.pop(ticket)
+        self.split_events.append(("cancel", ticket))
+
+
+class _PartialAsyncSplitClient(_SplitClient):
+    def begin_render_sample_read(self, submission: object) -> object:
+        return ("partial", submission)
 
 
 def _request(tmp_path: Path, **changes: object) -> RenderRequest:
@@ -440,7 +545,7 @@ def test_spec_construction_failure_preserves_active_session(
     assert controller.render(request, additional_samples=1).completed_samples == 1
 
 
-def test_scheduler_and_render_failures_preserve_active_session(
+def test_scheduler_failure_preserves_but_render_failure_taints_active_session(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -458,12 +563,22 @@ def test_scheduler_and_render_failures_preserve_active_session(
 
     with pytest.raises(RuntimeError, match="scheduler failed"):
         controller.apply_runtime_updates(fail_update)
-    with pytest.raises(RenderClientError, match="render failed"):
+    with pytest.raises(
+        controller_module.OvrtxSessionRetirementRequiredError,
+        match="render failed",
+    ) as raised:
         controller.render(request, additional_samples=1)
 
     assert calls == 1
+    assert raised.value.operation == "render"
     assert controller.diagnostics()["active"] is True
-    assert client.closed == 0
+    assert controller.would_replace(request) == "render_operation_failed"
+    with pytest.raises(RenderClientError, match="must be replaced"):
+        controller.apply_runtime_updates(fail_update)
+    assert controller.retire_render_session(
+        expected_session_revision=raised.value.session_revision,
+    ) == "stopped"
+    assert client.closed == 1
 
 
 def test_operations_require_an_ensured_session() -> None:
@@ -587,6 +702,281 @@ def test_all_client_calls_occur_on_the_adopted_render_thread(
     }
 
 
+def test_split_render_calls_preserve_controller_order_timings_and_confinement(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv(controller_module.RPC_THREAD_GUARD_ENV, "1")
+    client = _SplitClient("sim")
+    _factory(monkeypatch, [client])
+    controller = controller_module.OvrtxSessionController()
+    request = _request(tmp_path)
+    thread = ViewportRenderThread("controller-split-render")
+    thread.start()
+    try:
+        owning_ident = thread.call(controller.adopt_owning_thread).result(5.0)
+        thread.call(lambda: controller.ensure(request)).result(5.0)
+        first = thread.call(lambda: controller.submit_render_sample(request)).result(5.0)
+        second = thread.call(lambda: controller.submit_render_sample(request)).result(5.0)
+        result = thread.call(lambda: controller.complete_render_sample(first)).result(5.0)
+        thread.call(lambda: controller.discard_render_sample(second)).result(5.0)
+        status = thread.call(controller.shutdown).result(5.0)
+    finally:
+        outcome = thread.stop()
+
+    assert outcome["joined"] is True
+    assert status == "stopped"
+    assert result.simulation_time_ns == 10
+    assert client.split_events == [
+        ("submit", 1),
+        ("submit", 2),
+        ("complete", 1),
+        ("discard", 2),
+    ]
+    assert controller.diagnostics()["render_timings"] == {
+        "native_render_ms": 1.25,
+        "ticket": 1,
+    }
+    assert set(client.call_thread_idents) == {owning_ident}
+
+
+def test_transform_and_successor_sample_are_one_revision_checked_transaction(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv(controller_module.RPC_THREAD_GUARD_ENV, "1")
+    client = _SplitClient("sim")
+    _factory(monkeypatch, [client])
+    controller = controller_module.OvrtxSessionController()
+    request = _request(tmp_path)
+    transform = OvrtxTransformValue(
+        prim_path="/World/Camera",
+        matrix=((1.0, 0.0, 0.0, 5.0),),
+    )
+    thread = ViewportRenderThread("controller-prepared-render")
+    thread.start()
+    try:
+        owning_ident = thread.call(controller.adopt_owning_thread).result(5.0)
+        thread.call(lambda: controller.ensure(request)).result(5.0)
+        revision = controller._session_revision
+        with pytest.raises(RenderClientError, match="session changed"):
+            thread.call(
+                lambda: controller.submit_render_sample_after_transforms(
+                    request,
+                    (transform,),
+                    expected_session_revision=revision - 1,
+                )
+            ).result(5.0)
+        prepared = thread.call(
+            lambda: controller.submit_render_sample_after_transforms(
+                request,
+                (transform,),
+                expected_session_revision=revision,
+            )
+        ).result(5.0)
+        status = thread.call(controller.shutdown).result(5.0)
+    finally:
+        outcome = thread.stop()
+
+    assert outcome["joined"] is True
+    assert status == "stopped"
+    assert prepared.submission == 1
+    assert prepared.update_result.updated_count == 1
+    assert prepared.session_revision == revision
+    assert client.split_events == [("update", 5.0), ("submit", 1)]
+    assert set(client.call_thread_idents) == {owning_ident}
+
+
+def test_failed_prepared_render_requires_owner_driven_session_retirement(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = _SplitClient("sim")
+    client.submit_failures_remaining = 1
+    _factory(monkeypatch, [client])
+    controller = controller_module.OvrtxSessionController()
+    request = _request(tmp_path)
+    transform = OvrtxTransformValue(
+        prim_path="/World/Camera",
+        matrix=((1.0, 0.0, 0.0, 5.0),),
+    )
+    controller.ensure(request)
+    revision = controller._session_revision
+
+    with pytest.raises(
+        controller_module.OvrtxSessionRetirementRequiredError,
+        match="session retirement is required",
+    ) as raised:
+        controller.submit_render_sample_after_transforms(
+            request,
+            (transform,),
+            expected_session_revision=revision,
+        )
+
+    assert raised.value.session_revision == revision
+    assert raised.value.controller is controller
+    assert controller.would_replace(request) == "render_operation_failed"
+    with pytest.raises(RenderClientError, match="must be replaced"):
+        controller.submit_render_sample(request)
+    # Cleanup remains legal while normal operations fail closed.
+    controller.discard_render_sample("orphaned-local-ticket")
+    assert controller.retire_render_session(
+        expected_session_revision=revision,
+    ) == "stopped"
+    assert controller._session_revision == revision + 1
+    assert controller.would_replace(request) == "no_active_session"
+    assert client.split_events == [
+        ("update", 5.0),
+        ("discard", "orphaned-local-ticket"),
+    ]
+    assert client.deletes == 1
+    assert client.closed == 1
+
+
+def test_split_render_submission_failure_taints_and_retires_session(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = _SplitClient("sim")
+    client.submit_failures_remaining = 1
+    _factory(monkeypatch, [client])
+    controller = controller_module.OvrtxSessionController()
+    request = _request(tmp_path)
+    controller.ensure(request)
+    revision = controller._session_revision
+
+    with pytest.raises(
+        controller_module.OvrtxSessionRetirementRequiredError
+    ) as raised:
+        controller.submit_render_sample(request)
+
+    assert raised.value.controller is controller
+    assert raised.value.session_revision == revision
+    assert raised.value.operation == "render submission"
+    assert controller.would_replace(request) == "render_operation_failed"
+    assert controller.retire_render_session(
+        expected_session_revision=revision,
+    ) == "stopped"
+
+
+@pytest.mark.parametrize("phase", ["begin", "poll"])
+def test_async_read_failures_taint_revision_until_owner_cleanup_and_retirement(
+    phase: str,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = _AsyncSplitClient("sim")
+    _factory(monkeypatch, [client])
+    controller = controller_module.OvrtxSessionController()
+    request = _request(tmp_path)
+    controller.ensure(request)
+    revision = controller._session_revision
+    submission = controller.submit_render_sample(request)
+
+    if phase == "begin":
+        client.begin_failures_remaining = 1
+        with pytest.raises(
+            controller_module.OvrtxSessionRetirementRequiredError
+        ) as raised:
+            controller.begin_render_sample_read(submission)
+        controller.discard_render_sample(submission)
+    else:
+        ticket = controller.begin_render_sample_read(submission)
+        client.poll_failures_remaining = 1
+        with pytest.raises(
+            controller_module.OvrtxSessionRetirementRequiredError
+        ) as raised:
+            controller.poll_render_sample_read(ticket)
+        controller.cancel_render_sample_read(ticket)
+
+    assert raised.value.controller is controller
+    assert raised.value.session_revision == revision
+    assert phase in raised.value.operation
+    assert controller.would_replace(request) == "render_operation_failed"
+    with pytest.raises(RenderClientError, match="must be replaced"):
+        controller.submit_render_sample(request)
+    assert controller.retire_render_session(
+        expected_session_revision=revision,
+    ) == "stopped"
+    assert client.deletes == 1
+    assert client.closed == 1
+
+
+def test_async_render_read_calls_preserve_order_timings_and_confinement(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv(controller_module.RPC_THREAD_GUARD_ENV, "1")
+    client = _AsyncSplitClient("sim")
+    _factory(monkeypatch, [client])
+    controller = controller_module.OvrtxSessionController()
+    request = _request(tmp_path)
+    thread = ViewportRenderThread("controller-async-render-read")
+    thread.start()
+    try:
+        owning_ident = thread.call(controller.adopt_owning_thread).result(5.0)
+        thread.call(lambda: controller.ensure(request)).result(5.0)
+        submission = thread.call(
+            lambda: controller.submit_render_sample(request)
+        ).result(5.0)
+        ticket = thread.call(
+            lambda: controller.begin_render_sample_read(submission)
+        ).result(5.0)
+        pending = thread.call(
+            lambda: controller.poll_render_sample_read(ticket)
+        ).result(5.0)
+        result = thread.call(
+            lambda: controller.poll_render_sample_read(ticket)
+        ).result(5.0)
+        cancel_submission = thread.call(
+            lambda: controller.submit_render_sample(request)
+        ).result(5.0)
+        cancel_ticket = thread.call(
+            lambda: controller.begin_render_sample_read(cancel_submission)
+        ).result(5.0)
+        thread.call(
+            lambda: controller.cancel_render_sample_read(cancel_ticket)
+        ).result(5.0)
+        status = thread.call(controller.shutdown).result(5.0)
+    finally:
+        outcome = thread.stop()
+
+    assert outcome["joined"] is True
+    assert pending is None
+    assert result.simulation_time_ns == 10
+    assert status == "stopped"
+    assert client.split_events == [
+        ("submit", 1),
+        ("begin", 1),
+        ("poll", ("read", 1)),
+        ("poll", ("read", 1)),
+        ("submit", 2),
+        ("begin", 2),
+        ("cancel", ("read", 2)),
+    ]
+    assert controller.diagnostics()["render_timings"] == {
+        "native_render_ms": 0.75,
+        "ticket": 1,
+    }
+    assert set(client.call_thread_idents) == {owning_ident}
+
+
+def test_async_render_read_capability_requires_all_three_client_methods(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = _PartialAsyncSplitClient("sim")
+    _factory(monkeypatch, [client])
+    controller = controller_module.OvrtxSessionController()
+    request = _request(tmp_path)
+    controller.ensure(request)
+    submission = controller.submit_render_sample(request)
+
+    assert controller._supports_async_render_read() is False
+    with pytest.raises(RenderClientError, match="does not support asynchronous"):
+        controller.begin_render_sample_read(submission)
+
+
 def test_debug_guard_raises_on_foreign_thread_rpc_entry(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -600,6 +990,20 @@ def test_debug_guard_raises_on_foreign_thread_rpc_entry(
     for operation in (
         lambda: controller.ensure(_request(tmp_path)),
         lambda: controller.render(_request(tmp_path), additional_samples=1),
+        lambda: controller.submit_render_sample(_request(tmp_path)),
+        lambda: controller.submit_render_sample_after_transforms(
+            _request(tmp_path),
+            (),
+            expected_session_revision=0,
+        ),
+        lambda: controller.retire_render_session(
+            expected_session_revision=0,
+        ),
+        lambda: controller.complete_render_sample(object()),
+        lambda: controller.discard_render_sample(object()),
+        lambda: controller.begin_render_sample_read(object()),
+        lambda: controller.poll_render_sample_read(object()),
+        lambda: controller.cancel_render_sample_read(object()),
         lambda: controller.apply_runtime_updates(
             lambda port, project: RuntimeTickResult(
                 status=RuntimeTickStatus.NOOP,
@@ -725,6 +1129,128 @@ def test_serialized_presentations_acquire_transport_in_fifo_order() -> None:
     second.join(1.0)
     assert not first.is_alive() and not second.is_alive()
     assert order == ["first", "second"]
+
+
+def test_prefetched_reservation_owner_bypasses_waiting_presentation() -> None:
+    controller = controller_module.OvrtxSessionController()
+    controller._attach_presentation(1)
+    assert controller._reserve_prefetched_render_read(1) is False
+    with controller._serialized_transport(presentation_key=1):
+        assert controller._reserve_prefetched_render_read(1) is True
+        assert controller._reserve_prefetched_render_read(1) is True
+
+    controller._attach_presentation(2)
+    order: list[str] = []
+    other_entered = threading.Event()
+
+    def _other_presentation() -> None:
+        with controller._serialized_transport(presentation_key=2):
+            order.append("other")
+            other_entered.set()
+
+    other = threading.Thread(target=_other_presentation, daemon=True)
+    other.start()
+    deadline = time.monotonic() + 1.0
+    while len(controller._transport_waiters) < 1 and time.monotonic() < deadline:
+        time.sleep(0.001)
+    assert len(controller._transport_waiters) == 1
+    assert not other_entered.is_set()
+
+    with controller._serialized_transport(presentation_key=1) as (_, exclusive):
+        order.append("owner")
+        assert exclusive is False
+        assert not other_entered.is_set()
+        assert controller._release_prefetched_render_read(1) is True
+
+    other.join(1.0)
+    assert not other.is_alive()
+    assert order == ["owner", "other"]
+
+
+def test_second_attach_wins_atomic_reservation_check() -> None:
+    controller = controller_module.OvrtxSessionController()
+    controller._attach_presentation(1)
+
+    with controller._serialized_transport(presentation_key=1):
+        controller._attach_presentation(2)
+        assert controller._reserve_prefetched_render_read(1) is False
+
+    assert controller._prefetched_read_reservation is (
+        controller_module._PRESENTATION_UNSET
+    )
+
+
+def test_shared_attach_disables_debug_guard_in_both_race_orders(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv(controller_module.RPC_THREAD_GUARD_ENV, "1")
+
+    adopt_first = controller_module.OvrtxSessionController()
+    adopt_first._attach_presentation(1)
+    adopt_first.adopt_owning_thread(thread_ident=101)
+    assert adopt_first.diagnostics()["rpc_thread"]["guard_active"] is True
+    adopt_first._attach_presentation(2)
+    assert adopt_first.diagnostics()["rpc_thread"] == {
+        "owning_thread_ident": 0,
+        "adopted": False,
+        "guard_active": False,
+    }
+
+    attach_first = controller_module.OvrtxSessionController()
+    attach_first._attach_presentation(1)
+    attach_first._attach_presentation(2)
+    assert attach_first.adopt_owning_thread(thread_ident=202) == 202
+    assert attach_first.diagnostics()["rpc_thread"] == {
+        "owning_thread_ident": 0,
+        "adopted": False,
+        "guard_active": False,
+    }
+
+
+def test_exclusive_waits_for_reserved_owner_cancel_boundary() -> None:
+    controller = controller_module.OvrtxSessionController()
+    wakes: list[None] = []
+    controller._attach_presentation(1, lambda: wakes.append(None))
+    with controller._serialized_transport(presentation_key=1):
+        assert controller._reserve_prefetched_render_read(1) is True
+
+    exclusive_entered = threading.Event()
+
+    def _exclusive() -> None:
+        with controller._exclusive_transport():
+            exclusive_entered.set()
+
+    controller._request_exclusive_transport()
+    exclusive = threading.Thread(target=_exclusive, daemon=True)
+    exclusive.start()
+    assert wakes == [None]
+    time.sleep(0.02)
+    assert not exclusive_entered.is_set()
+
+    with controller._serialized_transport(presentation_key=1) as (_, pending):
+        assert pending is True
+        assert controller._release_prefetched_render_read(1) is True
+
+    exclusive.join(1.0)
+    controller._release_exclusive_transport()
+    assert not exclusive.is_alive()
+    assert exclusive_entered.is_set()
+
+
+def test_detaching_reserved_owner_releases_and_taints_revision() -> None:
+    controller = controller_module.OvrtxSessionController()
+    controller._session_revision = 7
+    controller._attach_presentation(1)
+    with controller._serialized_transport(presentation_key=1):
+        assert controller._reserve_prefetched_render_read(1) is True
+
+    controller._detach_presentation(1)
+
+    assert controller._prefetched_read_reservation is (
+        controller_module._PRESENTATION_UNSET
+    )
+    assert controller._render_session_invalid_revision == 7
+    assert controller._release_prefetched_render_read(1) is False
 
 
 def test_session_validation_keeps_publication_atomic_with_replacement(

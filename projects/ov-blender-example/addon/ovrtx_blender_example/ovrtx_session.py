@@ -97,6 +97,7 @@ def build_spec(request: RenderRequest) -> OvrtxSessionSpec:
     sensor_paths = ovrtx_scene_composition.normalize_sensor_paths(request.sensor_paths)
     width = _dimension(request.width)
     height = _dimension(request.height)
+    render_var = _render_var_from_request(request)
     composition = ovrtx_scene_composition.compose(
         source_scene_path=request.input_usd_path,
         camera_prim_path=request.camera_prim_path,
@@ -114,6 +115,7 @@ def build_spec(request: RenderRequest) -> OvrtxSessionSpec:
         rtpt_quality=getattr(request, "rtpt_quality", None),
         rtpt_value_route=bool(getattr(request, "rtpt_value_route", False)),
         dlss_enabled=bool(getattr(request, "dlss_enabled", True)),
+        render_vars=(render_var,),
     )
     return OvrtxSessionSpec(
         ovrtx_scene_composition=composition,
@@ -124,7 +126,7 @@ def build_spec(request: RenderRequest) -> OvrtxSessionSpec:
         camera_pose_source=(
             RUNTIME_UPDATE if request.camera_matrix is not None else COMPOSED_SCENE
         ),
-        render_var=_render_var_from_request(request),
+        render_var=render_var,
     )
 
 
@@ -141,6 +143,11 @@ def reuse_decision(
         return OvrtxSessionReuseDecision(False, "output_shape_changed")
     if current.camera_prim_path != desired.camera_prim_path:
         return OvrtxSessionReuseDecision(False, "camera_prim_changed")
+    if current.render_var != desired.render_var:
+        # The selected output is authored into the render product, so check it
+        # before the resulting composition digest and preserve the useful
+        # presentation-specific replacement reason.
+        return OvrtxSessionReuseDecision(False, "render_var_changed")
     if (
         current.ovrtx_scene_composition.composed_scene_path != desired.ovrtx_scene_composition.composed_scene_path
         or current.ovrtx_scene_composition.digest != desired.ovrtx_scene_composition.digest
@@ -153,12 +160,6 @@ def reuse_decision(
         and desired.camera_pose_source == COMPOSED_SCENE
     ):
         return OvrtxSessionReuseDecision(False, "camera_pose_override_removed")
-    if current.render_var != desired.render_var:
-        # A resolved presentation-mode change (LdrColor <-> HdrColor) re-keys
-        # the session so the replacement reads back the new render var and
-        # frame format (task02-02). The render loop's would_replace probe
-        # surfaces this as the ordinary background resync — no new lifecycle.
-        return OvrtxSessionReuseDecision(False, "render_var_changed")
     return OvrtxSessionReuseDecision(True, "same_session")
 
 
