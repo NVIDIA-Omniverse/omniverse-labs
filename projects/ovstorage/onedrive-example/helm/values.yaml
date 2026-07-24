@@ -1,0 +1,81 @@
+replicaCount: 1
+
+image:
+  # Set this to the registry/repository where you publish the image built from
+  # omni_onedrive_service/Dockerfile, e.g. myregistry.example.com/onedrive-storage-service.
+  repository: onedrive-storage-service
+  pullPolicy: IfNotPresent
+  # Empty by default so the chart falls back to Chart.appVersion instead of
+  # "latest". Pin a concrete build at deploy time: --set image.tag=<version>.
+  tag: ""
+
+# Name of a pre-created imagePullSecret in the target namespace (if your
+# registry requires authentication). Leave as-is or override for your cluster.
+imagePullSecretName: regcred
+
+service:
+  type: ClusterIP
+  restPort: 8011
+  grpcPort: 50051
+
+env:
+  AZURE_TENANT_ID: "${AZURE_TENANT_ID}"
+  OIDC_CLIENT_ID: "${OIDC_CLIENT_ID}"
+  OIDC_SCOPES: "openid {client_id}/.default offline_access"
+  USE_OBO_FLOW: ""
+  OBO_TIMEOUT: "10"
+  OBO_CACHE_MAXSIZE: "1000"
+  OBO_CACHE_TTL: "3000"
+  SERVICE_PUBLIC_URL: ""
+  # Max bytes buffered in memory for a single body upload (default 512 MiB).
+  # Bounds per-request memory and prevents OOM from oversized uploads.
+  MAX_UPLOAD_SIZE_BYTES: "536870912"
+  # Comma-separated allowed CORS origins (default "*"). Credentials are only
+  # enabled when explicit origins are set; a wildcard disables them (a wildcard
+  # must never be combined with credentials). Set to your browser client's
+  # origin(s) to lock down cross-origin access, e.g. "https://portal.example.com".
+  CORS_ALLOWED_ORIGINS: "*"
+
+obo:
+  enabled: false
+  secretName: ""
+  secretKey: "client-secret"
+
+httpProxy:
+  enabled: false
+  host: ""
+  annotations: {}
+  tls:
+    secretName: ""
+  authExtension:
+    enabled: false
+    extensionRef:
+      name: ""
+      namespace: ""
+    responseTimeout: "2s"
+
+# Container resource requests/limits. Limits are set so the pod is scheduled
+# with a bounded CPU/memory footprint (prevents noisy-neighbor + OOM blast
+# radius). Size the memory limit relative to MAX_UPLOAD_SIZE_BYTES (default
+# 512 MiB buffered per in-memory upload) and expected upload concurrency.
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi
+
+livenessProbe:
+  httpGet:
+    path: /api/v1/auth-config
+    port: rest
+  initialDelaySeconds: 5
+  periodSeconds: 30
+
+readinessProbe:
+  httpGet:
+    path: /api/v1/auth-config
+    port: rest
+  initialDelaySeconds: 3
+  periodSeconds: 10

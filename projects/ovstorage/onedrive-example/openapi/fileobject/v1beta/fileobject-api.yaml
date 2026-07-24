@@ -1,0 +1,685 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: LicenseRef-NvidiaProprietary
+#
+# NVIDIA CORPORATION, its affiliates and licensors retain all intellectual
+# property and proprietary rights in and to this material, related
+# documentation and any modifications thereto. Any use, reproduction,
+# disclosure or distribution of this material and related documentation
+# without an express license agreement from NVIDIA CORPORATION or
+# its affiliates is strictly prohibited.
+
+openapi: 3.0.0
+info:
+  description: NVIDIA Omniverse Storage API File Object service.
+  title: nvidia.omniverse.storage.fileobject.v1beta
+  version: 0.26.0
+security:
+  - bearerAuth: []
+tags:
+  - name: nspect_id
+    description: NSPECT-G2B8-GZ2M.
+paths:
+  /fileobject/by-address/{resource_address}:
+    head:
+      operationId: stat
+      summary: Get data object metadata at the given resource address.
+      description: Retrieves resource identity and other metadata of a data object at the specified resource address.
+      parameters:
+        - : '#/components/parameters/resource_address'
+      responses:
+        '204':
+          description: A successful stat operation will return 204 and the metadata in the response headers.
+          headers:
+            x-nvidia-omniverse-storage-metadata:
+              description: A metadata record, encoded in JSON.
+              required: true
+              schema:
+                type: string
+                format: json-metadata
+                maxLength: 4096
+            x-nvidia-omniverse-storage-resource-identity:
+              description: The identity of the referenced file object that can be used by a subsequent read operation.
+              required: true
+              schema:
+                type: string
+                maxLength: 4096
+                format: resource_identity
+    get:
+      operationId: read_from_address
+      summary: Download data object stored at the given address
+      description: Download data object, either via 200/Body octet stream or by a 300 redirect response.
+      parameters:
+        - : '#/components/parameters/resource_address'
+        - : '#/components/parameters/download_preference'
+      responses:
+        '200':
+          description: Successful Response, data in body.
+          headers:
+            x-nvidia-omniverse-storage-metadata:
+              description: A metadata record, encoded in JSON.
+              required: true
+              schema:
+                type: string
+                format: json-metadata
+                maxLength: 4096
+            x-nvidia-omniverse-storage-resource-identity:
+              description: The identity of the referenced file object.
+              required: true
+              schema:
+                type: string
+                maxLength: 4096
+                format: resource_identity
+          content:
+            application/octet-stream:
+              schema: {}
+        '300':
+          description: Redirect to an HTTP server via pre-signed URL, returns redirection information as JSON data.
+          content:
+            application/json:
+              schema:
+                : '#/components/schemas/ReadRedirectProperties'
+    put:
+      summary: Upload new data to the given resource address.
+      operationId: write
+      description: |
+        Upload new data provided in the body to the given resource address returning the metadata for an uploaded object.
+        For large uploads, it's recommended that clients include the `Expect: 100-continue` header with their request.
+        This allows the client to wait before streaming the request body until the storage API confirms it will accept
+        the data.
+      parameters:
+        - : '#/components/parameters/resource_address'
+        - : '#/components/parameters/previous_version'
+        - : '#/components/parameters/upload_preference'
+        - : '#/components/parameters/data_object_size'
+      requestBody:
+        content:
+          application/octet-stream:
+            schema:
+              format: binary
+              title: Body
+              type: string
+              maxLength: 5497558138880
+        required: false
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                : '#/components/schemas/ResourceInfo'
+        '300':
+          description: Either a redirect to a different upload location or multipart request properties.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - : '#/components/schemas/WriteRedirectResponse'
+                  - : '#/components/schemas/MultipartUploadResponse'
+    delete:
+      operationId: delete
+      summary: Delete a file object on storage. Deletes the object and all versions on storage.
+      parameters:
+        - : '#/components/parameters/resource_address'
+        - : '#/components/parameters/previous_version'
+      responses:
+        '204':
+          description: Successful Response
+  /fileobject/by-address/{resource_address}/redirect/complete:
+    post:
+      summary: Complete a redirect upload request
+      description: Completes a multipart upload by assembling previously uploaded parts. The response will be a ResourceInfo struct containing information about the assembled data object.
+      operationId: complete_redirect_upload
+      parameters:
+        - : '#/components/parameters/resource_address'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              : '#/components/schemas/CompleteUploadRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                : '#/components/schemas/ResourceInfo'
+  /fileobject/by-identity/{resource_identity}:
+    get:
+      operationId: read
+      summary: Download data object referenced by the given resource identity
+      description: Download data object, either via 200/Body octet stream or by a 300 redirect response.
+      parameters:
+        - : '#/components/parameters/resource_identity'
+        - : '#/components/parameters/download_preference'
+      responses:
+        '200':
+          description: Successful Response, data in body.
+          headers:
+            x-nvidia-omniverse-storage-metadata:
+              description: A metadata record, encoded in JSON.
+              required: true
+              schema:
+                type: string
+                format: json-metadata
+                maxLength: 4096
+            x-nvidia-omniverse-storage-resource-identity:
+              description: The identity of the referenced file object.
+              required: true
+              schema:
+                type: string
+                maxLength: 4096
+                format: resource_identity
+          content:
+            application/octet-stream:
+              schema: {}
+        '300':
+          description: Redirect to an HTTP server via pre-signed URL, returns redirection information as JSON data.
+          content:
+            application/json:
+              schema:
+                : '#/components/schemas/ReadRedirectProperties'
+  /fileobject/data-objects/{resource_address}:
+    get:
+      operationId: enumerate
+      summary: Enumerate data objects at resource address.
+      description: Enumerate all data objects at the given location when the resource address points to an enumerable address.
+      parameters:
+        - : '#/components/parameters/resource_address'
+        - : '#/components/parameters/max_page_size'
+        - : '#/components/parameters/continuation_handle'
+      responses:
+        '200':
+          description: Successful Response, enumeration result in body in JSON format.
+          content:
+            application/json:
+              schema:
+                : '#/components/schemas/EnumerateResult'
+  /fileobject/upload-options/by-address/{resource_address}:
+    get:
+      summary: Retrieve a list of the preferred upload methods for the file object at the specified address.
+      parameters:
+        - : '#/components/parameters/resource_address'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                : '#/components/schemas/UploadOptionsResponse'
+  /fileobject/by-address/{resource_address}/multipart/prepare:
+    post:
+      summary: Prepare a multipart upload request
+      description: Get the presigned URL that allows one to upload a single part of the multipart upload. The response will be a UploadPartResponse struct containing the information required to start an HTTP upload of the data part.
+      operationId: upload_part
+      parameters:
+        - : '#/components/parameters/resource_address'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              : '#/components/schemas/UploadPartRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                : '#/components/schemas/UploadPartResponse'
+  /fileobject/by-address/{resource_address}/multipart/complete:
+    post:
+      summary: Complete a multipart upload request
+      description: Completes a multipart upload by assembling previously uploaded parts. The response will be a ResourceInfo struct containing information about the assembled data object.
+      operationId: complete_multipart_upload
+      parameters:
+        - : '#/components/parameters/resource_address'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              : '#/components/schemas/CompleteMultipartUploadRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                : '#/components/schemas/ResourceInfo'
+  /fileobject/by-address/{resource_address}/multipart/abort:
+    post:
+      summary: Abort a multipart upload request
+      description: Aborts a multipart upload and attempts to free any uploaded blocks.
+      operationId: abort_multipart_upload
+      parameters:
+        - : '#/components/parameters/resource_address'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              : '#/components/schemas/AbortMultipartUploadRequest'
+        required: true
+      responses:
+        '204':
+          description: Successful Response
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    EnumerateResult:
+      properties:
+        next_continuation_handle:
+          type: string
+          maxLength: 512
+          format: page_handle
+          nullable: true
+          title: A handle by which enumerating can be continued.
+        items:
+          type: array
+          title: A single page of entries.
+          maxItems: 65536
+          items:
+            : '#/components/schemas/AddressInfo'
+      type: object
+      required:
+        - items
+      title: EnumerateResult
+      description: A enumerate operation result.
+    ReadRedirectProperties:
+      properties:
+        redirect_target_url:
+          type: string
+          maxLength: 4096
+          format: uri
+          title: The request URL.
+        additional_headers:
+          additionalProperties:
+            type: string
+            maxLength: 4096
+            format: http_header
+          type: object
+          title: The associated request headers.
+      type: object
+      required:
+        - redirect_target_url
+        - additional_headers
+      title: RequestProperties
+      description: Properties of an HTTP request.
+    UploadOptionsResponse:
+      title: UploadOptionsResponse
+      description: Upload options.
+      type: object
+      properties:
+        write_type_intervals:
+          title: A list of limits for upload methods.
+          type: array
+          maxItems: 32
+          items:
+            : '#/components/schemas/WriteTypeInterval'
+      required:
+        - write_type_intervals
+    WriteTypeInterval:
+      title: WriteTypeInterval
+      description: Preferences for an upload method.
+      type: object
+      properties:
+        minimum_data_object_size:
+          title: The minimum data object size for which this upload method is recommended.
+          type: integer
+          format: int64
+          minimum: 0
+          maximum: 9007199254740991
+        maximum_data_object_size:
+          title: The maximum data object size, it must be smaller than the maximum size for this upload method to be recommended
+          type: integer
+          format: int64
+          minimum: 0
+          maximum: 9007199254740991
+        preferred_upload_method:
+          title: Preferred upload method.
+          allOf:
+            - : '#/components/schemas/UploadPreference'
+      required:
+        - minimum_data_object_size
+        - maximum_data_object_size
+        - preferred_upload_method
+    WriteRedirectProperties:
+      properties:
+        redirect_target_url:
+          type: string
+          maxLength: 4096
+          format: uri
+          title: The request URL.
+        method:
+          title: The request method.
+          type: string
+          enum:
+            - post
+            - put
+        additional_headers:
+          type: array
+          title: List of HTTP headers to be used alongside the redirect_target_url to upload the data.
+          maxItems: 100
+          items:
+            : '#/components/schemas/HttpHeader'
+        completion_header_names:
+          type: array
+          maxItems: 100
+          items:
+            type: string
+            maxLength: 4096
+          description: List of names from the HTTP headers returned upload required to be used as parameter to .../redirect/complete
+      type: object
+      required:
+        - redirect_target_url
+        - method
+        - additional_headers
+        - completion_header_names
+      title: RequestProperties
+      description: Properties of an HTTP request.
+    WriteRedirectResponse:
+      title: WriteRedirectResponse
+      description: Redirect to a different write location.
+      type: object
+      properties:
+        redirect:
+          : '#/components/schemas/WriteRedirectProperties'
+      required:
+        - redirect
+    CompleteUploadRequest:
+      properties:
+        additional_headers:
+          type: array
+          title: List of HTTP headers gathered from the redirected upload operation.
+          maxItems: 100
+          items:
+            : '#/components/schemas/HttpHeader'
+      required:
+        - additional_headers
+      type: object
+      title: CompleteUploadRequest
+      description: Optionally, complete the write operation after a write redirect to obtain the ResourceInfo
+    MultipartUploadResponse:
+      title: MultipartUploadResponse
+      description: Properties of a newly initiated multipart upload for a file object.
+      type: object
+      properties:
+        multipart:
+          : '#/components/schemas/MultipartUploadProperties'
+      required:
+        - multipart
+    MultipartUploadProperties:
+      title: MultipartUploadProperties
+      description: Properties of a multipart upload.
+      type: object
+      properties:
+        upload_id:
+          type: string
+          maxLength: 128
+          format: upload_id
+          title: ID that identifies this multipart upload operation.
+        first_part_write_redirect:
+          : '#/components/schemas/WriteRedirectProperties'
+        minimum_size_per_part:
+          description: The minimum size of the part, bytes. A null or missing value means no limit is specified.
+          type: integer
+          format: int64
+          minimum: 0
+          maximum: 9007199254740991
+          nullable: true
+        maximum_size_per_part:
+          description: The maximum size of the part, bytes. A null or missing value means no limit is specified.
+          type: integer
+          format: int64
+          minimum: 0
+          maximum: 9007199254740991
+          nullable: true
+        maximum_parts_number:
+          description: The maximum number of parts per upload. A null or missing value means no limit is specified.
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 2147483647
+          nullable: true
+      required:
+        - upload_id
+        - first_part_write_redirect
+    UploadPartRequest:
+      properties:
+        upload_id:
+          type: string
+          maxLength: 128
+          format: upload_id
+          title: ID that identifies this multipart upload operation.
+        part_number:
+          type: integer
+          minimum: 0
+          maximum: 65535
+          title: Sequential part number.
+        part_count:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 65536
+          nullable: true
+          description: To get more than one part per call, supply the count of parts that will be uploaded. Part number starts with part_number.
+      required:
+        - upload_id
+        - part_number
+      type: object
+      title: UploadPartRequest
+      description: Upload part request.
+    UploadPartResponse:
+      properties:
+        part_write_redirects:
+          type: array
+          maxItems: 65536
+          items:
+            : '#/components/schemas/WriteRedirectProperties'
+      required:
+        - part_write_redirects
+      type: object
+      title: UploadPartResponse
+      description: Upload part response.
+    CompleteMultipartUploadRequest:
+      properties:
+        upload_id:
+          type: string
+          maxLength: 128
+          format: upload_id
+          title: ID that identifies this multipart upload operation.
+        parts:
+          type: array
+          title: List of all CompletedUploadPart parts needed to assemble the data object.
+          maxItems: 2147483647
+          items:
+            : '#/components/schemas/CompletedUploadPart'
+      required:
+        - upload_id
+        - parts
+      type: object
+      title: CompleteMultipartUploadRequest
+      description: Complete multipart upload request.
+    CompletedUploadPart:
+      properties:
+        part_number:
+          type: integer
+          minimum: 0
+          maximum: 2147483647
+          title: Sequential part number.
+        additional_headers:
+          type: array
+          title: List of HTTP headers gathered from the HTTP operation on the presigned URL.
+          maxItems: 100
+          items:
+            : '#/components/schemas/HttpHeader'
+      required:
+        - part_number
+        - additional_headers
+      type: object
+      title: CompletedUploadPart
+      description: Completed upload part.
+    AbortMultipartUploadRequest:
+      properties:
+        upload_id:
+          type: string
+          maxLength: 128
+          format: upload_id
+          title: ID that identifies this multipart upload operation.
+      required:
+        - upload_id
+      type: object
+      title: AbortMultipartUploadRequest
+      description: Abort a pending multipart upload request.
+    UploadPreference:
+      type: string
+      enum:
+        - body
+        - redirect
+        - multipart
+    ResourceIdentity:
+      type: string
+      maxLength: 4096
+      format: resource_identity
+    Metadata:
+      properties:
+        data_object_size:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+          title: The size of the asset, in bytes.
+          format: int64
+        last_modified_timestamp:
+          type: string
+          format: date-time
+          maxLength: 32
+          title: Timestamp (ISO-8601 UTC) of the last modification of the object. Exact semantics and precision are storage-type specific. This field may be omitted.
+      type: object
+      required:
+        - data_object_size
+      title: Metadata
+      description: A single resource metadata.
+    ResourceInfo:
+      properties:
+        resource_identity:
+          : '#/components/schemas/ResourceIdentity'
+        metadata:
+          : '#/components/schemas/Metadata'
+      type: object
+      required:
+        - resource_identity
+        - metadata
+      title: Metadata
+      description: A single resource metadata.
+    HttpHeader:
+      properties:
+        name:
+          type: string
+          maxLength: 4096
+          format: http_header
+          title: HTTP header name.
+        value:
+          type: string
+          maxLength: 4096
+          format: http_header
+          title: HTTP header value.
+      required:
+        - name
+        - value
+      type: object
+      title: HttpHeader
+      description: A single HTTP header.
+    AddressInfo:
+      properties:
+        resource_address:
+          type: string
+          maxLength: 4096
+          format: resource_address
+        metadata:
+          : '#/components/schemas/Metadata'
+      type: object
+      required:
+        - resource_address
+        - metadata
+      title: AddressInfo
+      description: A single item resolved by the Enumerate function
+  parameters:
+    resource_address:
+      required: true
+      description: A Resource Address, the concrete format and semantics are storage-backend specific.
+      schema:
+        type: string
+        maxLength: 4096
+        format: resource_address
+      name: resource_address
+      in: path
+    download_preference:
+      in: query
+      name: download_preference
+      description: Preferred download method, either not specified to allow the server to decide, or one of the allowed enum values.
+      required: false
+      schema:
+        type: string
+        enum:
+          - redirect
+          - body
+        nullable: true
+    previous_version:
+      description: Resource Identity of previous version.
+      required: false
+      schema:
+        type: string
+        maxLength: 4096
+        format: resource_identity
+      name: previous_version
+      in: query
+    upload_preference:
+      name: upload_preference
+      description: The desired way of the service reacting to the Write request.
+      required: false
+      in: query
+      schema:
+        : '#/components/schemas/UploadPreference'
+    data_object_size:
+      name: data_object_size
+      description: The size of the data object, bytes.
+      required: true
+      in: query
+      schema:
+        type: integer
+        format: int64
+        minimum: 0
+        maximum: 9007199254740991
+    resource_identity:
+      required: true
+      description: A Resource Identity references an immutable data object version.
+      schema:
+        type: string
+        maxLength: 4096
+        format: resource_identity
+      name: resource_identity
+      in: path
+    max_page_size:
+      in: query
+      name: max_page_size
+      description: The maximum size of the page to be returned by the server.
+      required: false
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+        maximum: 65536
+        nullable: true
+    continuation_handle:
+      name: continuation_handle
+      description: The continuation handle to fetch the next page of results.
+      in: query
+      required: false
+      schema:
+        type: string
+        maxLength: 512
+        format: page_handle
+        nullable: true

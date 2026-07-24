@@ -1,0 +1,64 @@
+// SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: LicenseRef-NvidiaProprietary
+//
+// NVIDIA CORPORATION, its affiliates and licensors retain all intellectual
+// property and proprietary rights in and to this material, related
+// documentation and any modifications thereto. Any use, reproduction,
+// disclosure or distribution of this material and related documentation
+// without an express license agreement from NVIDIA CORPORATION or
+// its affiliates is strictly prohibited.
+
+syntax = "proto3";
+package nvidia.omniverse.storage.versioning.v1beta;
+
+import "nvidia/omniverse/storage/fileobject/v1beta/fileobject.proto";
+
+option go_package = "pb.api.nvidia.com/omniverse/storage/versioning/v1beta;storage";
+option java_multiple_files = true;
+option java_outer_classname = "VersioningProto";
+option java_package = "com.nvidia.omniverse.storage.versioning.v1beta";
+
+// The VersioningService provides methods to manage versions of data objects.
+service VersioningService {
+  // List versions of a data object at the specified resource address.
+  rpc EnumerateVersions(EnumerateVersionsRequest) returns (stream EnumerateVersionsResponse);
+}
+
+// EnumerateVersionsRequest is the request message for listing versions.
+message EnumerateVersionsRequest {
+  // The resource address to list versions for.
+  string resource_address = 1;
+}
+
+// EnumerateVersionsResponse represents a page of version information.
+message EnumerateVersionsResponse {
+  // A single page of results.
+  repeated VersionInfo items = 1;
+
+  // The order of returned versions.
+  VersionsOrder versions_order = 2;
+}
+
+// The VersionInfo message contains the ResourceInfo and optional sorting_key.
+message VersionInfo {
+  // The ResourceIdentity of the data object, which can be used to download the data via Read()
+  fileobject.v1beta.ResourceInfo resource_info = 1;
+
+  // sorting_key for sorting
+  optional string sorting_key = 2;
+}
+
+// An enum for the different type of versions order.
+enum VersionsOrder {
+  // ORDER_UNSPECIFIED to detect unset or invalid values.
+  VERSIONS_ORDER_UNSPECIFIED = 0;
+
+  // From latest to newest
+  VERSIONS_ORDER_NEWEST_FIRST = 1;
+
+  // From newest to latest
+  VERSIONS_ORDER_OLDEST_FIRST = 2;
+
+  // Sort versions by sorting_key in ascending lexicographical order.
+  VERSIONS_ORDER_BY_KEY = 3;
+}

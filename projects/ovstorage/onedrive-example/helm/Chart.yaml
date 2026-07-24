@@ -1,0 +1,19 @@
+apiVersion: v2
+name: onedrive-storage-service
+description: A Helm chart for deploying the OneDrive Storage Service for NVIDIA Omniverse.
+
+type: application
+version: 0.2.1
+# Default image tag when image.tag is unset (see values.yaml). Deploys should
+# still pin a concrete build with --set image.tag=<version>.
+appVersion: "0.2.1"
+
+keywords:
+  - python
+  - onedrive
+  - omniverse
+  - storage
+  - helm
+  - kubernetes
+
+dependencies: []

@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+
+# Virtual environments
+.venv/
+.poetry/
+.poetry_venv/
+
+# IDE
+.idea/
+
+# Build / type-check caches
+.mypy_cache/
+.ruff_cache/
+
+# Generated protobuf stubs live under omni_onedrive_service/src/nvidia/.
+# They ARE committed so the project works out of the box — regenerate with generate_protos.sh.
+
+# Secrets — .env at any level
+.env
+
+# Internal / local-only
+_*/
+
+# Windows "mark of the web" metadata (created when files are downloaded/copied
+# on Windows). Never project content — keep them out of the repo.
+*:Zone.Identifier
+*.Identifier

@@ -1,0 +1,87 @@
+// SPDX-FileCopyrightText: Copyright (c) 2024-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: LicenseRef-NvidiaProprietary
+//
+// NVIDIA CORPORATION, its affiliates and licensors retain all intellectual
+// property and proprietary rights in and to this material, related
+// documentation and any modifications thereto. Any use, reproduction,
+// disclosure or distribution of this material and related documentation
+// without an express license agreement from NVIDIA CORPORATION or
+// its affiliates is strictly prohibited.
+
+syntax = "proto3";
+package nvidia.omniverse.storage.metadata.v1alpha;
+
+import "google/protobuf/struct.proto";
+
+option go_package = "pb.api.nvidia.com/omniverse/storage/metadata/v1alpha;storage";
+option java_multiple_files = true;
+option java_outer_classname = "MetadataProto";
+option java_package = "com.nvidia.omniverse.storage.metadata.v1alpha";
+
+// The MetadataService provides methods to set and retrieve metadata for data objects.
+service MetadataService {
+  // Get metadata for a specific URI
+  rpc GetMetadata(GetMetadataRequest) returns (GetMetadataResponse);
+
+  // Update metadata for a specific URI
+  rpc UpdateMetadata(UpdateMetadataRequest) returns (UpdateMetadataResponse);
+
+  // Delete metadata for a specific URI
+  rpc DeleteMetadata(DeleteMetadataRequest) returns (DeleteMetadataResponse);
+}
+
+// The GetMetadata defines the input parameters for the Stat() operation
+message GetMetadataRequest {
+  // The Resource URI
+  string uri = 1;
+  // A list of metadata keys to retrieve. Omitting the value or passing an empty
+  // array will cause service to retrieve all metadata keys.
+  repeated string user_metadata_keys = 2;
+}
+
+// The response of the GetMetadata operation
+message GetMetadataResponse {
+  // Metadata. Specifications for each piece of metadata are defined separately.
+  map<string, UserMetadataValue> user_metadata = 1;
+}
+
+// UpdateMetadataRequest is the request message for setting metadata for a given uri.
+message UpdateMetadataRequest {
+  // The Resource URI
+  string uri = 1;
+  // The identifier of a client
+  string user_metadata_key = 2;
+  // The opaque metadata specified separately
+  // NOTE: we're not reusing UserMetadataValue, because the etag is optional here,
+  // as the input value, while it's not as the return value
+  google.protobuf.Value user_metadata = 3;
+  // If-Match metadata key Etag
+  optional string expected_etag = 4;
+}
+
+// SetMetadataResponse is the response for SetMetadata request.
+message UpdateMetadataResponse {
+  // Metadata key Etag
+  string etag = 1;
+}
+
+// DeleteMetadataRequest is the request message for deleting metadata for a given uri.
+message DeleteMetadataRequest {
+  // The Resource URI
+  string uri = 1;
+  // The identifier of a client
+  string user_metadata_key = 2;
+  // If-Match metadata key Etag
+  optional string expected_etag = 3;
+}
+
+// SetMetadataResponse is the response for SetMetadata request.
+message DeleteMetadataResponse {}
+
+// A combination of metadata value and etag for that metadata
+message UserMetadataValue {
+  // The metadata value
+  google.protobuf.Value value = 1;
+  // Metadata key ETag
+  string etag = 2;
+}

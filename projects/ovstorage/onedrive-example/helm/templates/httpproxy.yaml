@@ -1,0 +1,59 @@
+{{- if .Values.httpProxy.enabled }}
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    app: {{ .Release.Name }}
+  {{- with .Values.httpProxy.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  virtualhost:
+    fqdn: {{ .Values.httpProxy.host }}
+    {{- if .Values.httpProxy.tls.secretName }}
+    tls:
+      secretName: {{ .Values.httpProxy.tls.secretName }}
+    {{- end }}
+    {{- if .Values.httpProxy.authExtension.enabled }}
+    authorization:
+      extensionRef:
+        name: {{ .Values.httpProxy.authExtension.extensionRef.name }}
+        {{- if .Values.httpProxy.authExtension.extensionRef.namespace }}
+        namespace: {{ .Values.httpProxy.authExtension.extensionRef.namespace }}
+        {{- end }}
+      responseTimeout: {{ .Values.httpProxy.authExtension.responseTimeout }}
+    {{- end }}
+  routes:
+    {{- if .Values.httpProxy.authExtension.enabled }}
+    # Bypass auth ONLY for the exact discovery paths. Exact matching (Contour
+    # >= 1.25) prevents prefix-based bypass of unintended sub-paths such as
+    # /api/v1/auth-config-injection or /api/v1/auth-config/... .
+    - conditions:
+        - exact: /api/v1/auth-config
+      authPolicy:
+        disabled: true
+      services:
+        - name: {{ .Release.Name }}
+          port: {{ .Values.service.restPort }}
+    - conditions:
+        - exact: /api/v1alpha/auth-config
+      authPolicy:
+        disabled: true
+      services:
+        - name: {{ .Release.Name }}
+          port: {{ .Values.service.restPort }}
+    {{- end }}
+    - conditions:
+        - prefix: /nvidia.omniverse.storage.
+      services:
+        - name: {{ .Release.Name }}
+          port: {{ .Values.service.grpcPort }}
+          protocol: h2c
+    - conditions:
+        - prefix: /
+      services:
+        - name: {{ .Release.Name }}
+          port: {{ .Values.service.restPort }}
+{{- end }}

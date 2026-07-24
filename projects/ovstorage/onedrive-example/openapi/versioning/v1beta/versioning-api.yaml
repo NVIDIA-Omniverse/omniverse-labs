@@ -1,0 +1,148 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: LicenseRef-NvidiaProprietary
+#
+# NVIDIA CORPORATION, its affiliates and licensors retain all intellectual
+# property and proprietary rights in and to this material, related
+# documentation and any modifications thereto. Any use, reproduction,
+# disclosure or distribution of this material and related documentation
+# without an express license agreement from NVIDIA CORPORATION or
+# its affiliates is strictly prohibited.
+
+openapi: 3.0.0
+info:
+  description: NVIDIA Omniverse Storage API Versioning service
+  title: nvidia.omniverse.storage.versioning.v1beta
+  version: 0.26.0
+security:
+  - bearerAuth: []
+tags:
+  - name: nspect_id
+    description: NSPECT-G2B8-GZ2M
+paths:
+  /versioning/{resource_address}/versions:
+    get:
+      summary: List data object versions by resource address
+      description: List versions of a data object at the specified resource address. The resource_address is a plus-quoted string.
+      operationId: enumerate_versions
+      parameters:
+        - required: true
+          schema:
+            type: string
+            maxLength: 4096
+            format: resource_address
+            title: ResourceAddress
+          name: resource_address
+          in: path
+        - : '#/components/parameters/max_page_size'
+        - : '#/components/parameters/continuation_handle'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                : '#/components/schemas/VersionInfoPage'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    VersionInfo:
+      properties:
+        resource_info:
+          : '#/components/schemas/ResourceInfo'
+        sorting_key:
+          type: string
+          maxLength: 512
+          format: key_handle
+          nullable: true
+          description: The optional sorting_key for sorting
+      type: object
+      required:
+        - resource_info
+      title: VersionInfo
+      description: Resource version wrapper containing ResourceInfo and an optional sorting_key.
+    VersionInfoPage:
+      properties:
+        next_continuation_handle:
+          type: string
+          maxLength: 512
+          format: page_handle
+          nullable: true
+          title: The optional continuation_handle to retrieve the next page of versions
+        items:
+          type: array
+          title: A single page of results.
+          maxItems: 65536
+          items:
+            : '#/components/schemas/VersionInfo'
+        versions_order:
+          type: string
+          enum:
+            - newest_first
+            - oldest_first
+            - by_key
+          description: The order in which the versions are returned.
+      type: object
+      required:
+        - items
+        - versions_order
+      title: VersionInfoPage
+      description: A page of VersionInfo objects.
+    ResourceIdentity:
+      type: string
+      maxLength: 4096
+      format: resource_identity
+    Metadata:
+      properties:
+        data_object_size:
+          type: integer
+          minimum: 0
+          maximum: 9007199254740991
+          title: The size of the asset, in bytes.
+          format: int64
+        last_modified_timestamp:
+          type: string
+          format: date-time
+          maxLength: 32
+          title: Timestamp (ISO-8601 UTC) of the last modification of the object. Exact semantics and precision are storage-type specific. This field may be omitted.
+      type: object
+      required:
+        - data_object_size
+      title: Metadata
+      description: A single resource metadata.
+    ResourceInfo:
+      properties:
+        resource_identity:
+          : '#/components/schemas/ResourceIdentity'
+        metadata:
+          : '#/components/schemas/Metadata'
+      type: object
+      required:
+        - resource_identity
+        - metadata
+      title: Metadata
+      description: A single resource metadata.
+  parameters:
+    max_page_size:
+      in: query
+      name: max_page_size
+      description: The maximum size of the page to be returned by the server.
+      required: false
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+        maximum: 65536
+        nullable: true
+    continuation_handle:
+      name: continuation_handle
+      description: The continuation handle to fetch the next page of results.
+      in: query
+      required: false
+      schema:
+        type: string
+        maxLength: 512
+        format: page_handle
+        nullable: true

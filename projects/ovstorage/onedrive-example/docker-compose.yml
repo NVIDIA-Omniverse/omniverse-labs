@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: LicenseRef-NvidiaProprietary
+
+services:
+  onedrive-storage:
+    build:
+      context: .
+      dockerfile: omni_onedrive_service/Dockerfile
+    env_file: .env
+    ports:
+      - "8011:8011"   # REST
+      - "50051:50051" # gRPC
+    restart: unless-stopped

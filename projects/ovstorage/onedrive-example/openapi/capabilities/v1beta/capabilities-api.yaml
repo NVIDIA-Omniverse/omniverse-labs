@@ -1,0 +1,107 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: LicenseRef-NvidiaProprietary
+#
+# NVIDIA CORPORATION, its affiliates and licensors retain all intellectual
+# property and proprietary rights in and to this material, related
+# documentation and any modifications thereto. Any use, reproduction,
+# disclosure or distribution of this material and related documentation
+# without an express license agreement from NVIDIA CORPORATION or
+# its affiliates is strictly prohibited.
+
+openapi: 3.0.0
+info:
+  description: NVIDIA Omniverse Storage API Capabilities service.
+  title: nvidia.omniverse.storage.capabilities.v1beta
+  version: 0.26.0
+security:
+  - bearerAuth: []
+tags:
+  - name: nspect_id
+    description: NSPECT-G2B8-GZ2M
+paths:
+  /capabilities/services:
+    get:
+      summary: Return the list of service API implemented by this service
+      description: Return the list of service API implemented by this service.
+      operationId: list_services
+      responses:
+        '200':
+          description: Successful Response.
+          content:
+            application/json:
+              schema:
+                : '#/components/schemas/ListServicesResult'
+  /capabilities/top-level-addresses:
+    get:
+      summary: Return a list of top-level resource addresses suited for browsing.
+      description: Return a list of top-level resource addresses suited for browsing this storage service.
+      operationId: list_top_level_addresses
+      responses:
+        '200':
+          description: Successful Response.
+          content:
+            application/json:
+              schema:
+                : '#/components/schemas/ListTopLevelAddressesResult'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    ListServicesResult:
+      title: ListServicesResult
+      description: The response of the list_services operation.
+      type: object
+      required:
+        - services
+      properties:
+        services:
+          title: List of services with details implemented by this Storage API server
+          type: array
+          maxItems: 65536
+          items:
+            : '#/components/schemas/ServiceEntry'
+    ServiceEntry:
+      title: ServiceEntry
+      description: One service is described via its name and supported versions.
+      type: object
+      required:
+        - service_name
+        - service_versions
+      properties:
+        service_name:
+          title: The name of the service, e.g. fileobject
+          type: string
+          maxLength: 4096
+        service_versions:
+          title: List of versions supported for this service, e.g. v1, v2alpha1, v2beta
+          type: array
+          maxItems: 256
+          items:
+            type: string
+            maxLength: 4096
+    ListTopLevelAddressesResult:
+      properties:
+        items:
+          title: The list of top level resource addresses served by this service instance.
+          type: array
+          maxItems: 65536
+          items:
+            : '#/components/schemas/TopLevelAddressEntry'
+      type: object
+      required:
+        - items
+      title: ListTopLevelAddressesResult
+      description: This is a convenience function to allow UI clients to explore the data exposed by this storage service, and does not need to be complete.
+    TopLevelAddressEntry:
+      properties:
+        top_level_address:
+          title: The root of a namespace. All resource addresses that start with this prefix are considered to be within this namespace
+          type: string
+          maxLength: 4096
+      type: object
+      required:
+        - top_level_address
+      title: TopLevelAddressEntry
+      description: TopLevelAddress
