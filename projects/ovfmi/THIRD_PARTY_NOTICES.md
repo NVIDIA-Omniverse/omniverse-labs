@@ -1,245 +1,170 @@
-# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: LicenseRef-NvidiaProprietary
-#
-# NVIDIA CORPORATION, its affiliates and licensors retain all intellectual
-# property and proprietary rights in and to this material, related
-# documentation and any modifications thereto. Any use, reproduction,
-# disclosure or distribution of this material and related documentation
-# without an express license agreement from NVIDIA CORPORATION or
-# its affiliates is strictly prohibited.
+<!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
 
 # Third-Party Notices
 
-This is the consolidated third-party software inventory for `ovfmi`. It covers
-Python runtime dependencies declared by `apps/ov-fmi`, Python packages installed
-by the setup scripts, optional NVIDIA runtime packages, external build/runtime
-prerequisites, bundled USD/material/texture assets, and standards referenced by
-the demo code and documentation.
+This file records the third-party software and content used by `ovfmi`. It
+covers direct Python dependencies, packages handled by the setup scripts,
+optional runtime components, external prerequisites, bundled demo assets, and
+standards used by the sample code.
 
-NVIDIA's own license terms do not override the upstream licenses of these
-components. Use of each component is subject to its own license. Where a
-component is resolved from PyPI or NVIDIA's package index at install time, the
-authoritative license text is the license file distributed with the resolved
-wheel or source archive. Preserve those license files when redistributing a
-resolved environment, generated FMU/SSP archive, wheel, SDK bundle, or native
-binary package.
+The ovfmi Apache-2.0 license does not replace the upstream licenses of
+third-party components. Packages resolved at installation time carry their
+authoritative license texts in their wheels or source archives. Preserve those
+texts when redistributing a resolved environment, generated FMU/SSP archive,
+SDK bundle, or native binary package.
 
-This file is not a lockfile-generated SBOM. `ovfmi` has unpinned dependencies
-and transitive dependencies resolved by package installers, so downstream
-redistributors should generate a fresh dependency notice from the exact
-resolved environment they ship.
+This inventory is not a lockfile-generated SBOM. Several dependencies are
+unpinned, and package installers resolve transitive dependencies. A distributor
+must generate notices from the exact environment and artifacts it distributes.
 
-If you discover a missing or incorrect attribution, please open an issue or
-pull request against this repository.
+## 1. Direct Python dependencies
 
----
+The following packages are declared by `pyproject.toml` and
+`demoapp/pyproject.toml`. They are installed from a configured Python package
+index and are not vendored in this repository.
 
-## 1. Python runtime dependencies
-
-These Python packages are declared directly by `apps/ov-fmi/pyproject.toml` and
-are installed when the app package is installed. They are resolved from PyPI at
-install time and are not vendored in this repository.
-
-| Package | Required version | License | Scope | Source |
+| Package | Project constraint | License | Use | Upstream |
 |---|---|---|---|---|
-| `fmpy` | `==0.3.25` | BSD-2-Clause, with bundled component notices | Runtime FMI/SSP parsing and simulation | <https://github.com/CATIA-Systems/FMPy> |
-| `numpy` | `>=2.2` | BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0 | Runtime array/tensor handling | <https://github.com/numpy/numpy> |
-| `glfw` / pyGLFW | `>=2.8` | MIT | Runtime OpenGL window/input handling | <https://github.com/FlorianRhiem/pyGLFW> |
-| `PyOpenGL` | `>=3.1` | BSD-style | Runtime OpenGL Python bindings | <https://github.com/mcfletch/pyopengl> |
+| `FMPy` | `==0.3.25` | BSD-2-Clause, plus bundled component notices | FMI/SSP parsing and simulation | <https://github.com/CATIA-Systems/FMPy> |
+| `NumPy` | `>=2.2` | BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0 | Array and tensor handling | <https://github.com/numpy/numpy> |
+| `glfw` / pyGLFW | `>=2.8` | MIT | OpenGL window and input handling | <https://github.com/FlorianRhiem/pyGLFW> |
+| `PyOpenGL` | `>=3.1` | BSD-style, with bundled component notices | OpenGL Python bindings | <https://github.com/mcfletch/pyopengl> |
+| `pytest` | `>=8` | MIT | Test runner installed with the demo application | <https://github.com/pytest-dev/pytest> |
 
-Notes:
-- `fmpy==0.3.25` declares additional runtime dependencies such as `attrs`,
-  `jinja2`, `lark`, `lxml`, `msgpack`, `nbformat`, and `numpy`. These are
-  resolved transitively by the Python installer and are not declared directly
-  by this repository. Include their license files if redistributing a resolved
-  Python environment.
-- FMPy includes separate notices for FMI header/schema files, SUNDIALS/CVODE,
-  co-simulation wrapper binaries, remoting binaries, bundled icons/materials,
-  Bootstrap Icons, Font Awesome Free Icons, and MPack. Preserve the license
-  files contained in the resolved FMPy wheel.
-- NumPy wheels include several embedded third-party components under permissive
-  licenses. Preserve all NumPy `LICENSE*`, `COPYING`, and bundled component
-  license files from the resolved wheel or source archive.
-- PyOpenGL's published metadata identifies a BSD license. The upstream
-  repository license text attributes Michael C. Fletcher and contributors and
-  includes notices for code inherited from the PyOpenGL 2.x series.
+Important license locations in installed distributions include:
 
-### License and notice locations
-
-| Package | License / notice file to preserve from resolved distribution |
+| Package | Files to preserve |
 |---|---|
-| `fmpy` | `fmpy-*.dist-info/licenses/LICENSE.txt`; `fmpy/cswrapper/license.txt`; `fmpy/fmucontainer/documentation/LICENSE.txt`; `fmpy/remoting/license.txt` |
-| `numpy` | `numpy-*.dist-info/licenses/LICENSE.txt` and bundled license files under `numpy/` |
-| `glfw` | `glfw-*.dist-info/LICENSE.txt` |
-| `PyOpenGL` | Upstream `license.txt` from <https://github.com/mcfletch/pyopengl> |
-
----
-
-## 2. Python packages installed by setup scripts
-
-The Windows and Linux setup scripts install these packages in addition to the
-declared `ov-fmi` runtime package. They are resolved from PyPI or NVIDIA's
-package index at setup time and are not vendored in this repository.
-
-| Package | Version/source in setup | License | Scope |
-|---|---|---|---|
-| `ovrtx` | `ovrtx==0.3.0.312915` from `https://pypi.nvidia.com` | `LicenseRef-NvidiaProprietary` / NVIDIA Software License Agreement | Required renderer runtime |
-| `ovphysx` | `ovphysx==0.4.9` from `https://pypi.nvidia.com`, unless skipped | `LicenseRef-NVIDIA-Omniverse` | Optional physics runtime |
-| `usd-core` | Unpinned PyPI package installed into isolated `apps/ov-fmi/.usd_venv` | `LicenseRef-TOST-1.0` | USD parsing fallback subprocess |
-| `cuda-python` | Unpinned PyPI package installed only when `INSTALL_CUDA_PYTHON=1` or `-InstallCudaPython` is used | `LicenseRef-NVIDIA-SOFTWARE-LICENSE` | Optional CUDA/OpenGL zero-copy display path |
-
-Notes:
-- `ovrtx` is an NVIDIA package, not an OSS dependency. The installed
-  `ovrtx==0.3.0.312915` package includes its own `THIRD-PARTY-NOTICES.txt`
-  and package license files for separate components. Preserve those files if
-  redistributing the package or a bundle containing it.
-- `ovphysx==0.4.9` package metadata reports license files `LICENSE.txt` and
-  `ovphysx-LICENSES.zip`. Preserve those files if redistributing the package
-  or a bundle containing it.
-- `usd-core` package metadata reviewed for version 26.5 reports
-  `LicenseRef-TOST-1.0`, the Tomorrow Open Source Technology License 1.0 used
-  by OpenUSD. Preserve the license file from the exact resolved `usd-core`
-  package.
-- `cuda-python` is separately licensed NVIDIA software. It is optional and is
-  installed only for the CUDA interop display path.
-
-### License and notice locations
-
-| Package | License / notice file to preserve from resolved distribution |
-|---|---|
-| `ovrtx` | `ovrtx/THIRD-PARTY-NOTICES.txt`; `ovrtx-*.dist-info/licenses/*`; package `LICENSE` files |
-| `ovphysx` | `LICENSE.txt`; `ovphysx-LICENSES.zip` |
-| `usd-core` | `usd_core-*.dist-info/licenses/LICENSE.txt` |
-| `cuda-python` | `cuda_python-*.dist-info/licenses/LICENSE` |
-
----
-
-## 4. External build and runtime prerequisites
-
-These tools and system components are required or optionally used to build and
-run the demos. They are not vendored in this repository and are not
-redistributed by `ovfmi`, but downstream users may need them installed.
-
-| Prerequisite | Version/source in project | License |
-|---|---|---|
-| Python | Python 3.10 through 3.13 documented in `README.md` | Python Software Foundation License |
-| Git and Git LFS | External prerequisites documented in `README.md` | GPL-2.0-only and other notices, depending on distribution |
-| C++17 compiler | Visual Studio 2022 Build Tools, `g++`, or `clang++` for demo FMU builds | Toolchain-specific |
-| CMake | Required only for optional `apps/ov-fmi/fmi_usd_helper` build | Apache-2.0 and BSD notices, depending on distribution |
-| OpenUSD headers | Optional `fmi_usd_helper` uses OpenUSD v25.11 headers | `LicenseRef-TOST-1.0` |
-| OpenGL / X11 runtime | Runtime display prerequisites documented in `README.md` | Vendor/system-specific |
-| NVIDIA driver | Runtime prerequisite for RTX rendering | NVIDIA driver license |
-| CUDA Toolkit | Optional prerequisite for CUDA/OpenGL zero-copy display | NVIDIA CUDA Toolkit EULA |
-| ovphysx SDK | Optional input for `fmi_usd_helper` linking experiments | NVIDIA Omniverse / package-specific terms |
-
-Notes:
-- `apps/ov-fmi/fmi_usd_helper/CMakeLists.txt` can clone OpenUSD v25.11 headers
-  and link against USD libraries from an ovphysx SDK. That helper is optional
-  and version-sensitive.
-- The generated demo FMU/SSP archives may contain compiled binaries produced by
-  the local C++ toolchain. Preserve any applicable toolchain/runtime notices if
-  redistributing generated archives.
-- CUDA Toolkit and the NVIDIA driver are NVIDIA proprietary prerequisites, not
-  OSS components.
-
----
-
-## 5. Optional test and developer dependencies
-
-These Python packages are documented or referenced for tests and optional
-developer workflows. They are resolved from PyPI and are not vendored in this
-repository.
-
-| Package | Version/source in project | License | Scope |
-|---|---|---|---|
-| `pytest` | Unpinned optional install documented in `README.md` | MIT | Test runner for `apps/ov-fmi/tests` |
-| `Pillow` | Unpinned optional install mentioned by `main.py --png` help | MIT-CMU | Optional PNG frame output |
-
-Notes:
-- `pytest` package metadata reviewed for version 9.1.1 reports MIT.
-- `Pillow` package metadata reviewed for version 12.2.0 reports MIT-CMU and
-  contains bundled third-party notices in its license file. Preserve the
-  package license file if redistributing.
-
-### License and notice locations
-
-| Package | License / notice file to preserve from resolved distribution |
-|---|---|
+| `FMPy` | `fmpy-*.dist-info/licenses/LICENSE.txt`, `fmpy/cswrapper/license.txt`, `fmpy/fmucontainer/documentation/LICENSE.txt`, and `fmpy/remoting/license.txt` |
+| `NumPy` | `numpy-*.dist-info/licenses/` and license files shipped inside `numpy/` |
+| `glfw` | `glfw-*.dist-info/licenses/LICENSE.txt` |
+| `PyOpenGL` | The upstream `license.txt` and bundled `OpenGL/DLLS/*COPYING*` files |
 | `pytest` | `pytest-*.dist-info/licenses/LICENSE` |
-| `Pillow` | `pillow-*.dist-info/licenses/LICENSE` |
 
----
+FMPy and NumPy ship additional component notices. Preserve their complete
+license directories instead of copying only the primary license file.
+
+## 2. NVIDIA runtime packages
+
+Users install these packages in the base Python environment before running
+setup. The project validates their presence but does not select an index, pin a
+version, or redistribute them.
+
+| Package | License reported by reviewed package metadata | Use |
+|---|---|---|
+| `ovrtx` | NVIDIA Proprietary Software | RTX rendering |
+| `ovstage` | NVIDIA Proprietary Software | Shared USD data-plane stage |
+| `ovphysx` | `LicenseRef-NVIDIA-Omniverse` | Optional rigid-body physics |
+
+Preserve each resolved package's own license and notice files when
+redistributing it. Reviewed packages contain these locations:
+
+| Package | Files to preserve |
+|---|---|
+| `ovrtx` | `ovrtx/THIRD-PARTY-NOTICES.txt`, package license files, and component `PACKAGE-LICENSES/` directories |
+| `ovstage` | `ovstage/THIRD-PARTY-NOTICES.txt` and package license files |
+| `ovphysx` | `ovphysx-*.dist-info/licenses/LICENSE.txt`, `ovphysx-*.dist-info/licenses/ovphysx-LICENSES.zip`, and notices shipped with its documentation |
+
+Any dependencies resolved by these packages, such as `packaging`, must also be
+included in a distribution-specific license inventory.
+
+## 3. Setup, build, and optional Python packages
+
+| Package | Project use | License |
+|---|---|---|
+| `setuptools>=77` | PEP 517 build backend declared by the root project | MIT |
+| `usd-core` | Unpinned package installed in `demoapp/.usd_venv` for isolated USD parsing | `LicenseRef-TOST-1.0` |
+| `cuda-python` | Optional CUDA/OpenGL zero-copy display support | NVIDIA Software License |
+| `Pillow` | Optional PNG output selected with `--png` | MIT-CMU, with bundled component notices |
+
+Preserve the license directory from the resolved `setuptools`, `usd-core`,
+`cuda-python`, and Pillow distributions when those packages are redistributed.
+Pillow's full license file includes notices for bundled image-codec components.
+
+## 4. Transitive Python dependencies
+
+FMPy 0.3.25 declares dependencies including `attrs`, `jinja2`, `lark`, `lxml`,
+`msgpack`, `nbformat`, and `numpy`. Pytest and the NVIDIA runtime packages also
+resolve their own dependencies. These packages are not declared directly by
+all ovfmi manifests and may vary by platform and installer state. Include every
+resolved distribution and its license files in a distribution-specific SBOM
+and notice bundle.
+
+## 5. External build and runtime prerequisites
+
+The following components are used from the host system and are not vendored by
+this repository:
+
+| Prerequisite | Use | License family |
+|---|---|---|
+| Python 3.10-3.13 | Application runtime | Python Software Foundation License |
+| Git and Git LFS | Source and asset checkout | GPL-2.0-only and distribution-specific notices |
+| Visual Studio 2022 Build Tools, GCC, or Clang | C++17 demo FMU compilation | Toolchain-specific |
+| OpenGL and X11 runtime libraries | Live display | Vendor/distribution-specific |
+| NVIDIA display driver | RTX rendering | NVIDIA driver license |
+| CUDA Toolkit | Optional CUDA/OpenGL interop | NVIDIA CUDA Toolkit EULA |
+| CMake | Optional `demoapp/fmi_usd_helper` build | Apache-2.0 and bundled component notices |
+| OpenUSD 25.11 headers | Optional `fmi_usd_helper` build | `LicenseRef-TOST-1.0` |
+| ovphysx SDK | Optional libraries for `fmi_usd_helper` | NVIDIA Omniverse/package-specific terms |
+
+Generated FMU and SSP archives can contain binaries produced by the local C++
+toolchain. Include applicable compiler runtime notices when distributing those
+archives.
 
 ## 6. Bundled USD, MDL, mesh, image, and texture assets
 
-The repository includes demo USD stages, MDL material files, meshes, screenshots,
-and textures used by the `ovfmi` examples. These assets are redistributed as
-part of this project when the repository content is distributed.
+The repository includes demo USD stages, MDL materials, meshes, screenshots,
+and textures:
 
-| Asset group | Files | Notice |
+| Asset group | Paths | Notice |
 |---|---|---|
-| ov-fmi demo USD stages and screenshots | `usd/ov-fmi/`, `fmu-ball-test.png`, `physx-sim-test.png` | NVIDIA project/demo material unless a file states otherwise |
-| Conveyor demo USD, MDL, mesh, and texture assets | `usd/conveyor/` | Includes Omniverse/MDL materials and generated USD layers. No separate OSS asset license file was present in the sparse checkout when reviewed. |
-| Generated FMU and SSP inputs | `fmu/`, `ssp/` | NVIDIA project/demo material unless a file states otherwise. Generated archives may include compiled binaries and copied FMI/SSP metadata. |
+| ovfmi-authored demo stages and screenshots | `demoapp/usd/*.usda`, `fmu-ball-test.png`, `physx-sim-test.png` | NVIDIA project/demo material unless a file states otherwise |
+| Conveyor and box assets | `demoapp/usd/conveyor/` | Includes NVIDIA Omniverse/SimReady-derived USD, MDL, mesh, and texture content |
+| Demo model sources | `demoapp/fmu/`, `demoapp/ssp/` | NVIDIA project/demo material unless a file states otherwise |
 
-Known provenance strings visible in checked-in USD layers include:
-
-- `E:\Simready\Collected_Conveyor3\ConveyorScene.usd`
-- `../simready_usd/sm_box_corrugated_brown_b13_01.usd`
-- `../simready_usd/sm_box_flat_a13_01.usd`
-
-Notes:
-- Treat `usd/conveyor` assets as NVIDIA Omniverse/SimReady or otherwise
-  separately licensed assets unless a future source file identifies a more
-  specific OSS asset license.
-- Verify redistribution rights for these assets before publishing them outside
-  the intended repository or package.
-- USD layers reference MDL materials such as `OmniPBR` and `OmniGlass`; those
-  material definitions are provided by the NVIDIA Omniverse runtime packages
-  and are subject to their own package terms.
-
----
+The conveyor layers contain SimReady provenance metadata and references to
+NVIDIA Omniverse/Isaac content locations. No separate OSS asset license file is
+present in the checked-in asset tree. Treat these assets as separately licensed
+NVIDIA content and verify redistribution rights for the intended release
+channel. USD layers also reference runtime-provided MDL materials, which remain
+subject to the licenses of the packages that provide them.
 
 ## 7. Standards and specification materials
 
-The project implements and documents interoperability with the following
-standards. The standards themselves are not vendored as standalone documents in
-this repository, but related schema/header materials may be present in FMPy or
-generated FMU/SSP archives.
-
-| Standard | Project usage | Notice |
+| Standard | Project use | Notice |
 |---|---|---|
-| FMI, Functional Mock-up Interface | Demo FMUs, `modelDescription.xml` files, FMPy runtime usage, and USD-FMI schema docs | FMPy includes copies of FMI header and model-description schema files from the FMI standard downloads and carries the associated notice from the MODELISAR consortium and Modelica Association Project "FMI". Preserve FMPy's license files if redistributing FMPy or copied FMI materials. |
-| SSP, System Structure and Parameterization | Demo `.ssd` files and SSP runtime behavior | The project references SSP 1.0 and uses FMPy's SSP support. Preserve notices from any SSP standard files or tooling if copied into a distribution. |
+| FMI (Functional Mock-up Interface) | Demo FMU metadata, runtime behavior, and USD-FMI mappings | FMPy carries notices for FMI headers and schemas from the MODELISAR consortium and Modelica Association Project FMI. Preserve those notices when redistributing FMPy or copied specification materials. |
+| SSP (System Structure and Parameterization) | Demo `.ssd` files and SSP runtime behavior | Preserve notices associated with any SSP specification files or tooling included in a distribution. |
 
----
+The checked-in `demoapp/fmu/fmi2/fmi2_minimal.h` is an NVIDIA-authored minimal
+set of declarations and carries its own NVIDIA SPDX header; it is not a copied
+FMI SDK header.
 
 ## 8. Redistribution checklist
 
-Before distributing `ovfmi` or a built package that includes dependencies:
+Before distributing `ovfmi` or a package containing its dependencies:
 
 1. Include this file or an updated equivalent.
-2. Generate a fresh dependency notice from the exact resolved Python
-   environment, including transitive dependencies.
-3. Include full license files from every redistributed wheel, source archive,
-   native SDK, generated FMU/SSP archive, and binary bundle.
-4. Include `ovrtx` and `ovphysx` license and third-party notice files if those
+2. Generate an SBOM and dependency notice from the exact resolved environment.
+3. Include complete license files from redistributed wheels, source archives,
+   native SDKs, generated model archives, and binary bundles.
+4. Include the NVIDIA runtime packages' own third-party notices when those
    packages or their contents are redistributed.
-5. Verify redistribution rights for `usd/conveyor` assets and any generated
-   FMU/SSP archives that contain copied third-party binaries, schemas, or SDK
-   files.
-6. Do not treat NVIDIA proprietary package licenses as OSS licenses.
-
----
+5. Confirm redistribution rights for `demoapp/usd/conveyor/` content.
+6. Do not classify NVIDIA proprietary package licenses as open-source licenses.
 
 ## 9. Sources reviewed
 
+- `pyproject.toml`
+- `demoapp/pyproject.toml`
+- `demoapp/setup.ps1`
+- `demoapp/setup.sh`
+- `demoapp/fmi_usd_helper/CMakeLists.txt`
 - `README.md`
-- `apps/ov-fmi/pyproject.toml`
-- `apps/ov-fmi/setup.sh`
-- `apps/ov-fmi/setup.ps1`
-- `apps/ov-fmi/fmi_usd_helper/CMakeLists.txt`
 - `docs/USD-FMI-SCHEMA.md`
-- `.gitmodules` from repository `HEAD`
-- Package metadata and license files for representative dependency wheels
-  reviewed on 2026-06-24.
+- checked-in asset provenance strings and SPDX headers
+- installed package metadata and license inventories reviewed on 2026-07-22
+  for FMPy 0.3.25, NumPy 2.4.3, glfw 2.10.2, PyOpenGL 3.1.10, pytest 9.1.0,
+  Pillow 12.2.0, usd-core 26.5, ovrtx 0.4.0.346409, ovstage 0.1.0.346039,
+  and ovphysx 0.5.9

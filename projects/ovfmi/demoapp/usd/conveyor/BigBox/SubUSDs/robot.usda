@@ -1,0 +1,153 @@
+#usda 1.0
+(
+    customLayerData = {
+        dictionary SimReady_Metadata = {
+            string asset_location = "simready_content\\common_assets\\props_warehouse\\box_corrugated_brown_b13\\simready_physx_usd\\sm_box_corrugated_brown_b13_01.usd"
+            string asset_type = "prop"
+            dictionary validation = {
+                string profile = "Prop-Robotics-Physx"
+                string profile_version = "1.0.0"
+                dictionary validated_features = {
+                    dictionary "2026-02-12" = {
+                        dictionary FET000_CORE = {
+                            string dependencies = "[]"
+                            bool passed = 1
+                            string version = "0.1.0"
+                        }
+                        dictionary FET001_BASE_NEUTRAL = {
+                            string dependencies = "[]"
+                            string "failing requirements" = "['AA.001']"
+                            bool passed = 0
+                            string version = "0.1.0"
+                        }
+                        dictionary FET003_BASE_NEUTRAL = {
+                            string dependencies = "[]"
+                            bool passed = 1
+                            string version = "0.1.0"
+                        }
+                        dictionary FET003_BASE_PHYSX = {
+                            string dependencies = "[{'FET003_BASE_NEUTRAL': {'version': '0.1.0'}}]"
+                            bool passed = 1
+                            string version = "0.1.0"
+                        }
+                        dictionary FET004_BASE_NEUTRAL = {
+                            string dependencies = "[{'FET003_BASE_NEUTRAL': {'version': '0.1.0'}}]"
+                            string "failing requirements" = "['RB.MB.001']"
+                            bool passed = 0
+                            string version = "0.1.0"
+                        }
+                        dictionary FET004_BASE_PHYSX = {
+                            string dependencies = "[{'FET003_BASE_PHYSX': {'version': '0.1.0'}}, {'FET004_BASE_NEUTRAL': {'version': '0.1.0'}}]"
+                            string "failing requirements" = "['RB.MB.001']"
+                            bool passed = 0
+                            string version = "0.1.0"
+                        }
+                        dictionary FET005_BASE_NEUTRAL = {
+                            string dependencies = "[]"
+                            string "failing requirements" = "['GSP.001']"
+                            bool passed = 0
+                            string version = "0.1.0"
+                        }
+                        dictionary FET006_BASE_MDL = {
+                            string dependencies = "[]"
+                            string "failing requirements" = "['VM.MDL.001']"
+                            bool passed = 0
+                            string version = "0.1.0"
+                        }
+                    }
+                    dictionary "2026-02-23" = {
+                        dictionary FET000_CORE = {
+                            string dependencies = "[]"
+                            string "failing requirements" = "['NP.008']"
+                            bool passed = 0
+                            string version = "0.1.0"
+                        }
+                        dictionary FET001_BASE_NEUTRAL = {
+                            string dependencies = "[]"
+                            string "failing requirements" = "['AA.001']"
+                            bool passed = 0
+                            string version = "0.1.0"
+                        }
+                        dictionary FET003_BASE_NEUTRAL = {
+                            string dependencies = "[]"
+                            bool passed = 1
+                            string version = "0.1.0"
+                        }
+                        dictionary FET003_BASE_PHYSX = {
+                            string dependencies = "[{'FET003_BASE_NEUTRAL': {'version': '0.1.0'}}]"
+                            bool passed = 1
+                            string version = "0.1.0"
+                        }
+                        dictionary FET004_BASE_NEUTRAL = {
+                            string dependencies = "[{'FET003_BASE_NEUTRAL': {'version': '0.1.0'}}]"
+                            string "failing requirements" = "['RB.MB.001']"
+                            bool passed = 0
+                            string version = "0.1.0"
+                        }
+                        dictionary FET004_BASE_PHYSX = {
+                            string dependencies = "[{'FET003_BASE_PHYSX': {'version': '0.1.0'}}, {'FET004_BASE_NEUTRAL': {'version': '0.1.0'}}]"
+                            string "failing requirements" = "['RB.MB.001']"
+                            bool passed = 0
+                            string version = "0.1.0"
+                        }
+                        dictionary FET005_BASE_NEUTRAL = {
+                            string dependencies = "[]"
+                            bool passed = 1
+                            string version = "0.1.0"
+                        }
+                        dictionary FET006_BASE_MDL = {
+                            string dependencies = "[]"
+                            string "failing requirements" = "['VM.MAT.001', 'VM.MDL.001']"
+                            bool passed = 0
+                            string version = "0.1.0"
+                        }
+                    }
+                }
+            }
+        }
+        string asset_dir = "simready_content/common_assets/props_warehouse/box_corrugated_brown_b13"
+        string asset_name = "sm_box_corrugated_brown_b13_01"
+        string asset_type = "prop"
+        dictionary cameraSettings = {
+            dictionary Front = {
+                double3 position = (5, 0, 0)
+                double radius = 5
+            }
+            dictionary Perspective = {
+                double3 position = (1.1864588088403787, 1.8258614617129796, 1.0433801206972775)
+                double3 target = (-0.013320140157647264, -0.006507678261709726, 0.22141832321194588)
+            }
+            dictionary Right = {
+                double3 position = (0.15231900816167293, -50000.000000000015, 0.3679794955355452)
+                double radius = 1.8733089447021485
+            }
+            dictionary Top = {
+                double3 position = (0, 0, 5)
+                double radius = 5
+            }
+            string boundCamera = "/OmniverseKit_Persp"
+        }
+        dictionary omni_layer = {
+            string authoring_layer = "./sm_box_corrugated_brown_b13_01.usd"
+        }
+        string profile = "Prop-Robotics-Neutral"
+        dictionary renderSettings = {
+        }
+        string source_file = "../simready_usd/sm_box_corrugated_brown_b13_01.usd"
+        string usd_date_generated = "2026-02-12 09:43:00"
+        bool used_dsrs_exporter = 1
+    }
+    defaultPrim = "RootNode"
+    doc = """Blender v5.0.1
+
+Generated from Composed Stage of root layer C:\\Users\\horde\\AppData\\Local\\Temp\\deploy_pipeline_dinlg1vj\\install\\sm_box_corrugated_brown_b13_01.usd
+"""
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+over "RootNode" (
+    prepend apiSchemas = ["IsaacRobotAPI"]
+)
+{
+}

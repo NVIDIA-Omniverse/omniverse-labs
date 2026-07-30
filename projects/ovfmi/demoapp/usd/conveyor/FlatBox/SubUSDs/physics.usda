@@ -1,0 +1,145 @@
+#usda 1.0
+(
+    customLayerData = {
+        dictionary SimReady_Metadata = {
+            string asset_location = "simready_content\\common_assets\\props_warehouse\\box_flat_a13\\simready_physx_usd\\sm_box_flat_a13_01.usd"
+            string asset_type = "prop"
+            dictionary validation = {
+                string profile = "Prop-Robotics-Physx"
+                string profile_version = "1.0.0"
+                dictionary validated_features = {
+                    dictionary "2026-02-12" = {
+                        dictionary FET000_CORE = {
+                            string dependencies = "[]"
+                            bool passed = 1
+                            string version = "0.1.0"
+                        }
+                        dictionary FET001_BASE_NEUTRAL = {
+                            string dependencies = "[]"
+                            string "failing requirements" = "['AA.001']"
+                            bool passed = 0
+                            string version = "0.1.0"
+                        }
+                        dictionary FET003_BASE_NEUTRAL = {
+                            string dependencies = "[]"
+                            bool passed = 1
+                            string version = "0.1.0"
+                        }
+                        dictionary FET003_BASE_PHYSX = {
+                            string dependencies = "[{'FET003_BASE_NEUTRAL': {'version': '0.1.0'}}]"
+                            bool passed = 1
+                            string version = "0.1.0"
+                        }
+                        dictionary FET004_BASE_NEUTRAL = {
+                            string dependencies = "[{'FET003_BASE_NEUTRAL': {'version': '0.1.0'}}]"
+                            string "failing requirements" = "['RB.MB.001']"
+                            bool passed = 0
+                            string version = "0.1.0"
+                        }
+                        dictionary FET004_BASE_PHYSX = {
+                            string dependencies = "[{'FET003_BASE_PHYSX': {'version': '0.1.0'}}, {'FET004_BASE_NEUTRAL': {'version': '0.1.0'}}]"
+                            string "failing requirements" = "['RB.MB.001']"
+                            bool passed = 0
+                            string version = "0.1.0"
+                        }
+                        dictionary FET005_BASE_NEUTRAL = {
+                            string dependencies = "[]"
+                            string "failing requirements" = "['GSP.001']"
+                            bool passed = 0
+                            string version = "0.1.0"
+                        }
+                        dictionary FET006_BASE_MDL = {
+                            string dependencies = "[]"
+                            string "failing requirements" = "['VM.MDL.001']"
+                            bool passed = 0
+                            string version = "0.1.0"
+                        }
+                    }
+                }
+            }
+        }
+        string asset_dir = "simready_content/common_assets/props_warehouse/box_flat_a13"
+        string asset_name = "sm_box_flat_a13_01"
+        string asset_type = "prop"
+        dictionary cameraSettings = {
+            dictionary Front = {
+                double3 position = (5, 0, 0)
+                double radius = 5
+            }
+            dictionary Perspective = {
+                double3 position = (0.7275770968169656, 0.9600342016902271, 0.8411473601854862)
+                double3 target = (-0.016217580563950285, 0.03176591237680493, 0.037614489927879635)
+            }
+            dictionary Right = {
+                double3 position = (0.04492390975766412, -49999.99912129344, 0.06599666383907873)
+                double radius = 1.0078946113586427
+            }
+            dictionary Top = {
+                double3 position = (0, 0, 5)
+                double radius = 5
+            }
+            string boundCamera = "/OmniverseKit_Persp"
+        }
+        dictionary omni_layer = {
+            string authoring_layer = "./sm_box_flat_a13_01.usd"
+        }
+        string profile = "Prop-Robotics-Neutral"
+        dictionary renderSettings = {
+        }
+        string source_file = "../simready_usd/sm_box_flat_a13_01.usd"
+        string usd_date_generated = "2026-02-12 15:01:22"
+        bool used_dsrs_exporter = 1
+    }
+    defaultPrim = "RootNode"
+    doc = """Blender v5.0.1
+
+Generated from Composed Stage of root layer C:\\Users\\horde\\AppData\\Local\\Temp\\deploy_pipeline_m7j_uvo8\\install\\sm_box_flat_a13_01.usd
+"""
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+over "RootNode"
+{
+    over "Geometry"
+    {
+        over "sm_box_flat_a13_obj_00" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI"]
+        )
+        {
+        }
+    }
+
+    over "PhysicsMaterials"
+    {
+        over "physics_mat_opaque__cardboard__brown_standard_a" (
+            prepend apiSchemas = ["PhysicsMaterialAPI"]
+        )
+        {
+            float physics:density = 689
+            float physics:dynamicFriction = 0.7
+            float physics:restitution = 0.4
+            float physics:staticFriction = 0.7
+        }
+
+        over "physics_mat_opaque__cardboard__unique_edges_a" (
+            prepend apiSchemas = ["PhysicsMaterialAPI"]
+        )
+        {
+            float physics:density = 689
+            float physics:dynamicFriction = 0.7
+            float physics:restitution = 0.4
+            float physics:staticFriction = 0.7
+        }
+
+        over "physics_mat_opaque__nylon__unique_tape_a" (
+            prepend apiSchemas = ["PhysicsMaterialAPI"]
+        )
+        {
+            float physics:density = 900
+            float physics:dynamicFriction = 0.45
+            float physics:restitution = 0.12
+            float physics:staticFriction = 0.5
+        }
+    }
+}

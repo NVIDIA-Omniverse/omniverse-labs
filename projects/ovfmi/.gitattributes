@@ -1,2 +1,6 @@
-usd/conveyor/**/*.png filter=lfs diff=lfs merge=lfs -text
-usd/conveyor/**/*.usd filter=lfs diff=lfs merge=lfs -text
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+*.sh text eol=lf
+demoapp/usd/conveyor/**/*.png filter=lfs diff=lfs merge=lfs -text
+demoapp/usd/conveyor/**/*.usd filter=lfs diff=lfs merge=lfs -text

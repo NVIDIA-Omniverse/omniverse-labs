@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+[project]
+name = "ovfmi-demoapp"
+version = "0.2.0"
+description = "FMI co-simulation with ovrtx rendering"
+license = "Apache-2.0"
+requires-python = ">=3.10,<3.14"
+dependencies = [
+    "ovfmi>=0.2,<0.3",
+    "numpy>=2.2",
+    "glfw>=2.8",
+    "PyOpenGL>=3.1",
+    "pytest>=8",
+    # usd-core is NOT listed here: it must live in an isolated venv because
+    # ovrtx refuses to load if usd-core is installed in the same environment.
+    # setup.sh creates demoapp/.usd_venv/ and writes USD_PYTHON to .env.
+    # See demoapp/fmi_usd_helper/ for the optional C++ alternative.
+    # ovrtx, ovstage, and ovphysx are intentionally not declared here. Users
+    # install those runtime packages into the base environment before setup;
+    # the demo venv inherits and validates them without choosing an index.
+    # See ../README.md for installation instructions.
+]
+
+[tool.setuptools]
+py-modules = ["fmi_parser", "fmi_runtime", "main", "ovstage_renderer", "parse_fmi_schema", "ssp_runtime"]

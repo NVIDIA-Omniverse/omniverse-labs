@@ -1,0 +1,495 @@
+#usda 1.0
+(
+    customLayerData = {
+        dictionary SimReady_Metadata = {
+            string asset_location = "simready_content\\common_assets\\props_warehouse\\box_flat_a13\\simready_physx_usd\\sm_box_flat_a13_01.usd"
+            string asset_type = "prop"
+            dictionary validation = {
+                string profile = "Prop-Robotics-Physx"
+                string profile_version = "1.0.0"
+                dictionary validated_features = {
+                    dictionary "2026-02-12" = {
+                        dictionary FET000_CORE = {
+                            string dependencies = "[]"
+                            bool passed = 1
+                            string version = "0.1.0"
+                        }
+                        dictionary FET001_BASE_NEUTRAL = {
+                            string dependencies = "[]"
+                            string "failing requirements" = "['AA.001']"
+                            bool passed = 0
+                            string version = "0.1.0"
+                        }
+                        dictionary FET003_BASE_NEUTRAL = {
+                            string dependencies = "[]"
+                            bool passed = 1
+                            string version = "0.1.0"
+                        }
+                        dictionary FET003_BASE_PHYSX = {
+                            string dependencies = "[{'FET003_BASE_NEUTRAL': {'version': '0.1.0'}}]"
+                            bool passed = 1
+                            string version = "0.1.0"
+                        }
+                        dictionary FET004_BASE_NEUTRAL = {
+                            string dependencies = "[{'FET003_BASE_NEUTRAL': {'version': '0.1.0'}}]"
+                            string "failing requirements" = "['RB.MB.001']"
+                            bool passed = 0
+                            string version = "0.1.0"
+                        }
+                        dictionary FET004_BASE_PHYSX = {
+                            string dependencies = "[{'FET003_BASE_PHYSX': {'version': '0.1.0'}}, {'FET004_BASE_NEUTRAL': {'version': '0.1.0'}}]"
+                            string "failing requirements" = "['RB.MB.001']"
+                            bool passed = 0
+                            string version = "0.1.0"
+                        }
+                        dictionary FET005_BASE_NEUTRAL = {
+                            string dependencies = "[]"
+                            string "failing requirements" = "['GSP.001']"
+                            bool passed = 0
+                            string version = "0.1.0"
+                        }
+                        dictionary FET006_BASE_MDL = {
+                            string dependencies = "[]"
+                            string "failing requirements" = "['VM.MDL.001']"
+                            bool passed = 0
+                            string version = "0.1.0"
+                        }
+                    }
+                }
+            }
+        }
+        string asset_dir = "simready_content/common_assets/props_warehouse/box_flat_a13"
+        string asset_name = "sm_box_flat_a13_01"
+        string asset_type = "prop"
+        dictionary cameraSettings = {
+            dictionary Front = {
+                double3 position = (5, 0, 0)
+                double radius = 5
+            }
+            dictionary Perspective = {
+                double3 position = (0.7275770968169656, 0.9600342016902271, 0.8411473601854862)
+                double3 target = (-0.016217580563950285, 0.03176591237680493, 0.037614489927879635)
+            }
+            dictionary Right = {
+                double3 position = (0.04492390975766412, -49999.99912129344, 0.06599666383907873)
+                double radius = 1.0078946113586427
+            }
+            dictionary Top = {
+                double3 position = (0, 0, 5)
+                double radius = 5
+            }
+            string boundCamera = "/OmniverseKit_Persp"
+        }
+        dictionary omni_layer = {
+            string authoring_layer = "./sm_box_flat_a13_01.usd"
+        }
+        string profile = "Prop-Robotics-Neutral"
+        dictionary renderSettings = {
+        }
+        string source_file = "../simready_usd/sm_box_flat_a13_01.usd"
+        string usd_date_generated = "2026-02-12 15:01:22"
+        bool used_dsrs_exporter = 1
+    }
+    doc = """Blender v5.0.1
+
+Generated from Composed Stage of root layer C:\\Users\\horde\\AppData\\Local\\Temp\\deploy_pipeline_m7j_uvo8\\install\\sm_box_flat_a13_01.usd
+"""
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Scope "Materials"
+{
+    def Material "opaque__cardboard__brown_standard_a"
+    {
+        custom token[] omni:simready:nonvisual:attributes = ["none"]
+        custom token omni:simready:nonvisual:base = "cardboard"
+        custom token omni:simready:nonvisual:coating = "none"
+        token outputs:displacement (
+            displayGroup = "Outputs"
+        )
+        prepend token outputs:mdl:surface.connect = </Materials/opaque__cardboard__brown_standard_a/OmniPBR_Shader.outputs:out>
+        token outputs:surface (
+            displayGroup = "Outputs"
+        )
+        prepend token outputs:surface.connect = </Materials/opaque__cardboard__brown_standard_a/Principled_BSDF.outputs:surface>
+        token outputs:volume (
+            displayGroup = "Outputs"
+        )
+        custom int pxr:usd:physics_density = 689
+        custom double pxr:usd:physics_dynamicFriction = 0.7
+        custom double pxr:usd:physics_fillRatio = 0.25
+        custom double pxr:usd:physics_restitution = 0.4
+        custom double pxr:usd:physics_staticFriction = 0.7
+        custom double pxr:usd:physics_thickness = 0.003
+        custom string pxr:usd:physics_type = "cardboard"
+
+        def Shader "Principled_BSDF" (
+            apiSchemas = ["NodeDefAPI"]
+        )
+        {
+            token info:id = "UsdPreviewSurface"
+            float inputs:clearcoat = 0
+            float inputs:clearcoatRoughness = 0.03
+            prepend color3f inputs:diffuseColor.connect = </Materials/opaque__cardboard__brown_standard_a/Albedo.outputs:rgb>
+            float inputs:ior = 1.5
+            prepend float inputs:metallic.connect = </Materials/opaque__cardboard__brown_standard_a/ORM.outputs:b>
+            prepend normal3f inputs:normal.connect = </Materials/opaque__cardboard__brown_standard_a/Normal.outputs:rgb>
+            float inputs:opacity = 1
+            prepend float inputs:roughness.connect = </Materials/opaque__cardboard__brown_standard_a/ORM.outputs:g>
+            float inputs:specular = 0.5
+            token outputs:surface
+        }
+
+        def Shader "Albedo" (
+            apiSchemas = ["NodeDefAPI"]
+        )
+        {
+            token info:id = "UsdUVTexture"
+            asset inputs:file = @./textures/T_FlatBox_A01_Tile_Albedo.png@
+            token inputs:sourceColorSpace = "sRGB"
+            prepend float2 inputs:st.connect = </Materials/opaque__cardboard__brown_standard_a/Mapping.outputs:result>
+            token inputs:wrapS = "repeat"
+            token inputs:wrapT = "repeat"
+            float3 outputs:rgb
+        }
+
+        def Shader "Mapping" (
+            apiSchemas = ["NodeDefAPI"]
+        )
+        {
+            token info:id = "UsdTransform2d"
+            prepend float2 inputs:in.connect = </Materials/opaque__cardboard__brown_standard_a/uvmap.outputs:result>
+            float inputs:rotation = 0
+            float2 inputs:scale = (1, 1)
+            float2 inputs:translation = (0, 0)
+            float2 outputs:result
+        }
+
+        def Shader "uvmap" (
+            apiSchemas = ["NodeDefAPI"]
+        )
+        {
+            token info:id = "UsdPrimvarReader_float2"
+            string inputs:varname = "st"
+            float2 outputs:result
+        }
+
+        def Shader "ORM" (
+            apiSchemas = ["NodeDefAPI"]
+        )
+        {
+            token info:id = "UsdUVTexture"
+            asset inputs:file = @./textures/T_FlatBox_A01_Tile_ORM.png@
+            token inputs:sourceColorSpace = "raw"
+            prepend float2 inputs:st.connect = </Materials/opaque__cardboard__brown_standard_a/Mapping.outputs:result>
+            token inputs:wrapS = "repeat"
+            token inputs:wrapT = "repeat"
+            float outputs:b
+            float outputs:g
+        }
+
+        def Shader "Normal" (
+            apiSchemas = ["NodeDefAPI"]
+        )
+        {
+            token info:id = "UsdUVTexture"
+            float4 inputs:bias = (-1, -1, -1, -1)
+            asset inputs:file = @./textures/T_FlatBox_A01_Tile_Normal.png@
+            float4 inputs:scale = (2, 2, 2, 2)
+            token inputs:sourceColorSpace = "raw"
+            prepend float2 inputs:st.connect = </Materials/opaque__cardboard__brown_standard_a/Mapping.outputs:result>
+            token inputs:wrapS = "repeat"
+            token inputs:wrapT = "repeat"
+            float3 outputs:rgb
+        }
+
+        def Shader "OmniPBR_Shader" (
+            apiSchemas = ["NodeDefAPI"]
+        )
+        {
+            token info:id = "mdl:OmniPBR"
+            token info:implementationSource = "sourceAsset"
+            asset info:mdl:sourceAsset = @OmniPBR.mdl@
+            token info:mdl:sourceAsset:subIdentifier = "OmniPBR"
+            float inputs:bump_factor = 0.1
+            asset inputs:diffuse_texture = @./textures/T_FlatBox_A01_Tile_Albedo.png@ (
+                colorSpace = "sRGB"
+            )
+            color3f inputs:emissive_color = (1, 1, 1)
+            float inputs:emissive_intensity = 0
+            bool inputs:enable_ORM_texture = 1
+            float inputs:metallic_texture_influence = 1
+            asset inputs:normalmap_texture = @./textures/T_FlatBox_A01_Tile_Normal.png@ (
+                colorSpace = "raw"
+            )
+            float inputs:opacity_constant = 1
+            asset inputs:ORM_texture = @./textures/T_FlatBox_A01_Tile_ORM.png@
+            float inputs:reflection_roughness_texture_influence = 0
+            float inputs:specular_level = 0.5
+            token outputs:out
+        }
+    }
+
+    def Material "opaque__cardboard__unique_edges_a"
+    {
+        custom token[] omni:simready:nonvisual:attributes = ["none"]
+        custom token omni:simready:nonvisual:base = "cardboard"
+        custom token omni:simready:nonvisual:coating = "none"
+        token outputs:displacement (
+            displayGroup = "Outputs"
+        )
+        prepend token outputs:mdl:surface.connect = </Materials/opaque__cardboard__unique_edges_a/OmniPBR_Shader.outputs:out>
+        token outputs:surface (
+            displayGroup = "Outputs"
+        )
+        prepend token outputs:surface.connect = </Materials/opaque__cardboard__unique_edges_a/Principled_BSDF.outputs:surface>
+        token outputs:volume (
+            displayGroup = "Outputs"
+        )
+        custom int pxr:usd:physics_density = 689
+        custom double pxr:usd:physics_dynamicFriction = 0.7
+        custom double pxr:usd:physics_fillRatio = 0.25
+        custom double pxr:usd:physics_restitution = 0.4
+        custom double pxr:usd:physics_staticFriction = 0.7
+        custom double pxr:usd:physics_thickness = 0.003
+        custom string pxr:usd:physics_type = "cardboard"
+
+        def Shader "Principled_BSDF" (
+            apiSchemas = ["NodeDefAPI"]
+        )
+        {
+            token info:id = "UsdPreviewSurface"
+            float inputs:clearcoat = 0
+            float inputs:clearcoatRoughness = 0.03
+            prepend color3f inputs:diffuseColor.connect = </Materials/opaque__cardboard__unique_edges_a/Albedo.outputs:rgb>
+            float inputs:ior = 1.5
+            prepend float inputs:metallic.connect = </Materials/opaque__cardboard__unique_edges_a/ORM.outputs:b>
+            prepend normal3f inputs:normal.connect = </Materials/opaque__cardboard__unique_edges_a/Normal.outputs:rgb>
+            float inputs:opacity = 1
+            prepend float inputs:roughness.connect = </Materials/opaque__cardboard__unique_edges_a/ORM.outputs:g>
+            float inputs:specular = 0.5
+            token outputs:surface
+        }
+
+        def Shader "Albedo" (
+            apiSchemas = ["NodeDefAPI"]
+        )
+        {
+            token info:id = "UsdUVTexture"
+            asset inputs:file = @./textures/T_FlatBox_A01_Trim_Albedo.png@
+            token inputs:sourceColorSpace = "sRGB"
+            prepend float2 inputs:st.connect = </Materials/opaque__cardboard__unique_edges_a/Mapping.outputs:result>
+            token inputs:wrapS = "repeat"
+            token inputs:wrapT = "repeat"
+            float3 outputs:rgb
+        }
+
+        def Shader "Mapping" (
+            apiSchemas = ["NodeDefAPI"]
+        )
+        {
+            token info:id = "UsdTransform2d"
+            prepend float2 inputs:in.connect = </Materials/opaque__cardboard__unique_edges_a/uvmap.outputs:result>
+            float inputs:rotation = 0
+            float2 inputs:scale = (1, 1)
+            float2 inputs:translation = (0, 0)
+            float2 outputs:result
+        }
+
+        def Shader "uvmap" (
+            apiSchemas = ["NodeDefAPI"]
+        )
+        {
+            token info:id = "UsdPrimvarReader_float2"
+            string inputs:varname = "st"
+            float2 outputs:result
+        }
+
+        def Shader "ORM" (
+            apiSchemas = ["NodeDefAPI"]
+        )
+        {
+            token info:id = "UsdUVTexture"
+            asset inputs:file = @./textures/T_FlatBox_A01_Trim_ORM.png@
+            token inputs:sourceColorSpace = "raw"
+            prepend float2 inputs:st.connect = </Materials/opaque__cardboard__unique_edges_a/Mapping.outputs:result>
+            token inputs:wrapS = "repeat"
+            token inputs:wrapT = "repeat"
+            float outputs:b
+            float outputs:g
+        }
+
+        def Shader "Normal" (
+            apiSchemas = ["NodeDefAPI"]
+        )
+        {
+            token info:id = "UsdUVTexture"
+            float4 inputs:bias = (-1, -1, -1, -1)
+            asset inputs:file = @./textures/T_FlatBox_A01_Trim_Normal.png@
+            float4 inputs:scale = (2, 2, 2, 2)
+            token inputs:sourceColorSpace = "raw"
+            prepend float2 inputs:st.connect = </Materials/opaque__cardboard__unique_edges_a/Mapping.outputs:result>
+            token inputs:wrapS = "repeat"
+            token inputs:wrapT = "repeat"
+            float3 outputs:rgb
+        }
+
+        def Shader "OmniPBR_Shader" (
+            apiSchemas = ["NodeDefAPI"]
+        )
+        {
+            token info:id = "mdl:OmniPBR"
+            token info:implementationSource = "sourceAsset"
+            asset info:mdl:sourceAsset = @OmniPBR.mdl@
+            token info:mdl:sourceAsset:subIdentifier = "OmniPBR"
+            float inputs:bump_factor = 0.1
+            asset inputs:diffuse_texture = @./textures/T_FlatBox_A01_Trim_Albedo.png@ (
+                colorSpace = "sRGB"
+            )
+            color3f inputs:emissive_color = (1, 1, 1)
+            float inputs:emissive_intensity = 0
+            bool inputs:enable_ORM_texture = 1
+            float inputs:metallic_texture_influence = 1
+            asset inputs:normalmap_texture = @./textures/T_FlatBox_A01_Trim_Normal.png@ (
+                colorSpace = "raw"
+            )
+            float inputs:opacity_constant = 1
+            asset inputs:ORM_texture = @./textures/T_FlatBox_A01_Trim_ORM.png@
+            float inputs:reflection_roughness_texture_influence = 0
+            float inputs:specular_level = 0.5
+            token outputs:out
+        }
+    }
+
+    def Material "opaque__nylon__unique_tape_a"
+    {
+        custom token[] omni:simready:nonvisual:attributes = ["single_sided"]
+        custom token omni:simready:nonvisual:base = "nylon"
+        custom token omni:simready:nonvisual:coating = "none"
+        token outputs:displacement (
+            displayGroup = "Outputs"
+        )
+        prepend token outputs:mdl:surface.connect = </Materials/opaque__nylon__unique_tape_a/OmniPBR_Shader.outputs:out>
+        token outputs:surface (
+            displayGroup = "Outputs"
+        )
+        prepend token outputs:surface.connect = </Materials/opaque__nylon__unique_tape_a/Principled_BSDF.outputs:surface>
+        token outputs:volume (
+            displayGroup = "Outputs"
+        )
+        custom int pxr:usd:physics_density = 900
+        custom double pxr:usd:physics_dynamicFriction = 0.45
+        custom double pxr:usd:physics_fillRatio = 0.3
+        custom double pxr:usd:physics_restitution = 0.12
+        custom double pxr:usd:physics_staticFriction = 0.5
+        custom double pxr:usd:physics_thickness = 0.00125
+        custom string pxr:usd:physics_type = "paper"
+
+        def Shader "Principled_BSDF" (
+            apiSchemas = ["NodeDefAPI"]
+        )
+        {
+            token info:id = "UsdPreviewSurface"
+            float inputs:clearcoat = 0
+            float inputs:clearcoatRoughness = 0.03
+            prepend color3f inputs:diffuseColor.connect = </Materials/opaque__nylon__unique_tape_a/Albedo.outputs:rgb>
+            float inputs:ior = 1.5
+            prepend float inputs:metallic.connect = </Materials/opaque__nylon__unique_tape_a/ORM.outputs:b>
+            prepend normal3f inputs:normal.connect = </Materials/opaque__nylon__unique_tape_a/Normal.outputs:rgb>
+            float inputs:opacity = 1
+            prepend float inputs:roughness.connect = </Materials/opaque__nylon__unique_tape_a/ORM.outputs:g>
+            float inputs:specular = 0.5
+            token outputs:surface
+        }
+
+        def Shader "Albedo" (
+            apiSchemas = ["NodeDefAPI"]
+        )
+        {
+            token info:id = "UsdUVTexture"
+            asset inputs:file = @./textures/T_FlatBox_A01_Trim_Albedo.png@
+            token inputs:sourceColorSpace = "sRGB"
+            prepend float2 inputs:st.connect = </Materials/opaque__nylon__unique_tape_a/Mapping.outputs:result>
+            token inputs:wrapS = "repeat"
+            token inputs:wrapT = "repeat"
+            float3 outputs:rgb
+        }
+
+        def Shader "Mapping" (
+            apiSchemas = ["NodeDefAPI"]
+        )
+        {
+            token info:id = "UsdTransform2d"
+            prepend float2 inputs:in.connect = </Materials/opaque__nylon__unique_tape_a/uvmap.outputs:result>
+            float inputs:rotation = 0
+            float2 inputs:scale = (1, 1)
+            float2 inputs:translation = (0, 0)
+            float2 outputs:result
+        }
+
+        def Shader "uvmap" (
+            apiSchemas = ["NodeDefAPI"]
+        )
+        {
+            token info:id = "UsdPrimvarReader_float2"
+            string inputs:varname = "st"
+            float2 outputs:result
+        }
+
+        def Shader "ORM" (
+            apiSchemas = ["NodeDefAPI"]
+        )
+        {
+            token info:id = "UsdUVTexture"
+            asset inputs:file = @./textures/T_FlatBox_A01_Trim_ORM.png@
+            token inputs:sourceColorSpace = "raw"
+            prepend float2 inputs:st.connect = </Materials/opaque__nylon__unique_tape_a/Mapping.outputs:result>
+            token inputs:wrapS = "repeat"
+            token inputs:wrapT = "repeat"
+            float outputs:b
+            float outputs:g
+        }
+
+        def Shader "Normal" (
+            apiSchemas = ["NodeDefAPI"]
+        )
+        {
+            token info:id = "UsdUVTexture"
+            float4 inputs:bias = (-1, -1, -1, -1)
+            asset inputs:file = @./textures/T_FlatBox_A01_Trim_Normal.png@
+            float4 inputs:scale = (2, 2, 2, 2)
+            token inputs:sourceColorSpace = "raw"
+            prepend float2 inputs:st.connect = </Materials/opaque__nylon__unique_tape_a/Mapping.outputs:result>
+            token inputs:wrapS = "repeat"
+            token inputs:wrapT = "repeat"
+            float3 outputs:rgb
+        }
+
+        def Shader "OmniPBR_Shader" (
+            apiSchemas = ["NodeDefAPI"]
+        )
+        {
+            token info:id = "mdl:OmniPBR"
+            token info:implementationSource = "sourceAsset"
+            asset info:mdl:sourceAsset = @OmniPBR.mdl@
+            token info:mdl:sourceAsset:subIdentifier = "OmniPBR"
+            float inputs:bump_factor = 0.1
+            asset inputs:diffuse_texture = @./textures/T_FlatBox_A01_Trim_Albedo.png@ (
+                colorSpace = "sRGB"
+            )
+            color3f inputs:emissive_color = (1, 1, 1)
+            float inputs:emissive_intensity = 0
+            bool inputs:enable_ORM_texture = 1
+            float inputs:metallic_texture_influence = 1
+            asset inputs:normalmap_texture = @./textures/T_FlatBox_A01_Trim_Normal.png@ (
+                colorSpace = "raw"
+            )
+            float inputs:opacity_constant = 1
+            asset inputs:ORM_texture = @./textures/T_FlatBox_A01_Trim_ORM.png@
+            float inputs:reflection_roughness_texture_influence = 0
+            float inputs:specular_level = 0.5
+            token outputs:out
+        }
+    }
+}

@@ -1,86 +1,111 @@
-# ovfmi — sample showcasing declarative FMI/SSP embedded in OpenUSD for physics simulation in digital twins
+<!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
 
-> **`bash apps/ov-fmi/setup.sh` → `python apps/ov-fmi/main.py <stage>.usda`** · Load FMI behavior models straight from a USD stage, step them with FMPy, render with RTX, and close the loop with rigid-body physics — all from a standalone Python app. Built on the disaggregated ov libraries (**ovrtx** rendering + **ovphysx** physics) plus the open **FMI**, **SSP**, and **OpenUSD** standards.
+# ovfmi — FMI/SSP co-simulation for OpenUSD digital twins
+
+> Load FMI behavior models from an OpenUSD stage, step them with FMPy, and
+> synchronize simulation data through a reusable Python API. The included
+> standalone demo application renders with ovrtx and can close the loop with
+> ovphysx rigid-body simulation. The project builds on the disaggregated
+> Omniverse libraries and the open FMI, SSP, and OpenUSD standards.
 >
-> *Pre-release Omniverse Labs project (ov-fmi v0.1.0; ovrtx 0.3, ovphysx 0.4.9, fmpy 0.3.25). APIs and the USD-FMI schema may change.*
+> *Pre-release ovfmi 0.2.0 project. APIs and the USD-FMI schema may change.*
+
+## What is ovfmi?
+
+`ovfmi` is a reusable, USD-native library that adds behavior to industrial
+digital twins by binding FMI co-simulation models to OpenUSD scenes through a
+custom schema. USD describes world state; FMI and SSP supply simulation
+behavior. ovfmi joins them so a USD layer can describe both the scene and its
+simulation model in a form that remains readable and composable by USD tools.
+
+Applications use the ovfmi Python API to discover `FmuInstance` and
+`SspInstance` prims, instantiate their referenced models through FMPy, route
+values between model variables and USD attributes, and advance the models.
+The `demoapp/` directory is separate sample code that shows how to combine the
+library with ovstage, ovrtx rendering, and optional ovphysx simulation without
+requiring a full Omniverse Kit installation.
+
+## What functionalities are available, and who are the target users?
+
+Available functionality includes:
+
+- Declaratively embedding individual FMUs and packaged SSP systems in USD.
+- Running FMI 2.0 and FMI 3.0 co-simulation models through the FMPy backend,
+  plus SSP 1.0 archives whose internal FMUs meet FMPy's version constraints.
+- Mapping FMI variables to USD attributes, including selected vector
+  components and ranges.
+- Deterministic, synchronous simulation stepping and explicit data routing
+  through a documented Python API.
+- Integrating FMU control logic with ovphysx rigid bodies in the sample
+  application, using shared ovstage data rather than per-attribute USD I/O.
+- Running the supplied examples with live ovrtx rendering or in headless mode.
+
+ovfmi is intended for:
+
+- Industrial digital-twin engineers adding controllers, sensors, and actuator
+  behavior to OpenUSD scenes.
+- Controls and simulation engineers bringing vendor-neutral FMUs and SSPs into
+  USD-based workflows.
+- Robotics and physics developers coupling model-based control logic to
+  rigid-body simulations.
+- ISVs and integrators assembling standards-based simulation applications.
+
+## Documentation and reference links
+
+- [USD-FMI Schema Reference](docs/USD-FMI-SCHEMA.md)
+- [Architecture and API design](docs/architecture.md)
+- [FMI standard](https://fmi-standard.org/)
+- [SSP standard](https://ssp-standard.org/)
+- [OpenUSD](https://openusd.org/)
+- [FMPy FMI runtime](https://github.com/CATIA-Systems/FMPy)
+- GTC 2025 session S71963, "Build Physics-Based Digital Twins for
+  Co-Simulation" (with SoftServe), which presents the original project.
+
+Install the library from the repository root with:
 
 ```bash
-# Conveyor-belt digital twin: ovphysx rollers + package sensor + SSP controller
-python apps/ov-fmi/main.py usd/conveyor/ConveyorFMI.usda --up-axis Z
-# Minimal example: one FMU drives a sphere's height
-python apps/ov-fmi/main.py usd/ov-fmi/fmi_parser_test.usda
+python -m pip install .
 ```
 
----
+## Fast Start
 
-## 1. What is ovfmi?
+The commands below are the normal path from a fresh machine to running the
+demos. Use the Windows block on Windows and the Linux block on Linux.
+Run commands from the repository root unless a step says otherwise.
 
-**ovfmi** is a USD-native integration that adds *behavior* to industrial digital twins by binding **FMI** co-simulation models to OpenUSD scenes through a custom schema. USD is declarative: it describes world state (*the what*), not behavior. FMI + SSP supply the imperative simulation behavior (*the how*). ovfmi joins the two so a single USD layer captures both the 3D scene and its simulation model, readable and composable by any USD tool.
+### 1. Install Prerequisites
 
-ovfmi exposes a Python runtime (the `ov-fmi` app) plus a USD-FMI schema: you author `FmuInstance` / `SspInstance` prims that reference `.fmu` or `.ssp` archives, declaratively map model variables to USD attributes, and the runtime traverses the stage, instantiates the models via FMPy, and synchronizes data every simulation step. It runs standalone — no full Omniverse Kit install — on the disaggregated ov libraries. Behind the scenes **ovrtx** (NVIDIA RTX renderer and USD stage host) is paired with **ovphysx** (PhysX-based rigid-body simulation), exchanging state through ovphysx's in-memory tensor API rather than slow per-attribute USD I/O — fast enough for real-time.
+#### Library requirements
 
----
+The ovfmi library requires:
 
-## 2. What functionalities are available, and who are the target users?
+- Python 3.10 through 3.13.
+- Windows or Linux on x86_64.
+- A compatible ovstage package when attaching ovfmi to a USD stage.
 
-**What you can do with it:**
+An NVIDIA GPU, graphics driver, display server, OpenGL, Git LFS, and a C++
+compiler are not requirements of the ovfmi library itself.
 
-- **Embed FMUs and SSPs in USD declaratively** — `FmuInstance` (single `.fmu`) and `SspInstance` (multi-FMU `.ssp` black box), each with `FmuConnection` → `FmuMapping` children that bind FMI variables to prim attributes.
-- **Run FMI 2.0 and FMI 3.0 co-simulation** via the FMPy master, plus **SSP 1.0** archives that package networks of wired FMUs into one file (internal FMUs must be FMI 1.0/2.0 — an FMPy constraint).
-- **Close the physics loop** — `physx:position` / `physx:velocity` inputs and `physx:force` (and articulation drive-velocity) outputs route directly to ovphysx tensors; physics auto-enables for prims carrying `PhysicsRigidBodyAPI`.
-- **Map to any USD attribute with component selection** — `fmi:usdMapping = (offset, count)` picks scalar, single-component, or ranges of `xformOp:translate`, `omni:xform`, light intensity, or custom attributes.
-- **Render and inspect live** — real-time RTX viewer (WASD/mouse navigation), plus `--headless` and `--png` modes for smoke tests and batch capture.
-- **Deterministic stepping** — FmuInstances step in USD depth-first traversal order (authoring order sets causality between coupled FMUs); each SSP steps atomically.
-- **Ready-made demo scenes** — bouncing ball, PD controller, two-FMU orbit, SSP orbit, and a full conveyor-belt digital twin.
+#### Demo application requirements
 
-**Who benefits:**
+Building and running the included demo application additionally requires:
 
-- **Industrial digital-twin engineers** — add controllers, sensors, and actuator behavior to factory scenes built on open standards.
-- **Controls & simulation engineers from the FMI/Modelica ecosystem** — drop vendor-neutral FMUs/SSPs exported by 250+ compliant tools (Siemens, Dassault, dSPACE, Bosch, …) into a USD twin for simulations without rewriting them.
-- **Robotics & physics developers (ovphysx / Isaac users)** — drive PhysX rigid bodies from FMU control logic through the tensor API for closed-loop simulation.
-- **ISVs & integrators** — protect IP by shipping pre-packaged SSP black boxes whose internal wiring stays hidden from USD.
+- Git with Git LFS.
+- A C++17 compiler for building the supplied demo FMUs.
+- Compatible ovrtx and ovstage packages.
+- ovphysx for the physics-enabled examples.
+- An NVIDIA RTX GPU and recent NVIDIA driver for ovrtx rendering.
+- Display/OpenGL support only for the live viewer.
 
----
+The `--headless` option removes the display-window and OpenGL requirement, but
+the current demo still initializes ovrtx and therefore still requires an RTX
+GPU. This distinction does not apply to applications that use ovfmi without
+the ovrtx renderer.
 
-## 3. Documentation and reference links
-
-- **USD-FMI Schema Reference:** [docs/USD-FMI-SCHEMA.md](docs/USD-FMI-SCHEMA.md)
-- **FMI standard:** <https://fmi-standard.org/> · **SSP standard:** <https://ssp-standard.org/> · **OpenUSD:** <https://openusd.org/>
-- **FMPy (FMI runtime):** <https://github.com/CATIA-Systems/FMPy>
-- **Background talk:** GTC 2025 — "Build Physics-Based Digital Twins for Co-Simulation" (S71963, with SoftServe), since extended with SSP support.
-
----
-
-## 4. System requirements
-
-- Python 3.10 through 3.13 (`requires-python >=3.10,<3.14`).
-- Linux (Ubuntu/Debian and equivalents) and Windows (x86_64).
-- NVIDIA RTX GPU + recent driver; display/OpenGL for the live viewer. CUDA Toolkit optional (only for CUDA/OpenGL zero-copy display).
-- Git with Git LFS, and a C++17 compiler to build the demo FMUs (Windows: Visual Studio 2022 Build Tools, MSVC v143 x64; Linux: build-essential).
-- Key dependencies installed by the setup scripts: `ovrtx==0.3.0.312915`, `ovphysx==0.4.9`, `fmpy==0.3.25`, NumPy ≥2.2, GLFW, PyOpenGL. `usd-core` lives in an isolated venv (ovrtx will not load alongside it); ovphysx must be installed **after** ovrtx to avoid Carbonite plugin conflicts.
-
----
-
-## 5. Licensing
-
-- **Source code:** Apache License 2.0 — permissive, free for commercial and non-commercial use, with an express patent grant (per project materials).
-- **Pre-built binaries** of the underlying ov libraries (ovrtx, ovphysx wheels): distributed under the **NVIDIA Omniverse License**; installs additional third-party open-source components (FMPy, OpenUSD, etc.) — review their terms.
-- **Third-party notices:** See [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md) for the project-specific notices and license references.
-
-> **Known constraints:** co-simulation only (no Model Exchange); SSP internal FMUs limited to FMI 1.0/2.0; single shared time step (no multi-rate); no algebraic-loop detection; declarative scene-query sensors (overlap/raycast) still need an app-level workaround.
-
----
-
-## 6. Detailed setup and usage
-
-The sections below expand the overview into a complete setup, operation, and
-authoring guide. Run commands from the repository root unless a step says
-otherwise.
-
-### 6.1 Install platform prerequisites
-
-Install the platform-specific packages that satisfy the system requirements
-above.
+The CUDA Toolkit is optional. The app can display frames through a CPU upload
+path without CUDA. Install CUDA only if you want CUDA/OpenGL zero-copy display
+or other CUDA developer tools.
 
 #### Windows
 
@@ -116,7 +141,7 @@ git lfs install
 The setup script will locate the Visual Studio compiler environment for the FMU
 build.
 
-#### Linux (Ubuntu/Debian)
+#### Linux Ubuntu/Debian
 
 ```bash
 sudo apt update
@@ -137,45 +162,62 @@ For other Linux distributions, install the equivalent packages: Git, Git LFS,
 Python 3 with `venv` and `pip`, a C++17 compiler, and OpenGL/X11 runtime
 libraries.
 
-### 6.2 Clone the repository
+### 2. Clone the Repository
 
-Clone the public repository and change to the ovfmi project directory:
+If you already cloned the repo, skip to step 3.
 
 ```bash
-git clone https://github.com/NVIDIA-Omniverse/omniverse-labs.git
-cd omniverse-labs/projects/ovfmi
+git clone https://github.com/NVIDIA-dev/ovfmi.git
+cd ovfmi
 ```
 
-### 6.3 Set up Python dependencies
+### 3. Set Up Python Dependencies
 
-The setup scripts install the normal Python runtime for the app. They install:
+First install the three NVIDIA runtime packages into the Python environment
+that will launch setup. The packages may come from a local wheel, an internal
+index, or a public package index once published:
 
-- the pinned `ovrtx` wheel from NVIDIA's Python package index
-- this app as an editable Python package
-- app dependencies such as FMPy, NumPy, GLFW, and PyOpenGL
-- `ovphysx` for the physics demos
+Windows:
+
+```powershell
+py -m pip install ovrtx ovstage ovphysx
+```
+
+Linux:
+
+```bash
+python3 -m pip install ovrtx ovstage ovphysx
+```
+
+The setup scripts do not install or pin these packages. They create the demo
+virtual environment with access to the base environment, validate that all
+three packages are visible, and then install:
+
+- the root `ovfmi` product and `demoapp` as editable Python packages
+- ovfmi's FMPy backend dependency and demo dependencies such as GLFW, PyOpenGL,
+  and pytest
 - an isolated `usd-core` environment used for USD parsing
-- `apps/ov-fmi/.env`, which records paths the app needs at runtime
-- generated demo `.fmu`, `.fmu3`, and `.ssp` archives in `usd/ov-fmi/`
+- `demoapp/.env`, which records paths the app needs at runtime
+- generated demo `.fmu`, `.fmu3`, and `.ssp` archives in `demoapp/usd/`
 
-They do not install optional `cuda-python` or test-only tools such as `pytest`.
+They do not install optional `cuda-python` unless requested.
 
-If the setup output shows large `ovrtx` or `ovphysx` wheel downloads, that is
-expected. Do not install them again manually.
+If `demoapp/.venv` was created by an older checkout, delete it before running
+the new setup so it can inherit the packages installed in the base environment.
 
 #### Windows
 
 From a normal PowerShell:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File apps\ov-fmi\setup.ps1
+powershell -ExecutionPolicy Bypass -File demoapp\setup.ps1
 ```
 
 This creates and populates:
 
-- `apps/ov-fmi/.venv` for the app
-- `apps/ov-fmi/.usd_venv` for USD parsing
-- `apps/ov-fmi/.env` with paths used by the app
+- `demoapp/.venv` for the app
+- `demoapp/.usd_venv` for USD parsing
+- `demoapp/.env` with paths used by the app
 
 The script also builds the demo FMUs and SSPs. It can run from a normal
 PowerShell as long as Visual Studio Build Tools are installed; it will locate
@@ -184,13 +226,13 @@ the `vcvars64.bat` compiler environment automatically.
 Optional CUDA/OpenGL zero-copy display support:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File apps\ov-fmi\setup.ps1 -InstallCudaPython
+powershell -ExecutionPolicy Bypass -File demoapp\setup.ps1 -InstallCudaPython
 ```
 
 If you only want to install Python packages and skip FMU compilation:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File apps\ov-fmi\setup.ps1 -SkipFmuBuild
+powershell -ExecutionPolicy Bypass -File demoapp\setup.ps1 -SkipFmuBuild
 ```
 
 #### Linux
@@ -198,32 +240,29 @@ powershell -ExecutionPolicy Bypass -File apps\ov-fmi\setup.ps1 -SkipFmuBuild
 Run:
 
 ```bash
-bash apps/ov-fmi/setup.sh
+bash demoapp/setup.sh
 ```
 
-This creates and populates `apps/ov-fmi/.venv`, creates
-`apps/ov-fmi/.usd_venv` for USD parsing, and builds the demo FMUs and SSPs.
+This creates and populates `demoapp/.venv`, creates
+`demoapp/.usd_venv` for USD parsing, and builds the demo FMUs and SSPs.
 
 Optional CUDA/OpenGL zero-copy display support:
 
 ```bash
-INSTALL_CUDA_PYTHON=1 bash apps/ov-fmi/setup.sh
+INSTALL_CUDA_PYTHON=1 bash demoapp/setup.sh
 ```
 
 If you only want to install Python packages and skip FMU compilation:
 
 ```bash
-SKIP_FMU_BUILD=1 bash apps/ov-fmi/setup.sh
+SKIP_FMU_BUILD=1 bash demoapp/setup.sh
 ```
 
-### 6.4 Run the demos
-
-The first launch can take several minutes while ovrtx compiles and caches RTX
-shaders. Little or no terminal output may appear during this one-time step; leave
-the process running. Subsequent launches are normally much faster.
+### 4. Run the Demos
 
 The app opens a live window by default. Close the window or press `Ctrl+C` to
-stop. In the live viewer:
+stop. The first ovrtx run can take several minutes while shaders compile;
+subsequent runs reuse the shader cache. In the live viewer:
 
 - `W/A/S/D`: move
 - `Q/E`: down/up
@@ -235,70 +274,88 @@ stop. In the live viewer:
 
 ```powershell
 # Basic FMI rendering demo
-.\apps\ov-fmi\.venv\Scripts\python.exe apps\ov-fmi\main.py usd\ov-fmi\fmi_parser_test.usda
+.\demoapp\.venv\Scripts\python.exe demoapp\main.py demoapp\usd\fmi_parser_test.usda
 
 # Physics PD controller demo
-.\apps\ov-fmi\.venv\Scripts\python.exe apps\ov-fmi\main.py usd\ov-fmi\pd_controller_test.usda
+.\demoapp\.venv\Scripts\python.exe demoapp\main.py demoapp\usd\pd_controller_test.usda
 
 # SSP orbit demo
-.\apps\ov-fmi\.venv\Scripts\python.exe apps\ov-fmi\main.py usd\ov-fmi\ssp_orbit.usda
+.\demoapp\.venv\Scripts\python.exe demoapp\main.py demoapp\usd\ssp_orbit.usda
 
 # Conveyor FMI/SSP + ovphysx demo
-.\apps\ov-fmi\.venv\Scripts\python.exe apps\ov-fmi\main.py usd\conveyor\ConveyorFMI.usda --up-axis Z
+.\demoapp\.venv\Scripts\python.exe demoapp\main.py demoapp\usd\conveyor\ConveyorFMI.usda --up-axis Z
 ```
 
 #### Linux
 
 ```bash
 # Basic FMI rendering demo
-apps/ov-fmi/.venv/bin/python apps/ov-fmi/main.py usd/ov-fmi/fmi_parser_test.usda
+demoapp/.venv/bin/python demoapp/main.py demoapp/usd/fmi_parser_test.usda
 
 # Physics PD controller demo
-apps/ov-fmi/.venv/bin/python apps/ov-fmi/main.py usd/ov-fmi/pd_controller_test.usda
+demoapp/.venv/bin/python demoapp/main.py demoapp/usd/pd_controller_test.usda
 
 # SSP orbit demo
-apps/ov-fmi/.venv/bin/python apps/ov-fmi/main.py usd/ov-fmi/ssp_orbit.usda
+demoapp/.venv/bin/python demoapp/main.py demoapp/usd/ssp_orbit.usda
 
 # Conveyor FMI/SSP + ovphysx demo
-apps/ov-fmi/.venv/bin/python apps/ov-fmi/main.py usd/conveyor/ConveyorFMI.usda --up-axis Z
+demoapp/.venv/bin/python demoapp/main.py demoapp/usd/conveyor/ConveyorFMI.usda --up-axis Z
 ```
 
-#### Headless smoke test
+#### Headless Smoke Test
 
 Use this to verify a setup without opening a live display window.
 
 Windows:
 
 ```powershell
-.\apps\ov-fmi\.venv\Scripts\python.exe apps\ov-fmi\main.py usd\conveyor\ConveyorFMI.usda --up-axis Z --duration 0.05 --headless
+.\demoapp\.venv\Scripts\python.exe demoapp\main.py demoapp\usd\conveyor\ConveyorFMI.usda --up-axis Z --duration 0.05 --headless
 ```
 
 Linux:
 
 ```bash
-apps/ov-fmi/.venv/bin/python apps/ov-fmi/main.py usd/conveyor/ConveyorFMI.usda --up-axis Z --duration 0.05 --headless
+demoapp/.venv/bin/python demoapp/main.py demoapp/usd/conveyor/ConveyorFMI.usda --up-axis Z --duration 0.05 --headless
 ```
 
 Expected output includes:
 
 ```text
 SSP loaded: 7 components, 5 inputs, 12 outputs
-Articulation drive target routing enabled
+FMI physics controls: shared ovstage control ordinals
 Done: ...
 ```
 
-## 7. Demo guide
+## What Each Demo Shows
 
 | Stage | Purpose |
 |---|---|
-| `usd/ov-fmi/fmi_parser_test.usda` | Minimal FMI demo; one FMU drives a sphere height attribute. |
-| `usd/ov-fmi/pd_controller_test.usda` | FMU reads rigid-body pose/velocity and writes a force through ovphysx tensors. |
-| `usd/ov-fmi/two_fmu_orbit.usda` | Two FMU instances communicate through authored USD attributes. |
-| `usd/ov-fmi/ssp_orbit.usda` | One SSP instance hides internal FMU wiring behind system-level connectors. |
-| `usd/conveyor/ConveyorFMI.usda` | Conveyor demo with ovphysx rollers, package sensor, SSP controller, and five driven roller zones. |
-| `usd/conveyor/Conveyor.usda` | Base conveyor USD asset without FMI overlay; useful for preview/debug. |
+| `demoapp/usd/fmi_parser_test.usda` | Minimal FMI demo; one FMU drives a sphere height attribute. |
+| `demoapp/usd/pd_controller_test.usda` | FMU reads rigid-body pose/velocity and writes a force through ovphysx tensors. |
+| `demoapp/usd/two_fmu_orbit.usda` | Two FMU instances communicate through authored USD attributes. |
+| `demoapp/usd/ssp_orbit.usda` | One SSP instance hides internal FMU wiring behind system-level connectors. |
+| `demoapp/usd/conveyor/ConveyorFMI.usda` | Conveyor demo with ovphysx rollers, package sensor, SSP controller, and five driven roller zones. |
+| `demoapp/usd/conveyor/Conveyor.usda` | Base conveyor USD asset without FMI overlay; useful for preview/debug. |
 
-## 8. Troubleshooting
+## Known Issues
+
+### Custom USD-FMI schema discovery requires source parsing
+
+The currently supported ovstage release does not expose data authored with
+unregistered custom schemas, including the USD-FMI `FmuInstance`,
+`SspInstance`, `FmuConnection`, and `FmuMapping` prims used by ovfmi.
+Consequently, ovfmi cannot yet discover FMI/SSP instances and mappings from
+the populated ovstage alone.
+
+As a compatibility measure, `FmiHost.attach_ovstage()` accepts the original
+USD file through its `source_asset` argument. ovfmi pre-parses that source with
+OpenUSD in an isolated helper process and uses the resulting schema description
+to populate its FMI/SSP runtime directly. Simulation values continue to flow
+through the caller-owned ovstage; the auxiliary parse is used only for schema
+discovery and initial authored values. The demo setup configures the isolated
+OpenUSD environment automatically.
+
+## Common Problems
 
 ### `cl.exe` is not found on Windows
 
@@ -309,20 +366,24 @@ with `-SkipFmuBuild`.
 
 ### The conveyor stage loads but physics is disabled
 
-Rerun setup. It installs ovphysx after ovrtx, which is the supported order for
-these packages.
+Confirm that all three NVIDIA runtime packages are installed in the base Python
+environment:
 
 Windows:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File apps\ov-fmi\setup.ps1
+py -m pip show ovrtx ovstage ovphysx
 ```
 
 Linux:
 
 ```bash
-bash apps/ov-fmi/setup.sh
+python3 -m pip show ovrtx ovstage ovphysx
 ```
+
+If a package is missing or outdated, install the required wheels in that base
+environment, delete `demoapp/.venv`, and rerun setup. The application imports
+ovrtx before ovphysx at runtime, as required for shared plugin initialization.
 
 ### The app says generated FMU archives are missing
 
@@ -331,13 +392,13 @@ Rerun setup, or rebuild the generated archives directly.
 Windows:
 
 ```powershell
-.\apps\ov-fmi\.venv\Scripts\python.exe apps\ov-fmi\build_fmu.py
+.\demoapp\.venv\Scripts\python.exe demoapp\build_fmu.py
 ```
 
 Linux:
 
 ```bash
-apps/ov-fmi/.venv/bin/python apps/ov-fmi/build_fmu.py
+demoapp/.venv/bin/python demoapp/build_fmu.py
 ```
 
 ### FMPy reports `WinError 193` while loading an FMU DLL
@@ -347,7 +408,7 @@ for example by an x86 Visual Studio compiler environment while running 64-bit
 Python. Rerun setup from a normal PowerShell:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File apps\ov-fmi\setup.ps1
+powershell -ExecutionPolicy Bypass -File demoapp\setup.ps1
 ```
 
 Rerunning setup should print a line like:
@@ -373,7 +434,7 @@ Warnings can appear when ovrtx and ovphysx are loaded in the same Python
 process. They are expected with the currently tested package combination as
 long as physics initializes and the simulation runs.
 
-## 9. Command reference
+## Command Reference
 
 Useful app flags:
 
@@ -389,37 +450,103 @@ Useful app flags:
 | `--render-product PATH` | Render product prim path. Default: `/Render/Camera`. |
 | `--camera-prim PATH` | Camera prim controlled by live navigation. |
 
-## 10. Testing
+## Testing
 
-After setup, install `pytest` into the app venv if you want to run the test
-suite.
+The regular setup installs pytest into the demo environment.
 
 Windows:
 
 ```powershell
-.\apps\ov-fmi\.venv\Scripts\python.exe -m pip install pytest
-.\apps\ov-fmi\.venv\Scripts\python.exe -m pytest apps\ov-fmi\tests
+.\demoapp\.venv\Scripts\python.exe -m pytest tests
+.\demoapp\.venv\Scripts\python.exe -m pytest demoapp\tests
 ```
 
 Linux:
 
 ```bash
-apps/ov-fmi/.venv/bin/python -m pip install pytest
-apps/ov-fmi/.venv/bin/python -m pytest apps/ov-fmi/tests
+demoapp/.venv/bin/python -m pytest tests
+demoapp/.venv/bin/python -m pytest demoapp/tests
 ```
 
-## 11. Notes on ovrtx and ovphysx
+## Public Python API
 
-- `ovrtx==0.3.0.312915` is installed by the setup scripts from NVIDIA's Python
-  package index.
-- `ovphysx==0.4.9` is installed by the setup scripts after ovrtx because it is
-  needed for the physics demos.
-- Import order matters: the app imports and initializes ovrtx before ovphysx.
-  Loading ovphysx first can fail because both packages use Carbonite plugins.
+Applications should import supported symbols directly from `ovfmi`. The
+package's `__all__` is the compatibility boundary; submodules and names that
+begin with an underscore are implementation details.
+
+```python
+from ovfmi import AttributeWrite, FmiHost
+
+with FmiHost() as fmi:
+    report = fmi.attach_ovstage(stage, source_asset=usd_path)
+    fmi.update_from_ovstage(input_ordinal, input_ordinal)
+    fmi.write(
+        [
+            AttributeWrite(
+                prim_paths=("/World/Body",),
+                attribute_name="sim:input",
+                values=[[1.0]],
+            )
+        ]
+    )
+    fmi.step_sync(1.0 / 60.0)
+
+    with fmi.read() as result:
+        consume_outputs(result.groups)
+```
+
+The public symbols are:
+
+| Symbol | Purpose |
+|---|---|
+| `FmiHost` | Owns FMI/SSP instances, routing state, and simulation lifecycle for one caller-owned ovstage. |
+| `FmiHostConfig` | Configures discovery, schema validation, SSP support, and missing-input behavior. |
+| `MissingInputPolicy` | Selects how unavailable mapped inputs are initialized. |
+| `PopulationReport`, `InstanceInfo` | Describe instances created during attachment. |
+| `AttributeWrite` | Supplies input values identified by USD prim path and attribute name. |
+| `ReadResult`, `ReadGroup` | Provide an owned snapshot of output values in USD space. |
+
+All public classes and methods carry detailed Python docstrings, including
+ownership, filtering, operation-token, ordinal, and current backend semantics.
+The present FMPy backend is synchronous; `step()` and `write()` nevertheless
+use the backend-neutral API's completion-token lifecycle.
+
+## Versioning and Releases
+
+The library distribution version is recorded in `VERSION.md` and in
+`[project].version` in the root `pyproject.toml`; a unit test requires them to
+match. Versions follow Python's PEP 440 format, and a public release is tagged
+`v<version>` from the commit used to build its wheel and source distribution.
+For example, version `0.2.0` uses tag `v0.2.0`.
+
+The demo application has separate package metadata but tracks the library's
+minor release. Its ovfmi dependency accepts compatible patch releases within
+that minor series.
+
+## Notes on ovstage, ovrtx, and ovphysx
+
+- The project deliberately does not pin or install ovrtx, ovstage, or ovphysx.
+  Install compatible wheels in the base Python environment before running
+  setup. Pip can resolve them from a configured package index or local wheel
+  paths.
+- Setup creates `demoapp/.venv` with access to base-environment packages and
+  validates that all three distributions are visible. It does not copy,
+  upgrade, downgrade, or otherwise manage them.
+- Stage population now goes through ovstage, which ovrtx renders directly in
+  zero-copy BORROW mode. There is no private replicated rendering stage or
+  legacy compatibility population pass.
+- ovphysx attaches to the same caller-owned ovstage as ovrtx. Physics
+  outputs are read with `PhysX.read()` and published to output-only ovstage
+  ordinals that are never drained back into physics. Renderer-consumed local
+  transforms are authored to the same ordinal before it is sealed and rendered
+  directly from the shared Fabric.
+- Initialization order matters: the app initializes ovrtx, then populates
+  ovstage, and only then imports ovphysx. Loading ovphysx first can fail because
+  the packages use shared Carbonite plugins.
 - On Windows, the app exits directly after a physics run to avoid native DLL
   unload crashes during process shutdown. The simulation has already completed
   at that point.
-## 12. USD-FMI schema used by the demos
+## USD FMI Schema Used by the Demos
 
 The app looks for `FmuInstance` and `SspInstance` prims in a USD stage.
 
@@ -479,22 +606,35 @@ Mapping rules:
 - Transform writes should use `omni:xform` or `xformOp:translate` through the
   app's transform binding path.
 
-Physics routing names:
+Legacy tensor-routing names:
 
 | Attribute | Direction | Meaning |
 |---|---|---|
 | `physx:position` | input | Rigid-body position from ovphysx pose tensor. |
 | `physx:velocity` | input | Rigid-body linear velocity from ovphysx velocity tensor. |
 | `physx:force` | output | Force written to the ovphysx force tensor. |
-| `physx:overlap` | input | Sphere overlap presence signal for sensor prims. |
-| `drive:angular:physics:targetVelocity` | output | Articulation drive velocity target written through ovphysx tensors. |
 
 These are routing directives, not real authored USD attributes.
 
-For overlap sensors, a prim whose name starts with `Sensor` supplies the query
-center from its world transform. A child `Sphere` can supply the query radius.
+Stage-routed physics values:
 
-## 13. Optional developer workflows
+| Attribute | Direction | Meaning |
+|---|---|---|
+| `sensor:presence` | input | Real runtime USD attribute populated from an ovphysx overlap query and read by FMI on the next frame. |
+| `drive:angular:physics:targetVelocity` | output | Real USD drive attribute written to an ovstage control ordinal and consumed through `PhysX.update_from_ovstage()`. |
+
+The conveyor FMUs retain the deprecated articulation tensor convention of
+radians per second. At the ovstage boundary, the app converts those drive
+outputs to the USD angular-drive unit of degrees per second.
+
+For overlap sensors, a prim whose name starts with `Sensor` identifies the
+sensor and a child `UsdGeomSphere` supplies the preferred shape query. The app
+runs an ovphysx `SHAPE`/`ANY` overlap after each physics step, publishes the
+boolean result as `sensor:presence` on the sensor prim, and consumes that stage
+attribute during the next FMI step. If no child shape is available, its world
+position and radius are used for a sphere query.
+
+## Optional Developer Workflows
 
 ### Optional `fmi_usd_helper`
 
@@ -504,17 +644,22 @@ Do not build this for normal demo use. The default USD parser path is enough.
 `usd-core` Python fallback is not desired. It links against USD libraries from
 an ovphysx SDK and OpenUSD headers, so it is version-sensitive.
 
-## 14. Project layout
+## Project Layout
 
 ```text
 ovfmi/
-  apps/ov-fmi/                  Python app, setup scripts, tests
-  fmu/                          C++ FMU source folders
-  ssp/                          SSP source folders
-  usd/ov-fmi/                   Small demo stages and generated FMU/SSP outputs
-  usd/conveyor/                 Conveyor USD asset and FMI overlay stage
+  python/                       Shipping ovfmi Python package
+  tests/                        Library unit and integration tests
+  demoapp/                      Rendering/physics sample application
+    fmu/                        Demo FMU source folders
+    ssp/                        Demo SSP source folders
+    usd/                        Demo stages and generated model archives
+  docs/                         Architecture, schema, and API design documents
 ```
 
----
+## License
 
-*ovfmi · OpenUSD + FMI/SSP · ovrtx · ovphysx · FMPy · Copyright (c) 2026 NVIDIA Corporation.*
+The ovfmi source code is licensed under the
+[Apache License 2.0](LICENSE.md). Bundled demo assets and third-party
+dependencies may have separate terms; see
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
