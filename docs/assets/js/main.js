@@ -21,11 +21,6 @@
     return BASE + path.replace(/^\//, "");
   }
 
-  function statusClass(status) {
-    const key = (status || "concept").toLowerCase();
-    return "badge--status-" + key;
-  }
-
   function renderCard(project, featured) {
     const pageUrl = resolveUrl(project.links?.page);
     const imageUrl = resolveUrl(project.image);
@@ -51,13 +46,6 @@
       '<span class="badge badge--type">' +
       escapeHtml(typeLabel) +
       "</span>" +
-      (project.status
-        ? '<span class="badge ' +
-          statusClass(project.status) +
-          '">' +
-          escapeHtml(project.status) +
-          "</span>"
-        : "") +
       "</div>" +
       '<h2 class="project-card__title">' +
       escapeHtml(project.title) +

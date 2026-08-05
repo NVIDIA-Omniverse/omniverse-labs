@@ -3,7 +3,7 @@
     "title": "Omniverse Labs",
     "tagline": "Early Omniverse experiments you can run, fork, and learn from.",
     "description": "A Sketchpad built by NVIDIA Omniverse Teams \u2014 early samples, prototypes, and write-ups for developers exploring Omniverse.",
-    "dataVersion": "20260717"
+    "dataVersion": "20260804b"
   },
   "projects": [
     {
@@ -78,6 +78,25 @@
       "links": {
         "page": "projects/ov-blender-example/",
         "repo": "https://github.com/nvidia-omniverse/omniverse-labs/tree/main/projects/ov-blender-example"
+      }
+    },
+    {
+      "slug": "ovfmi",
+      "title": "ovfmi",
+      "subtitle": "FMI/SSP co-simulation for OpenUSD digital twins — FMPy, ovrtx rendering, optional ovphysx.",
+      "type": "project",
+      "status": "partial",
+      "date": "2026-08-04",
+      "image": "assets/images/card-ovfmi-conveyor.png",
+      "accent": [
+        "#1a1f3d",
+        "#76b900"
+      ],
+      "featured": false,
+      "source": "projects/ovfmi",
+      "links": {
+        "page": "projects/ovfmi/",
+        "repo": "https://github.com/nvidia-omniverse/omniverse-labs/tree/main/projects/ovfmi"
       }
     },
     {
