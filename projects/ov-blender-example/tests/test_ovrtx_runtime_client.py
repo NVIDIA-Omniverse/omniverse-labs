@@ -116,14 +116,14 @@ def isolated_gpu_lease(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
 def fake_control_plane(monkeypatch) -> _FakeControlPlane:
     control = _FakeControlPlane()
 
-    def _bind(start_result: Mapping[str, object], worker_command: str):
-        control.endpoints.append(
-            ovrtx_runtime_client._control_plane_endpoint(start_result, worker_command)
-        )
+    def _bind(native_client: object, native_module: object):
+        endpoints = getattr(native_module, "client_endpoints", ())
+        if endpoints:
+            control.endpoints.append(str(endpoints[-1]))
         return control.bindings()
 
     monkeypatch.setattr(
-        "ovrtx_blender_example.ovrtx_runtime_client._bind_official_control_plane",
+        "ovrtx_blender_example.ovrtx_runtime_client._bind_native_control_plane",
         _bind,
     )
     return control

@@ -542,12 +542,10 @@ def test_ovphysx_worker_environment_uses_bundled_runtime_roots(
     tmp_path: Path,
 ) -> None:
     addon_root = tmp_path / "addon"
-    ovphysx_root = addon_root / "runtime" / "ovphysx"
     ovphysx_bridge_root = addon_root / "runtime" / "ovphysx-bridge-server"
-    ovruntime_root = addon_root / "runtime" / "ovruntime"
+    ovphysx_root = ovphysx_bridge_root / "private" / "ovphysx-runtime"
+    ovruntime_root = ovphysx_root
     ovphysx_root.mkdir(parents=True)
-    ovphysx_bridge_root.mkdir(parents=True)
-    ovruntime_root.mkdir(parents=True)
     monkeypatch.delenv("OVPHYSX_ROOT", raising=False)
     monkeypatch.delenv("OVRUNTIME_ROOT", raising=False)
     monkeypatch.setattr(bundled_runtime, "addon_root", lambda: addon_root)
@@ -560,6 +558,7 @@ def test_ovphysx_worker_environment_uses_bundled_runtime_roots(
     assert env["OVRUNTIME_ROOT"] == str(ovruntime_root)
     assert str(ovphysx_root / "lib") in env["LD_LIBRARY_PATH"]
     assert str(ovphysx_bridge_root / "lib") in env["LD_LIBRARY_PATH"]
+    assert str(ovphysx_bridge_root / "private" / "ovstage" / "bin") in env["LD_LIBRARY_PATH"]
     assert str(ovruntime_root / "lib") in env["LD_LIBRARY_PATH"]
 
     monkeypatch.setattr(bundled_runtime, "current_platform_id", lambda: "windows-x64")

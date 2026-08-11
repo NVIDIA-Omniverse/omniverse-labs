@@ -49,8 +49,8 @@ _DEFAULT_WORKER_BASENAMES = frozenset(
     {
         "ovrtx-bridge-server",
         "ovrtx-bridge-server.exe",
-        "ovphysx-bridge-server",
-        "ovphysx-bridge-server.exe",
+        "ovphysx_grpc_server",
+        "ovphysx_grpc_server.exe",
     }
 )
 

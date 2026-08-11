@@ -505,7 +505,9 @@ class OvrtxRuntimeClient:
             self._worker_owned = owned_before_start and bool(
                 _result_value(start_result, "worker_process_alive", False)
             )
-            control_plane = _bind_official_control_plane(start_result, self._worker_command)
+            if self._native_client is None:
+                raise RenderClientError("Native OVRTX control-plane client is not initialized")
+            control_plane = _bind_native_control_plane(self._native_client, native_client)
             self._control_plane_bindings = control_plane
             cleanup_diagnostics = self._cleanup_on_worker_attach(
                 control_plane,
@@ -1975,6 +1977,47 @@ def _bind_official_control_plane(start_result: Mapping[str, Any], worker_command
     )
 
 
+def _bind_native_control_plane(native_client: Any, native_module: Any) -> _ControlPlaneBindings:
+    """Use SIL's native control-plane methods; Blender ships no Python gRPC wheel."""
+    rpc_status_error = native_client_support.rpc_status_error_type(
+        native_module,
+        client_label=RENDER_NATIVE_CLIENT_LABEL,
+        error_type=RenderClientError,
+    )
+    list_rpc = native_client_support.require_callable(
+        native_client,
+        "ListSimulations",
+        client_label=RENDER_NATIVE_CLIENT_LABEL,
+        error_type=RenderClientError,
+    )
+    delete_rpc = native_client_support.require_callable(
+        native_client,
+        "DeleteSimulation",
+        client_label=RENDER_NATIVE_CLIENT_LABEL,
+        error_type=RenderClientError,
+    )
+
+    def call(
+        name: str,
+        function: Callable[[Mapping[str, Any]], Any],
+        request: Mapping[str, Any],
+    ) -> Mapping[str, Any]:
+        return native_client_support.call_native_rpc(
+            name,
+            function,
+            dict(request),
+            rpc_status_error=rpc_status_error,
+            client_label=RENDER_NATIVE_CLIENT_LABEL,
+            error_type=RenderClientError,
+        )
+
+    return _ControlPlaneBindings(
+        list_simulations=lambda request: call("ListSimulations", list_rpc, request),
+        delete_simulation=lambda request: call("DeleteSimulation", delete_rpc, request),
+        close=lambda: None,
+    )
+
+
 def _create_grpc_channel(grpc_module: Any, endpoint: str) -> Any:
     return grpc_module.insecure_channel(endpoint)
 
@@ -2433,6 +2476,38 @@ def apply_worker_runtime_environment(env: MutableMapping[str, str], worker_comma
     )
     previous[ACTIVE_CUDA_GPUS_ENV] = env.get(ACTIVE_CUDA_GPUS_ENV)
     env[ACTIVE_CUDA_GPUS_ENV] = active_cuda_gpus
+    package_root = _worker_package_root_from_worker_command(worker_command)
+    if package_root is not None and os.name != "nt":
+        library_paths = [
+            package_root / "lib",
+            package_root / "plugins",
+            package_root / "plugins" / "rtx",
+        ]
+        existing = env.get("LD_LIBRARY_PATH", "")
+        updated = os.pathsep.join(
+            [
+                *(str(path) for path in library_paths if path.is_dir()),
+                *filter(None, existing.split(os.pathsep)),
+            ]
+        )
+        if updated != existing:
+            previous["LD_LIBRARY_PATH"] = env.get("LD_LIBRARY_PATH")
+            env["LD_LIBRARY_PATH"] = updated
+        plugin_paths = [
+            package_root / "lib" / "usd",
+            package_root / "plugin" / "usd",
+            package_root / "usd_plugins",
+        ]
+        existing_plugins = env.get("PXR_PLUGINPATH_NAME", "")
+        updated_plugins = os.pathsep.join(
+            [
+                *(str(path) for path in plugin_paths if path.is_dir()),
+                *filter(None, existing_plugins.split(os.pathsep)),
+            ]
+        )
+        if updated_plugins != existing_plugins:
+            previous["PXR_PLUGINPATH_NAME"] = env.get("PXR_PLUGINPATH_NAME")
+            env["PXR_PLUGINPATH_NAME"] = updated_plugins
     plugins_path = worker_plugins_search_path_from_worker_command(worker_command)
     if plugins_path and os.name == "nt":
         current_path = env.get("PATH", "")

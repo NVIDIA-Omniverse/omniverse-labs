@@ -721,6 +721,7 @@ def _ovphysx_worker_environment(config: OvphysxRuntimeConfig) -> dict[str, str]:
             [
                 str(Path(bundle.ovphysx_bridge_runtime_root) / "lib"),
                 str(Path(bundle.ovphysx_bridge_runtime_root) / "lib64"),
+                str(Path(bundle.ovphysx_bridge_runtime_root) / "private" / "ovstage" / "bin"),
             ]
         )
     if ovruntime_root is not None:

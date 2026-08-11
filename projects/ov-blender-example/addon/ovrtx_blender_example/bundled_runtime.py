@@ -84,16 +84,15 @@ def defaults(
     if platform_id not in {"linux-x64", "linux-aarch64", "windows-x64"}:
         return BundledRuntimeDefaults(root=root, platform_id=platform_id)
 
-    bin_dir = root / "bin"
-    native_dir = root / "native"
+    native_dir = root / "native" / "client"
     runtime_dir = root / "runtime"
     executable_suffix = ".exe" if platform_id == "windows-x64" else ""
-    worker = bin_dir / f"ovrtx-bridge-server{executable_suffix}"
     worker_package_root = runtime_dir / "ovrtx-bridge-server"
-    ovphysx_server = bin_dir / f"ovphysx-bridge-server{executable_suffix}"
+    worker = worker_package_root / "bin" / f"ovrtx-bridge-server{executable_suffix}"
     ovphysx_bridge_runtime_root = runtime_dir / "ovphysx-bridge-server"
-    ovphysx_root = runtime_dir / "ovphysx"
-    ovruntime_root = runtime_dir / "ovruntime"
+    ovphysx_server = ovphysx_bridge_runtime_root / "bin" / f"ovphysx_grpc_server{executable_suffix}"
+    ovphysx_root = ovphysx_bridge_runtime_root / "private" / "ovphysx-runtime"
+    ovruntime_root = ovphysx_root
 
     worker_command = ""
     if worker.is_file() and worker_package_root.is_dir():

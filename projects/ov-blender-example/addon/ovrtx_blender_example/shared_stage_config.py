@@ -20,7 +20,7 @@ from .shared_stage_errors import SharedStageCompositionError
 
 
 DEFAULT_OVPHYSX_ADDRESS = "127.0.0.1:50094"
-DEFAULT_OVPHYSX_SERVER = Path("ovphysx-bridge-server")
+DEFAULT_OVPHYSX_SERVER = Path("ovphysx_grpc_server")
 DEFAULT_DEVICE = "cpu"
 
 

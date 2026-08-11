@@ -14,14 +14,13 @@ from ovrtx_blender_example.command_line import split_command  # noqa: E402
 
 def _bundle_root(tmp_path: Path) -> Path:
     root = tmp_path / "addon"
-    (root / "bin").mkdir(parents=True)
-    (root / "native").mkdir()
+    (root / "native" / "client").mkdir(parents=True)
     (root / "runtime" / "ovrtx-bridge-server").mkdir(parents=True)
-    (root / "runtime" / "ovphysx-bridge-server").mkdir()
-    (root / "runtime" / "ovphysx").mkdir()
-    (root / "runtime" / "ovruntime").mkdir()
-    (root / "bin" / "ovrtx-bridge-server").write_text("#!/bin/sh\n", encoding="utf-8")
-    (root / "bin" / "ovphysx-bridge-server").write_text("#!/bin/sh\n", encoding="utf-8")
+    (root / "runtime" / "ovphysx-bridge-server" / "private" / "ovphysx-runtime").mkdir(parents=True)
+    (root / "runtime" / "ovrtx-bridge-server" / "bin").mkdir()
+    (root / "runtime" / "ovphysx-bridge-server" / "bin").mkdir()
+    (root / "runtime" / "ovrtx-bridge-server" / "bin" / "ovrtx-bridge-server").write_text("#!/bin/sh\n", encoding="utf-8")
+    (root / "runtime" / "ovphysx-bridge-server" / "bin" / "ovphysx_grpc_server").write_text("#!/bin/sh\n", encoding="utf-8")
     return root
 
 
@@ -32,11 +31,11 @@ def test_bundled_runtime_defaults_resolve_linux_x64_layout(tmp_path: Path, monke
     defaults = bundled_runtime.defaults(root=root, ovrtx_port="50151", ovphysx_address="127.0.0.1:50194")
 
     assert defaults.platform_id == "linux-x64"
-    assert defaults.native_client_path == str(root / "native")
-    assert defaults.ovphysx_native_client_path == str(root / "native")
-    assert defaults.ovphysx_root == str(root / "runtime" / "ovphysx")
+    assert defaults.native_client_path == str(root / "native" / "client")
+    assert defaults.ovphysx_native_client_path == str(root / "native" / "client")
+    assert defaults.ovphysx_root == str(root / "runtime" / "ovphysx-bridge-server" / "private" / "ovphysx-runtime")
     assert defaults.ovphysx_bridge_runtime_root == str(root / "runtime" / "ovphysx-bridge-server")
-    assert defaults.ovruntime_root == str(root / "runtime" / "ovruntime")
+    assert defaults.ovruntime_root == str(root / "runtime" / "ovphysx-bridge-server" / "private" / "ovphysx-runtime")
 
 
 def test_bundled_runtime_defaults_resolve_linux_aarch64_layout(tmp_path: Path, monkeypatch) -> None:
@@ -45,8 +44,8 @@ def test_bundled_runtime_defaults_resolve_linux_aarch64_layout(tmp_path: Path, m
 
     defaults = bundled_runtime.defaults(root=root)
 
-    assert defaults.native_client_path == str(root / "native")
-    assert str(root / "bin" / "ovrtx-bridge-server") in defaults.worker_command
+    assert defaults.native_client_path == str(root / "native" / "client")
+    assert str(root / "runtime" / "ovrtx-bridge-server" / "bin" / "ovrtx-bridge-server") in defaults.worker_command
 
 
 def test_bundled_runtime_defaults_prefer_installed_runtime(tmp_path: Path, monkeypatch) -> None:
@@ -56,8 +55,8 @@ def test_bundled_runtime_defaults_prefer_installed_runtime(tmp_path: Path, monke
 
     defaults = bundled_runtime.defaults()
 
-    assert str(installed / "bin" / "ovrtx-bridge-server") in defaults.worker_command
-    assert defaults.native_client_path == str(installed / "native")
+    assert str(installed / "runtime" / "ovrtx-bridge-server" / "bin" / "ovrtx-bridge-server") in defaults.worker_command
+    assert defaults.native_client_path == str(installed / "native" / "client")
 
 
 def test_bundled_runtime_defaults_fall_back_to_addon_root(tmp_path: Path, monkeypatch) -> None:
@@ -68,7 +67,7 @@ def test_bundled_runtime_defaults_fall_back_to_addon_root(tmp_path: Path, monkey
 
     defaults = bundled_runtime.defaults()
 
-    assert str(root / "bin" / "ovrtx-bridge-server") in defaults.worker_command
+    assert str(root / "runtime" / "ovrtx-bridge-server" / "bin" / "ovrtx-bridge-server") in defaults.worker_command
 
 
 def test_bundled_runtime_explicit_root_wins_over_installed_runtime(tmp_path: Path, monkeypatch) -> None:
@@ -79,20 +78,20 @@ def test_bundled_runtime_explicit_root_wins_over_installed_runtime(tmp_path: Pat
 
     defaults = bundled_runtime.defaults(root=explicit)
 
-    assert str(explicit / "bin" / "ovrtx-bridge-server") in defaults.worker_command
+    assert str(explicit / "runtime" / "ovrtx-bridge-server" / "bin" / "ovrtx-bridge-server") in defaults.worker_command
 
 
 def test_bundled_runtime_defaults_resolve_windows_x64_layout(tmp_path: Path, monkeypatch) -> None:
     root = _bundle_root(tmp_path / "Blender Foundation")
-    (root / "bin" / "ovrtx-bridge-server.exe").write_text("", encoding="utf-8")
-    (root / "bin" / "ovphysx-bridge-server.exe").write_text("", encoding="utf-8")
+    (root / "runtime" / "ovrtx-bridge-server" / "bin" / "ovrtx-bridge-server.exe").write_text("", encoding="utf-8")
+    (root / "runtime" / "ovphysx-bridge-server" / "bin" / "ovphysx_grpc_server.exe").write_text("", encoding="utf-8")
     monkeypatch.setattr(bundled_runtime, "current_platform_id", lambda: "windows-x64")
 
     defaults = bundled_runtime.defaults(root=root, ovrtx_port="50151", ovphysx_address="127.0.0.1:50194")
 
     assert defaults.platform_id == "windows-x64"
-    assert defaults.native_client_path == str(root / "native")
-    assert defaults.ovphysx_native_client_path == str(root / "native")
+    assert defaults.native_client_path == str(root / "native" / "client")
+    assert defaults.ovphysx_native_client_path == str(root / "native" / "client")
 
 
 def test_split_windows_command_round_trips_list2cmdline_paths_with_spaces() -> None:

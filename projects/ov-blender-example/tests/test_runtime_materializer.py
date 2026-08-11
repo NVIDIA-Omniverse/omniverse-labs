@@ -199,12 +199,22 @@ def test_materialize_runtime_installs_verified_bundle(tmp_path: Path) -> None:
     source = tmp_path / "source"
     _write(source / "bin" / "ovrtx-bridge-server", "#!/bin/sh\nexit 0\n")
     _write(source / "bin" / "ovphysx-bridge-server", "#!/bin/sh\nexit 0\n")
-    _write(source / "native" / "ovsensors_worker_client.py", "VALUE = 1\n")
+    _write(source / "native" / "client" / "ovsensors_worker_client.py", "VALUE = 1\n")
+    _write(
+        source / "runtime" / "ovrtx-bridge-server" / "bin" / "ovrtx-bridge-server",
+        "#!/bin/sh\nexit 0\n",
+    )
+    _write(
+        source / "runtime" / "ovphysx-bridge-server" / "bin" / "ovphysx_grpc_server",
+        "#!/bin/sh\nexit 0\n",
+    )
     _write(source / "runtime" / "ovrtx-bridge-server" / "package.marker", "render\n")
     _write(source / "runtime" / "ovrtx-bridge-server" / "helper", "#!/bin/sh\nexit 0\n", 0o755)
     _write(source / "runtime" / "ovphysx-bridge-server" / "package.marker", "grpc\n")
-    _write(source / "runtime" / "ovphysx" / "package.marker", "physx\n")
-    _write(source / "runtime" / "ovruntime" / "package.marker", "runtime\n")
+    _write(
+        source / "runtime" / "ovphysx-bridge-server" / "private" / "ovphysx-runtime" / "package.marker",
+        "physx\n",
+    )
     if os.name != "nt":
         os.symlink("package.marker", source / "runtime" / "ovrtx-bridge-server" / "package.link")
     archive = tmp_path / "runtime.tar.xz"
@@ -234,7 +244,7 @@ def test_materialize_runtime_installs_verified_bundle(tmp_path: Path) -> None:
         assert os.access(current_root / "bin" / "ovphysx-bridge-server", os.X_OK)
     defaults = bundled_runtime.defaults(root=current_root)
     assert defaults.worker_command
-    assert defaults.native_client_path == str(current_root / "native")
+    assert defaults.native_client_path == str(current_root / "native" / "client")
     assert defaults.ovphysx_worker_command
     runtime_status = status(storage_root, manifest)
     assert runtime_status.state == "ready"

@@ -3,7 +3,7 @@
     "title": "Omniverse Labs",
     "tagline": "Early Omniverse experiments you can run, fork, and learn from.",
     "description": "A Sketchpad built by NVIDIA Omniverse Teams \u2014 early samples, prototypes, and write-ups for developers exploring Omniverse.",
-    "dataVersion": "20260804b"
+    "dataVersion": "20260806a"
   },
   "projects": [
     {
@@ -78,6 +78,25 @@
       "links": {
         "page": "projects/ov-blender-example/",
         "repo": "https://github.com/nvidia-omniverse/omniverse-labs/tree/main/projects/ov-blender-example"
+      }
+    },
+    {
+      "slug": "onedrive-example",
+      "title": "OneDrive Storage API Sample",
+      "subtitle": "Connect Omniverse applications to OneDrive for Business through the Omniverse Storage API, using delegated Microsoft Graph access over gRPC and REST.",
+      "type": "sample",
+      "status": "working",
+      "date": "2026-08-05",
+      "image": "assets/images/card-onedrive-example.svg",
+      "accent": [
+        "#0a0c10",
+        "#5ce1e6"
+      ],
+      "featured": false,
+      "source": "projects/ovstorage/onedrive-example",
+      "links": {
+        "page": "projects/onedrive-example/",
+        "repo": "https://github.com/nvidia-omniverse/omniverse-labs/tree/main/projects/ovstorage/onedrive-example"
       }
     },
     {

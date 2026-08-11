@@ -129,7 +129,6 @@ def materialize_runtime(
             total_bytes,
             total_bytes,
         )
-        _relink_native_client_libraries(store_paths.staging_root, manifest)
         _chmod_executables(store_paths.staging_root, manifest)
         _write_install_record(store_paths.staging_root, manifest)
         _check_cancelled(cancelled)

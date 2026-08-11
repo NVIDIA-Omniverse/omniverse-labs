@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Connect Omniverse applications to OneDrive for Business through the Omniverse Storage API, using delegated Microsoft Graph access over gRPC and REST."
+    />
+    <title>OneDrive Storage API Sample — Omniverse Labs</title>
+    <link rel="stylesheet" href="../../assets/css/main.css" />
+    <!-- OneTrust Cookies Consent Notice start for nvidia-omniverse.github.io -->
+    <script src="https://cdn.cookielaw.org/scripttemplates/otSDKStub.js" data-document-language="true" type="text/javascript" charset="UTF-8" data-domain-script="019f8341-2fcb-7482-b1aa-375a01df34fb-test"></script>
+    <script type="text/javascript">
+    function OptanonWrapper() {
+        var event = new Event('bannerLoaded');
+        window.dispatchEvent(event);
+    }
+    </script>
+    <script type="text/javascript" src="https://images.nvidia.com/aem-dam/Solutions/ot-js/ot-custom.js"></script>
+    <!-- OneTrust Cookies Consent Notice end for nvidia-omniverse.github.io -->
+  </head>
+  <body data-base="../../">
+    <header class="site-header site-header--compact">
+      <div class="brand-row">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">OL</div>
+          <p class="brand-title"><a href="../../">Omniverse Labs</a></p>
+        </div>
+        <nav class="header-links" aria-label="Site">
+          <a
+            href="https://github.com/nvidia-omniverse/omniverse-labs/tree/main/projects/ovstorage/onedrive-example"
+            target="_blank"
+            rel="noopener noreferrer"
+          >Project on GitHub</a>
+          <a href="../sample-catalog/">Samples</a>
+        </nav>
+      </div>
+    </header>
+
+    <article class="article-wrap">
+      <header class="article-hero">
+        <p class="article-kicker">Sample</p>
+        <h1 class="article-title">OneDrive Storage API Sample</h1>
+        <p class="article-deck">
+          Connect Omniverse applications to OneDrive for Business through the Omniverse Storage API,
+          using delegated Microsoft Graph access over gRPC and REST.
+        </p>
+        <div class="article-meta">
+          <span>Sample</span>
+          <span>August 2026</span>
+        </div>
+        <img
+          src="../../assets/images/card-onedrive-example.svg"
+          alt="A Kit application signs in with Microsoft Entra ID and calls the OneDrive Storage API Sample, which maps requests to Microsoft Graph"
+          width="554"
+          height="346"
+        />
+      </header>
+
+      <div class="prose">
+        <p>
+          <em>
+            The sample maps Omniverse Storage API requests to Microsoft Graph for the signed-in user.
+          </em>
+        </p>
+
+        <p>
+          The OneDrive Storage API Sample is a reference implementation that maps Omniverse Storage
+          API operations to OneDrive for Business. It uses the signed-in user's delegated Microsoft
+          Graph access token to resolve and access that user's drive. The implementation is designed
+          not to persist user files or long-lived credentials.
+        </p>
+
+        <p>
+          The repository includes the Python service, gRPC and REST API contracts, and example Docker
+          and Helm packaging. Use these artifacts as starting points for your own deployment, and
+          adapt authentication, ingress, TLS, secret management, and observability to your environment.
+        </p>
+
+        <p>
+          This is a pre-release Omniverse Labs sample (version 0.2.1). APIs and configuration may change.
+        </p>
+
+        <h2>What you can do</h2>
+        <ul>
+          <li>Connect each signed-in user to their OneDrive for Business</li>
+          <li>Use supported Storage API operations through gRPC and REST</li>
+          <li>Read, write, list, copy, move, and delete files and folders</li>
+          <li>Upload large files through Microsoft Graph upload sessions</li>
+          <li>Retrieve file version history</li>
+          <li>Use bearer-token pass-through or OAuth 2.0 on-behalf-of authentication</li>
+          <li>Start from example Docker and Helm deployment configurations</li>
+        </ul>
+
+        <h2>Prerequisites</h2>
+        <ul>
+          <li>Python 3.10 or later</li>
+          <li>The <code>uv</code> package manager, or <code>pip</code></li>
+          <li>A Microsoft Entra ID application registration</li>
+          <li>Microsoft Graph delegated permissions for <code>Files.ReadWrite</code> and <code>User.Read</code></li>
+          <li>Tenant consent according to your organization's policies</li>
+          <li>A Microsoft 365 tenant with OneDrive for Business enabled</li>
+        </ul>
+
+        <h2>Fast start</h2>
+        <p>From the project directory, install the service dependencies:</p>
+
+<pre><code>cd omni_onedrive_service
+uv sync</code></pre>
+
+        <p>
+          Copy the example configuration and set at least <code>AZURE_TENANT_ID</code> and
+          <code>OIDC_CLIENT_ID</code>:
+        </p>
+
+<pre><code>cp ../.env.example .env</code></pre>
+
+        <p>Start the service:</p>
+
+<pre><code>uv run omni-onedrive-storage-service onedrive</code></pre>
+
+        <p>
+          The REST endpoint listens on port <code>8011</code>, and the gRPC endpoint listens on port
+          <code>50051</code>. Configure a compatible Kit application to use:
+        </p>
+
+<pre><code>http://localhost:8011</code></pre>
+
+        <p>Verify the unauthenticated configuration endpoint:</p>
+
+<pre><code>curl http://localhost:8011/api/v1/auth-config</code></pre>
+
+        <p>
+          The configuration endpoint should return <code>200</code>. Protected endpoints return
+          <code>401</code> until the user signs in and supplies an access token.
+        </p>
+
+        <p>
+          The repository also includes <code>docker-compose.yml</code> and an example Helm chart
+          under <code>helm/</code>.
+        </p>
+
+        <h2>How it works</h2>
+        <p>
+          A Kit application requests <code>/api/v1/auth-config</code>, completes sign-in with
+          Microsoft Entra ID, and sends an access token with subsequent requests. The service
+          resolves the signed-in user's OneDrive for Business drive and translates supported Storage
+          API operations into Microsoft Graph requests.
+        </p>
+
+        <p>The sample supports two authentication models:</p>
+        <ul>
+          <li>
+            <strong>Bearer-token pass-through</strong> uses an incoming token that is already scoped
+            for Microsoft Graph. The client application owns sign-in and token renewal.
+          </li>
+          <li>
+            <strong>On-behalf-of (OBO)</strong> exchanges a token issued for the service's
+            application audience for a Microsoft Graph access token. This model is intended for
+            deployments in which an upstream authentication component validates tokens for the service.
+          </li>
+        </ul>
+
+        <p>
+          OBO requires confidential-client credentials. Production deployments should provide those
+          credentials through an approved secret-management system rather than storing them directly
+          in deployment files.
+        </p>
+
+        <h2>Supported storage</h2>
+        <ul>
+          <li>OneDrive for Business, per signed-in user — supported</li>
+          <li>OneDrive Personal accounts — not supported</li>
+          <li>SharePoint document libraries — not implemented in this sample</li>
+        </ul>
+
+        <h2>Known limitations</h2>
+        <ul>
+          <li>The sample is configured for a single Microsoft Entra ID tenant</li>
+          <li>Custom Storage API metadata operations are not implemented</li>
+          <li>Concurrent writes to the same file may produce version conflicts</li>
+          <li>OneDrive Personal accounts and SharePoint document libraries are outside the current scope</li>
+        </ul>
+
+        <h2>Repository path</h2>
+        <p>
+          Full source, API specifications, packaging examples, and deployment documentation are
+          available in the project folder:
+        </p>
+
+        <div class="callout">
+          <p>
+            <strong>Clone and explore:</strong>
+            <a
+              href="https://github.com/nvidia-omniverse/omniverse-labs/tree/main/projects/ovstorage/onedrive-example"
+              target="_blank"
+              rel="noopener noreferrer"
+            ><code>projects/ovstorage/onedrive-example/</code></a>
+          </p>
+          <p>
+            <strong>Deployment:</strong>
+            <a
+              href="https://github.com/nvidia-omniverse/omniverse-labs/blob/main/projects/ovstorage/onedrive-example/skills/onedrive-deployment/SKILL.md"
+              target="_blank"
+              rel="noopener noreferrer"
+            >Deployment guide</a>
+            <br />
+            <strong>References:</strong>
+            <a
+              href="https://github.com/nvidia-omniverse/omniverse-labs/tree/main/projects/ovstorage/onedrive-example/openapi"
+              target="_blank"
+              rel="noopener noreferrer"
+            >Omniverse Storage API</a>
+            ·
+            <a href="https://learn.microsoft.com/en-us/graph/overview" target="_blank" rel="noopener noreferrer">Microsoft Graph</a>
+            ·
+            <a href="https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-on-behalf-of-flow" target="_blank" rel="noopener noreferrer">OAuth 2.0 On-Behalf-Of flow</a>
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <footer class="site-footer">
+      <div class="site-footer__site">
+        <p class="site-footer__meta">
+          <a href="../../">← All projects</a>
+          <span class="site-footer__sep" aria-hidden="true">·</span>
+          <a
+            href="https://github.com/nvidia-omniverse/omniverse-labs/blob/main/projects/ovstorage/onedrive-example/LICENSE.txt"
+            target="_blank"
+            rel="noopener noreferrer"
+          >NVIDIA Software License Agreement</a>
+          <span class="site-footer__sep" aria-hidden="true">·</span>
+          <a href="https://github.com/nvidia-omniverse/omniverse-labs/issues">Site feedback</a>
+        </p>
+      </div>
+      <nav class="site-footer__policies" aria-label="NVIDIA legal and policies">
+        <ul>
+          <li>
+            <a href="https://www.nvidia.com/en-us/about-nvidia/privacy-policy/">Privacy Policy</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/about-nvidia/privacy-center/">Your Privacy Choices</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/about-nvidia/terms-of-service/">Terms of Service</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/about-nvidia/accessibility/">Accessibility</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/about-nvidia/company-policies/">Corporate Policies</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/about-nvidia/product-security/">Product Security</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/contact/">Contact</a>
+          </li>
+        </ul>
+      </nav>
+    </footer>
+  </body>
+</html>

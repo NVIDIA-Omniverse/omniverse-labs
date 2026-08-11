@@ -48,7 +48,7 @@ def test_pid_seam_register_and_forget(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_basename_and_pid_helpers() -> None:
-    assert wpr._basename_lower(r"C:\bundle\bin\Ovphysx-Bridge-Server.exe") == "ovphysx-bridge-server.exe"
+    assert wpr._basename_lower(r"C:\bundle\bin\Ovphysx_Grpc_Server.exe") == "ovphysx_grpc_server.exe"
     assert wpr._basename_lower('  "ovrtx-bridge-server"  ') == "ovrtx-bridge-server"
     assert wpr._basename_lower("") == ""
     assert wpr._coerce_pid("7") == 7
