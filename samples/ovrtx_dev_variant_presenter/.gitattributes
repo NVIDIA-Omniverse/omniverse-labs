@@ -1,0 +1,7 @@
+# Shell scripts MUST check out with LF, on every platform. Git's autocrlf would
+# otherwise give a Windows clone CRLF line endings, and a CRLF shebang makes Linux
+# fail the launcher with the cryptic "bad interpreter: /usr/bin/env bash^M".
+*.sh text eol=lf
+
+# PowerShell reads a BOM-less .ps1 as ANSI; CRLF is its native form on Windows.
+*.ps1 text eol=crlf

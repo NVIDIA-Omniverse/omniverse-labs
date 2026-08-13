@@ -64,7 +64,7 @@
     {
       "slug": "ov-blender-example",
       "title": "ovrtx Blender Example",
-      "subtitle": "Bring NVIDIA RTX rendering into Blender — review and render without leaving your scene.",
+      "subtitle": "Bring NVIDIA RTX rendering into Blender \u2014 review and render without leaving your scene.",
       "type": "sample",
       "status": "working",
       "date": "2026-07-17",
@@ -102,7 +102,7 @@
     {
       "slug": "ovfmi",
       "title": "ovfmi",
-      "subtitle": "FMI/SSP co-simulation for OpenUSD digital twins — FMPy, ovrtx rendering, optional ovphysx.",
+      "subtitle": "FMI/SSP co-simulation for OpenUSD digital twins \u2014 FMPy, ovrtx rendering, optional ovphysx.",
       "type": "project",
       "status": "partial",
       "date": "2026-08-04",

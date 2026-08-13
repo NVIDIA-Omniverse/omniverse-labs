@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Present USD variants live in a path-traced viewport streamed to the browser, then capture them to stills or MP4. Built on ovrtx, ovstage and ovstream."
+    />
+    <title>OVRTX Dev Variant Presenter - Omniverse Labs</title>
+    <link rel="stylesheet" href="../../assets/css/main.css" />
+    <!-- OneTrust Cookies Consent Notice start for nvidia-omniverse.github.io -->
+    <script src="https://cdn.cookielaw.org/scripttemplates/otSDKStub.js" data-document-language="true" type="text/javascript" charset="UTF-8" data-domain-script="019f8341-2fcb-7482-b1aa-375a01df34fb-test"></script>
+    <script type="text/javascript">
+    function OptanonWrapper() {
+        var event = new Event('bannerLoaded');
+        window.dispatchEvent(event);
+    }
+    </script>
+    <script type="text/javascript" src="https://images.nvidia.com/aem-dam/Solutions/ot-js/ot-custom.js"></script>
+    <!-- OneTrust Cookies Consent Notice end for nvidia-omniverse.github.io -->
+  </head>
+  <body data-base="../../">
+    <header class="site-header site-header--compact">
+      <div class="brand-row">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">OL</div>
+          <p class="brand-title"><a href="../../">Omniverse Labs</a></p>
+        </div>
+        <nav class="header-links" aria-label="Site">
+          <a
+            href="https://github.com/nvidia-omniverse/omniverse-labs/tree/main/samples/ovrtx_dev_variant_presenter"
+            target="_blank"
+            rel="noopener noreferrer"
+          >Sample on GitHub</a>
+          <a href="../sample-catalog/">Samples</a>
+        </nav>
+      </div>
+    </header>
+
+    <article class="article-wrap">
+      <header class="article-hero">
+        <p class="article-kicker">Sample</p>
+        <h1 class="article-title">OVRTX Dev Variant Presenter</h1>
+        <p class="article-deck">
+          Present USD variants live in a path-traced viewport streamed to your browser, then
+          capture them to stills or MP4. Built on ovrtx, ovstage and ovstream.
+        </p>
+        <div class="article-meta">
+          <span>Status: Working</span>
+          <span>July 2026</span>
+        </div>
+        <img
+          src="../../assets/images/card-ovrtx-dev-variant-presenter.png"
+          alt="The NVIDIA ConceptCar in a live RTX viewport with the multi-track timeline editor open below and variant and camera panels on the right"
+          width="2365"
+          height="1270"
+        />
+      </header>
+
+      <div class="prose">
+        <p>
+          Open a USD stage, render it live in a path-traced viewport streamed over WebRTC, switch
+          variants on the fly, and render the visual state out to stills or MP4. The
+          renderer runs on your workstation; the browser shows the video and the controls. Your USD
+          files are never modified.
+        </p>
+
+        <p>
+          It exists to show how the pieces fit together: one thread owning an
+          <code>ovstage.Stage</code> with an <code>ovrtx.Renderer</code> attached, composing USD
+          non-destructively, wiring <code>ovstream</code> into a FastAPI control plane.
+        </p>
+
+        <h2>What you can do</h2>
+        <ul>
+          <li>Switch variant sets live and see the result immediately</li>
+          <li>Frame authored cameras, orbit, and pick a focus point or pivot</li>
+          <li>
+            Override camera position, rotation and optics in a composite layer, leaving the
+            source stage untouched
+          </li>
+          <li>Build a turntable rig and preview the spin</li>
+          <li>Batch-render a permutation grid to stills</li>
+          <li>Sequence variants and cameras on a timeline and render an MP4</li>
+          <li>Open a stage straight from an <code>http(s)</code> or S3 URL</li>
+        </ul>
+
+        <h2>Instant variant switching</h2>
+        <p>
+          At stage open, each variant set is classified into <em>shader-input</em> (material and
+          colour swaps) or <em>structural</em> (transform, visibility, binding). For the
+          shader-input sets it also records the attribute writes each variant makes: the prim, the
+          attribute and the value.
+        </p>
+        <p>
+          When every changed set is shader-input, those writes replay straight into the live
+          <code>ovstage.Stage</code> under one shared ordinal, so the switch lands atomically with
+          no recompose. Anything structural falls back to a full reload.
+        </p>
+
+        <h2>Fast start</h2>
+        <p>
+          Needs an NVIDIA RTX GPU, Python 3.11 with
+          <a href="https://docs.astral.sh/uv/" target="_blank" rel="noopener noreferrer">uv</a>,
+          Node.js, and a Chromium browser. Validated on Windows.
+        </p>
+        <ol>
+          <li>
+            Clone the repo and <code>cd samples/ovrtx_dev_variant_presenter</code>. Every command
+            below runs from there.
+          </li>
+          <li>Run <code>uv sync</code> to create the environment.</li>
+          <li>
+            Start the server with
+            <code>powershell -ExecutionPolicy Bypass -File run_server.ps1</code> or
+            <code>./run_server.sh</code>.
+          </li>
+          <li>Open the printed URL in one tab. The stream is single-client.</li>
+          <li>Paste a stage path or URL and press Open.</li>
+        </ol>
+        <p>
+          <strong>Using a coding agent?</strong> Open the sample folder and ask it to
+          <em>"set up and start the OVRTX Dev Variant Presenter server"</em>. That wording matches
+          the bundled skills in <code>.claude/skills/</code>, which carry the full procedures.
+          <code>AGENTS.md</code> in the sample root is the single source of truth and points at
+          them.
+        </p>
+        <p>
+          The first open compiles shaders and takes a few minutes; later runs reuse the cache.
+        </p>
+
+        <div class="callout">
+          <p>
+            <strong>Clone and explore:</strong>
+            <a
+              href="https://github.com/nvidia-omniverse/omniverse-labs/tree/main/samples/ovrtx_dev_variant_presenter"
+              target="_blank"
+              rel="noopener noreferrer"
+            ><code>samples/ovrtx_dev_variant_presenter/</code></a>
+          </p>
+          <p>
+            Libraries:
+            <a href="https://pypi.org/project/ovrtx/" target="_blank" rel="noopener noreferrer">ovrtx</a>,
+            <a href="https://pypi.org/project/ovstage/" target="_blank" rel="noopener noreferrer">ovstage</a>,
+            <a href="https://pypi.org/project/ovstream/" target="_blank" rel="noopener noreferrer">ovstream</a>
+            &middot; Standard:
+            <a href="https://openusd.org/" target="_blank" rel="noopener noreferrer">OpenUSD</a>
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <footer class="site-footer">
+      <div class="site-footer__site">
+        <p class="site-footer__meta">
+          <a href="../../">&larr; All projects</a>
+          <span class="site-footer__sep" aria-hidden="true">&middot;</span>
+          <span>Apache 2.0</span>
+          <span class="site-footer__sep" aria-hidden="true">&middot;</span>
+          <a href="https://github.com/nvidia-omniverse/omniverse-labs/issues">Site feedback</a>
+        </p>
+      </div>
+      <nav class="site-footer__policies" aria-label="NVIDIA legal and policies">
+        <ul>
+          <li>
+            <a href="https://www.nvidia.com/en-us/about-nvidia/privacy-policy/">Privacy Policy</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/about-nvidia/privacy-center/">Your Privacy Choices</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/about-nvidia/terms-of-service/">Terms of Service</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/about-nvidia/accessibility/">Accessibility</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/about-nvidia/company-policies/">Corporate Policies</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/about-nvidia/product-security/">Product Security</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/contact/">Contact</a>
+          </li>
+        </ul>
+      </nav>
+    </footer>
+  </body>
+</html>

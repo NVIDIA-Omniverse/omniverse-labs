@@ -1,0 +1,20 @@
+---
+description: How to set up and run the Dev Variant Presenter server (developed and validated on Windows + RTX). Always start via the run_server.ps1 / run_server.sh watchdog; never bare python or a generic dev-server launcher.
+alwaysApply: true
+---
+
+# Dev Variant Presenter
+
+**Read `AGENTS.md` at the repo root.** It is the single source of truth for how to work here:
+architecture, starting and stopping the server, fresh-clone setup, and tests. This rule file exists
+only so Cursor always has the two critical constraints loaded; everything else lives in `AGENTS.md`
+so there is one copy to keep correct.
+
+- **Start the server ONLY via the watchdog** — `run_server.ps1` on Windows, `run_server.sh` on
+  Linux/macOS. Never bare `python -m dev_variant_presenter`, and never a generic preview or
+  dev-server launcher. Those skip the watchdog, so a routine ovrtx/ovstream native crash becomes a
+  dead app with no relaunch and no logs.
+- **The stream is single-client.** Opening a second browser or client steals the active session.
+
+Full step-by-step procedures are in `.claude/skills/start-server/SKILL.md` and
+`.claude/skills/setup-environment/SKILL.md`. They are plain Markdown — read them by path.

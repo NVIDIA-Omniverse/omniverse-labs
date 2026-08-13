@@ -1,0 +1,338 @@
+<!doctype html>
+<!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dev Variant Presenter</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <!-- NOTE: the element ids below are part of the acceptance-gate contract documented in
+       rebuild/skills/omniverse-dev-variant-presenter/references/SPEC-UX.md ("DOM CONTRACT").
+       rebuild/acceptance/verify_browser.cjs drives the app through them, so renaming one
+       requires updating that spec and gate in lockstep. -->
+  <header>
+    <h1>Dev Variant Presenter</h1>
+    <input id="usd-path" type="text" spellcheck="false"
+           title="Path to a USD stage (.usd/.usda/.usdc), or an https:// URL to a remote stage (mirrored locally on open). The source file is never modified."
+           placeholder="path to a .usd, or an https:// URL (see README)"
+           value="" />
+    <button id="open-btn" data-help="Opens the USD stage and starts the live RTX viewport, scanning the stage for variant sets and cameras. Re-opening the same stage just re-attaches to the running session.">Open</button>
+    <span id="status" class="status">no stage</span>
+  </header>
+
+  <main>
+    <div class="stage-col">
+      <section class="viewport">
+        <video id="remote-video" autoplay muted playsinline tabindex="-1"></video>
+        <img id="results-img" alt="rendered result" />
+        <video id="results-video" controls playsinline loop></video>
+        <div id="overlay">Open a stage to begin</div>
+        <div id="pick-overlay" class="pick-overlay"></div>
+        <svg id="gizmo" class="gizmo"></svg>
+        <div id="hint" class="hint"></div>
+      </section>
+      <div id="timeline-strip">
+        <div class="tl-resize" id="tl-resize" title="drag to resize the timeline"></div>
+        <div class="tl-toolbar">
+          <span class="tl-grp"><span class="tl-lab">playhead</span> <span class="tl-time" id="tl-playtime">0.00s</span></span>
+          <span class="tl-grp"><span class="tl-lab">length</span> <span id="tl-dur" class="badge">0.0s</span></span>
+          <span class="tl-grp"><span class="tl-lab">append</span>
+            <button id="tl-mode-stack" class="active" data-help="New clips stack immediately after the last clip on the track.">Stack</button>
+            <button id="tl-mode-playhead" data-help="New clips drop at the current playhead position.">At playhead</button>
+          </span>
+          <span class="tl-grp"><span class="tl-lab">presets</span>
+            <button id="tl-slideshow" data-help="Fill every set's track in sequence so the result steps through one variant change at a time (a staircase).">Slideshow</button>
+            <button id="tl-mixer" data-help="Fill every set's track in parallel so all sets cycle their variants together.">Mixer</button>
+            <button id="tl-clear" data-help="Remove all clips from every track (the tracks themselves stay).">Clear clips</button>
+          </span>
+          <span class="tl-grp"><span class="tl-lab">selected</span>
+            <button id="tl-del-clip" title="Delete the selected clip — click a clip to select it (or press Delete)" disabled>&#128465; Delete clip</button>
+          </span>
+          <span class="tl-grp"><span class="tl-lab">new clip</span>
+            <input id="tl-clip" type="number" value="2" min="0.1" step="0.5" title="Default duration, in seconds, for newly appended clips." />s ·
+            <span class="tl-lab">fps</span> <input id="tl-fps" type="number" value="30" min="1" step="1" title="Frame rate for the MP4 render and frame-stepping." />
+          </span>
+          <span class="tl-grp"><span class="tl-lab">tracks</span>
+            <select id="tl-show-track" title="Bring a hidden track back into view."><option value="">show hidden…</option></select>
+          </span>
+          <span class="tl-grp tl-render-grp">
+            <input id="tl-out" type="text" spellcheck="false" placeholder="output folder, e.g. C:\renders\timeline" title="Output folder for the rendered MP4." />
+            <button id="tl-browse" title="Browse for a folder">&#128193;</button>
+            <button id="tl-render" data-help="Render the timeline to an MP4 at the viewport's current resolution. The result opens in the Results tab.">Render to MP4</button>
+            <button id="tl-cancel" disabled title="Stop the MP4 render.">Cancel</button>
+            <span class="progress tl-prog"><span id="tl-bar" class="bar"></span></span>
+            <span id="tl-status" class="muted"></span>
+          </span>
+        </div>
+        <div class="tl-body">
+          <div class="tl-rulerbar" id="tl-rulerbar"><div class="tl-ruler-gutter" id="tl-transport">
+              <button id="tl-to-start" title="To start (Home)">&#9198;</button>
+              <button id="tl-step-back" title="Frame back (Left arrow)">&#9665;</button>
+              <button id="tl-play" title="Play / Pause (Space)">&#9654;</button>
+              <button id="tl-step-fwd" title="Frame forward (Right arrow)">&#9655;</button>
+              <button id="tl-to-end" title="To end (End)">&#9197;</button>
+              <button id="tl-loop" title="Loop playback">&#128257;</button>
+            </div><div id="tl-ruler" class="tl-ruler"></div></div>
+          <div id="tl-scroll" class="tl-scroll"><div id="tl-tracks"></div></div>
+          <div id="tl-playhead" class="tl-playhead"></div>
+          <div id="tl-gutter-resize" class="tl-gutter-resize" title="drag to resize the Tracks column"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="panel-resize" class="panel-resize" title="drag to resize the panel"></div>
+    <aside class="panel">
+      <div class="tabs">
+        <button class="tab active" data-pane="configure">Configure</button>
+        <button class="tab" data-pane="grid">Grid</button>
+        <button class="tab" data-pane="timeline">Timeline</button>
+        <button class="tab" data-pane="results">Results</button>
+      </div>
+
+      <!-- Configure (live) -->
+      <div class="pane active" id="pane-configure">
+        <div class="block">
+          <h2>Camera <span class="info" data-help="Badges in the list: &#8635; animated (motion from its rig or the USD) &middot; &#9670; saved framing &middot; &#10033; optics overrides (ISO / focal / DOF). A plain entry is the authored default.">i</span></h2>
+          <select id="camera-select" title="Jump the live viewport to any camera authored in the stage. You can orbit/pan/zoom freely from there."><option value="">— open a stage —</option></select>
+          <div class="row">
+            <button id="disp-save-framing" data-help="Commits POSITION + ROTATION only: your current viewport pose becomes this camera's framing (used by renders, the timeline, and when switching back to it). Free navigation never changes a camera — only this button does. Optics need no saving: ISO / focal length / f-stop / focus apply to the selected camera the moment you move a slider.">Save framing</button>
+            <button id="disp-reset" data-help="Reverts the selected camera to how it was authored in the USD — drops any saved framing and display overrides (ISO, focal length, depth of field).">Reset camera</button>
+          </div>
+        </div>
+        <div class="block">
+          <h2>Render mode <span class="info" data-help="How the viewport renders. Real-Time is for live exploration and timeline playback; Path Tracing is for final, photoreal output. You can switch any time.">i</span></h2>
+          <div class="seg">
+            <button class="mode-btn active" data-mode="RealTimePathTracing" data-help="Real-time path tracing (RTX). Fast and interactive — the image refines over a few frames after each change. The default for live work and timeline playback.">Real-Time</button>
+            <button class="mode-btn" data-mode="PathTracing" data-help="Reference-quality path tracing. Each frame accumulates samples toward a converged, photoreal result — slower, best for hero stills. Set the sample count (SPP) in the Grid tab.">Path Tracing</button>
+          </div>
+        </div>
+        <div class="block">
+          <h2>Display</h2>
+          <div id="stage-info" class="stage-info" data-help="Read-only properties of the open USD stage. fps + frame range come from the stage's timeCodesPerSecond / start-endTimeCode and drive turntable timing; up-axis and units (metersPerUnit) come from the stage metadata. These are the authored stage's timebase — distinct from the Timeline tab's output fps."></div>
+          <label class="dlab" data-help="Sets the live stream and render aspect/resolution. Changing it rebuilds the stream and briefly reconnects. The Grid tab inherits this size as its render default.">Aspect / resolution
+            <select id="disp-res">
+              <option value="1280x720">1280×720 — 16:9</option>
+              <option value="1920x1080">1920×1080 — 16:9</option>
+              <option value="1080x1080">1080×1080 — 1:1</option>
+              <option value="1080x1920">1080×1920 — 9:16</option>
+              <option value="1440x1080">1440×1080 — 4:3</option>
+              <option value="1920x804">1920×804 — 2.39:1</option>
+            </select>
+          </label>
+          <label class="dlab" data-help="Physical camera exposure (film ISO) for the selected camera. Higher is brighter. Applies live and is saved per camera; Reset camera returns it to automatic exposure.">ISO (exposure) <span id="disp-iso-v" class="dval">100</span>
+            <input id="disp-iso" type="range" min="25" max="3200" step="25" value="100" /></label>
+          <label class="dlab" data-help="Lens focal length in millimetres for the selected camera. Lower is a wider field of view; higher is tighter / more telephoto. Applies live and is saved per camera.">Focal length (mm) <span id="disp-fl-v" class="dval">50</span>
+            <input id="disp-fl" type="range" min="14" max="200" step="1" value="50" /></label>
+          <label class="dlab" data-help="Aperture for depth of field on the selected camera. 0 turns it off (everything sharp). A lower f-stop means shallower focus and more background blur — pair it with a focus distance below.">f-stop (depth of field) <span id="disp-fs-v" class="dval">off</span>
+            <input id="disp-fs" type="range" min="0" max="22" step="0.1" value="0" /></label>
+          <label class="dlab" data-help="Distance from the camera to the plane in sharp focus (scene units), used when f-stop is above 0. Type a value, or use Pick to click the point on the model to focus on.">Focus distance
+            <span class="fd-row">
+              <input id="disp-fd" type="number" step="1" placeholder="auto" />
+              <button id="disp-pick" type="button" title="Click a point on the model to focus there">&#9678; Pick</button>
+            </span>
+          </label>
+        </div>
+        <div class="block">
+          <h2>Turntable <span class="info" data-help="Adds a dedicated camera named Turntable that orbits a pivot point one full revolution — for stages that ship without cameras, or for product-spin renders. The rig lives in a sidecar file; the source USD is never modified.">i</span></h2>
+          <div class="row">
+            <button id="tt-pick" data-help="Step 1: click the asset in the viewport. The pivot is the point the camera will revolve around — a gizmo appears so you can fine-tune it.">&#128204; Pick pivot</button>
+            <button id="tt-remove" data-help="Deletes the turntable camera and its sidecar file. The source USD was never touched.">Remove</button>
+            <span id="tt-pivot" class="muted">no pivot</span>
+          </div>
+          <div id="tt-tools" style="display:none">
+            <div class="row tt-nudge">
+              <label data-help="How far each X/Y/Z nudge moves the pivot, in scene units. Auto-set from the picked object's size (one nudge ≈ 2.5% of it). Also sets the gizmo's axis length. You can drag the gizmo handles directly instead.">step <input id="tt-step" type="number" value="5" step="1" /></label>
+              <span class="tt-ax"><b class="ax-x">X</b><button data-ax="0" data-d="-1">&minus;</button><button data-ax="0" data-d="1">+</button></span>
+              <span class="tt-ax"><b class="ax-y">Y</b><button data-ax="1" data-d="-1">&minus;</button><button data-ax="1" data-d="1">+</button></span>
+              <span class="tt-ax"><b class="ax-z">Z</b><button data-ax="2" data-d="-1">&minus;</button><button data-ax="2" data-d="1">+</button></span>
+            </div>
+            <div class="row" style="display:none">
+              <input id="tt-radius" type="number" /><input id="tt-height" type="number" value="0" />
+            </div>
+            <div class="row">
+              <label>frames <input id="tt-frames" type="number" value="120" min="2" style="width:64px" data-help="Length of one full revolution, in stage frames. Preview and renders play at the stage frame rate: 120 frames at 60fps = a 2-second spin. More frames = slower, smoother rotation. Takes effect on the next Preview or Create." /></label>
+              <div id="tt-frames-s" class="tt-note"></div>
+            </div>
+            <div class="row">
+              <button id="tt-add" data-help="Creates the turntable camera using YOUR CURRENT VIEW as the first frame — the exact pose, including any pan offset you composed. Press again any time to update it.">&#127909; Create camera from this view</button>
+              <button id="tt-preview" data-help="Plays the spin in the viewport exactly as it will render: it first updates the camera from your CURRENT view (pan offsets included) and the current frames count, then loops at real speed. Stop returns to your framing.">&#9654; Preview spin</button>
+            </div>
+          </div>
+          <div id="tt-msg" class="muted"></div>
+        </div>
+        <div class="block grow">
+          <h2>Variant sets <span id="vset-count" class="badge"></span> <span class="info" data-help="Every variant set authored in the stage. Click a chip to switch that set in the live viewport instantly. A colored dot shows the variant's representative color where one could be detected. This live look is the base for Grid sweeps and the Timeline.">i</span></h2>
+          <div id="variant-cards"></div>
+        </div>
+      </div>
+
+      <!-- Grid / batch -->
+      <div class="pane" id="pane-grid">
+        <div class="block">
+          <h2>Matrix mode <span class="info" data-help="How the included sets are combined into permutations to render.">i</span></h2>
+          <div class="seg">
+            <button class="grid-mode-btn active" data-mode="one_at_a_time" data-help="Vary one set at a time across its variants while every other set stays at the current live look. The count is the sum of the variants — ideal for 'show me each paint colour'.">One-at-a-time</button>
+            <button class="grid-mode-btn" data-mode="full_cartesian" data-help="Render every combination of the included sets (their product). The count grows fast — a 500-permutation guard asks for confirmation above the limit.">Full Cartesian</button>
+          </div>
+        </div>
+        <div class="block">
+          <h2>Quality &amp; output</h2>
+          <div class="seg">
+            <button class="grid-q-btn active" data-mode="RealTimePathTracing" data-help="Real-time path tracing — fast. Good for proofing a large sweep before committing to slower hero renders.">Real-Time</button>
+            <button class="grid-q-btn" data-mode="PathTracing" data-help="Reference-quality path tracing — each still accumulates the samples below before it is saved. Slower, photoreal.">Path Tracing</button>
+          </div>
+          <div class="row">
+            <label data-help="Output width in pixels.">W <input id="grid-w" type="number" value="1280" min="64" step="16" /></label>
+            <label data-help="Output height in pixels.">H <input id="grid-h" type="number" value="720" min="64" step="16" /></label>
+            <label data-help="Samples per pixel for Path Tracing — higher converges to a cleaner image but takes longer. Ignored in Real-Time mode.">SPP <input id="grid-spp" type="number" value="64" min="1" /></label>
+          </div>
+          <label class="check" data-help="Render a numbered frame sequence (and an MP4) for each permutation across the frame range below, instead of a single still — e.g. a turntable revolution or an authored animation."><input id="grid-anim" type="checkbox" /> Animation range (per-frame sequence)</label>
+          <div class="row" id="grid-frame-range" style="display:none" data-help="The frame range rendered per permutation (defaults to the stage's frame range). Step skips frames — e.g. 2 renders every other frame.">
+            <label>Start <input id="grid-fstart" type="number" step="1" /></label>
+            <label>End <input id="grid-fend" type="number" step="1" /></label>
+            <label>Step <input id="grid-fstep" type="number" value="1" min="1" step="1" /></label>
+          </div>
+          <div class="row">
+            <input id="grid-out" type="text" spellcheck="false" placeholder="output folder, e.g. C:\renders\concept" />
+            <button id="grid-browse" title="Browse for a folder">&#128193;</button>
+          </div>
+        </div>
+        <div class="block">
+          <h2>Cameras <span class="info" data-help="Render against one or more authored cameras (including a Turntable). Each selected camera produces its own output for every permutation.">i</span></h2>
+          <div id="grid-cameras" class="checklist"></div>
+        </div>
+        <div class="block grow">
+          <h2>Include sets <span id="grid-count" class="badge">0</span> <span class="info" data-help="Tick a set to sweep it, then use its chips to cherry-pick which variants participate. Sets left unticked stay pinned to the current live look, so your interactive setup becomes the fixed base for the batch.">i</span></h2>
+          <div id="grid-sets"></div>
+        </div>
+        <div class="block">
+          <div id="grid-estimate" class="muted">open a stage</div>
+          <div class="seg">
+            <button id="grid-render" disabled title="Render the batch to the output folder. Files use {set}-{variant} naming and appear in the Results tab.">Render</button>
+            <button id="grid-cancel" disabled title="Stop after the current permutation finishes.">Cancel</button>
+          </div>
+          <div class="progress"><div id="grid-bar" class="bar"></div></div>
+          <div id="grid-status" class="muted"></div>
+        </div>
+      </div>
+
+      <!-- Timeline (NLE) -->
+      <div class="pane" id="pane-timeline">
+        <div class="block">
+          <h2>Project</h2>
+          <p class="muted">Bundles the stage, the base look, display settings, and all saved views.</p>
+          <div class="row">
+            <input id="proj-name" type="text" spellcheck="false" placeholder="project name" title="Name for a new project. Leave empty and click Save to update the currently open project." />
+            <button id="proj-save" data-help="Save the current stage, base look, display settings, selected camera, and the working timeline as a named project. Saving with an empty name updates the open project; a green dot marks unsaved changes.">Save Project</button>
+          </div>
+          <div class="row">
+            <select id="proj-list" title="Saved projects."></select>
+            <button id="proj-open" title="Open the selected project — reloads its stage and restores its look, display, camera, timeline, and track views.">Open</button>
+            <button id="proj-del" title="Delete the selected project.">Delete</button>
+          </div>
+          <div id="proj-msg" class="muted"></div>
+          <div id="proj-hint" class="muted">Open a project to manage its track views.</div>
+        </div>
+        <div class="block" id="tlv-block">
+          <h2>Saved track views<span id="tlv-project-name" class="muted"></span> <span class="info" data-help="Named timelines saved inside the open project. A view's clips reference this stage's variant sets and cameras, so views live in their project — open a project to manage them.">i</span></h2>
+          <div class="row">
+            <input id="tlv-name" type="text" spellcheck="false" placeholder="view name" title="Name for the track view to save." />
+            <button id="tlv-save" title="Save the current timeline as a named track view in this project.">Save</button>
+          </div>
+          <div class="row">
+            <select id="tlv-list" title="Saved track views in this project."></select>
+            <button id="tlv-load" title="Load the selected track view (replaces the current timeline).">Load</button>
+            <button id="tlv-del" title="Delete the selected track view.">Delete</button>
+          </div>
+          <div id="tlv-msg" class="muted"></div>
+        </div>
+        <div class="block grow">
+          <h2>Timeline (NLE)</h2>
+          <p class="tl-help">The editor is the strip below the viewport — one track per variant
+            set plus a camera track. Drag its <b>top edge</b> to resize. Hide unused tracks with the
+            track's <b>−</b>; bring them back from <b>show hidden…</b>.</p>
+          <p class="tl-help">On a track, pick a variant and <b>Append</b>. The toolbar
+            <b>append</b> toggle controls whether it stacks after the last clip or drops at the
+            playhead. Change a clip's variant with the <b>▾</b> on the clip; <b>drag</b> to move,
+            drag the <b>right edge</b> to resize. To delete, select a clip and press <b>Delete</b>
+            (or use <b>Delete clip</b> in the toolbar).</p>
+          <p class="tl-help"><b>Drag the ruler</b> to scrub — the viewport previews the look live.
+            Set an output folder and <b>Render to MP4</b>; the result lands in Results.</p>
+          <p class="tl-help"><b>Presets:</b> Mixer fills every set's track in parallel; Slideshow
+            steps through one change at a time (a staircase across the per-set tracks); Clear
+            empties all clips.</p>
+        </div>
+      </div>
+
+      <!-- Results -->
+      <div class="pane" id="pane-results">
+        <div class="block">
+          <h2>Results folder</h2>
+          <div class="row">
+            <input id="results-dir" type="text" spellcheck="false" placeholder="output folder" title="A folder containing rendered stills or videos (a Grid or Timeline output)." />
+            <button id="results-browse" title="Browse for a folder">&#128193;</button>
+          </div>
+          <button id="results-refresh" title="Re-scan the results folder for rendered stills and videos.">Refresh</button>
+        </div>
+        <div class="block">
+          <h2>Post-process</h2>
+          <div class="seg">
+            <button id="post-overlay" data-help="Stamp each render with its variant label. Labeled copies are written to a _labeled folder; the originals are left untouched.">Overlay labels</button>
+            <button id="post-cutsheet" data-help="Compose all variants in the folder into a single labeled contact-sheet image (a 'cut sheet').">Cut sheet</button>
+          </div>
+          <div id="post-log" class="muted"></div>
+        </div>
+        <div class="block">
+          <h2>Renders</h2>
+          <select id="results-select" title="Choose a rendered permutation to view."></select>
+          <div id="results-frame-controls">
+            <input id="results-slider" type="range" min="0" value="0" title="Scrub through the frames of a rendered sequence." />
+            <span id="results-frame-label" class="muted"></span>
+          </div>
+          <div id="results-empty" class="muted">Refresh a rendered folder to browse stills.</div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <script src="./omniverse-webrtc-streaming-library.js"></script>
+  <!-- Fail loudly, not silently, if NVIDIA's stream client above is missing. It is fetched at
+       setup (run_server.ps1 / run_server.sh), not shipped in this repo; app.js destructures
+       window.OVWebRTC on its first line, so without this guard a missing file just throws into
+       the console and leaves a dead-looking page. -->
+  <script>
+    // IIFE: keep these names off `window`, so a future upstream bundle that top-level-declares
+    // `lib` / `url` / `box` cannot collide with (and break) this guard.
+    (function () {
+    if (!window.OVWebRTC) {
+      var lib = "web/omniverse-webrtc-streaming-library.js";
+      var url = "https://raw.githubusercontent.com/NVIDIA-Omniverse/ovstream/af7f1f9006d1037a3cc7b8eca73f39a6469b69c2/examples/webrtc_client/omniverse-webrtc-streaming-library.js";
+      var box = document.createElement("div");
+      box.setAttribute("style", "position:fixed;inset:0;z-index:99999;overflow:auto;padding:8vh 6vw;"
+        + "background:#12100e;color:#e8e6e3;font:14px/1.6 system-ui,sans-serif");
+      box.innerHTML =
+        '<h1 style="margin:0 0 .6em;font-size:22px;color:#76b900">Viewer component missing</h1>'
+        + '<p><code>' + lib + '</code> did not load. It is NVIDIA&rsquo;s StreamSDK WebRTC client, '
+        + 'and the viewer cannot stream without it.</p>'
+        + '<p>It is <b>fetched at setup</b> from NVIDIA&rsquo;s public <code>ovstream</code> repository, '
+        + 'not redistributed in this repository. Start the app through its launcher '
+        + '(<code>run_server.ps1</code> on Windows, <code>./run_server.sh</code> on Linux/macOS): '
+        + 'every launch checks the copy on disk against the pinned SHA256 and re-fetches it if it '
+        + 'is missing, truncated or otherwise does not match. If the fetch cannot be completed the '
+        + 'launcher stops and prints why &mdash; read its output.</p>'
+        + '<p>If this page still says the file is missing, delete <code>' + lib + '</code> '
+        + 'and relaunch to force a clean fetch.</p>'
+        + '<p>Offline or behind a proxy, download it by hand from:</p>'
+        + '<p><a style="color:#76b900;word-break:break-all" href="' + url + '">' + url + '</a></p>'
+        + '<p>save it as <code>' + lib + '</code>, then reload this page.</p>';
+      document.body.appendChild(box);
+    }
+    })();
+  </script>
+  <script src="./timeline-core.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>

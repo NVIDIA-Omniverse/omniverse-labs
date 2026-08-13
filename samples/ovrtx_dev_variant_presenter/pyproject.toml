@@ -1,0 +1,37 @@
+[project]
+name = "dev-variant-presenter"
+version = "0.1.0"
+description = "OVRTX Dev Variant Presenter — live + batch + timeline variant permutation rendering"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+requires-python = ">=3.11,<3.12"   # ovrtx ships no cp312+ distribution
+dependencies = [
+    "ovrtx>=0.4,<0.5",
+    "ovstage>=0.1,<0.2",
+    "ovstream>=0.4,<0.5",
+    "warp-lang",
+    "usd-core",
+    "numpy",
+    "pillow",
+    "opencv-python<5",  # batch/timeline pipeline validated on 4.x (imwrite/VideoWriter semantics)
+    "imageio-ffmpeg",   # bundled static ffmpeg: H.264 mp4s (browser-decodable) + compress
+    "natsort",
+    "fastapi",
+    "uvicorn[standard]",
+    "httpx",            # downloads an https:// stage and its asset closure (see mirror.py)
+]
+
+[dependency-groups]
+dev = ["pytest"]   # a dependency-group (not an extra): plain `uv sync` installs it, so `uv run pytest` just works
+
+[tool.uv]
+package = false
+
+# All three resolve from PyPI, so no extra index is configured here — but note that
+# `ovrtx` on PyPI is only a `wheel-stub` sdist whose build backend downloads the real
+# platform wheel from pypi.nvidia.com. Installing therefore needs network access to
+# that index. `ovstage` / `ovstream` publish real wheels to PyPI directly
+# (manylinux_2_35 x86_64/aarch64 + win_amd64).
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

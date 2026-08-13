@@ -1,0 +1,71 @@
+# Nested git directories (e.g. clones checked out inside the tree).
+.git/
+
+# Runtime state the app writes at run time: saved projects, render output,
+# logs and the on-disk data dir. All machine-local, never source.
+/data/
+/logs/
+/output/
+/projects/
+
+# Scratch build tree for the rebuild package: `rebuild/PROMPT.md` tells the builder agent to
+# work in `rebuild/build/`, which ends up holding its own .venv, node_modules, render output
+# and a mirrored stage (tens of GB). Ignore the whole directory — the per-name rules above are
+# root-anchored and would not cover `rebuild/build/data/`, `/output/`, `/logs/`.
+/rebuild/build/
+
+# Native crash artifacts (ovrtx/ovstream can hard-die and leave dumps behind).
+server_crashes.log
+crash_dumps/
+*.dmp
+
+# Python environment and caches. The venv is created by `uv sync`.
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+.uv/
+
+# Frontend dependencies and build output.
+node_modules/
+web/dist/
+web/.vite/
+
+# NVIDIA's StreamSDK WebRTC browser client. Fetched from NVIDIA's public ovstream repo on
+# first launch (see run_server.ps1 / run_server.sh); NVIDIA's own software, not redistributed
+# here.
+/web/omniverse-webrtc-streaming-library.js
+# Half-written download: the launcher fetches to `<name>.partial` and only moves it into
+# place once the SHA256 checks out, so an interrupted fetch leaves one behind.
+/web/*.partial
+
+# Temporary composite USDA stages written into the render OUTPUT folder: batch grid
+# permutations (`_comp_`, batch/engine.py) and timeline frames (`_tl_`, render/runtime.py).
+# The live-preview composite is NOT here — it goes to %TEMP%/dev_variant_presenter/
+# (`_live_*.usda`), outside the tree, so it needs no rule.
+_comp_*.usda
+_tl_*.usda
+*.tmp
+
+# OS / editor cruft.
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Third-party reference clones — large, and other repositories' code.
+/reference/
+
+# Scratch workspace for skill authoring; not part of the application.
+/skills_development/
+
+# Personal notes and machine-local tool configuration.
+/docs/.obsidian/
+/docs/superpowers/
+.claude/settings.local.json
+.claude/launch.json
+/.agents/
+/.codex/
