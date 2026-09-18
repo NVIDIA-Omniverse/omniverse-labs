@@ -3,9 +3,27 @@
     "title": "Omniverse Labs",
     "tagline": "Early Omniverse experiments you can run, fork, and learn from.",
     "description": "A Sketchpad built by NVIDIA Omniverse Teams \u2014 early samples, prototypes, and write-ups for developers exploring Omniverse.",
-    "dataVersion": "20260806a"
+    "dataVersion": "20260917b"
   },
   "projects": [
+    {
+      "slug": "astra-omniverse-libraries",
+      "title": "Putting Astra to Work in Simulation With NVIDIA Omniverse Libraries",
+      "subtitle": "A rolling look at what developers are building with OpenAI GPT-6 Astra and NVIDIA Omniverse libraries.",
+      "type": "article",
+      "date": "2026-09-17",
+      "image": "assets/images/card-astra-omniverse-libraries.png",
+      "accent": [
+        "#0a0c10",
+        "#76b900"
+      ],
+      "pinned": true,
+      "pinOrder": 2,
+      "featured": false,
+      "links": {
+        "page": "projects/astra-omniverse-libraries/"
+      }
+    },
     {
       "slug": "about-omniverse-labs",
       "title": "What is Omniverse Labs?",
@@ -18,7 +36,9 @@
         "#0d2818",
         "#76b900"
       ],
-      "featured": true,
+      "pinned": true,
+      "pinOrder": 1,
+      "featured": false,
       "links": {
         "page": "projects/about-omniverse-labs/"
       }
@@ -78,6 +98,24 @@
       "links": {
         "page": "projects/ov-blender-example/",
         "repo": "https://github.com/nvidia-omniverse/omniverse-labs/tree/main/projects/ov-blender-example"
+      }
+    },
+    {
+      "slug": "ovrtx-dev-variant-presenter",
+      "title": "OVRTX Dev Variant Presenter",
+      "subtitle": "Present USD variants live in a path-traced viewport streamed to the browser, then capture them to stills or MP4.",
+      "type": "sample",
+      "date": "2026-07-30",
+      "image": "assets/images/card-ovrtx-dev-variant-presenter.png",
+      "accent": [
+        "#0a0c10",
+        "#76b900"
+      ],
+      "featured": false,
+      "source": "samples/ovrtx_dev_variant_presenter",
+      "links": {
+        "page": "projects/ovrtx-dev-variant-presenter/",
+        "repo": "https://github.com/nvidia-omniverse/omniverse-labs/tree/main/samples/ovrtx_dev_variant_presenter"
       }
     },
     {

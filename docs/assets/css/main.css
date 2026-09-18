@@ -185,6 +185,19 @@ img {
   gap: 1.5rem;
 }
 
+.project-grid__pinned {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+@media (max-width: 719px) {
+  .project-grid__pinned {
+    grid-template-columns: 1fr;
+  }
+}
+
 .project-card {
   position: relative;
   display: flex;
@@ -408,6 +421,27 @@ img {
   margin: 1.75rem 0 0.75rem;
 }
 
+.article-title[id],
+.prose h2[id],
+.prose h3[id] {
+  scroll-margin-top: 1.5rem;
+}
+
+.heading-anchor {
+  margin-left: 0.25em;
+  color: var(--accent);
+  text-decoration: none;
+  opacity: 0;
+  transition: opacity var(--transition);
+}
+
+.article-title:hover .heading-anchor,
+.prose h2:hover .heading-anchor,
+.prose h3:hover .heading-anchor,
+.heading-anchor:focus-visible {
+  opacity: 1;
+}
+
 .prose {
   overflow-wrap: break-word;
 }
@@ -433,6 +467,15 @@ img {
 .prose ul,
 .prose ol {
   padding-left: 1.5rem;
+}
+
+.prose video {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #000;
 }
 
 .prose code {

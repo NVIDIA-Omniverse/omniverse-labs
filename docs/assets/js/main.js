@@ -169,12 +169,33 @@
     }
 
     const sorted = filtered.slice().sort(function (a, b) {
+      if (a.pinned && !b.pinned) return -1;
+      if (!a.pinned && b.pinned) return 1;
+      if (a.pinned && b.pinned) {
+        return (a.pinOrder || 999) - (b.pinOrder || 999);
+      }
       if (a.featured && !b.featured) return -1;
       if (!a.featured && b.featured) return 1;
       return (b.date || "").localeCompare(a.date || "");
     });
 
-    sorted.forEach(function (project) {
+    const pinned = sorted.filter(function (project) {
+      return project.pinned;
+    });
+    const unpinned = sorted.filter(function (project) {
+      return !project.pinned;
+    });
+
+    if (pinned.length) {
+      const pinnedRow = document.createElement("div");
+      pinnedRow.className = "project-grid__pinned";
+      pinned.forEach(function (project) {
+        pinnedRow.appendChild(renderCard(project, false));
+      });
+      grid.appendChild(pinnedRow);
+    }
+
+    unpinned.forEach(function (project) {
       grid.appendChild(renderCard(project, !!project.featured));
     });
   }

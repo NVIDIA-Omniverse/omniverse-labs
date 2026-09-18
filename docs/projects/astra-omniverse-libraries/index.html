@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="A rolling look at what developers are building with OpenAI GPT-6 Astra and NVIDIA Omniverse libraries."
+    />
+    <title>Putting Astra to Work in Simulation With NVIDIA Omniverse Libraries — Omniverse Labs</title>
+    <link rel="stylesheet" href="../../assets/css/main.css" />
+    <script type="text/javascript">
+    if (location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
+      window.OptanonWrapper = function () {
+        var event = new Event("bannerLoaded");
+        window.dispatchEvent(event);
+      };
+      document.write('<script src="https://cdn.cookielaw.org/scripttemplates/otSDKStub.js" data-document-language="true" type="text/javascript" charset="UTF-8" data-domain-script="019f8341-2fcb-7482-b1aa-375a01df34fb"><\/script>');
+      document.write('<script type="text/javascript" src="https://images.nvidia.com/aem-dam/Solutions/ot-js/ot-custom.js"><\/script>');
+      document.write('<script src="https://assets.adobedtm.com/5d4962a43b79/814eb6e9b4e1/launch-4bc07f1e0b0b.min.js"><\/script>');
+    }
+    </script>
+  </head>
+  <body data-base="../../">
+    <header class="site-header site-header--compact">
+      <div class="brand-row">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">OL</div>
+          <p class="brand-title"><a href="../../">Omniverse Labs</a></p>
+        </div>
+        <nav class="header-links" aria-label="Site">
+          <a href="https://github.com/nvidia-omniverse/omniverse-labs" target="_blank" rel="noopener noreferrer">Repository</a>
+          <a href="https://developer.nvidia.com/omniverse" target="_blank" rel="noopener noreferrer">Omniverse libraries</a>
+        </nav>
+      </div>
+    </header>
+
+    <article class="article-wrap">
+      <header class="article-hero">
+        <p class="article-kicker">Article</p>
+        <h1 class="article-title" id="putting-astra-to-work-in-simulation-with-nvidia-omniverse-libraries">
+          Putting Astra to Work in Simulation With NVIDIA Omniverse Libraries
+          <a class="heading-anchor" href="#putting-astra-to-work-in-simulation-with-nvidia-omniverse-libraries" aria-label="Link to this heading">#</a>
+        </h1>
+        <p class="article-deck">
+          A rolling look at what developers are building with OpenAI GPT-6 Astra and NVIDIA Omniverse libraries.
+        </p>
+        <div class="article-meta">
+          <span>September 2026</span>
+        </div>
+        <img
+          src="../../assets/images/astra-omniverse-libraries-hero.png"
+          alt="The International Space Station above Earth blending into an editable digital-twin lounge scene."
+          width="720"
+          height="405"
+        />
+      </header>
+
+      <div class="prose">
+        <p>
+          Turning a
+          <a href="https://www.nvidia.com/en-us/glossary/generative-physical-ai/" target="_blank" rel="noopener noreferrer">physical AI</a>
+          simulation goal into a working application takes more than code. Developers need usable assets, connected tools, and tests that reveal whether a system behaves as intended. AI agents expand what developers can build and test by preparing environments, integrating capabilities, and running experiments—freeing developers to explore scenarios, investigate failures, and test improvements.
+        </p>
+
+        <p>
+          With advances in coding, visual reasoning, and computer use, models such as
+          <a href="https://openai.com/index/gpt-6-astra/" target="_blank" rel="noopener noreferrer">OpenAI GPT-6 Astra</a>
+          can coordinate multistep workflows. These experiments show how that extends to building editable scenes, inspecting results, and revising implementations as requirements evolve.
+          <a href="https://developer.nvidia.com/omniverse" target="_blank" rel="noopener noreferrer">NVIDIA Omniverse libraries</a>
+          and agent skills, coupled with other NVIDIA technologies including
+          <a href="https://developer.nvidia.com/isaac?size=n_6_n&amp;sort-field=featured&amp;sort-direction=desc" target="_blank" rel="noopener noreferrer">NVIDIA Isaac libraries</a>,
+          provide tools to evaluate physical behavior within existing applications, so agents can use the results to guide their next revision.
+        </p>
+
+        <p>
+          This ongoing series highlights internal NVIDIA experiments with Astra and Omniverse libraries, offering a glimpse of what teams are exploring and learning. The early results are worth paying close attention to.
+        </p>
+
+        <h2 id="bring-the-international-space-station-into-the-browser">
+          Bring the International Space Station into the browser
+          <a class="heading-anchor" href="#bring-the-international-space-station-into-the-browser" aria-label="Link to this heading">#</a>
+        </h2>
+
+        <figure>
+          <img
+            src="../../assets/images/card-astra-omniverse-libraries.png"
+            alt="A browser application displaying the International Space Station above Earth alongside live telemetry."
+            width="720"
+          />
+          <figcaption>
+            <em>Astra and NVIDIA Omniverse libraries bring NASA’s ISS assets into a browser application, showing how developers can connect existing 3D content with operational data.</em>
+          </figcaption>
+        </figure>
+
+        <p>
+          Turning 3D assets into a live-data application requires scene assembly, data integration, and an interface.
+        </p>
+
+        <p>
+          NVIDIA’s Nic Johns used Astra to assemble publicly available NASA assets—555 exterior meshes and seven interior modules—into an OpenUSD model of the International Space Station. Blender supported conversion and assembly; NVIDIA Omniverse libraries—ovrtx, ovstage, and ovstream—provided rendering, scene runtime, and streaming for a custom web interface with ISS telemetry. The initial prompt produced the application; a second corrected Earth in the scene.
+        </p>
+
+        <p>
+          Developers can reuse existing assets in custom applications, delegating preparation and integration to an agent. Engineering software teams could offer users tailored views of their models and operational data.
+        </p>
+
+        <div class="callout">
+          <p>
+            Want to experiment with your own USD scene in a browser? Check out NVIDIA’s
+            <a href="https://github.com/NVIDIA/skills/tree/main/skills/omniverse-realtime-viewer" target="_blank" rel="noopener noreferrer">Omniverse Realtime Viewer skill</a>.
+          </p>
+        </div>
+
+        <h2 id="turn-captured-rooms-into-scenes-you-can-test">
+          Turn captured rooms into scenes you can test
+          <a class="heading-anchor" href="#turn-captured-rooms-into-scenes-you-can-test" aria-label="Link to this heading">#</a>
+        </h2>
+
+        <figure>
+          <video controls playsinline preload="metadata" width="720">
+            <source src="../../assets/videos/astra-room-reconstruction.mp4" type="video/mp4" />
+            Your browser does not support embedded MP4 video.
+          </video>
+          <figcaption>
+            <em>Astra coordinates NVIDIA reconstruction tools, scene authoring, and Isaac Sim feedback to turn a captured room into an editable USD scene for interaction testing.</em>
+          </figcaption>
+        </figure>
+
+        <p>
+          Turning stereo captures into an editable simulation scene requires more than reconstruction: developers must resolve incomplete geometry, preserve uncertainty, and configure physical behavior. In this prototype by Chirag Majithia, Astra helped turn stereo RGB captures into an editable studio scene through three stages:
+        </p>
+
+        <ul>
+          <li>
+            <strong>Object map:</strong> Astra coordinated
+            <a href="https://github.com/nvidia-isaac/pyCuSFM" target="_blank" rel="noopener noreferrer">PyCuSFM</a>,
+            <a href="https://github.com/NVlabs/FoundationStereo" target="_blank" rel="noopener noreferrer">FoundationStereo</a>, and
+            <a href="https://github.com/nvidia-isaac/nvblox" target="_blank" rel="noopener noreferrer">nvblox</a>
+            to reconstruct the room. Comparing geometry with source images helped recover a missed door and exit sign; areas with insufficient depth evidence remained unknown.
+          </li>
+          <li>
+            <strong>Object library:</strong> Astra combined generated geometry and Blender-authored assets, using
+            <a href="https://github.com/nvidia-isaac/video_to_data" target="_blank" rel="noopener noreferrer">V2D</a>
+            alignment tools and user review to select and place objects.
+          </li>
+          <li>
+            <strong>Scene composition and testing:</strong> Astra integrated
+            <a href="https://github.com/NVIDIA-Omniverse/usd-content-agents" target="_blank" rel="noopener noreferrer">USD Content Agents</a>’
+            physics-authoring and inspection code, configured doors and drawers, and used Isaac Sim tests to refine collisions and contacts. Stable interactions still required iteration.
+          </li>
+        </ul>
+
+        <p>
+          The video brings these stages together through articulated storage demonstrations, recorded mouse-driven physics interactions, and controllable lighting. The resulting editable USD prototype connects reconstruction to interaction testing, letting developers inspect gaps, revise the scene, and test selected interactions.
+        </p>
+
+        <div class="callout">
+          <p>
+            Want to experiment with your own captures? Explore NVIDIA’s
+            <a href="https://developer.nvidia.com/isaac?size=n_6_n&amp;sort-field=featured&amp;sort-direction=desc" target="_blank" rel="noopener noreferrer">3D reconstruction tools</a>,
+            <a href="https://developer.nvidia.com/isaac/sim" target="_blank" rel="noopener noreferrer">Isaac Sim</a>,
+            <a href="https://nvidia-omniverse.github.io/ovrtx/" target="_blank" rel="noopener noreferrer">ovrtx</a>, and
+            <a href="https://github.com/NVIDIA-Omniverse/usd-content-agents" target="_blank" rel="noopener noreferrer">USD Content Agents</a>
+            to experiment with reconstructing, rendering, and testing your own scenes in simulation.
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <footer class="site-footer">
+      <div class="site-footer__site">
+        <p class="site-footer__meta">
+          <a href="../../">← All projects</a>
+          <span class="site-footer__sep" aria-hidden="true">·</span>
+          <span>Apache 2.0</span>
+          <span class="site-footer__sep" aria-hidden="true">·</span>
+          <a href="https://github.com/nvidia-omniverse/omniverse-labs/issues">Site feedback</a>
+        </p>
+      </div>
+      <nav class="site-footer__policies" aria-label="NVIDIA legal and policies">
+        <ul>
+          <li><a href="https://www.nvidia.com/en-us/about-nvidia/privacy-policy/">Privacy Policy</a></li>
+          <li><a href="https://www.nvidia.com/en-us/about-nvidia/privacy-center/">Your Privacy Choices</a></li>
+          <li><a href="https://www.nvidia.com/en-us/about-nvidia/terms-of-service/">Terms of Service</a></li>
+          <li><a href="https://www.nvidia.com/en-us/about-nvidia/accessibility/">Accessibility</a></li>
+          <li><a href="https://www.nvidia.com/en-us/about-nvidia/company-policies/">Corporate Policies</a></li>
+          <li><a href="https://www.nvidia.com/en-us/product-security/">Product Security</a></li>
+          <li><a href="https://www.nvidia.com/en-us/contact/">Contact</a></li>
+        </ul>
+      </nav>
+    </footer>
+    <script type="text/javascript">if (window._satellite) { window._satellite.pageBottom(); }</script>
+  </body>
+</html>
