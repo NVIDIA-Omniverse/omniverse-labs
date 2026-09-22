@@ -27,11 +27,8 @@ define the intended `ov-blender-example` release platform set.
 | OVRTX platform | `ov-blender-example` platform |
 | --- | --- |
 | Linux x86_64 | `linux-x64` |
-| Windows x86_64 | `windows-x64` |
 | Linux aarch64 | `linux-aarch64` |
 
-Windows ARM64 is not an intended release platform because OVRTX does not
-publish a Windows ARM64 binary release.
 
 ## Omniverse Runtime Requirements
 
@@ -41,7 +38,6 @@ platforms above. They do not define additional release platforms.
 | OS | Minimum version |
 | --- | --- |
 | Linux | Ubuntu 22.04 |
-| Windows | Windows 11 |
 
 The linked requirements list a GeForce RTX 3070 as the minimum GPU for
 Omniverse Kit. The following table records validated driver minimums by GPU
@@ -53,12 +49,6 @@ generation and type; it is not a list of minimum GPU models.
 | Linux | Blackwell | Data Center | `580.95.05` |
 | Linux | Ada, Ampere, or Turing | GeForce or Workstation | `570.169` |
 | Linux | Ada, Ampere, or Turing | Data Center | `570.158.01` |
-| Windows | Blackwell | GeForce | `581.42` |
-| Windows | Blackwell | Workstation | `573.42` |
-| Windows | Blackwell | Data Center | `581.42` |
-| Windows | Ada, Ampere, or Turing | GeForce | `581.42` |
-| Windows | Ada, Ampere, or Turing | Workstation | `573.42` |
-| Windows | Ada, Ampere, or Turing | Data Center | `573.39` |
 
 ## ov-blender-example Support Matrix
 
@@ -69,7 +59,6 @@ progress.
 | Support platform | OVRTX target | Support status | Evidence |
 | --- | --- | --- | --- |
 | `linux-x64` | Yes | Supported | Published `linux-x64` release |
-| `windows-x64` | Yes | Supported | Published `windows-x64` release; current platform release build is active |
 | `linux-aarch64` | Yes | Supported | Linux aarch64 platform release build is active |
 
 ## Maintaining This Matrix
