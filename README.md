@@ -2,7 +2,7 @@
 
 Experimental samples and ideas from the NVIDIA Omniverse team. A Sketchpad built by NVIDIA Omniverse Teams.
 
-**Browse projects and articles:** once GitHub Pages is enabled, the showcase lives at `https://<org>.github.io/omniverse-labs/` (see [docs/README.md](docs/README.md) to publish).
+**Browse projects and articles:** once GitHub Pages is enabled, the showcase lives at [https://nvidia-omniverse.github.io/omniverse-labs/] (see [docs/README.md](docs/README.md) to publish).
 
 ---
 
