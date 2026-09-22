@@ -71,6 +71,6 @@ specifics. Common dependencies:
 Clone the repo and navigate to the project you want to explore:
 
 ```bash
-git clone https://github.com/NVIDIA-dev/omniverse-labs.git
+git clone https://github.com/NVIDIA-Omniverse/omniverse-labs.git
 cd omniverse-labs/projects/<project-name>
 pip install -r requirements.txt   # if present
