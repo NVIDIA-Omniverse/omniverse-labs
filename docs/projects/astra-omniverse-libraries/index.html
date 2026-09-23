@@ -74,8 +74,85 @@
         </p>
 
         <p>
-          This ongoing series highlights internal NVIDIA experiments with Astra and Omniverse libraries, offering a glimpse of what teams are exploring and learning. The early results are worth paying close attention to.
+          This ongoing series brief highlights from internal NVIDIA experiments with Astra and Omniverse libraries, offering a glimpse of what teams are exploring and learning. And the early results are worth paying close attention to.
         </p>
+
+        <h2 id="robo-olympics-teaching-robots-to-go-for-gold">
+          Robo Olympics: Teaching Robots to Go for Gold
+          <a class="heading-anchor" href="#robo-olympics-teaching-robots-to-go-for-gold" aria-label="Link to this heading">#</a>
+        </h2>
+
+        <figure>
+          <img
+            src="../../assets/images/astra-robo-olympics.png"
+            alt="Grid of OVRTX renders showing Unitree G1 humanoids in Robo Olympics events including sprint, soccer, baseball, long jump, hurdles, shot put, javelin, figure skating, and kickboxing."
+            width="753"
+            height="376"
+          />
+          <figcaption>
+            <em>OVRTX rendered images of robots trained and simulated with NVIDIA libraries to play various sports activities.</em>
+          </figcaption>
+        </figure>
+
+        <p>
+          Teaching robots a sport requires translating visual references into actions that hold up in physics simulation. For Robo Olympics, NVIDIA’s Tae Kim used sports videos and natural-language instructions to guide Astra through building scenes, controllers, simulation trials, and videos featuring Unitree G1 humanoids.
+        </p>
+
+        <p>
+          Kimodo–a motion-generation AI model–generated motion references, SOMA Retargeter–a motion-retargeting library–adapted them to the robot’s joints, and SONIC provided pretrained whole-body control. Astra built sport-specific controllers above SONIC and refined them through repeated physics trials. Here, the
+          <a href="https://github.com/newton-physics/newton" target="_blank" rel="noopener noreferrer">Newton</a>
+          open-source physics engine was used to simulate balance, forces, and contact to help evaluate timing, aim, and recovery while NVIDIA Warp powered GPU-accelerated calculations, such as moving sand. The training environment was represented using OpenUSD and simulation rendered with
+          <a href="https://github.com/NVIDIA-Omniverse/ovrtx" target="_blank" rel="noopener noreferrer">ovrtx</a>.
+        </p>
+
+        <p>
+          In one hurdle experiment, ovrtx also supplied images from a robot-mounted virtual camera, enabling a perception model to detect the hurdle and the controller to adjust its timing as Newton advanced the physical world. The robot succeeded in <strong>64 of 100 single-hurdle simulation trials</strong>—an early demonstration of using visual feedback and physics to test and refine visually guided robot behavior.
+        </p>
+
+        <div class="callout">
+          <p>
+            Want to explore your own simulation idea? Join Tae Kim and NVIDIA and community developers for a live build with Astra and Omniverse libraries, including lessons from Robo Olympics on guiding agents and testing results.
+            <a href="https://www.youtube.com/watch?v=pbwlRzjLwqc" target="_blank" rel="noopener noreferrer">Tune in September 30 at 11 a.m. PDT</a>.
+          </p>
+        </div>
+
+        <h2 id="test-robotic-disassembly-with-cad-and-simulation-feedback">
+          Test robotic disassembly with CAD and simulation feedback
+          <a class="heading-anchor" href="#test-robotic-disassembly-with-cad-and-simulation-feedback" aria-label="Link to this heading">#</a>
+        </h2>
+
+        <figure>
+          <img
+            src="../../assets/images/astra-robotic-disassembly.png"
+            alt="Isaac Sim view of a robotic wrench removing a bolt from a car suspension assembly, with an on-screen overlay tracking bolt removal."
+            width="753"
+            height="564"
+          />
+          <figcaption>
+            <em>Astra connects PTC Onshape design changes with NVIDIA Isaac Sim feedback to explore how robots can disassemble a suspension within space constraints.</em>
+          </figcaption>
+        </figure>
+
+        <p>
+          Can a robot reach the fasteners and take an assembly apart? NVIDIA's Jens Jebens explored that question with Astra, using it to agentically model a car suspension in PTC Onshape and rig it in a physically plausible manner in NVIDIA Isaac Sim.
+        </p>
+
+        <p>
+          Astra used simulation feedback to revise the design in Onshape’s UI, measured the remaining space and devised a wrench that fit. Jens reported successful toe-control arm removal in simulation, paving the way for disassembly and assembly policy training in Isaac Lab.
+        </p>
+
+        <p>
+          Developers can explore how design and tooling choices affect robotic assembly. For engineering software makers, this points to an opportunity to extend existing applications with agents that use their trusted CAD tools, simulators, and engineering data to test changes and guide revisions. Software makers can bring that expertise into agent-driven workflows while retaining control of their applications and customer experience.
+        </p>
+
+        <div class="callout">
+          <p>
+            Want to try it? Explore NVIDIA's
+            <a href="https://docs.omniverse.nvidia.com/extensions/latest/ext_onshape.html" target="_blank" rel="noopener noreferrer">Onshape importer guide</a>
+            to start experimenting with your own assembly in
+            <a href="https://developer.nvidia.com/isaac/sim" target="_blank" rel="noopener noreferrer">Isaac Sim</a>.
+          </p>
+        </div>
 
         <h2 id="bring-the-international-space-station-into-the-browser">
           Bring the International Space Station into the browser
@@ -157,9 +234,9 @@
 
         <div class="callout">
           <p>
-            Want to experiment with your own captures? Explore NVIDIA’s
-            <a href="https://developer.nvidia.com/isaac?size=n_6_n&amp;sort-field=featured&amp;sort-direction=desc" target="_blank" rel="noopener noreferrer">3D reconstruction tools</a>,
-            <a href="https://developer.nvidia.com/isaac/sim" target="_blank" rel="noopener noreferrer">Isaac Sim</a>,
+            Want to experiment with your own captures? Explore NVIDIA tools including Isaac CUDA-accelerated
+            <a href="https://github.com/nvidia-isaac" target="_blank" rel="noopener noreferrer">3D reconstruction tools</a>,
+            <a href="https://github.com/isaac-sim/IsaacSim" target="_blank" rel="noopener noreferrer">Isaac Sim</a>/<a href="https://github.com/isaac-sim/IsaacLab" target="_blank" rel="noopener noreferrer">Lab</a>,
             <a href="https://nvidia-omniverse.github.io/ovrtx/" target="_blank" rel="noopener noreferrer">ovrtx</a>, and
             <a href="https://github.com/NVIDIA-Omniverse/usd-content-agents" target="_blank" rel="noopener noreferrer">USD Content Agents</a>
             to experiment with reconstructing, rendering, and testing your own scenes in simulation.

@@ -415,6 +415,25 @@ img {
   color: var(--text);
 }
 
+.prose figure {
+  margin: 0 0 1.25rem;
+}
+
+.prose figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+.prose figcaption {
+  margin-top: 0.75rem;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
 .prose h3 {
   font-family: var(--font-display);
   font-size: 1.1rem;

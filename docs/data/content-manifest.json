@@ -12,12 +12,6 @@
   ],
   "samples": [
     {
-      "slug": "ovrtx-ovphysx-livestream",
-      "source_dir": "samples/ovrtx_ovphysx_livestream",
-      "card_image": "livestream-files/examples/python/ov-libaries-livestream/clone_example.png",
-      "card_image_dest": "assets/images/card-ovrtx-ovphysx-livestream.png"
-    },
-    {
       "slug": "ovrtx-dev-variant-presenter",
       "source_dir": "samples/ovrtx_dev_variant_presenter",
       "card_image": "docs/images/timeline.png",
