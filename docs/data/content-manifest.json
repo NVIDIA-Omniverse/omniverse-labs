@@ -8,6 +8,19 @@
       "images_dir": "images",
       "card_image": "images/dsx_output.png",
       "card_image_dest": "assets/images/card-ovrtx-agents.png"
+    },
+    {
+      "slug": "astra-vscode-simulation",
+      "source_dir": "articles/astra-vscode-simulation",
+      "images_dir": "images",
+      "card_image": "images/figure-5-robotiq-pickup.png",
+      "card_image_dest": "assets/images/card-astra-vscode-simulation.png",
+      "extra_files": [
+        {
+          "src": "media/robotiq-pick.webm",
+          "dest": "assets/videos/robotiq-pick.webm"
+        }
+      ]
     }
   ],
   "samples": [

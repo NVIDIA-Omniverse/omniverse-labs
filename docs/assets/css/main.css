@@ -497,6 +497,30 @@ img {
   background: #000;
 }
 
+.prose .table-wrap {
+  overflow-x: auto;
+  margin: 0 0 1.25rem;
+}
+
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.prose th,
+.prose td {
+  border: 1px solid var(--border);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.prose th {
+  background: var(--bg-elevated);
+  font-weight: 600;
+}
+
 .prose code {
   font-family: var(--font-mono);
   font-size: 0.9em;

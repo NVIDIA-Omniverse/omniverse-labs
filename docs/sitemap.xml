@@ -7,6 +7,12 @@
     <priority>1.0</priority>
   </url>
   <url>
+    <loc>https://nvidia-omniverse.github.io/omniverse-labs/projects/astra-vscode-simulation/</loc>
+    <lastmod>2026-09-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://nvidia-omniverse.github.io/omniverse-labs/projects/astra-omniverse-libraries/</loc>
     <lastmod>2026-09-23</lastmod>
     <changefreq>monthly</changefreq>
