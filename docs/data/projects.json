@@ -3,7 +3,7 @@
     "title": "Omniverse Labs",
     "tagline": "Early Omniverse experiments you can run, fork, and learn from.",
     "description": "A Sketchpad built by NVIDIA Omniverse Teams \u2014 early samples, prototypes, and write-ups for developers exploring Omniverse.",
-    "dataVersion": "20260923c"
+    "dataVersion": "20260928"
   },
   "projects": [
     {
@@ -12,7 +12,7 @@
       "subtitle": "Started with one box crossing a conveyor gap. Ended with a robot picking and sorting defects.",
       "type": "article",
       "date": "2026-09-23",
-      "image": "assets/images/card-astra-vscode-simulation.png",
+      "image": "assets/images/card-astra-vscode-simulation.jpg",
       "accent": [
         "#0a0c10",
         "#76b900"

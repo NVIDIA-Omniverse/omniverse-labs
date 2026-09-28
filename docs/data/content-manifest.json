@@ -13,8 +13,8 @@
       "slug": "astra-vscode-simulation",
       "source_dir": "articles/astra-vscode-simulation",
       "images_dir": "images",
-      "card_image": "images/figure-5-robotiq-pickup.png",
-      "card_image_dest": "assets/images/card-astra-vscode-simulation.png",
+      "card_image": "images/figure-5-robotiq-pickup.jpg",
+      "card_image_dest": "assets/images/card-astra-vscode-simulation.jpg",
       "extra_files": [
         {
           "src": "media/robotiq-pick.webm",

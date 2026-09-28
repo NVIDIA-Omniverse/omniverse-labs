@@ -35,7 +35,7 @@ The existing extension built from another project using `ovrtx` and HTTP service
 
 Figure 1\. How the pieces fit together. The editor and headless runs share a runner and saved configuration.
 
-![Figure 2. The first version in VS Code. The gantry is still a kinematic placeholder here; we get to the UR10 and Robotiq later.](images/figure-2-vscode-placeholder.png)
+![Figure 2. The first version in VS Code. The gantry is still a kinematic placeholder here; we get to the UR10 and Robotiq later.](images/figure-2-vs-code-ext.png)
 
 Figure 2\. The first version in VS Code. The gantry is still a kinematic placeholder here; we get to the UR10 and Robotiq later.
 
@@ -104,7 +104,7 @@ So I asked for a compatible workpiece. The new test variant is 70 mm across the 
 
 The first pickup attempts needed some adjustments too. The original mount couldn’t reach the approach pose. Going too deep brought the gripper knuckles into contact with the box, and lowering into the original tray brought the forearm into the pedestal. We moved the robot origin to \[0, −0.9, 1.0\] m, set the tray support height to 0.78 m, and used a pinch near the top of the box. The higher pinch also cleared the knuckles on the narrower defect. I understand these are all very precise test specifications and don’t account for the real-world conditions the gripper may experience with a box but at least it gives us somewhere to start.
 
-![Figure 5. The UR10 and Robotiq carrying the compatible box in ovrtx. This is the physical-contact pickup, after replacing the early gantry placeholder.](images/figure-5-robotiq-pickup.png)
+![Figure 5. The UR10 and Robotiq carrying the compatible box in ovrtx. This is the physical-contact pickup, after replacing the early gantry placeholder.](images/figure-5-robotiq-pickup.jpg)
 
 Figure 5\. The UR10 and Robotiq carry the compatible box in ovrtx. This is the physical-contact pickup, after replacing the early gantry placeholder.
 
