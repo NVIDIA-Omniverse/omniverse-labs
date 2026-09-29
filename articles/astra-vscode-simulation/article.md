@@ -163,6 +163,25 @@ Omniverse libraries made it possible to put that workflow inside VS Code. `ovphy
 
 That combination is what made this useful for me: Astra helped me build and debug across the project, and the libraries let me bring the simulation into my everyday editor. If you’re trying something similar and want to learn to do this yourself, bring your questions to GTC Berlin’s digital twin training and vision AI sessions. I’ll happily start with one box. There’s plenty to learn before adding the warehouse.
 
+### What the build used
+
+The token usage for building this workflow was 24,164,826 logged tokens—about 24.16 million—based on the sum of the per-request usage records. That includes planning, implementation, conveyor and detector refinements, CAD preparation, robot integration, and pickup compatibility.
+
+* 22,737,024 cached input tokens—reused context.
+* 1,269,403 uncached input tokens.
+* 158,399 output tokens, including reasoning.
+
+That works out to roughly $43 USD in model-token costs for the full Factory Line build, including refinements, CAD preparation, and robot integration.
+
+Using GPT-6 Astra’s standard API rates as of September 2026—$10 per million uncached input tokens, $1 per million cached input tokens, and $50 per million output tokens—the baseline estimate is below. It excludes cache-write pricing and the 2× long-context pricing applied to requests over 272K input tokens.
+
+* Uncached input: $12.69
+* Cached input: $22.74
+* Output, including reasoning: $7.92
+* **Total: $43.35**
+
+[Official GPT-6 Astra pricing](https://developers.openai.com/api/docs/models/gpt-6-astra)
+
 Explore GTC Berlin
 
 * [GTC Berlin training](https://www.nvidia.com/en-eu/gtc/training/)  
