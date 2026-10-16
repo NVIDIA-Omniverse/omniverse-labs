@@ -26,3 +26,4 @@ done
 exec "$KIT_EXECUTABLE" "$ROOT/apps/reference.kit" ${ARGS[@]+"${ARGS[@]}"} \
     --ext-path "$ROOT/source/clients/extensions/utils/omni.example.reference_client" \
     "--/exts/omni.example.reference_client/clientConfig=$CLIENT_CONFIG" "$@"
+    
