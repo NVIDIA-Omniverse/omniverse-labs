@@ -1,0 +1,146 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="750" viewBox="0 0 1200 750" role="img" aria-labelledby="card-title card-desc">
+  <title id="card-title">Composable Bindings — source identity across shared views</title>
+  <desc id="card-desc">Two illustrative machines provide live readings identified as machine-01 and machine-02. Composable Bindings connect those readings to an OpenUSD scene with two cylindrical machines and a shared two-dimensional console. All displayed readings are synthetic.</desc>
+  <defs>
+    <radialGradient id="backdrop-glow" cx="84%" cy="34%" r="75%">
+      <stop offset="0" stop-color="#15232a" stop-opacity="0.68"/>
+      <stop offset="1" stop-color="#0a0c10" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="machine-green" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#1c2925"/>
+      <stop offset="0.43" stop-color="#526655"/>
+      <stop offset="1" stop-color="#1b2823"/>
+    </linearGradient>
+    <linearGradient id="machine-cyan" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#192a31"/>
+      <stop offset="0.43" stop-color="#405b65"/>
+      <stop offset="1" stop-color="#192a31"/>
+    </linearGradient>
+    <linearGradient id="binding-fill" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1e2c22"/>
+      <stop offset="1" stop-color="#12151c"/>
+    </linearGradient>
+    <pattern id="background-grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" fill="none" stroke="#8da0b5" stroke-width="1" opacity="0.035"/>
+    </pattern>
+    <marker id="arrow-green" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M1 1L7 4.5L1 8" fill="none" stroke="#76b900" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="arrow-cyan" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M1 1L7 4.5L1 8" fill="none" stroke="#5ce1e6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <!-- Background and heading -->
+  <rect width="1200" height="750" rx="0" fill="#0a0c10"/>
+  <rect width="1200" height="750" fill="url(#backdrop-glow)"/>
+  <rect width="1200" height="750" fill="url(#background-grid)"/>
+  <rect x="64" y="48" width="29" height="5" rx="2.5" fill="#76b900"/>
+  <text x="107" y="56" fill="#b1bdca" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="700" letter-spacing="2.4">OMNIVERSE LABS</text>
+  <text x="64" y="120" fill="#f3f6f9" font-family="Arial, Helvetica, sans-serif" font-size="47" font-weight="700" letter-spacing="-1.4">Composable Bindings</text>
+  <text x="65" y="158" fill="#a8b4c3" font-family="Arial, Helvetica, sans-serif" font-size="21">Source identity connects live readings to shared views.</text>
+
+  <!-- Connectors: one binding layer supplies both consumers -->
+  <path d="M304 425H378" fill="none" stroke="#76b900" stroke-width="2.5" marker-end="url(#arrow-green)"/>
+  <circle cx="304" cy="425" r="4" fill="#76b900"/>
+  <path d="M634 425H662Q680 425 680 407V369Q680 351 698 351H722" fill="none" stroke="#76b900" stroke-width="2.5" marker-end="url(#arrow-green)"/>
+  <path d="M680 425V593Q680 611 698 611H722" fill="none" stroke="#5ce1e6" stroke-width="2.5" marker-end="url(#arrow-cyan)"/>
+  <circle cx="680" cy="425" r="5" fill="#0a0c10" stroke="#a9d662" stroke-width="2"/>
+
+  <!-- Source readings -->
+  <g id="source-readings" font-family="Arial, Helvetica, sans-serif">
+    <text x="64" y="232" fill="#c9d3de" font-size="16" font-weight="700" letter-spacing="1.6">SOURCE READINGS</text>
+    <rect x="64" y="257" width="240" height="336" rx="18" fill="#12151c" stroke="#2c3541"/>
+    <circle cx="88" cy="286" r="4" fill="#76b900"/>
+    <text x="101" y="291" fill="#a8b4c3" font-size="13" letter-spacing="1.3">LIVE DATA</text>
+    <path d="M84 311H284" fill="none" stroke="#29323e"/>
+
+    <text x="86" y="341" fill="#8c99aa" font-size="12" letter-spacing="1.5">SOURCE ID</text>
+    <rect x="85" y="354" width="164" height="33" rx="7" fill="#253517" stroke="#527d1b"/>
+    <text x="98" y="376" fill="#c8eca0" font-family="Consolas, 'Courier New', monospace" font-size="18">machine-01</text>
+    <text x="86" y="419" fill="#f0f5f8" font-size="25" font-weight="700">182.4</text>
+    <text x="162" y="419" fill="#91a0b1" font-size="14">kPa</text>
+    <text x="210" y="419" fill="#d7e2eb" font-size="16">64.2°C</text>
+    <path d="M85 444H283" fill="none" stroke="#29323e"/>
+
+    <text x="86" y="476" fill="#8c99aa" font-size="12" letter-spacing="1.5">SOURCE ID</text>
+    <rect x="85" y="489" width="164" height="33" rx="7" fill="#163138" stroke="#306c76"/>
+    <text x="98" y="511" fill="#a9ebef" font-family="Consolas, 'Courier New', monospace" font-size="18">machine-02</text>
+    <text x="86" y="557" fill="#f0f5f8" font-size="25" font-weight="700">176.8</text>
+    <text x="162" y="557" fill="#91a0b1" font-size="14">kPa</text>
+    <text x="210" y="557" fill="#d7e2eb" font-size="16">61.6°C</text>
+  </g>
+
+  <!-- Binding layer -->
+  <g id="composable-bindings" font-family="Arial, Helvetica, sans-serif">
+    <rect x="390" y="295" width="244" height="260" rx="22" fill="url(#binding-fill)" stroke="#587c2f" stroke-width="1.5"/>
+    <rect x="417" y="323" width="190" height="4" rx="2" fill="#76b900" opacity="0.65"/>
+    <g id="binding-symbol" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="3">
+      <rect x="469" y="353" width="51" height="51" rx="12" stroke="#76b900"/>
+      <rect x="502" y="374" width="51" height="51" rx="12" stroke="#5ce1e6"/>
+      <path d="M489 389H533" stroke="#e9f4df"/>
+      <path d="M527 383L533 389L527 395" stroke="#e9f4df"/>
+    </g>
+    <text x="512" y="464" text-anchor="middle" fill="#f3f6f9" font-size="27" font-weight="700">Composable</text>
+    <text x="512" y="497" text-anchor="middle" fill="#f3f6f9" font-size="27" font-weight="700">Bindings</text>
+    <text x="512" y="530" text-anchor="middle" fill="#b9c6ad" font-size="14">SOURCE-ISSUED IDENTITIES</text>
+  </g>
+
+  <!-- OpenUSD consumer and two stylized cylindrical machines -->
+  <g id="openusd-scene" font-family="Arial, Helvetica, sans-serif">
+    <rect x="734" y="215" width="402" height="290" rx="18" fill="#12151c" stroke="#2c3541"/>
+    <rect x="757" y="238" width="7" height="7" rx="1.5" fill="#76b900"/>
+    <text x="776" y="248" fill="#e6edf3" font-size="18" font-weight="700">OpenUSD scene</text>
+    <text x="1112" y="247" text-anchor="end" fill="#8697a9" font-size="12" letter-spacing="1.2">3D</text>
+    <path d="M759 268H1111" fill="none" stroke="#29323e"/>
+    <path d="M764 418L935 369L1108 418L935 468Z" fill="#171e26" stroke="#263440"/>
+    <path d="M808 430L979 381M851 442L1022 393M894 454L1065 405M808 405L979 454M851 393L1022 442M894 381L1065 430" fill="none" stroke="#263440" stroke-width="1" opacity="0.75"/>
+
+    <g id="machine-01">
+      <ellipse cx="859" cy="420" rx="51" ry="16" fill="#070b0f" opacity="0.8"/>
+      <path d="M817 329C817 313 901 313 901 329V407C901 429 817 429 817 407Z" fill="url(#machine-green)" stroke="#7b9777" stroke-opacity="0.55"/>
+      <ellipse cx="859" cy="329" rx="42" ry="14" fill="#485c45" stroke="#8ca680"/>
+      <ellipse cx="859" cy="329" rx="29" ry="9" fill="#263c28" stroke="#59744f"/>
+      <path d="M817 355C817 373 901 373 901 355" fill="none" stroke="#76b900" stroke-width="5"/>
+      <path d="M817 394C817 412 901 412 901 394" fill="none" stroke="#889d85" stroke-opacity="0.4"/>
+      <rect x="849" y="379" width="20" height="14" rx="3" fill="#102110" stroke="#a1c47c"/>
+      <circle cx="859" cy="386" r="3" fill="#76b900"/>
+      <rect x="799" y="450" width="122" height="28" rx="6" fill="#253517" stroke="#446521"/>
+      <text x="860" y="469" text-anchor="middle" fill="#c8eca0" font-family="Consolas, 'Courier New', monospace" font-size="14">machine-01</text>
+    </g>
+
+    <g id="machine-02">
+      <ellipse cx="1010" cy="420" rx="51" ry="16" fill="#070b0f" opacity="0.8"/>
+      <path d="M968 329C968 313 1052 313 1052 329V407C1052 429 968 429 968 407Z" fill="url(#machine-cyan)" stroke="#749ca8" stroke-opacity="0.55"/>
+      <ellipse cx="1010" cy="329" rx="42" ry="14" fill="#3e5c65" stroke="#7aa6b3"/>
+      <ellipse cx="1010" cy="329" rx="29" ry="9" fill="#213d46" stroke="#537d89"/>
+      <path d="M968 355C968 373 1052 373 1052 355" fill="none" stroke="#5ce1e6" stroke-width="5"/>
+      <path d="M968 394C968 412 1052 412 1052 394" fill="none" stroke="#7ba0ad" stroke-opacity="0.4"/>
+      <rect x="1000" y="379" width="20" height="14" rx="3" fill="#10242b" stroke="#89bbc3"/>
+      <circle cx="1010" cy="386" r="3" fill="#5ce1e6"/>
+      <rect x="949" y="450" width="122" height="28" rx="6" fill="#163138" stroke="#30616c"/>
+      <text x="1010" y="469" text-anchor="middle" fill="#a9ebef" font-family="Consolas, 'Courier New', monospace" font-size="14">machine-02</text>
+    </g>
+  </g>
+
+  <!-- Shared 2D consumer -->
+  <g id="shared-console" font-family="Arial, Helvetica, sans-serif">
+    <rect x="734" y="537" width="402" height="148" rx="18" fill="#12151c" stroke="#2c3541"/>
+    <rect x="757" y="560" width="7" height="7" rx="1.5" fill="#5ce1e6"/>
+    <text x="776" y="570" fill="#e6edf3" font-size="18" font-weight="700">Console / 2D dashboard</text>
+    <text x="1112" y="569" text-anchor="end" fill="#8697a9" font-size="12" letter-spacing="1.2">2D</text>
+    <path d="M759 589H1111" fill="none" stroke="#29323e"/>
+    <circle cx="764" cy="615" r="4" fill="#76b900"/>
+    <text x="779" y="620" fill="#c8eca0" font-family="Consolas, 'Courier New', monospace" font-size="15">machine-01</text>
+    <path d="M907 619L920 619L927 608L937 623L945 612L954 614L966 614" fill="none" stroke="#76b900" stroke-width="2" stroke-linejoin="round"/>
+    <text x="1109" y="620" text-anchor="end" fill="#dde6ee" font-size="16">182.4 kPa</text>
+    <circle cx="764" cy="649" r="4" fill="#5ce1e6"/>
+    <text x="779" y="654" fill="#a9ebef" font-family="Consolas, 'Courier New', monospace" font-size="15">machine-02</text>
+    <path d="M907 653L916 653L923 646L934 658L943 644L955 649L966 649" fill="none" stroke="#5ce1e6" stroke-width="2" stroke-linejoin="round"/>
+    <text x="1109" y="654" text-anchor="end" fill="#dde6ee" font-size="16">176.8 kPa</text>
+  </g>
+
+  <!-- Small editorial footer -->
+  <text x="64" y="697" fill="#a8b4c3" font-family="Arial, Helvetica, sans-serif" font-size="15">Same identities. Multiple views.</text>
+  <text x="64" y="721" fill="#667487" font-family="Arial, Helvetica, sans-serif" font-size="11" letter-spacing="1.6">ILLUSTRATIVE VALUES</text>
+</svg>

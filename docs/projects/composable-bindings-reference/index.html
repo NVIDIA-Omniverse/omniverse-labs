@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Connect operational data to the assets in your OpenUSD digital twin. This runnable reference demonstrates a reusable integration pattern for linking live data to equipment while keeping data sources and applications separate." />
+    <title>Composable Bindings Reference Sample — Omniverse Labs</title>
+    <link rel="stylesheet" href="../../assets/css/main.css" />
+    <script type="text/javascript">
+    if (location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
+      window.OptanonWrapper = function () {
+        var event = new Event("bannerLoaded");
+        window.dispatchEvent(event);
+      };
+      document.write('<script src="https://cdn.cookielaw.org/scripttemplates/otSDKStub.js" data-document-language="true" type="text/javascript" charset="UTF-8" data-domain-script="019f8341-2fcb-7482-b1aa-375a01df34fb"><\/script>');
+      document.write('<script type="text/javascript" src="https://images.nvidia.com/aem-dam/Solutions/ot-js/ot-custom.js"><\/script>');
+      document.write('<script src="https://assets.adobedtm.com/5d4962a43b79/814eb6e9b4e1/launch-4bc07f1e0b0b.min.js"><\/script>');
+    }
+    </script>
+  </head>
+  <body data-base="../../">
+    <header class="site-header site-header--compact">
+      <div class="brand-row">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">OL</div>
+          <p class="brand-title"><a href="../../">Omniverse Labs</a></p>
+        </div>
+        <nav class="header-links" aria-label="Site">
+          <a href="https://github.com/NVIDIA-Omniverse/omniverse-labs/tree/main/samples/composable-bindings-reference-sample" target="_blank" rel="noopener noreferrer">Sample on GitHub</a>
+          <a href="../sample-catalog/">Samples</a>
+        </nav>
+      </div>
+    </header>
+
+    <article class="article-wrap">
+      <header class="article-hero">
+        <p class="article-kicker">Sample</p>
+        <h1 class="article-title">Composable Bindings Reference Sample</h1>
+        <p class="article-deck">Connect operational data to the assets in your OpenUSD digital twin. This runnable reference demonstrates a reusable integration pattern for linking live data to equipment while keeping data sources and applications separate.</p>
+        <div class="article-meta">
+          <span>Python · OpenUSD · Omniverse Kit</span>
+          <span>October 2026</span>
+        </div>
+        <img src="../../assets/images/card-composable-bindings-reference.svg" alt="Source-issued identities connect live machine measurements to an OpenUSD scene and shared 3D and 2D clients." width="1200" height="750" />
+      </header>
+
+      <div class="prose">
+        <p>An operational digital twin needs a way to relate data from external systems to the assets in its OpenUSD scene. This reference sample demonstrates that connection through source-issued identities, keeping operational data separate from the saved scene and its visual presentation.</p>
+
+        <p>Use it as a starting point for your own data sources, equipment and applications. Following the live-data pattern in the <a href="https://aka.ms/ComposableBindings" target="_blank" rel="noopener noreferrer">Composable Bindings white paper</a>, the sample separates data production, event enrichment and visualization. Its adapter, configuration and shared client show where to connect a different source, bind your own USD assets or build another application.</p>
+
+        <p>Two simulated machines and their production line publish measurements. An edge service preserves their identities and adds threshold alarms. A console, an Omniverse Kit view and an optional 2D ovui dashboard consume the same results through a shared Python client. The included machine data and geometry are synthetic.</p>
+
+        <h2>What you can explore</h2>
+        <ul>
+          <li><strong>Connect data to assets:</strong> associate OpenUSD prims with the issuing system’s equipment IDs, independently of scene paths.</li>
+          <li><strong>Adapt the example:</strong> add a metric, change thresholds or supported displays, and try a second source with the supplied JSON adapter.</li>
+          <li><strong>Reuse the data connection:</strong> consume the same measurements and alarms through a shared Python client, with console, Kit and optional ovui examples.</li>
+          <li><strong>See live values in 3D:</strong> select equipment to show gauges and watch pressure-driven cylinder colors update in a temporary USD layer.</li>
+          <li><strong>Capture and replay:</strong> record the live stream locally and inspect the recording with Kit’s timeline controls.</li>
+        </ul>
+
+        <h2>How the binding works</h2>
+        <p>A USD prim carries an ID issued by its data source in <code>assetInfo.sourceIds.&lt;source&gt;.id</code>. The client uses that identity to associate incoming readings with the scene asset. This sample convention follows the direction described in <a href="https://github.com/PixarAnimationStudios/OpenUSD-proposals/pull/105" target="_blank" rel="noopener noreferrer">OpenUSD proposal #105</a>; it is not a standardized binding schema.</p>
+        <p>Operational readings remain in the data service. Kit derives gauges and temporary display colors from those readings while leaving the saved USD asset unchanged. The <a href="https://github.com/NVIDIA-Omniverse/omniverse-labs/blob/main/samples/composable-bindings-reference-sample/docs/reference/ARCHITECTURE.md" target="_blank" rel="noopener noreferrer">architecture guide</a> explains the separation of sources, enrichment, delivery and clients.</p>
+
+        <h2>Get started</h2>
+        <p>The service and console require Python 3.9 or later on Windows or Linux, with no extra Python packages. For 3D visualization, add an installed Kit SDK and a compatible GPU. The optional ovui dashboard uses Python 3.12 and its own UI dependencies.</p>
+        <p>Clone the repository and open the sample folder:</p>
+<pre><code>git clone https://github.com/NVIDIA-Omniverse/omniverse-labs.git
+cd omniverse-labs/samples/composable-bindings-reference-sample</code></pre>
+        <p>On Linux, run these from the sample folder in separate terminals:</p>
+<pre><code># Terminal 1: service and simulated producer
+./run-services.sh
+# Terminal 2: live console reader
+python3 reference.py console
+# Terminal 3: optional 3D view, with Kit installed
+./run-kit.sh</code></pre>
+        <p>On Windows, use PowerShell terminals from the same folder:</p>
+<pre><code># Terminal 1: service and simulated producer
+python reference.py demo --no-console
+# Terminal 2: live console reader
+python reference.py console
+# Terminal 3: optional 3D view, with Kit installed
+.\run-kit.bat</code></pre>
+        <p>Set <code>KIT_ROOT</code> to your Kit SDK installation if the launcher does not find it. The <a href="https://github.com/NVIDIA-Omniverse/omniverse-labs/blob/main/samples/composable-bindings-reference-sample/docs/reference/TUTORIAL.md" target="_blank" rel="noopener noreferrer">full tutorial</a> covers setup, expected results, selection, configuration, recording and shutdown. Use the <a href="https://github.com/NVIDIA-Omniverse/omniverse-labs/blob/main/samples/composable-bindings-reference-sample/docs/reference/OVUI.md" target="_blank" rel="noopener noreferrer">ovui guide</a> for the optional 2D dashboard.</p>
+
+        <h2>Use your own data and scene</h2>
+        <p>Start with the <a href="https://github.com/NVIDIA-Omniverse/omniverse-labs/blob/main/samples/composable-bindings-reference-sample/docs/reference/SOURCES.md" target="_blank" rel="noopener noreferrer">second-source adapter guide</a> to map an external JSON payload into the sample’s source contract, and the <a href="https://github.com/NVIDIA-Omniverse/omniverse-labs/blob/main/samples/composable-bindings-reference-sample/docs/reference/USD_BINDINGS.md" target="_blank" rel="noopener noreferrer">USD binding guide</a> to associate source IDs with your own scene. The <a href="https://github.com/NVIDIA-Omniverse/omniverse-labs/blob/main/samples/composable-bindings-reference-sample/docs/reference/CONFIGURATION.md" target="_blank" rel="noopener noreferrer">configuration guide</a> shows how to keep event declarations, simulation, alarm rules and display settings separate.</p>
+
+        <h2>Scope and limitations</h2>
+        <p>This is a small reference implementation with synthetic inputs, not a production broker or certified protocol stack. Capture replay uses the sample’s locally recorded live stream; querying historical records from a source system is not implemented. Console and ovui remain live while Kit replays a capture. Omniverse Labs samples have no support SLA and may change without notice.</p>
+
+        <h2>Source and maintainer</h2>
+        <div class="callout">
+          <p><strong>Source:</strong> <a href="https://github.com/NVIDIA-Omniverse/omniverse-labs/tree/main/samples/composable-bindings-reference-sample" target="_blank" rel="noopener noreferrer"><code>samples/composable-bindings-reference-sample/</code></a></p>
+          <p><strong>Maintainer:</strong> Min Jiang · <a href="mailto:minj@nvidia.com">minj@nvidia.com</a></p>
+          <p><strong>License:</strong> NVIDIA-authored sample code is licensed under <a href="https://github.com/NVIDIA-Omniverse/omniverse-labs/blob/main/samples/composable-bindings-reference-sample/LICENSE" target="_blank" rel="noopener noreferrer">Apache 2.0</a>. See <a href="https://github.com/NVIDIA-Omniverse/omniverse-labs/blob/main/samples/composable-bindings-reference-sample/THIRD_PARTY_NOTICES.md" target="_blank" rel="noopener noreferrer">third-party notices</a> for optional runtimes and dependencies.</p>
+        </div>
+      </div>
+    </article>
+
+    <footer class="site-footer">
+      <div class="site-footer__site">
+        <p class="site-footer__meta">
+          <a href="../../">← All projects</a>
+          <span class="site-footer__sep" aria-hidden="true">·</span>
+          <span>Apache 2.0</span>
+          <span class="site-footer__sep" aria-hidden="true">·</span>
+          <a href="https://github.com/nvidia-omniverse/omniverse-labs/issues">Site feedback</a>
+        </p>
+      </div>
+      <nav class="site-footer__policies" aria-label="NVIDIA legal and policies">
+        <ul>
+          <li>
+            <a href="https://www.nvidia.com/en-us/about-nvidia/privacy-policy/">Privacy Policy</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/about-nvidia/privacy-center/">Your Privacy Choices</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/about-nvidia/terms-of-service/">Terms of Service</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/about-nvidia/accessibility/">Accessibility</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/about-nvidia/company-policies/">Corporate Policies</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/product-security/">Product Security</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/contact/">Contact</a>
+          </li>
+        </ul>
+      </nav>
+    </footer>
+  <script type="text/javascript">if (window._satellite) { window._satellite.pageBottom(); }</script>
+  </body>
+</html>

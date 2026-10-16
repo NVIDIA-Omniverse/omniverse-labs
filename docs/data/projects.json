@@ -3,7 +3,7 @@
     "title": "Omniverse Labs",
     "tagline": "Early Omniverse experiments you can run, fork, and learn from.",
     "description": "A Sketchpad built by NVIDIA Omniverse Teams \u2014 early samples, prototypes, and write-ups for developers exploring Omniverse.",
-    "dataVersion": "20260928"
+    "dataVersion": "20261016-composable-bindings"
   },
   "projects": [
     {
@@ -190,6 +190,24 @@
       "links": {
         "page": "projects/sample-catalog/",
         "repo": "https://github.com/nvidia-omniverse/omniverse-labs/tree/main/samples"
+      }
+    },
+    {
+      "slug": "composable-bindings-reference",
+      "title": "Composable Bindings Reference Sample",
+      "subtitle": "Connect operational data to the assets in your OpenUSD digital twin. This runnable reference demonstrates a reusable integration pattern for linking live data to equipment while keeping data sources and applications separate.",
+      "type": "sample",
+      "date": "2026-10-16",
+      "image": "assets/images/card-composable-bindings-reference.svg",
+      "accent": [
+        "#0a0c10",
+        "#5ce1e6"
+      ],
+      "featured": false,
+      "source": "samples/composable-bindings-reference-sample",
+      "links": {
+        "page": "projects/composable-bindings-reference/",
+        "repo": "https://github.com/NVIDIA-Omniverse/omniverse-labs/tree/main/samples/composable-bindings-reference-sample"
       }
     }
   ]
