@@ -1,0 +1,2 @@
+# Keep Linux launchers runnable when copied from Windows checkouts.
+*.sh text eol=lf
