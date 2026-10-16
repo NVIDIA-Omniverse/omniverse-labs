@@ -107,8 +107,11 @@ def main(argv=None):
         else:
             deadline = time.monotonic() + a.duration if a.duration else float('inf')
             while not stop.wait(.1) and time.monotonic() < deadline:
-                if producer and producer.poll() is not None:
-                    raise RuntimeError('Producer exited')
+                # Ctrl-C reaches the whole console group, so the producer can exit
+                # before our own handler runs (on Windows only after the wait returns).
+                # Allow that pending stop request to land before reporting a failure.
+                if producer and producer.poll() is not None and not stop.wait(1):
+                    raise RuntimeError(f'Producer exited with code {producer.returncode}')
     finally:
         watcher.stop()
         service.recorder.close()
