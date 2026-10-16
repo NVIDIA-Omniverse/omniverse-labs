@@ -4,8 +4,13 @@
 """Focused regression coverage for source identity, adapters and live snapshots."""
 import copy
 import json
+import os
 from pathlib import Path
+import signal
+import subprocess
+import sys
 import tempfile
+import time
 import threading
 import unittest
 
@@ -221,6 +226,31 @@ class SourceContractTests(unittest.TestCase):
         bad['scene'][1]['display_color']['range'] = [200, 160]
         with self.assertRaises(ValueError):
             validate_configuration(self.config, self.bindings, bad)
+
+    @unittest.skipUnless(sys.platform.startswith('linux'), 'reads producer PID from /proc')
+    def test_demo_exits_cleanly_when_ctrl_c_stops_producer_first(self):
+        # Windows delivers Ctrl-C to the producer, which can exit before the demo's handler runs.
+        with tempfile.TemporaryDirectory() as directory:
+            demo = subprocess.Popen([sys.executable, str(ROOT / 'reference.py'), 'demo', '--no-console',
+                                     '--port', '0', '--state', directory],
+                                    stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
+            try:
+                children = Path(f'/proc/{demo.pid}/task/{demo.pid}/children')
+                deadline = time.monotonic() + 15
+                while not children.read_text().split() and time.monotonic() < deadline:
+                    time.sleep(.05)
+                producer = int(children.read_text().split()[0])
+                time.sleep(1)
+                os.kill(producer, signal.SIGINT)
+                time.sleep(.3)
+                demo.send_signal(signal.SIGINT)
+                _, errors = demo.communicate(timeout=15)
+            finally:
+                if demo.poll() is None:
+                    demo.kill()
+                    demo.wait()
+            self.assertEqual(demo.returncode, 0, errors)
+            self.assertNotIn('Producer exited', errors)
 
 
 if __name__ == '__main__':
