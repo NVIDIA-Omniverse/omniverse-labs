@@ -1,0 +1,4 @@
+{
+  "version": 1,
+  "bindings": [{"source": "line_gateway", "id": "press-7", "label": "Gateway press 7"}]
+}

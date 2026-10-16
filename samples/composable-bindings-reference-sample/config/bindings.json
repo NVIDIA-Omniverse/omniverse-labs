@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "bindings": [
+    {
+      "source": "factory_simulator",
+      "id": "mock-controller-1",
+      "label": "Machine 1"
+    },
+    {
+      "source": "factory_simulator",
+      "id": "mock-controller-2",
+      "label": "Machine 2"
+    },
+    {
+      "source": "factory_simulator",
+      "id": "mock-line-1",
+      "label": "Production line 1"
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+{
+  "version": 1,
+  "displays": [{"id": "gateway_temperature", "metric": "gateway.temperature", "title": "Gateway temperature", "kind": "gauge", "range": [0, 150]}]
+}

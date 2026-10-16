@@ -1,0 +1,19 @@
+[package]
+title = "Composable Bindings - Default Client"
+version = "0.1.0"
+description = "Kit adapter for the shared, standard-library Python reference client"
+[dependencies]
+"omni.ui.scene" = {}
+"omni.kit.viewport.window" = {}
+"omni.kit.actions.core" = {}
+"omni.kit.commands" = {}
+"omni.kit.hotkeys.core" = {}
+"omni.kit.manipulator.selection" = {}
+"omni.ui" = {}
+"omni.usd" = {}
+"omni.kit.viewport.utility" = {}
+[[python.module]]
+name = "composable_bindings"
+path = "../../../.."
+[[python.module]]
+name = "omni.example.reference_client"

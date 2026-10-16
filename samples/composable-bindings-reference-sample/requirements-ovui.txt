@@ -1,0 +1,2 @@
+ovui==0.2.0
+nvidia-cuda-runtime-cu12==12.9.79

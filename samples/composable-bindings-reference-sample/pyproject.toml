@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=61", "wheel>=0.38.4"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "composable-bindings-reference"
+version = "0.3.0"
+description = "A small configuration-driven operational-data integration example"
+requires-python = ">=3.9"
+dependencies = []
+
+[tool.setuptools]
+license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md", "third_party_licenses/*.txt"]
+
+[tool.setuptools.packages.find]
+where = ["source"]
+include = ["composable_bindings*", "clients", "clients.console_client*", "clients.ovui_client*"]

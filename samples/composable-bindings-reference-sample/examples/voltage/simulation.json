@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "source": "factory_simulator",
+  "events": [
+    {
+      "type": "org.example.voltage.v1",
+      "assets": [
+        "mock-controller-1",
+        "mock-controller-2"
+      ],
+      "interval": 0.5,
+      "metrics": [
+        {
+          "name": "equipment.voltage",
+          "simulation": {
+            "center": 230,
+            "amplitude": 20,
+            "period": 4
+          }
+        }
+      ]
+    }
+  ]
+}

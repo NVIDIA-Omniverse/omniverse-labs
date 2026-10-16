@@ -1,0 +1,12 @@
+{
+  "event_type": "org.example.measurements.v1",
+  "event_id": "2ce0289a-222f-46d2-ac48-9eab03a70640",
+  "time": "2026-09-30T12:00:00Z",
+  "values": {
+    "equipment.temperature": 110.0,
+    "equipment.pressure": 180.0,
+    "equipment.throughput": 45.0
+  },
+  "source": "factory_simulator",
+  "source_id": "mock-controller-1"
+}

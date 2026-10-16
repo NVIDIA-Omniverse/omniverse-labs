@@ -1,0 +1,17 @@
+# Connecting
+2026-10-02T19:37:22.783326Z factory_simulator/mock-controller-1 Temperature: 65.0 Cel [########----] NORMAL event=7cebe44b-fcce-4467-bdb2-c08fb1965a7b
+2026-10-02T19:37:22.783326Z factory_simulator/mock-controller-1 Pressure: 180.0 kPa [#########---] NORMAL event=7cebe44b-fcce-4467-bdb2-c08fb1965a7b
+2026-10-02T19:37:22.783326Z factory_simulator/mock-controller-2 Temperature: 79.9 Cel [##########--] NORMAL event=29c804f3-c9b6-4fdb-b8a0-13d60a213bba
+2026-10-02T19:37:22.783326Z factory_simulator/mock-controller-2 Pressure: 199.8 kPa [##########--] ALARM event=29c804f3-c9b6-4fdb-b8a0-13d60a213bba
+2026-10-02T19:37:22.783326Z factory_simulator/mock-line-1 Line Throughput: 95.0 parts/min [#########---] NORMAL event=1e9f8147-8f42-4ab8-b485-035799d63488
+# Live
+2026-10-02T19:37:23.300526Z factory_simulator/mock-controller-1 Temperature: 71.7 Cel [#########---] NORMAL event=520ad782-3eef-4c94-bd3e-96b69c641ebe
+2026-10-02T19:37:23.300526Z factory_simulator/mock-controller-1 Pressure: 185.8 kPa [#########---] NORMAL event=520ad782-3eef-4c94-bd3e-96b69c641ebe
+2026-10-02T19:37:23.300526Z factory_simulator/mock-controller-2 Temperature: 77.4 Cel [#########---] NORMAL event=31dadc29-9db5-470e-90c5-4568499e8676
+2026-10-02T19:37:23.300526Z factory_simulator/mock-controller-2 Pressure: 198.2 kPa [##########--] ALARM event=31dadc29-9db5-470e-90c5-4568499e8676
+2026-10-02T19:37:23.300526Z factory_simulator/mock-line-1 Line Throughput: 95.2 parts/min [#########---] NORMAL event=b3811e42-d17d-4096-8cf1-33a2e1cda4b5
+2026-10-02T19:37:23.797005Z factory_simulator/mock-controller-1 Temperature: 76.9 Cel [#########---] NORMAL event=c9711d81-7a83-4c85-ab8f-017d40067ba7
+2026-10-02T19:37:23.797005Z factory_simulator/mock-controller-1 Pressure: 191.0 kPa [#########---] NORMAL event=c9711d81-7a83-4c85-ab8f-017d40067ba7
+2026-10-02T19:37:23.797005Z factory_simulator/mock-controller-2 Temperature: 72.6 Cel [#########---] NORMAL event=9148afe7-843a-4ea6-a23f-6b476d611213
+2026-10-02T19:37:23.797005Z factory_simulator/mock-controller-2 Pressure: 195.2 kPa [#########---] ALARM event=9148afe7-843a-4ea6-a23f-6b476d611213
+2026-10-02T19:37:23.797005Z factory_simulator/mock-line-1 Line Throughput: 95.4 parts/min [#########---] NORMAL event=dcb53edc-e8f0-49a6-9b73-1b7d84c35b74

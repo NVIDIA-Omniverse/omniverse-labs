@@ -1,0 +1,115 @@
+{
+  "version": 1,
+  "displays": [
+    {
+      "id": "temperature",
+      "metric": "equipment.temperature",
+      "title": "Temperature",
+      "kind": "gauge",
+      "range": [
+        0,
+        100
+      ],
+      "placement": "world"
+    },
+    {
+      "id": "pressure",
+      "metric": "equipment.pressure",
+      "title": "Pressure",
+      "kind": "gauge",
+      "range": [
+        0,
+        250
+      ],
+      "placement": "world"
+    },
+    {
+      "id": "line_throughput",
+      "metric": "line.throughput",
+      "title": "Line Throughput",
+      "kind": "gauge",
+      "range": [
+        80,
+        100
+      ],
+      "decimals": 1,
+      "placement": "hud-top-left"
+    }
+  ],
+  "scene": [
+    {
+      "source": "factory_simulator",
+      "id": "mock-line-1"
+    },
+    {
+      "gauge_offset": [
+        0,
+        0,
+        0.2
+      ],
+      "gauge_scale": 1.2,
+      "source": "factory_simulator",
+      "id": "mock-controller-1",
+      "display_color": {
+        "mode": "gradient",
+        "metric": "equipment.pressure",
+        "range": [
+          160,
+          200
+        ],
+        "colors": {
+          "low": [
+            0.05,
+            0.2,
+            0.9
+          ],
+          "high": [
+            0.9,
+            0.05,
+            0.02
+          ],
+          "unknown": [
+            0.3,
+            0.3,
+            0.3
+          ]
+        }
+      }
+    },
+    {
+      "gauge_offset": [
+        0,
+        0,
+        0.2
+      ],
+      "gauge_scale": 1.2,
+      "source": "factory_simulator",
+      "id": "mock-controller-2",
+      "display_color": {
+        "mode": "gradient",
+        "metric": "equipment.pressure",
+        "range": [
+          160,
+          200
+        ],
+        "colors": {
+          "low": [
+            0.05,
+            0.2,
+            0.9
+          ],
+          "high": [
+            0.9,
+            0.05,
+            0.02
+          ],
+          "unknown": [
+            0.3,
+            0.3,
+            0.3
+          ]
+        }
+      }
+    }
+  ]
+}

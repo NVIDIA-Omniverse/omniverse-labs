@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "displays": [
+    {
+      "id": "voltage",
+      "metric": "equipment.voltage",
+      "title": "Voltage",
+      "kind": "gauge",
+      "range": [
+        0,
+        300
+      ],
+      "decimals": 1
+    }
+  ]
+}

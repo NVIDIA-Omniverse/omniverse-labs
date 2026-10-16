@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "rules": [
+    {
+      "metric": "equipment.temperature",
+      "threshold": 100
+    },
+    {
+      "metric": "equipment.pressure",
+      "threshold": 195
+    }
+  ]
+}

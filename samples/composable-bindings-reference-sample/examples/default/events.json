@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "assets": [
+    {
+      "source": "factory_simulator",
+      "id": "mock-controller-1"
+    },
+    {
+      "source": "factory_simulator",
+      "id": "mock-controller-2"
+    },
+    {
+      "source": "factory_simulator",
+      "id": "mock-line-1"
+    }
+  ],
+  "events": [
+    {
+      "type": "org.example.measurements.v1",
+      "source": "factory_simulator",
+      "assets": [
+        "mock-controller-1",
+        "mock-controller-2"
+      ],
+      "metrics": [
+        {
+          "name": "equipment.temperature",
+          "unit": "Cel"
+        },
+        {
+          "name": "equipment.pressure",
+          "unit": "kPa"
+        },
+        {
+          "name": "equipment.throughput",
+          "unit": "parts/min"
+        }
+      ]
+    },
+    {
+      "type": "org.example.line.v1",
+      "source": "factory_simulator",
+      "assets": [
+        "mock-line-1"
+      ],
+      "metrics": [
+        {
+          "name": "line.throughput",
+          "unit": "parts/min"
+        }
+      ]
+    }
+  ]
+}

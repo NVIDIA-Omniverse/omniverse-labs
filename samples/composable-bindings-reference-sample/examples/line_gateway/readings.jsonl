@@ -1,0 +1,2 @@
+{"equipment":"press-7","occurrence":"gateway-reading-1","observed_at":"2026-10-01T12:00:00Z","readings":{"temperature_c":64.5},"conditions":{"overheat":true}}
+{"equipment":"press-7","occurrence":"gateway-reading-2","observed_at":"2026-10-01T12:00:01Z","readings":{"temperature_c":64.0},"conditions":{"overheat":false}}

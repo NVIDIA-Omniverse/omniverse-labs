@@ -1,0 +1,177 @@
+{
+  "specversion": "1.0",
+  "id": "2ce0289a-222f-46d2-ac48-9eab03a70640",
+  "source": "urn:example:source:factory_simulator",
+  "subject": "mock-controller-1",
+  "type": "org.example.measurements.v1",
+  "time": "2026-09-30T12:00:00Z",
+  "dataschema": "urn:example:composable:metrics:2",
+  "datacontenttype": "application/json",
+  "data": {
+    "resourceMetrics": [
+      {
+        "resource": {
+          "attributes": [
+            {
+              "key": "source.name",
+              "value": {
+                "stringValue": "factory_simulator"
+              }
+            },
+            {
+              "key": "source.id",
+              "value": {
+                "stringValue": "mock-controller-1"
+              }
+            }
+          ]
+        },
+        "scopeMetrics": [
+          {
+            "scope": {
+              "name": "reference-edge"
+            },
+            "metrics": [
+              {
+                "name": "equipment.temperature",
+                "unit": "Cel",
+                "gauge": {
+                  "dataPoints": [
+                    {
+                      "timeUnixNano": "1790769600000000000",
+                      "attributes": [
+                        {
+                          "key": "quality",
+                          "value": {
+                            "stringValue": "good"
+                          }
+                        }
+                      ],
+                      "asDouble": 110.0
+                    }
+                  ]
+                }
+              },
+              {
+                "name": "equipment.temperature.alarm",
+                "unit": "1",
+                "gauge": {
+                  "dataPoints": [
+                    {
+                      "timeUnixNano": "1790769600000000000",
+                      "attributes": [
+                        {
+                          "key": "kind",
+                          "value": {
+                            "stringValue": "condition"
+                          }
+                        },
+                        {
+                          "key": "metric",
+                          "value": {
+                            "stringValue": "equipment.temperature"
+                          }
+                        },
+                        {
+                          "key": "rule",
+                          "value": {
+                            "stringValue": "above"
+                          }
+                        },
+                        {
+                          "key": "threshold",
+                          "value": {
+                            "stringValue": "100"
+                          }
+                        }
+                      ],
+                      "asDouble": 1.0
+                    }
+                  ]
+                }
+              },
+              {
+                "name": "equipment.pressure",
+                "unit": "kPa",
+                "gauge": {
+                  "dataPoints": [
+                    {
+                      "timeUnixNano": "1790769600000000000",
+                      "attributes": [
+                        {
+                          "key": "quality",
+                          "value": {
+                            "stringValue": "good"
+                          }
+                        }
+                      ],
+                      "asDouble": 180.0
+                    }
+                  ]
+                }
+              },
+              {
+                "name": "equipment.pressure.alarm",
+                "unit": "1",
+                "gauge": {
+                  "dataPoints": [
+                    {
+                      "timeUnixNano": "1790769600000000000",
+                      "attributes": [
+                        {
+                          "key": "kind",
+                          "value": {
+                            "stringValue": "condition"
+                          }
+                        },
+                        {
+                          "key": "metric",
+                          "value": {
+                            "stringValue": "equipment.pressure"
+                          }
+                        },
+                        {
+                          "key": "rule",
+                          "value": {
+                            "stringValue": "above"
+                          }
+                        },
+                        {
+                          "key": "threshold",
+                          "value": {
+                            "stringValue": "195"
+                          }
+                        }
+                      ],
+                      "asDouble": 0.0
+                    }
+                  ]
+                }
+              },
+              {
+                "name": "equipment.throughput",
+                "unit": "parts/min",
+                "gauge": {
+                  "dataPoints": [
+                    {
+                      "timeUnixNano": "1790769600000000000",
+                      "attributes": [
+                        {
+                          "key": "quality",
+                          "value": {
+                            "stringValue": "good"
+                          }
+                        }
+                      ],
+                      "asDouble": 45.0
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

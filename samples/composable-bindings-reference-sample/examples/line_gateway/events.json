@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "assets": [{"source": "line_gateway", "id": "press-7"}],
+  "events": [{
+    "type": "org.example.gateway.v1",
+    "source": "line_gateway",
+    "assets": ["press-7"],
+    "metrics": [{"name": "gateway.temperature", "unit": "Cel", "alarm": "source"}]
+  }]
+}

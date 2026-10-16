@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "rules": [
+    {
+      "metric": "equipment.voltage",
+      "threshold": 245
+    }
+  ]
+}

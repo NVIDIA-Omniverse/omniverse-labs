@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "source": "line_gateway",
+  "event_type": "org.example.gateway.v1",
+  "id_field": "equipment",
+  "time_field": "observed_at",
+  "event_id_field": "occurrence",
+  "values": {"gateway.temperature": "readings.temperature_c"},
+  "alarms": {"gateway.temperature": "conditions.overheat"}
+}
