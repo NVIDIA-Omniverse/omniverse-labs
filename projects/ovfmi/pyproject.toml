@@ -44,10 +44,10 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/NVIDIA-dev/ovfmi"
-Documentation = "https://github.com/NVIDIA-dev/ovfmi#readme"
-Repository = "https://github.com/NVIDIA-dev/ovfmi"
-Issues = "https://github.com/NVIDIA-dev/ovfmi/issues"
+Homepage = "https://github.com/NVIDIA-Omniverse/omniverse-labs/tree/main/projects/ovfmi"
+Documentation = "https://github.com/NVIDIA-Omniverse/omniverse-labs/blob/main/projects/ovfmi/README.md"
+Repository = "https://github.com/NVIDIA-Omniverse/omniverse-labs"
+Issues = "https://github.com/NVIDIA-Omniverse/omniverse-labs/issues"
 
 [tool.setuptools]
 package-dir = {ovfmi = "python"}

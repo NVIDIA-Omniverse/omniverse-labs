@@ -19,13 +19,13 @@ short-circuit `NANOUSD_BACKEND` selection before the environment-provided
 backend is loaded.
 
 ```powershell
-& "C:\Users\eslavin\AppData\Local\Programs\CMake\bin\cmake.exe" `
+cmake `
   -S C:\tmp\nanousd `
   -B C:\tmp\nanousd\build-shared-api `
   -DNANOUSD_SHARED_API=ON `
   -DNANOUSD_BUILD_TESTS=ON
 
-& "C:\Users\eslavin\AppData\Local\Programs\CMake\bin\cmake.exe" `
+cmake `
   --build C:\tmp\nanousd\build-shared-api `
   --config Release `
   --target benchmark_stage_load

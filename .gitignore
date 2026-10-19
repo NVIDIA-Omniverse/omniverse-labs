@@ -1,0 +1,30 @@
+# Repo-wide ignores. Keep in sync with `exclude` in scripts/public-release-manifest.json;
+# sample- and project-level .gitignore files add their own rules on top.
+
+# Python caches
+__pycache__/
+*.py[co]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+.coverage
+htmlcov/
+
+# Environments and dependencies
+.venv/
+venv/
+node_modules/
+*.egg-info/
+
+# Logs and crash artifacts
+*.log
+*.dmp
+crash_dumps/
+
+# Local machine files
+.env
+.claude/settings.local.json
+.claude/launch.json
+.DS_Store
+Thumbs.db

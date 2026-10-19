@@ -426,8 +426,7 @@ ovrtx_dev_variant_presenter/
 
 Everything the sample needs sits at its own root, so it is self-contained: `cd` into this
 folder and `uv sync` / the launcher / `uv run pytest` all work from there. The layout departs
-from the `source/` + `data/` scaffold in
-[`../NEW_SAMPLE_TEMPLATE.md`](../NEW_SAMPLE_TEMPLATE.md) on purpose, this is a runnable `uv`
+from the `source/` + `data/` scaffold described in [`../README.md`](../README.md) on purpose, this is a runnable `uv`
 project, so `pyproject.toml` has to sit at the project root, and Claude Code only auto-discovers
 skills at `.claude/skills/` relative to the working directory.
 

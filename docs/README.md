@@ -53,7 +53,7 @@ Contributor steps are documented here (not promoted on the public home grid):
 Summary:
 
 1. Add your article under `articles/<name>/` or sample under `samples/<name>/`
-2. Copy `projects/_template.html` → `projects/<slug>/index.html`
+2. Copy `_unpublished/templates/project-page-template.html` (internal repo only) → `docs/projects/<slug>/index.html`
 3. Add an entry to `data/projects.json` and `data/content-manifest.json`
 4. Run `python scripts/sync-docs-site.py` from the repo root (copies images into `docs/`)
 5. Add `assets/images/<your-card>.svg` (or PNG) if not produced by sync

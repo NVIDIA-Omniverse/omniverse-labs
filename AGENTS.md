@@ -18,16 +18,21 @@ Guidance for AI coding agents working in this repository.
 omniverse-labs/
 ├── README.md                 # Human-facing overview
 ├── AGENTS.md                 # This file
-├── _unpublished/             # Draft articles & samples (NOT deployed to Pages)
+├── _unpublished/             # Draft articles & samples (NOT deployed to Pages, NOT in public releases)
+│   └── templates/            # Contributor templates (sample README spec, project page scaffold)
 ├── samples/                  # Runnable samples (one folder per sample)
-│   ├── README.md             # Sample catalog rules
-│   └── NEW_SAMPLE_TEMPLATE.md  # Authoritative scaffold + frontmatter spec
+│   └── README.md             # Sample catalog rules
 ├── docs/                     # Static GitHub Pages site (project showcase)
 │   ├── README.md             # How to publish / preview the site
 │   ├── data/projects.json    # Home grid metadata
 │   ├── projects/<slug>/      # Per-project HTML articles
 │   └── assets/               # CSS, JS, card images
-└── .github/workflows/pages.yml  # Deploys docs/ to GitHub Pages on push to main
+├── scripts/
+│   ├── public-release-manifest.json  # Allowlist + excludes for public release exports
+│   └── check-public-release.py       # Release hygiene check / clean export
+└── .github/workflows/
+    ├── pages.yml             # Deploys docs/ to GitHub Pages on push to main
+    └── release-hygiene.yml   # Fails PRs that add excluded paths to the public tree
 ```
 
 | Area | Purpose | When to touch |
@@ -52,7 +57,7 @@ Samples and site projects are **independent**: a sample can exist without a `doc
 
 ### Required sample structure
 
-Follow [`samples/NEW_SAMPLE_TEMPLATE.md`](samples/NEW_SAMPLE_TEMPLATE.md). Summary:
+Follow `_unpublished/templates/NEW_SAMPLE_TEMPLATE.md` (internal repo only). Summary:
 
 - Folder: `samples/<kebab-case-name>/`
 - **No loose files at sample root** — code in `source/`, assets in `data/`, config in `config/`, optional `skills/`, `scripts/`, `docs/`, `tools/`
@@ -68,12 +73,7 @@ Use `skills/` and `skills_included: true` when the sample ships agent-callable s
 
 ### Creating a new sample
 
-```bash
-# From repo root — copy scaffold if _template exists, else create layout manually
-cp -r samples/_template samples/your-sample-name   # when _template is present
-```
-
-Then fill frontmatter, implement under `source/`, and complete the pre-PR checklist in `NEW_SAMPLE_TEMPLATE.md`.
+Create `samples/<kebab-case-name>/` with the layout and README frontmatter from `_unpublished/templates/NEW_SAMPLE_TEMPLATE.md`, implement under `source/`, and complete the pre-PR checklist in that template. Do not copy the template file itself into `samples/`.
 
 ### Agent-specific expectations
 
@@ -100,7 +100,7 @@ Open `http://localhost:8080/`. Cards load from `docs/data/projects.json` via `do
 
 ### Add a home-grid project or article
 
-1. Copy `docs/projects/_template.html` → `docs/projects/<slug>/index.html`
+1. Copy `_unpublished/templates/project-page-template.html` → `docs/projects/<slug>/index.html`
 2. Add an entry to `docs/data/projects.json` (`slug`, `title`, `subtitle`, `type`, `status`, `date`, `image`, `accent`, `links`, etc.)
 3. Add `docs/assets/images/<card>.svg` (or PNG)
 4. Keep contributor-only guides off the public grid — surface **about**, **samples**, and real experiments
@@ -122,6 +122,26 @@ Draft articles and samples live under [`_unpublished/`](_unpublished/README.md).
 - Move `_unpublished/samples/*` into `samples/` unless publishing.
 
 **To publish**, follow the explicit checklists in [`_unpublished/README.md`](_unpublished/README.md) (move folders, merge one JSON object, add card image, preview locally).
+
+---
+
+## Public release hygiene
+
+The public repo ([NVIDIA-Omniverse/omniverse-labs](https://github.com/NVIDIA-Omniverse/omniverse-labs)) is exported from the internal repo. [`scripts/public-release-manifest.json`](scripts/public-release-manifest.json) defines what may be exported:
+
+- `include` — allowlisted paths that make up the public tree
+- `internal_only` — tracked internally, never exported (`_unpublished/`, `.gitmodules`, the publish-to-public workflow)
+- `exclude` — never allowed in the public tree: contributor templates, Python/tool caches, virtualenvs, generated outputs, logs, crash dumps
+
+[`.github/workflows/release-hygiene.yml`](.github/workflows/release-hygiene.yml) runs the check on every PR. Run it locally before opening a PR or mirroring:
+
+```bash
+python scripts/check-public-release.py                         # check tracked files
+python scripts/check-public-release.py --export ../ol-export   # write a clean public tree
+python scripts/check-public-release.py --strict --path ../ol-export   # verify an exported tree
+```
+
+Do not commit `__pycache__/`, `*.pyc`, virtualenvs, or render/log output. When adding a new top-level folder that should ship publicly, add it to `include` in the manifest.
 
 ---
 
@@ -165,7 +185,8 @@ There is no monorepo `package.json` or root `Makefile` — each sample documents
 |----------|---------|
 | [README.md](README.md) | Repo purpose and audience |
 | [samples/README.md](samples/README.md) | Sample README requirements (status, libraries, architecture) |
-| [samples/NEW_SAMPLE_TEMPLATE.md](samples/NEW_SAMPLE_TEMPLATE.md) | Folder layout, frontmatter fields, PR checklist |
+| `_unpublished/templates/NEW_SAMPLE_TEMPLATE.md` (internal only) | Folder layout, frontmatter fields, PR checklist |
+| [scripts/public-release-manifest.json](scripts/public-release-manifest.json) | What is allowed in a public release export |
 | [docs/README.md](docs/README.md) | GitHub Pages setup and publishing steps |
 
 ---
@@ -176,4 +197,4 @@ There is no monorepo `package.json` or root `Makefile` — each sample documents
 - **Site work:** `projects.json` valid JSON, new page paths match `links.page`, images resolve from `docs/`, local preview shows the new card.
 - **Fixes:** Root cause addressed with smallest change; no unrelated refactors.
 
-When unsure about scope (new sample vs. site card vs. both), ask the user or follow the checklist in `NEW_SAMPLE_TEMPLATE.md` and `docs/README.md`.
+When unsure about scope (new sample vs. site card vs. both), ask the user or follow the checklist in `_unpublished/templates/NEW_SAMPLE_TEMPLATE.md` and `docs/README.md`.

@@ -167,8 +167,8 @@ libraries.
 If you already cloned the repo, skip to step 3.
 
 ```bash
-git clone https://github.com/NVIDIA-dev/ovfmi.git
-cd ovfmi
+git clone https://github.com/NVIDIA-Omniverse/omniverse-labs.git
+cd omniverse-labs/projects/ovfmi
 ```
 
 ### 3. Set Up Python Dependencies

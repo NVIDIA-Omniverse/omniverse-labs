@@ -1,0 +1,69 @@
+{
+  "_comment": "Public release manifest for omniverse-labs. A file ships in a public export only if it matches `include` and matches neither `internal_only` nor `exclude`. Checked by scripts/check-public-release.py and .github/workflows/release-hygiene.yml. Patterns are repo-relative globs: `*` stays within one path segment, `**` spans any number of segments.",
+  "public_repo": "https://github.com/NVIDIA-Omniverse/omniverse-labs",
+  "include": [
+    ".github/**",
+    "articles/**",
+    "docs/**",
+    "projects/**",
+    "samples/**",
+    "scripts/**",
+    "skills/**",
+    ".gitignore",
+    "AGENTS.md",
+    "LICENSE",
+    "README.md",
+    "SECURITY.md"
+  ],
+  "internal_only": [
+    "_unpublished/**",
+    ".gitmodules",
+    ".github/workflows/publish-to-public.yml"
+  ],
+  "exclude": {
+    "contributor_templates": [
+      "**/NEW_SAMPLE_TEMPLATE.md",
+      "**/_template",
+      "**/_template/**",
+      "**/_template.*"
+    ],
+    "caches": [
+      "**/__pycache__/**",
+      "**/*.pyc",
+      "**/*.pyo",
+      "**/.pytest_cache/**",
+      "**/.ruff_cache/**",
+      "**/.mypy_cache/**",
+      "**/.ipynb_checkpoints/**",
+      "**/.coverage",
+      "**/htmlcov/**"
+    ],
+    "environments_and_dependencies": [
+      "**/.venv/**",
+      "**/venv/**",
+      "**/node_modules/**",
+      "**/*.egg-info/**"
+    ],
+    "generated_outputs": [
+      "**/build/**",
+      "**/dist/**",
+      "**/output/**",
+      "**/outputs/**",
+      "**/logs/**",
+      "**/crash_dumps/**",
+      "**/*.log",
+      "**/*.dmp",
+      "**/*.tmp",
+      "**/*.partial",
+      "**/_comp_*.usda",
+      "**/_tl_*.usda"
+    ],
+    "local_machine_files": [
+      "**/.env",
+      "**/.claude/settings.local.json",
+      "**/.claude/launch.json",
+      "**/.DS_Store",
+      "**/Thumbs.db"
+    ]
+  }
+}
