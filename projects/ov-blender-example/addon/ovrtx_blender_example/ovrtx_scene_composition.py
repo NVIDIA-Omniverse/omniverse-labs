@@ -14,8 +14,8 @@ from pathlib import Path
 from collections.abc import Iterator
 from typing import Any, Iterable, Mapping
 
+from .native_exposure import NativeExposure, ENABLED_ATTRIBUTE, TARGET_ATTRIBUTE
 from . import camera_value_conversion
-from . import color_presentation
 from . import usd_paths as usd_paths
 from . import render_requests
 from .properties import (
@@ -57,21 +57,11 @@ def _rtpt_render_product_lines(rtpt_quality: Mapping[str, Any] | None) -> list[s
     return lines
 
 
-def _dlss_render_product_lines(dlss_enabled: bool) -> list[str]:
-    """Author the DLSS execMode attribute onto the render product when OFF.
-
-    A real-GPU A/B proved this worker honors ``omni:rtx:post:dlss:execMode`` on
-    the RenderProduct at session creation (unlike the ignored omni:rtx:rtpt:*
-    family), so the DLSS toggle applies via session re-key with no worker
-    restart. ``dlss_enabled=True`` leaves the engine default (no line authored);
-    ``False`` authors the Performance-preset execMode value. The worker exposes
-    no full DLSS off, so this changes the DLSS execution mode rather than
-    disabling DLSS.
-    """
-
-    if dlss_enabled:
-        return []
-    return [f"int {DLSS_EXECMODE_ATTRIBUTE} = {int(DLSS_DISABLED_EXECMODE)}"]
+def _dlss_render_product_lines(dlss_enabled: bool, dlss_quality: str = "INHERIT") -> list[str]:
+    """Author matched public-SDK Token presets; omit inherited source policy."""
+    from .properties import resolve_dlss_quality
+    quality = resolve_dlss_quality(dlss_quality, dlss_enabled)
+    return [] if quality is None else [f'token {DLSS_EXECMODE_ATTRIBUTE} = "{quality}"']
 
 
 def _rtpt_digest_content(rtpt_quality: Mapping[str, Any] | None) -> dict[str, Any]:
@@ -186,23 +176,6 @@ def normalize_sensor_paths(values: Iterable[str] | str) -> tuple[str, ...]:
     return paths or (DEFAULT_RENDER_PRODUCT_PATH,)
 
 
-def normalize_render_vars(values: Iterable[str] | str) -> tuple[str, ...]:
-    """Return the ordered color outputs authored for one render product."""
-
-    source = (values,) if isinstance(values, str) else tuple(values)
-    supported = {
-        color_presentation.RENDER_VAR_LDR_COLOR,
-        color_presentation.RENDER_VAR_HDR_COLOR,
-    }
-    render_vars = tuple(dict.fromkeys(str(value) for value in source if str(value)))
-    if not render_vars:
-        raise ValueError("at least one render var must be selected")
-    unsupported = tuple(value for value in render_vars if value not in supported)
-    if unsupported:
-        raise ValueError(f"unsupported render vars: {unsupported!r}")
-    return render_vars
-
-
 @dataclass(frozen=True)
 class OvrtxSceneComposition:
     source_scene_path: str
@@ -259,13 +232,13 @@ def compose(
     generate_scene_presentation: bool = False,
     scene_camera_matrix: tuple[tuple[float, ...], ...] | None = None,
     camera_value_route_classes: Iterable[str] = (),
+    output_size_value_route: bool = False,
     rtpt_quality: Mapping[str, Any] | None = None,
     rtpt_value_route: bool = False,
     dlss_enabled: bool = True,
-    render_vars: Iterable[str] | str = (
-        color_presentation.RENDER_VAR_LDR_COLOR,
-        color_presentation.RENDER_VAR_HDR_COLOR,
-    ),
+    dlss_quality: str = "INHERIT",
+    render_vars: tuple[str, ...] = ("LdrColor",),
+    native_exposure: NativeExposure = NativeExposure(),
 ) -> OvrtxSceneComposition:
     """Resolve the exact USD scene path an OVRTX session should open."""
 
@@ -274,7 +247,9 @@ def compose(
     source_scene_path = str(source_scene_path or "")
     camera_prim_path = str(camera_prim_path or "")
     sensor_paths = normalize_sensor_paths(sensor_paths)
-    render_vars = normalize_render_vars(render_vars)
+    render_vars = tuple(dict.fromkeys(render_vars))
+    if not render_vars or any(name not in {"LdrColor", "HdrColor", "SemanticSegmentation", "SemanticIdMap"} for name in render_vars):
+        raise ValueError("Unsupported presentation render variable")
     if material_scene_layer is not None and not isinstance(
         material_scene_layer,
         render_requests.MaterialPresentationLayer,
@@ -302,10 +277,13 @@ def compose(
         generate_scene_presentation=generate_scene_presentation,
         scene_camera_matrix=scene_camera_matrix,
         camera_value_route_classes=camera_value_route_classes,
+        output_size_value_route=output_size_value_route,
         rtpt_quality=rtpt_quality,
         rtpt_value_route=rtpt_value_route,
         dlss_enabled=dlss_enabled,
+        dlss_quality=dlss_quality,
         render_vars=render_vars,
+        native_exposure=native_exposure,
     )
     if not contributions:
         return _pass_through_composition(source_scene_path)
@@ -465,13 +443,13 @@ def _presentation_contributions(
     generate_scene_presentation: bool = False,
     scene_camera_matrix: tuple[tuple[float, ...], ...] | None = None,
     camera_value_route_classes: Iterable[str] = (),
+    output_size_value_route: bool = False,
     rtpt_quality: Mapping[str, Any] | None = None,
     rtpt_value_route: bool = False,
     dlss_enabled: bool = True,
-    render_vars: tuple[str, ...] = (
-        color_presentation.RENDER_VAR_LDR_COLOR,
-        color_presentation.RENDER_VAR_HDR_COLOR,
-    ),
+    dlss_quality: str = "INHERIT",
+    render_vars: tuple[str, ...] = ("LdrColor", "HdrColor"),
+    native_exposure: NativeExposure = NativeExposure(),
 ) -> list[_PresentationContribution]:
     contributions: list[_PresentationContribution] = []
     if material_scene_layer is not None:
@@ -514,25 +492,29 @@ def _presentation_contributions(
                     scene_camera_matrix if generate_scene_presentation else None
                 ),
                 camera_value_route_classes=camera_value_route_classes,
+                output_size_value_route=output_size_value_route,
                 rtpt_quality=rtpt_quality,
                 rtpt_value_route=rtpt_value_route,
                 dlss_enabled=dlss_enabled,
+                dlss_quality=dlss_quality,
                 render_vars=render_vars,
+                native_exposure=native_exposure,
             )
         )
     return contributions
 
 
+def render_vars_from_request(request: render_requests.RenderRequest) -> tuple[str, ...]:
+    """Keep authored products and request composition identity in agreement."""
+    color = str(request.color_presentation.get("render_var", "LdrColor"))
+    auxiliary = (("SemanticSegmentation", "SemanticIdMap")
+                 if getattr(request, "semantic_output_path", "") else ())
+    return (color, *auxiliary)
+
+
 def _contributions_from_request(
     request: render_requests.RenderRequest,
 ) -> list[_PresentationContribution]:
-    presentation = getattr(request, "color_presentation", None) or {}
-    getter = getattr(presentation, "get", None)
-    selected_render_var = (
-        getter("render_var", color_presentation.RENDER_VAR_LDR_COLOR)
-        if callable(getter)
-        else color_presentation.RENDER_VAR_LDR_COLOR
-    )
     return _presentation_contributions(
         source_scene_path=str(request.input_usd_path or ""),
         camera_prim_path=str(request.camera_prim_path or ""),
@@ -549,15 +531,16 @@ def _contributions_from_request(
         light_scene_layer=request.light_scene_layer,
         generate_scene_presentation=request.current_scene_generation,
         scene_camera_matrix=getattr(request, "scene_camera_matrix", None),
+        output_size_value_route=bool(getattr(request, "output_size_value_route", False)),
         camera_value_route_classes=tuple(
             getattr(request, "camera_value_route_classes", ()) or ()
         ),
         rtpt_quality=getattr(request, "rtpt_quality", None),
         rtpt_value_route=bool(getattr(request, "rtpt_value_route", False)),
         dlss_enabled=bool(getattr(request, "dlss_enabled", True)),
-        render_vars=normalize_render_vars(
-            (str(selected_render_var or color_presentation.RENDER_VAR_LDR_COLOR),)
-        ),
+        dlss_quality=str(getattr(request, "dlss_quality", "INHERIT")),
+        render_vars=render_vars_from_request(request),
+        native_exposure=getattr(request, "native_exposure", NativeExposure()),
     )
 
 
@@ -572,13 +555,13 @@ def _camera_projection_contribution(
     generate_scene_presentation: bool = False,
     scene_camera_matrix: tuple[tuple[float, ...], ...] | None = None,
     camera_value_route_classes: Iterable[str] = (),
+    output_size_value_route: bool = False,
     rtpt_quality: Mapping[str, Any] | None = None,
     rtpt_value_route: bool = False,
     dlss_enabled: bool = True,
-    render_vars: tuple[str, ...] = (
-        color_presentation.RENDER_VAR_LDR_COLOR,
-        color_presentation.RENDER_VAR_HDR_COLOR,
-    ),
+    dlss_quality: str = "INHERIT",
+    render_vars: tuple[str, ...] = ("LdrColor", "HdrColor"),
+    native_exposure: NativeExposure = NativeExposure(),
 ) -> _PresentationContribution:
     route_classes = tuple(
         sorted({str(item) for item in camera_value_route_classes if str(item)})
@@ -600,7 +583,9 @@ def _camera_projection_contribution(
             camera_matrix=scene_camera_matrix,
             rtpt_quality=rtpt_quality,
             dlss_enabled=dlss_enabled,
+            dlss_quality=dlss_quality,
             render_vars=render_vars,
+            native_exposure=native_exposure,
         )
     else:
         scene_camera_matrix = None
@@ -611,6 +596,7 @@ def _camera_projection_contribution(
             height=height,
             projection=projection,
             render_vars=render_vars,
+            native_exposure=native_exposure,
         )
     layer_body = "\n".join(body_lines).rstrip()
     authored_properties = tuple((authored_camera_prim_path, str(name)) for name in projection)
@@ -624,6 +610,9 @@ def _camera_projection_contribution(
     # route defines the product, the override route re-defines it against
     # the declared sensor identity), so record the ownership unconditionally.
     authored_properties += tuple((sensor_path, "camera") for sensor_path in sensor_paths)
+    authored_properties += tuple((path, attribute)
+        for path in (authored_camera_prim_path, *sensor_paths)
+        for attribute in (ENABLED_ATTRIBUTE, TARGET_ATTRIBUTE))
     if generate_scene_presentation:
         # RTPT quality attributes are authored on the generated RenderProduct
         # (task01-03) — record them so overlay-conflict detection and artifact
@@ -636,7 +625,7 @@ def _camera_projection_contribution(
         # DLSS execMode is authored on the generated RenderProduct only when the
         # toggle is OFF (enabled leaves the engine default). Record it for
         # overlay-conflict detection when present.
-        if not dlss_enabled:
+        if not dlss_enabled or dlss_quality != "INHERIT":
             authored_properties += tuple(
                 (sensor_path, DLSS_EXECMODE_ATTRIBUTE) for sensor_path in sensor_paths
             )
@@ -663,11 +652,13 @@ def _camera_projection_contribution(
         "source": "viewport_camera_projection",
         "camera_prim_path": authored_camera_prim_path,
         "sensor_paths": sensor_paths,
-        "projection": digest_projection,
-        "width": width,
-        "height": height,
-        "generated_scene_presentation": generate_scene_presentation,
         "render_vars": render_vars,
+        "projection": digest_projection,
+        "width": None if output_size_value_route else width,
+        "height": None if output_size_value_route else height,
+        "output_size_value_route": output_size_value_route,
+        "generated_scene_presentation": generate_scene_presentation,
+        "dlss_frame_generation": False,
     }
     # The RTPT quality values are session state: fold them into the composition
     # digest on the generated route so a changed value produces a distinct
@@ -679,6 +670,7 @@ def _camera_projection_contribution(
     # render thread, so it must not change session identity; the layer body
     # still authors the current values so any (re)placed session composes them
     # fresh.
+    digest_content["native_exposure"] = native_exposure.identity()
     if generate_scene_presentation and not rtpt_value_route:
         digest_content["rtpt_quality"] = _rtpt_digest_content(rtpt_quality)
     # The DLSS toggle is honored on the RenderProduct at SESSION creation (real-
@@ -689,6 +681,8 @@ def _camera_projection_contribution(
     # toggling either direction re-keys.
     if generate_scene_presentation:
         digest_content["dlss_enabled"] = bool(dlss_enabled)
+        if dlss_quality != "INHERIT":
+            digest_content["dlss_quality"] = dlss_quality
     if route_classes:
         digest_content["camera_value_route_classes"] = route_classes
     if scene_camera_matrix is not None:
@@ -703,8 +697,10 @@ def _camera_projection_contribution(
         digest_content=digest_content,
         diagnostics={
             "source": "viewport_camera_projection",
+            "native_exposure": native_exposure.diagnostics(),
             "camera_prim_path": authored_camera_prim_path,
             "sensor_paths": sensor_paths,
+        "render_vars": render_vars,
             "projection_route": str(
                 projection_diagnostics.get("route", render_requests.OVRTX_SCENE_COMPOSITION_ROUTE)
             ),
@@ -717,13 +713,13 @@ def _camera_projection_contribution(
                 name for name in projection if name not in digest_projection
             ],
             "generated_scene_presentation": generate_scene_presentation,
-            "render_vars": list(render_vars),
+        "dlss_frame_generation": False,
             "scene_camera_pose_authored": scene_camera_matrix is not None,
             "rtpt_value_route": bool(generate_scene_presentation and rtpt_value_route),
             "rtpt_digest_excluded": bool(generate_scene_presentation and rtpt_value_route),
             "dlss_enabled": bool(dlss_enabled),
             "dlss_execmode_authored": bool(
-                generate_scene_presentation and not dlss_enabled
+                generate_scene_presentation and (not dlss_enabled or dlss_quality != "INHERIT")
             ),
         },
     )
@@ -892,10 +888,8 @@ def _camera_override_body_lines(
     height: int,
     projection: Mapping[str, Any],
     define_render_products: bool = True,
-    render_vars: Iterable[str] | str = (
-        color_presentation.RENDER_VAR_LDR_COLOR,
-        color_presentation.RENDER_VAR_HDR_COLOR,
-    ),
+    render_vars: tuple[str, ...] = ("LdrColor", "HdrColor"),
+    native_exposure: NativeExposure = NativeExposure(),
 ) -> list[str]:
     """Author the fixture/direct-USD camera + render-product override layer.
 
@@ -908,8 +902,7 @@ def _camera_override_body_lines(
     are add-on-defined), merged into a single prim tree.
     """
 
-    render_vars = normalize_render_vars(render_vars)
-    camera_attr_lines = []
+    camera_attr_lines = native_exposure.usd_lines()
     projection_token = str(projection.get("projection", "") or "")
     if projection_token in {"perspective", "orthographic"}:
         camera_attr_lines.append(f'token projection = "{_usda_string(projection_token)}"')
@@ -936,10 +929,8 @@ def _camera_override_body_lines(
         camera_definitions.append((camera_prim_path, "", camera_attr_lines))
     render_product_definitions: list[tuple[str, str | None, list[str]]] = []
     for sensor_path in sensor_paths:
-        render_var_paths = tuple(
-            f"{sensor_path.rstrip('/')}/{render_var}" for render_var in render_vars
-        )
-        ordered_vars = ", ".join(f"<{path}>" for path in render_var_paths)
+        ldr_path = f"{sensor_path.rstrip('/')}/LdrColor"
+        hdr_path = f"{sensor_path.rstrip('/')}/HdrColor"
         if define_render_products:
             product_definition: tuple[str, str | None, list[str]] = (
                 sensor_path,
@@ -952,12 +943,12 @@ def _camera_override_body_lines(
                     ),
                     'token omni:rtx:rendermode = "RealTimePathTracing"',
                     'token omni:rtx:background:source:type = "domeLight"',
-                    f"rel orderedVars = [{ordered_vars}]",
+                    "rel orderedVars = [" + ", ".join(f"<{sensor_path.rstrip('/')}/{name}>" for name in render_vars) + "]",
                     f"uniform int2 resolution = ({max(1, int(width))}, {max(1, int(height))})",
                     "bool omni:rtx:indirectDiffuse:denoiser:enabled = true",
                     "bool omni:rtx:reflections:denoiser:enabled = true",
-                    "bool omni:rtx:dlss:frameGeneration = true",
-                    "bool omni:rtx:autoExposure:enabled = false",
+                    "bool omni:rtx:dlss:frameGeneration = false",
+                    *native_exposure.usd_lines(),
                     "bool omni:rtx:rt:ecoMode:enabled = false",
                     # No omni:rtx:rtpt:* opinions here: RTPT quality is owned
                     # by the generated route / live value writes (task01-03),
@@ -972,14 +963,13 @@ def _camera_override_body_lines(
                 sensor_path,
                 "",
                 [
-                    f"rel orderedVars = [{ordered_vars}]",
+                    "rel orderedVars = [" + ", ".join(f"<{sensor_path.rstrip('/')}/{name}>" for name in render_vars) + "]",
                     f"uniform int2 resolution = ({max(1, int(width))}, {max(1, int(height))})",
                 ],
             )
         render_product_definitions.append(product_definition)
         render_product_definitions.extend(
-            (path, "RenderVar", [f'uniform string sourceName = "{render_var}"'])
-            for path, render_var in zip(render_var_paths, render_vars, strict=True)
+            _render_var_definitions(sensor_path, render_vars)
         )
     if not define_render_products:
         # Pure-override shape: one merged tree so a shared root prim between
@@ -1001,14 +991,13 @@ def _generated_presentation_body_lines(
     camera_matrix: tuple[tuple[float, ...], ...] | None = None,
     rtpt_quality: Mapping[str, Any] | None = None,
     dlss_enabled: bool = True,
-    render_vars: Iterable[str] | str = (
-        color_presentation.RENDER_VAR_LDR_COLOR,
-        color_presentation.RENDER_VAR_HDR_COLOR,
-    ),
+    dlss_quality: str = "INHERIT",
+    render_vars: tuple[str, ...] = ("LdrColor", "HdrColor"),
+    native_exposure: NativeExposure = NativeExposure(),
 ) -> list[str]:
-    render_vars = normalize_render_vars(render_vars)
     camera_projection = str(projection.get("projection", "perspective") or "perspective")
     camera_attributes = [
+        *native_exposure.usd_lines(),
         f'token projection = "{_usda_string(camera_projection)}"',
         f"float focalLength = {_usda_float(float(projection.get('focalLength', 35.0)))}",
         "float horizontalAperture = "
@@ -1035,7 +1024,10 @@ def _generated_presentation_body_lines(
         camera_attributes.extend(
             (
                 f"matrix4d xformOp:transform = {_usda_matrix4d(camera_matrix)}",
-                'uniform token[] xformOpOrder = ["xformOp:transform"]',
+                # The request supplies a world matrix. Stock cameras can sit
+                # below an already-transformed object/rig; reset inheritance
+                # just as the native omni:xform packet does on later edits.
+                'uniform token[] xformOpOrder = ["!resetXformStack!", "xformOp:transform"]',
             )
         )
     definitions: list[tuple[str, str | None, list[str]]] = [
@@ -1062,10 +1054,8 @@ def _generated_presentation_body_lines(
             defined_paths.add(ancestor)
             definitions.append((ancestor, None, []))
     for sensor_path in sensor_paths:
-        render_var_paths = tuple(
-            f"{sensor_path.rstrip('/')}/{render_var}" for render_var in render_vars
-        )
-        ordered_vars = ", ".join(f"<{path}>" for path in render_var_paths)
+        ldr_path = f"{sensor_path.rstrip('/')}/LdrColor"
+        hdr_path = f"{sensor_path.rstrip('/')}/HdrColor"
         definitions.append(
             (
                 sensor_path,
@@ -1074,24 +1064,32 @@ def _generated_presentation_body_lines(
                     f"rel camera = <{camera_prim_path}>",
                     'token omni:rtx:rendermode = "RealTimePathTracing"',
                     'token omni:rtx:background:source:type = "domeLight"',
-                    f"rel orderedVars = [{ordered_vars}]",
+                    "rel orderedVars = [" + ", ".join(f"<{sensor_path.rstrip('/')}/{name}>" for name in render_vars) + "]",
                     f"uniform int2 resolution = ({max(1, int(width))}, {max(1, int(height))})",
                     "bool omni:rtx:indirectDiffuse:denoiser:enabled = true",
                     "bool omni:rtx:reflections:denoiser:enabled = true",
-                    "bool omni:rtx:dlss:frameGeneration = true",
-                    "bool omni:rtx:autoExposure:enabled = false",
+                    "bool omni:rtx:dlss:frameGeneration = false",
+                    *native_exposure.usd_lines(),
                     "bool omni:rtx:rt:ecoMode:enabled = false",
                     *_rtpt_render_product_lines(rtpt_quality),
-                    *_dlss_render_product_lines(dlss_enabled),
+                    *_dlss_render_product_lines(dlss_enabled, dlss_quality),
                     "color3f omni:rtx:rt:ambientLight:color = (0, 0, 0)",
                 ],
             )
         )
         definitions.extend(
-            (path, "RenderVar", [f'uniform string sourceName = "{render_var}"'])
-            for path, render_var in zip(render_var_paths, render_vars, strict=True)
+            _render_var_definitions(sensor_path, render_vars)
         )
     return _usda_typed_def_tree(definitions)
+
+
+def _render_var_definitions(sensor_path: str, render_vars: tuple[str, ...]):
+    # Retain the established color definitions even when only one is selected.
+    # Every requested auxiliary target must also be defined: orderedVars alone
+    # cannot make an absent RenderVar a native SDK output.
+    names = tuple(dict.fromkeys(("LdrColor", "HdrColor", *render_vars)))
+    return [(f"{sensor_path.rstrip('/')}/{name}", "RenderVar",
+             [f'uniform string sourceName = "{name}"']) for name in names]
 
 
 def _usda_typed_def_tree(

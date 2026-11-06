@@ -7,6 +7,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 from types import SimpleNamespace
+import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "addon"))
@@ -79,3 +80,64 @@ def test_on_disk_image_resolves_in_place(tmp_path: Path) -> None:
     )
     resolved = texture_materialization.materialized_image_path(image)
     assert Path(resolved) == texture.resolve()
+
+
+def test_packed_exr_named_png_keeps_hdr_encoding(tmp_path, monkeypatch):
+    from ovrtx_blender_example import materialx_openpbr_conversion
+    monkeypatch.setenv("OV_BLENDER_EXAMPLE_AUTHORING_WORK_DIR", str(tmp_path / "authored-scenes"))
+    monkeypatch.setenv("OV_BLENDER_EXAMPLE_VIEWPORT_WORK_DIR", str(tmp_path / "viewport"))
+    payload = b"\x76\x2f\x31\x01" + b"exr-payload"
+    image = _packed_image("Sky.png", payload, "//misleading.png")
+    for export in (texture_materialization.materialized_image_path, materialx_openpbr_conversion._materialized_image_path):
+        path = Path(export(image))
+        assert path.suffix == ".exr"
+        assert path.read_bytes() == payload
+        assert not path.with_suffix('.exr.tmp').exists()
+
+
+def test_stock_packed_filename_repair_uses_only_exact_exported_bytes(tmp_path):
+    from pxr import Sdf, Usd
+    from ovrtx_blender_example.scene_generation import _repair_packed_texture_assets
+    root = tmp_path / 'stock.usda'
+    stage = Usd.Stage.CreateNew(str(root))
+    attr = stage.DefinePrim('/Texture', 'Shader').CreateAttribute('inputs:file', Sdf.ValueTypeNames.Asset)
+    attr.Set(Sdf.AssetPath('./textures/original.png'))
+    textures = tmp_path / 'textures'
+    textures.mkdir()
+    (textures / 'Generated Image.png').write_bytes(b'packed-content')
+    (textures / 'other.png').write_bytes(b'different-content')
+    image = _packed_image('Generated Image', b'packed-content', '//original.png')
+    _repair_packed_texture_assets(stage, root, [image])
+    assert attr.Get().path == './textures/Generated Image.png'
+    assert Path(attr.Get().resolvedPath).read_bytes() == b'packed-content'
+    assert image.filepath == '//original.png'
+
+
+@pytest.mark.parametrize('payloads', [(b'missing',), (b'one', b'two'), (b'',)])
+def test_stock_packed_filename_repair_rejects_missing_or_ambiguous_bytes(tmp_path, payloads):
+    from pxr import Sdf, Usd
+    from ovrtx_blender_example.scene_generation import _repair_packed_texture_assets, SceneGenerationError
+    root = tmp_path / 'stock.usda'
+    stage = Usd.Stage.CreateNew(str(root))
+    attr = stage.DefinePrim('/Texture', 'Shader').CreateAttribute('inputs:file', Sdf.ValueTypeNames.Asset)
+    attr.Set(Sdf.AssetPath('./textures/original.png'))
+    (tmp_path / 'textures').mkdir()
+    (tmp_path / 'textures' / 'one.png').write_bytes(b'one')
+    images = [_packed_image('Image', value, '//original.png') for value in payloads]
+    with pytest.raises(SceneGenerationError, match='unambiguous'):
+        _repair_packed_texture_assets(stage, root, images)
+    assert attr.Get().path == './textures/original.png'
+
+
+def test_stock_packed_repair_preserves_resolver_tiles_and_unrelated_missing_assets(tmp_path):
+    from pxr import Sdf, Usd
+    from ovrtx_blender_example.scene_generation import _repair_packed_texture_assets
+    root = tmp_path / 'stock.usda'
+    stage = Usd.Stage.CreateNew(str(root))
+    prim = stage.DefinePrim('/Texture', 'Shader')
+    paths = ['./textures/diffuse.<UDIM>.png', './textures/unrelated.png', '../outside.png']
+    attrs = [prim.CreateAttribute('asset' + str(i), Sdf.ValueTypeNames.Asset) for i in range(len(paths))]
+    for attr, value in zip(attrs, paths):
+        attr.Set(Sdf.AssetPath(value))
+    _repair_packed_texture_assets(stage, root, [_packed_image('Tiled', b'packed', '//diffuse.<UDIM>.png')])
+    assert [attr.Get().path for attr in attrs] == paths

@@ -3,6 +3,7 @@
 """RenderEngine shell for the OVRTX render example."""
 
 from __future__ import annotations
+from types import SimpleNamespace
 
 from array import array
 from dataclasses import dataclass, replace
@@ -14,6 +15,7 @@ from pathlib import Path
 import struct
 import threading
 import time
+import uuid
 from typing import Any, Callable, Iterable, Mapping, MutableMapping, Sequence
 import weakref
 
@@ -46,6 +48,7 @@ from .blender_signal_translation import BlenderSignalTranslationError, RenderReq
 from .interactive_edit_planner import InteractiveEdit
 from .interactive_edit_workflow import InteractiveEditWorkflow, EditWorkflowResult
 from . import color_presentation
+from . import supersample as supersample_module
 from . import blender_signal_translation
 from .ovrtx_runtime_client import (
     RenderClientError,
@@ -54,18 +57,21 @@ from .ovrtx_runtime_client import (
     SIMULATION_ID_PREFIX,
 )
 from .ovrtx_session_controller import OvrtxSessionController
+from .direct_runtime_session import is_worker_failure
 from .runtime_scheduler import RuntimeScheduler, RuntimeTickResult, RuntimeTickStatus
 from . import viewport_handoff, viewport_render_thread
-from . import viewport_profile, render_requests
+from . import depsgraph_updates
+from . import performance_profile, viewport_profile, render_requests
 from .render_requests import RenderRequest
 from . import usd_paths as usd_paths
 from . import usd_prim_resolver
 from . import viewport_artifact_recorder
 from . import viewport_presentation
+from . import viewport_display_overlay
 from . import ovrtx_scene_composition, ovrtx_session
 from . import session_lifecycle
-from . import runtime_services
 from . import user_messages
+from . import worker_failure_logs
 from .shared_stage_composition import BodyPose, write_rgba_png
 from .value_edit_conversion import ValueEditConversionPolicies
 
@@ -73,6 +79,8 @@ from .value_edit_conversion import ValueEditConversionPolicies
 BLENDER_AVAILABLE = bpy is not None
 ENGINE_ID = "OVRTX_EXAMPLE"
 FINAL_RENDER_USE_POSTPROCESS = False
+# Covers a deferred scene close that stops a retained final-render worker.
+FINAL_RENDER_CLOSE_WAIT_SECONDS = 120.0
 VIEWPORT_SESSION_TEARDOWN_TIMEOUT_SECONDS = 600.0
 _ACTIVE_VIEWPORT_ENGINES: weakref.WeakSet[Any] = weakref.WeakSet()
 _RENDER_CALLBACK_ADAPTERS: dict[
@@ -115,6 +123,77 @@ def _logs_from_startup_diagnostics(startup: Mapping[str, Any]) -> dict[str, Any]
 #: thread teardown, leaking render threads and orphaning workers).
 _ENGINE_RUNTIMES: dict[int, dict[str, Any]] = {}
 _DIRECT_VIEWPORT_REUSE_BLOCKED = False
+_DISPLAY_OVERLAY = viewport_display_overlay.DisplayOverlay()
+#: Viewport session ends in progress, on any thread. A session end can
+#: evaluate the view layer (pose mirror, playback-lock release), and Blender
+#: then calls ``view_update`` synchronously; a session started from there
+#: would be wiped by the end that is still running (orphaned render loop).
+_SESSION_ENDS_LOCK = threading.Lock()
+_SESSION_ENDS_IN_PROGRESS = 0
+_TEARDOWN_START_LOCK = threading.Lock()
+
+
+def _thread_model_snapshot(loop: Any, render_thread: Any) -> dict[str, Any]:
+    capture = {}
+    for name, owner, method in (("render_thread", render_thread, "diagnostics"),
+                                ("render_loop", loop, "diagnostics"),
+                                ("render_loop_records", loop, "iteration_records")):
+        if owner is not None:
+            try:
+                capture[name] = getattr(owner, method)()
+            except Exception:
+                pass
+    return capture
+
+
+def _finish_viewport_outputs(runtime: MutableMapping[str, Any]) -> None:
+    with _TEARDOWN_START_LOCK:
+        runtime["cleanup_finished"] = True
+        finish = runtime.pop("finish_outputs", None)
+    if finish is not None:
+        finish()
+
+
+def _queue_viewport_outputs(runtime: MutableMapping[str, Any], outputs: list) -> None:
+    # Freeze JSON while the engine is alive. The cleanup callback captures no
+    # engine/RNA wrapper and survives unregister or scene replacement.
+    outputs = json.loads(json.dumps(outputs))
+    completion = threading.Event()
+    runtime["output_completion"] = completion
+
+    def finish() -> None:
+        try:
+            cleanup = dict(runtime.get("stop_outcome", {}))
+            cleanup["status"] = "stopped" if runtime.get("stop_confirmed") else "teardown_stop_failed"
+            viewport_artifact_recorder.finalize_outputs(outputs,
+                runtime.get("thread_model_final", {}), cleanup, viewport_profile.render_thread_summary)
+        except Exception as exc:
+            runtime["output_failure"] = f"{type(exc).__name__}: {exc}"
+        finally:
+            completion.set()
+
+    with _TEARDOWN_START_LOCK:
+        ready = runtime.get("cleanup_finished", False)
+        if not ready:
+            runtime["finish_outputs"] = finish
+    if ready:
+        finish()
+
+
+def _viewport_session_end_in_progress() -> bool:
+    return _SESSION_ENDS_IN_PROGRESS > 0
+
+
+class _ViewportSessionEnding:
+    def __enter__(self) -> None:
+        global _SESSION_ENDS_IN_PROGRESS
+        with _SESSION_ENDS_LOCK:
+            _SESSION_ENDS_IN_PROGRESS += 1
+
+    def __exit__(self, *_exc: Any) -> None:
+        global _SESSION_ENDS_IN_PROGRESS
+        with _SESSION_ENDS_LOCK:
+            _SESSION_ENDS_IN_PROGRESS -= 1
 
 
 def _sidecar_generation_runtime(runtime: Mapping[str, Any] | None) -> Any | None:
@@ -153,19 +232,83 @@ def _fail_closed_runtime_reuse(runtime: Any | None) -> None:
             request_stop()
 
 
-def _teardown_engine_runtime(runtime: Mapping[str, Any] | None) -> bool:
-    """Stop a dead engine's render loop/thread from its sidecar handles.
+def _live_engine_timer(method: Callable[[], Any]) -> Callable[[], Any]:
+    """Wrap a bound engine method for bpy.app.timers.
 
-    Bounded (the thread's own join timeout); safe to call repeatedly and
-    with ``None``. This is the ``__del__``/pruning teardown path for
-    wrappers whose RNA is gone — the full artifact-writing session end
-    needs the wrapper and only runs while it is alive.
+    A pending timer can outlive its viewport engine (viewport closed, shading
+    changed, file load); a freed engine's work is simply dropped.
     """
+
+    def call() -> Any:
+        try:
+            # Any attribute access on a freed RNA struct raises ReferenceError.
+            check = getattr(method.__self__, "as_pointer", None)
+            if check is not None:
+                check()
+        except ReferenceError:
+            return None
+        return method()
+
+    return call
+
+
+def _teardown_engine_runtime(runtime: MutableMapping[str, Any] | None) -> bool:
+    """Request one cleanup job and poll its result without joining on Blender."""
 
     if not runtime:
         return True
-    if runtime.get("stop_confirmed") is False:
-        return False
+    with _TEARDOWN_START_LOCK:
+        if runtime.get("stop_confirmed") is not None:
+            return bool(runtime["stop_confirmed"])
+        completion = runtime.get("cleanup_completion")
+        if completion is not None:
+            return bool(completion.is_set() and runtime.get("stop_confirmed"))
+        # Resolve RNA-dependent ownership before handing off. The worker only
+        # consumes captured Python owners, never the scene or engine wrapper.
+        runtime["generation_runtime"] = _sidecar_generation_runtime(runtime)
+        runtime["scene"] = None
+        completion = threading.Event()
+        runtime["cleanup_completion"] = completion
+        runtime["stop_pending"] = True
+        runtime["stop_confirmed"] = None
+        runtime["stop_outcome"] = {"joined": False, "join_deferred": True}
+        ending = _ViewportSessionEnding()
+        ending.__enter__()
+
+        def finish() -> None:
+            loop, render_thread = runtime.get("render_loop"), runtime.get("render_thread")
+            try:
+                _teardown_live_engine_runtime(runtime)
+            except Exception as exc:
+                runtime["stop_confirmed"] = False
+                runtime["stop_pending"] = False
+                runtime["stop_outcome"] = {
+                    "joined": False, "failure": f"{type(exc).__name__}: {exc}"
+                }
+                _fail_closed_runtime_reuse(runtime.get("generation_runtime"))
+            finally:
+                runtime["thread_model_final"] = _thread_model_snapshot(loop, render_thread)
+                _finish_viewport_outputs(runtime)
+                ending.__exit__()
+                completion.set()
+
+        thread = threading.Thread(target=finish, name="ovrtx-viewport-cleanup", daemon=True)
+        runtime["cleanup_thread"] = thread
+        try:
+            thread.start()
+        except Exception as exc:
+            runtime["stop_pending"] = False
+            runtime["stop_confirmed"] = False
+            runtime["stop_outcome"] = {"joined": False, "failure": f"{type(exc).__name__}: {exc}"}
+            runtime["cleanup_finished"] = True
+            runtime["thread_model_final"] = _thread_model_snapshot(runtime.get("render_loop"), runtime.get("render_thread"))
+            ending.__exit__()
+            completion.set()
+            _fail_closed_runtime_reuse(runtime.get("generation_runtime"))
+    return bool(completion.is_set() and runtime.get("stop_confirmed"))
+
+
+def _teardown_live_engine_runtime(runtime: MutableMapping[str, Any]) -> bool:
     loop = runtime.get("render_loop")
     request_stop = getattr(loop, "request_stop", None)
     if callable(request_stop):
@@ -178,15 +321,26 @@ def _teardown_engine_runtime(runtime: Mapping[str, Any] | None) -> bool:
     teardown_state = runtime.get("teardown_state")
     generation_runtime = _sidecar_generation_runtime(runtime)
     stop = getattr(render_thread, "stop", None)
-    if callable(teardown) and callable(getattr(render_thread, "submit", None)):
+    if (not runtime.get("teardown_submitted") and callable(teardown)
+            and callable(getattr(render_thread, "submit", None))):
         try:
             render_thread.submit(teardown, label="session-teardown")
+            runtime["teardown_submitted"] = True
         except Exception:
             pass
     joined = render_thread is None
+    if joined and callable(teardown):
+        teardown()
+        joined = not bool(teardown_state and teardown_state.get("errors"))
     if callable(stop):
         try:
             outcome = stop()
+            runtime["stop_caller_ident"] = threading.get_ident()
+            runtime["stop_outcome"] = dict(outcome) if isinstance(outcome, Mapping) else {}
+            if isinstance(outcome, Mapping) and outcome.get("join_deferred"):
+                runtime["stop_pending"] = True
+                runtime["stop_confirmed"] = None
+                return False
             joined = bool(
                 isinstance(outcome, Mapping)
                 and outcome.get("joined", not outcome.get("leaked_thread", False))
@@ -196,12 +350,23 @@ def _teardown_engine_runtime(runtime: Mapping[str, Any] | None) -> bool:
             )
             if joined and callable(teardown) and not teardown_ran:
                 teardown()
+            teardown_errors = (
+                list(teardown_state.get("errors", ()))
+                if isinstance(teardown_state, Mapping) else []
+            )
+            if joined and teardown_errors:
+                runtime["stop_outcome"]["teardown_errors"] = teardown_errors
+                joined = False
             if not joined:
                 _fail_closed_runtime_reuse(generation_runtime)
+                reason = (
+                    "reported owner-thread cleanup errors"
+                    if teardown_errors else
+                    "did not complete owner-thread teardown before its configured deadline"
+                )
                 message = (
                     "[ovrtx_blender_example] defect: dead render engine's viewport "
-                    f"session {runtime.get('signal_id', '?')!r} did not complete "
-                    "owner-thread teardown before its configured deadline; "
+                    f"session {runtime.get('signal_id', '?')!r} {reason}; "
                     "runtime reuse disabled"
                 )
                 print(message)
@@ -216,12 +381,51 @@ def _teardown_engine_runtime(runtime: Mapping[str, Any] | None) -> bool:
             _fail_closed_runtime_reuse(generation_runtime)
             joined = False
     runtime["stop_confirmed"] = joined
+    runtime["stop_pending"] = False
     if joined:
         runtime["render_loop"] = None
         runtime["render_thread"] = None
         runtime["teardown"] = None
         runtime["teardown_state"] = None
     return joined
+
+
+def _finish_pending_engine_teardowns() -> bool:
+    """Confirm deferred owner-thread stops off-owner before runtime reuse."""
+
+    confirmed = True
+    tracked_ids = {id(item) for item in list(_ACTIVE_VIEWPORT_ENGINES)}
+    for engine_id, runtime in tuple(_ENGINE_RUNTIMES.items()):
+        if not runtime.get("stop_pending") and runtime.get("cleanup_completion") is None:
+            continue
+        joined = _teardown_engine_runtime(runtime)
+        confirmed = confirmed and joined
+        if joined and engine_id not in tracked_ids:
+            _ENGINE_RUNTIMES.pop(engine_id, None)
+    return confirmed
+
+
+def _wait_final_render_teardowns(cancel_requested: Callable[[], bool]) -> bool:
+    """The render job can wait cancellably; viewport/UI callbacks only request."""
+    deadline = time.monotonic() + VIEWPORT_SESSION_TEARDOWN_TIMEOUT_SECONDS
+    for runtime in tuple(_ENGINE_RUNTIMES.values()):
+        completion = runtime.get("cleanup_completion")
+        if completion is None:
+            continue
+        while not completion.wait(0.02):
+            if cancel_requested() or time.monotonic() >= deadline:
+                return False
+        if runtime.get("stop_confirmed") is not True:
+            return False
+    return True
+
+
+def _end_viewports_for_final(cancel_requested: Callable[[], bool]) -> bool:
+    immediate = _run_on_main_thread(
+        lambda: _end_active_viewport_sessions(ViewportSessionEndReason.SESSION_REPLACED),
+        cancel_requested=cancel_requested,
+    )
+    return bool(immediate or _wait_final_render_teardowns(cancel_requested))
 
 
 def _forget_tracked_engine(engine: Any) -> None:
@@ -265,6 +469,7 @@ def _visit_active_viewport_engines(
     runtime from the sidecar — never through the wrapper.
     """
 
+    _finish_pending_engine_teardowns()
     engines: list[Any] = []
     stopped: list[bool] = []
     dead: list[Any] = []
@@ -310,13 +515,71 @@ def _visit_active_viewport_engines(
     stopped.extend(
         False
         for engine_id, runtime in _ENGINE_RUNTIMES.items()
-        if engine_id not in tracked_ids and runtime.get("stop_confirmed") is False
+        if engine_id not in tracked_ids and (
+            runtime.get("stop_confirmed") is False or runtime.get("stop_pending")
+        )
     )
     return engines, stopped
 
 
 def _live_viewport_engines() -> list[Any]:
     return _visit_active_viewport_engines()[0]
+
+
+def retire_physics_presentation(scene: Any) -> None:
+    """Retire drained live-physics display ownership before baked Actions apply."""
+    if threading.current_thread() is not threading.main_thread():
+        raise RuntimeError("Presentation retirement requires the main thread")
+    for engine in _live_viewport_engines():
+        if getattr(engine, "_viewport_scene", None) is scene:
+            engine._retire_physics_presentation()
+
+
+def resume_physics_presentation(scene_uids: Iterable[int]) -> None:
+    """Re-present the newest frame of scenes whose presentation stop ended.
+
+    The stop discarded every prepared packet, and a paused scene publishes no
+    new frame on its own. Retire the stale display state (authored RNA is
+    already restored), then prepare the newest publication again.
+    """
+    if threading.current_thread() is not threading.main_thread():
+        raise RuntimeError("Presentation resumption requires the main thread")
+    uids = set(scene_uids)
+    for engine in _live_viewport_engines():
+        try:
+            uid = int(getattr(getattr(engine, "_viewport_scene", None), "session_uid", 0) or 0)
+        except ReferenceError:
+            continue
+        if uid not in uids:
+            continue
+        engine._retire_physics_presentation()
+        slot = getattr(engine, "_frame_slot", None)
+        if slot is not None:
+            engine._queue_frame_presentation(slot.peek_latest())
+
+
+def presented_physics_timeline_frame(scene: Any) -> int | None:
+    """Newest timeline frame a live-physics OVRTX viewport of ``scene`` presented.
+
+    Reads each viewport's committed presentation. None while no viewport
+    presents a live-physics frame under timeline control (nothing presented
+    yet, retired, or a physics-free render).
+    """
+    uid = int(getattr(scene, "session_uid", 0) or 0)
+    newest = None
+    for engine in _live_viewport_engines():
+        try:
+            if int(getattr(getattr(engine, "_viewport_scene", None), "session_uid", 0) or 0) != uid:
+                continue
+            frame = getattr(engine, "_presented_frame", None)
+        except ReferenceError:
+            continue
+        tick = getattr(frame, "runtime_tick_result", None)
+        timeline = getattr(frame, "runtime_tick_timeline", None)
+        if tick is None or not getattr(tick, "physics_pose_set", ()) or not timeline or not timeline[0]:
+            continue
+        newest = int(timeline[1]) if newest is None else max(newest, int(timeline[1]))
+    return newest
 
 
 def _edit_submission_engines(engines: Iterable[Any]) -> tuple[Any, ...]:
@@ -382,49 +645,113 @@ def reconnect_viewport_sessions() -> dict[str, Any]:
     }
 
 
+def _require_viewport_runtime_ready() -> None:
+    scene_generation_sessions._require_session_open()
+    if _WORKER_RESTART is not None and (not _WORKER_RESTART['completion'].is_set()):
+        raise RuntimeServicesPreparingError('Renderer restart is still draining previous work')
+    if _WORKER_RESTART is not None and _WORKER_RESTART['result']['status'] == 'teardown_unconfirmed':
+        raise RenderClientError(_WORKER_RESTART['result'].get('error', 'Renderer restart failed'))
+    'Defer session activation while the selected runtime is being installed.'
+    from . import bundled_runtime, public_sdk_install
+    if bundled_runtime.public_sdk_python():
+        return
+    status = public_sdk_install.status()
+    message = str(status.get("error") or status.get("message") or "Select and install a sidecar in the add-on preferences")
+    if status.get('state') == 'installing':
+        raise RuntimeServicesPreparingError(message)
+    raise RenderClientError(message)
+
+
+_WORKER_RESTART: dict[str, Any] | None = None
+
+
+def worker_restart_status() -> dict[str, Any]:
+    task = _WORKER_RESTART
+    return dict(task["result"]) if task is not None else {"status": "not_requested"}
+
+
+def _poll_worker_restart() -> float | None:
+    _restore_viewport_redraw()
+    task = _WORKER_RESTART
+    return 0.1 if task is not None and not task["completion"].is_set() else None
+
+
 def restart_ovrtx_workers() -> dict[str, Any]:
-    """Quiesce every pane, then synchronously replace only the OVRTX worker."""
+    """Request one renderer-only restart; Blender never waits for native work."""
+    global _WORKER_RESTART
+    if _WORKER_RESTART is not None and (not _WORKER_RESTART['completion'].is_set()):
+        return worker_restart_status()
+    try:
+        scene_generation_sessions._require_session_open()
+    except Exception as exc:
+        return {'status': 'teardown_unconfirmed', 'restart_pending': False, 'error': f'{type(exc).__name__}: {exc}'}
+    result = {'status': 'restart_pending', 'restart_pending': True, 'active_session_count': 0, 'restarted_worker_count': 0, 'teardown_confirmed': False, 'end_reason': ViewportSessionEndReason.WORKER_RESTART_REQUESTED.value}
+    completion = threading.Event()
+    task = {'result': result, 'completion': completion}
+    _WORKER_RESTART = task
+    requested = 0
+    admission_paused = False
 
-    restarted = 0
-
-    def _restart(engine: Any) -> bool:
-        nonlocal restarted
+    def restart(engine: Any) -> bool:
+        nonlocal requested
         had_session, stopped = engine._request_viewport_worker_restart()
-        restarted += bool(had_session and stopped)
+        requested += bool(had_session)
         return stopped
 
-    engines, stopped = _visit_active_viewport_engines(_restart)
-    result = {
-        "active_session_count": len(engines),
-        "restarted_worker_count": restarted,
-        "teardown_confirmed": all(stopped),
-        "end_reason": ViewportSessionEndReason.WORKER_RESTART_REQUESTED.value,
-    }
-    if not all(stopped):
-        return {**result, "status": "teardown_unconfirmed"}
-    if not scene_generation_sessions.pause_preparation():
-        scene_generation_sessions.resume_preparation()
-        return {**result, "status": "teardown_unconfirmed", "teardown_confirmed": False}
+    def fail_setup(exc: Exception) -> dict[str, Any]:
+        if admission_paused:
+            scene_generation_sessions.resume_preparation()
+        task['result'] = {**result, 'status': 'teardown_unconfirmed', 'restart_pending': False, 'error': f'{type(exc).__name__}: {exc}'}
+        completion.set()
+        return worker_restart_status()
     try:
-        if not scene_generation_sessions.deactivate_all_ovrtx():
-            return {**result, "status": "teardown_unconfirmed", "teardown_confirmed": False}
-        try:
-            from . import runtime_bundle_status
+        scene_generation_sessions._require_session_open()
+        scene_generation_sessions.request_preparation_pause()
+        admission_paused = True
+        engines, stopped = _visit_active_viewport_engines(restart)
+        sidecars = tuple(_ENGINE_RUNTIMES.values())
+        result['active_session_count'] = len(engines)
+    except Exception as exc:
+        return fail_setup(exc)
 
-            runtime = runtime_bundle_status()
-            if runtime.get("state") != "ready":
-                raise RuntimeError(str(runtime.get("message") or "runtime is unavailable"))
-            runtime_services.owner.restart_ovrtx(Path(str(runtime["current_root"])))
+    def finish() -> None:
+        final = dict(result)
+        try:
+            deadline = time.monotonic() + VIEWPORT_SESSION_TEARDOWN_TIMEOUT_SECONDS
+            for sidecar in sidecars:
+                pending = sidecar.get('cleanup_completion')
+                if pending is not None:
+                    if not pending.wait(max(0.0, deadline - time.monotonic())):
+                        raise RuntimeError('Viewport cleanup deadline exceeded')
+                    if sidecar.get('stop_confirmed') is not True:
+                        raise RuntimeError('Viewport cleanup failed; restart refused')
+            if not all(stopped) and (not any((s.get('cleanup_completion') for s in sidecars))):
+                raise RuntimeError('Viewport teardown is unconfirmed')
+            if not scene_generation_sessions.pause_preparation():
+                raise RuntimeError('Preparation did not drain; restart refused')
+            discarded = scene_generation_sessions.discard_unacknowledged_renderer_intent()
+            if not scene_generation_sessions.deactivate_all_ovrtx():
+                raise RuntimeError('Renderer shutdown was not confirmed')
+            final.update(status='restarted', teardown_confirmed=True, restarted_worker_count=requested, discarded_unacknowledged_count=discarded, backend='public_sdk')
         except Exception as exc:
-            return {
-                **result,
-                "status": "failed",
-                "error": f"{type(exc).__name__}: {exc}",
-                "restarted_worker_count": 0,
-            }
-    finally:
-        scene_generation_sessions.resume_preparation()
-    return {**result, "status": "restarted"}
+            final.update(status='teardown_unconfirmed', error=f'{type(exc).__name__}: {exc}')
+        finally:
+            scene_generation_sessions.resume_preparation()
+            final['restart_pending'] = False
+            task['result'] = final
+            completion.set()
+    thread = threading.Thread(target=finish, name='ovrtx-worker-restart', daemon=True)
+    task['thread'] = thread
+    try:
+        thread.start()
+    except Exception as exc:
+        return fail_setup(exc)
+    timers = getattr(getattr(bpy, 'app', None), 'timers', None)
+    registered = getattr(timers, 'is_registered', None)
+    register = getattr(timers, 'register', None)
+    if callable(registered) and callable(register) and (not registered(_poll_worker_restart)):
+        register(_poll_worker_restart, first_interval=0.1)
+    return worker_restart_status()
 
 
 def viewport_session_statuses() -> dict[str, Any]:
@@ -466,13 +793,19 @@ def submit_depsgraph_interactive_edits_to_active_viewports(
     *,
     context: Any | None = None,
     scene: Any | None = None,
+    updates: tuple[Any, ...] | None = None,
 ) -> list[EditWorkflowResult]:
-    """Submit tagged stock-Blender depsgraph edits to active viewport engines."""
+    """Submit tagged stock-Blender depsgraph edits to active viewport engines.
+
+    ``updates`` is the caller's snapshot of ``depsgraph.updates``; ``None``
+    reads the depsgraph.
+    """
 
     return _edit_callback_adapter(scene=scene).submit_depsgraph_interactive_edits(
         depsgraph,
         context=context,
         scene=scene,
+        updates=updates,
     )
 
 
@@ -505,7 +838,9 @@ def _track_viewport_engine(engine: Any) -> None:
     _ACTIVE_VIEWPORT_ENGINES.add(engine)
     engine_id = id(engine)
     existing = _ENGINE_RUNTIMES.get(engine_id)
-    if existing is not None and existing.get("stop_confirmed") is False:
+    if existing is not None and (
+        existing.get("stop_confirmed") is False or existing.get("stop_pending")
+    ):
         # Keep the one sidecar store; a short negative-key scan is
         # enough for the rare case where Python reuses a dead wrapper's id.
         orphan_id = -1
@@ -529,6 +864,7 @@ def _track_viewport_engine(engine: Any) -> None:
 
 
 def _untrack_viewport_engine(engine: Any, runtime: Mapping[str, Any] | None = None) -> None:
+    _DISPLAY_OVERLAY.discard_owner(engine)
     _forget_tracked_engine(engine)
     if runtime is None:
         runtime = _ENGINE_RUNTIMES.pop(id(engine), None)
@@ -538,11 +874,36 @@ def _untrack_viewport_engine(engine: Any, runtime: Mapping[str, Any] | None = No
 
 
 def register_interactive_edit_bridge() -> bool:
-    return operator_state.register_interactive_edit_bridge(bpy, _live_interactive_edit_depsgraph_handler)
+    registered = operator_state.register_interactive_edit_bridge(bpy, _live_interactive_edit_depsgraph_handler)
+    handlers = getattr(getattr(bpy, 'app', None), 'handlers', None)
+    for name in ('undo_post', 'redo_post'):
+        hooks = getattr(handlers, name, None)
+        if hooks is not None and _physics_authoring_history_restored not in hooks:
+            hooks.append(_physics_authoring_history_restored)
+            registered = True
+    handlers = getattr(getattr(getattr(bpy, "app", None), "handlers", None), "frame_change_post", None)
+    if handlers is not None and _live_interactive_edit_frame_handler not in handlers:
+        handlers.append(_live_interactive_edit_frame_handler)
+        registered = True
+    return registered
 
 
 def unregister_interactive_edit_bridge() -> bool:
-    return operator_state.unregister_interactive_edit_bridge(bpy, _live_interactive_edit_depsgraph_handler)
+    _DISPLAY_OVERLAY.unregister(bpy)
+    removed = operator_state.unregister_interactive_edit_bridge(bpy, _live_interactive_edit_depsgraph_handler)
+    handlers = getattr(getattr(bpy, 'app', None), 'handlers', None)
+    for name in ('undo_post', 'redo_post'):
+        hooks = getattr(handlers, name, None)
+        if hooks is not None and _physics_authoring_history_restored in hooks:
+            hooks.remove(_physics_authoring_history_restored)
+            removed = True
+    handlers = getattr(getattr(getattr(bpy, "app", None), "handlers", None), "frame_change_post", None)
+    if handlers is not None:
+        while _live_interactive_edit_frame_handler in handlers:
+            handlers.remove(_live_interactive_edit_frame_handler)
+            removed = True
+    _TIMELINE_VALUE_CACHES.clear()
+    return removed
 
 
 def stop_viewport_render_threads_for_file_load() -> bool:
@@ -560,52 +921,77 @@ def stop_viewport_sessions_for_unregister() -> bool:
 #: Set by the render_init handler when a live viewport session was ended for F12,
 #: so the render_complete/render_cancel handlers know to bring it back.
 _FINAL_RENDER_RESTORE_VIEWPORT = False
+# GUI render jobs service main-loop timers; view callbacks must not restart
+# the shared renderer or overwrite its camera while the final lane owns it.
+_FINAL_RENDER_ACTIVE = False
 
 #: Render request authored by the render_init handler on the main thread and consumed
 #: by render() on the render job thread (see the handler for why).
 _FINAL_RENDER_REQUEST: RenderRequest | None = None
+#: Why the render_init handler could not author the request, if it failed.
+_FINAL_RENDER_INIT_ERROR: Exception | None = None
 _FINAL_RENDER_INIT_ADAPTER_ID = "__ovrtx_final_render_init__"
 
 
-@_persistent
-def _final_render_init_handler(scene: Any, *_args: Any) -> None:
-    """End the active viewport session on the main thread before F12 renders.
+def _consume_final_render_request(scene: Any):
+    global _FINAL_RENDER_REQUEST, _FINAL_RENDER_INIT_ERROR
+    request, error = _FINAL_RENDER_REQUEST, _FINAL_RENDER_INIT_ERROR
+    _FINAL_RENDER_REQUEST = _FINAL_RENDER_INIT_ERROR = None
+    if (request is not None and request.current_scene_generation
+            and request.timeline_frame != int(getattr(scene, "frame_current", request.timeline_frame))):
+        # Render Animation may start on a different frame than render_init.
+        request = None
+    return request, error
 
-    ``render_init`` fires on Blender's main thread before ``render()`` runs on the
-    render job thread. A live viewport session holds the main thread and the GPU
-    context, so if ``render()`` reaches ``_run_on_main_thread(final_render)`` first
-    (engine.py render(), before it ends the viewport at line ~1781) the main thread
-    never services the marshalled callback and F12 deadlocks. Freeing the viewport
-    here -- earlier, and on the main thread -- breaks that ordering. The viewport is
-    brought back by the render_complete/render_cancel handlers.
-    """
 
-    if getattr(getattr(scene, "render", None), "engine", "") != ENGINE_ID:
-        return
-    global _FINAL_RENDER_RESTORE_VIEWPORT, _FINAL_RENDER_REQUEST
-    # reconnect_viewport_sessions() ends the live session now (freeing the main thread
-    # and GPU for F12) but flags it RECONNECT_REQUESTED, so the next viewport redraw
-    # starts a fresh session -- which the render_complete/cancel handler triggers.
+def _prepare_final_render_request(prepare: Callable[[], RenderRequest]) -> RenderRequest:
+    """Stop viewport work and export on Blender's main event loop."""
+    global _FINAL_RENDER_RESTORE_VIEWPORT
+    _DISPLAY_OVERLAY.unregister(bpy)
+    request = prepare()
+    if not request.current_scene_generation:
+        # Exact-stage F12 uses the existing hosting loop's exclusive RPC job;
+        # destroying that loop here would bypass its suspension/restoration lane.
+        return request
     try:
         result = reconnect_viewport_sessions()
-        _FINAL_RENDER_RESTORE_VIEWPORT = int(result.get("active_session_count", 0)) > 0
+        _FINAL_RENDER_RESTORE_VIEWPORT |= int(result.get("active_session_count", 0)) > 0
     except Exception:
-        _FINAL_RENDER_RESTORE_VIEWPORT = False
-    # Build the whole render request here, on the main thread. The stock USD export
-    # (bpy.ops.wm.usd_export) needs the window-manager context, and material/camera
-    # translation reads bpy.data, which is only safe on the main thread. render() then
-    # consumes this request instead of marshalling final_render through bpy.app.timers --
-    # that timer callback never runs during an F12 INVOKE render, so the marshalling
-    # deadlocks.
-    try:
-        _FINAL_RENDER_REQUEST = _render_callback_adapter(
-            _FINAL_RENDER_INIT_ADAPTER_ID
-        ).final_render_from_scene(scene)
-    except Exception:
-        _FINAL_RENDER_REQUEST = None
+        # The render path separately refuses unconfirmed viewport teardown.
+        pass
+    return request
 
 
 @_persistent
+@performance_profile.timed("main.final_render_init")
+def _final_render_init_handler(scene: Any, *_args: Any) -> None:
+    """Reset the render job; prepare inline only for main-thread EXEC calls.
+
+    GUI INVOKE runs this handler on Blender's job thread, where stock USD
+    operators have no window context. Its render callback prepares through
+    the main event loop, with access to the engine's cancellation signal.
+    """
+    if getattr(getattr(scene, "render", None), "engine", "") != ENGINE_ID:
+        return
+    global _FINAL_RENDER_ACTIVE, _FINAL_RENDER_RESTORE_VIEWPORT, _FINAL_RENDER_REQUEST, _FINAL_RENDER_INIT_ERROR
+    _FINAL_RENDER_ACTIVE = True
+    _FINAL_RENDER_RESTORE_VIEWPORT = False
+    _FINAL_RENDER_REQUEST = _FINAL_RENDER_INIT_ERROR = None
+    # A render right after a file load must not race the previous scene's
+    # deferred close. The close runs on its own thread; a close that fails or
+    # outlasts this bound is still refused by preparation.
+    scene_generation_sessions.wait_for_close(FINAL_RENDER_CLOSE_WAIT_SECONDS)
+    if threading.current_thread() is not threading.main_thread():
+        return
+    try:
+        _FINAL_RENDER_REQUEST = _prepare_final_render_request(
+            lambda: _render_callback_adapter(_FINAL_RENDER_INIT_ADAPTER_ID).final_render_from_scene(scene))
+    except Exception as exc:
+        _FINAL_RENDER_INIT_ERROR = exc
+
+
+@_persistent
+@performance_profile.timed("main.final_render_end")
 def _final_render_end_handler(scene: Any, *_args: Any) -> None:
     """Re-enable the viewport after F12 if it was on before the render.
 
@@ -613,15 +999,22 @@ def _final_render_end_handler(scene: Any, *_args: Any) -> None:
     ``view_draw`` (a Solid/Material-Preview viewport just repaints, no session).
     """
 
-    global _FINAL_RENDER_RESTORE_VIEWPORT
+    global _FINAL_RENDER_ACTIVE, _FINAL_RENDER_RESTORE_VIEWPORT
+    _FINAL_RENDER_ACTIVE = False
     if not _FINAL_RENDER_RESTORE_VIEWPORT:
         return
     _FINAL_RENDER_RESTORE_VIEWPORT = False
     # Redraw from a one-shot main-loop timer, not inline: render_complete fires in the
     # render context, where tag_redraw on the 3D viewports does not reliably stick (the
     # render-result window has focus). A timer runs on the main event loop afterwards.
+    _schedule_viewport_redraw()
+
+
+def _schedule_viewport_redraw() -> None:
+    """Redraw the 3D viewports from a one-shot main-loop timer."""
+
     timers = getattr(getattr(bpy, "app", None), "timers", None)
-    if timers is not None:
+    if timers is not None and not timers.is_registered(_restore_viewport_redraw):
         timers.register(_restore_viewport_redraw, first_interval=0.1)
 
 
@@ -652,6 +1045,8 @@ def register_final_render_handlers() -> bool:
 
 
 def unregister_final_render_handlers() -> bool:
+    global _FINAL_RENDER_ACTIVE
+    _FINAL_RENDER_ACTIVE = False
     handlers = getattr(getattr(bpy, "app", None), "handlers", None)
     if handlers is None:
         return False
@@ -683,20 +1078,193 @@ def _should_mirror_runtime_poses(*, at_initial_condition: bool, lock_was_active:
     )
 
 
+_TIMELINE_VALUE_CACHES: dict[int, Any] = {}
+
+
 @_persistent
+def _physics_authoring_history_restored(_unused: Any = None) -> None:
+    # Undo/redo can restore the first participant without firing RNA updates.
+    # Latch only; the normal main-thread observation owns validation and intent.
+    scene_generation_sessions.note_physics_authoring_changed()
+    scene_generation_sessions.schedule_initial_generation()
+
+
+@_persistent
+def _live_interactive_edit_frame_handler(scene: Any, depsgraph: Any = None) -> None:
+    """Queue changed timeline values independently of viewport selection."""
+    from . import physics_live_kinematics, timeline_value_edits
+    if physics_live_kinematics.evaluating() or _interactive_edit_bridge_suppressed():
+        return
+    if not any(getattr(engine, "_viewport_scene", None) is scene for engine in _live_viewport_engines()):
+        return
+    if depsgraph is None:
+        return
+    try:
+        resolver, _lights = scene_generation_sessions.current_generation_edit_context(scene)
+        if resolver is None:
+            return
+        number, epoch, _targets = scene_generation_sessions.current_presentation_context(scene)
+        uid = int(getattr(scene, "session_uid", 0) or id(scene))
+        cache = _TIMELINE_VALUE_CACHES.setdefault(uid, timeline_value_edits.TimelineValueCache())
+        context = (number, epoch)
+        edits = cache.changed(context, timeline_value_edits.evaluated_value_edits(scene, depsgraph, resolver,
+            material_owners=cache.materials_for(scene, context)))
+        groups: dict[tuple[Any, ...], list[Any]] = {}
+        for edit in edits:
+            key = (edit.provenance.get("blender_id_kind"), edit.provenance.get("blender_session_uid"))
+            groups.setdefault(key, []).append(edit)
+        for group in groups.values():
+            # This retains generation ownership and physics playback admission,
+            # while animated sources need not be selected as a complete group.
+            results = scene_generation_sessions.submit_current_scene_edit_group(scene, group, {})
+            for edit, result in zip(group, results):
+                if result.accepted:
+                    cache.accepted(edit)
+    except Exception as exc:
+        _record_interactive_edit_bridge_diagnostics(last_error=f"timeline:{type(exc).__name__}: {exc}")
+
+
+def _capture_mesh_geometry_ids(
+    scene: Any, depsgraph: Any, *, updates: tuple[Any, ...] | None = None,
+) -> set[Any]:
+    """Retain nominated geometry changes even when legacy UV proof emits no edit.
+
+    In the serialized capture lane the direct mesh extractor owns corner/order
+    conversion. UV-only changes and custom attributes need not change the legacy
+    topology fingerprint. Visit only reported IDs; pure transforms retain their
+    value path and no source/mesh scan is introduced here.
+    """
+    if int(getattr(scene, "session_uid", 0) or 0) not in scene_generation_sessions._camera_capture_owners:
+        return set()
+    affected = set()
+    for update in getattr(depsgraph, "updates", ()) if updates is None else updates:
+        if getattr(update, "is_updated_geometry", None) is False:
+            continue
+        source = getattr(update, "id", None)
+        source = getattr(source, "original", None) or source
+        kind = str(getattr(getattr(source, "bl_rna", None), "identifier", ""))
+        if kind != "Mesh" and not (kind == "Object" and getattr(source, "type", None) == "MESH"):
+            continue
+        identity = scene_generation_sessions._affected_blender_id(update)
+        if identity is not None:
+            affected.add(identity)
+    return affected
+
+
+def _capture_visibility_ids(
+    scene: Any, depsgraph: Any, provenance=None, *, updates: tuple[Any, ...] | None = None,
+) -> set[Any]:
+    """Compare nominated owners with acknowledged live visibility, not base USD.
+
+    Returning hide_render to the exported value is still an edit after a direct
+    hide. The legacy generation baseline cannot nominate that reversal. Reuse
+    current projection handles and inspect only IDs in this notification batch.
+    """
+    uid = int(getattr(scene, "session_uid", 0) or 0)
+    if uid not in scene_generation_sessions._camera_capture_owners:
+        return set()
+    owner = scene_generation_sessions._owners.get(uid)
+    direct = getattr(owner, "_direct_state", None)
+    contract = getattr(direct, "visibility", None)
+    if contract is None:
+        return set()
+    from .direct_visibility_updates import _viewport_visible
+    affected = set()
+    for update in getattr(depsgraph, "updates", ()) if updates is None else updates:
+        identity = scene_generation_sessions._affected_blender_id(update)
+        if identity is None:
+            continue
+        if identity.kind == "OBJECT":
+            owners = (identity,)
+        elif identity.kind in {"MESH", "LIGHT"}:
+            owners = getattr(direct, "data_users", {}).get(identity.session_uid, ())
+        else:
+            continue
+        for target in owners:
+            state = contract.states.get(target)
+            source = contract.handles.get(target)
+            if state is None or source is None:
+                continue
+            visible = (state.render_enabled and _viewport_visible(source, contract.view_layer)
+                       and not bool(source.hide_render))
+            if ("inherited" if visible else "invisible") == state.token:
+                continue
+            affected.add(target)
+            if provenance is not None and identity in provenance and target != identity:
+                note = provenance[identity]
+                provenance[target] = provenance[target].merged(note) if target in provenance else note
+    return affected
+
+
+@_persistent
+@performance_profile.timed("main.interactive_edit_depsgraph")
 def _live_interactive_edit_depsgraph_handler(scene: Any, depsgraph: Any) -> None:
     # ``@_persistent`` is load-bearing: Blender clears non-persistent
     # ``depsgraph_update_post`` handlers on every file load, and without it
     # opening a .blend silently kills the live-edit bridge — no transform,
     # light, camera, or material deltas reach the runtime for the rest of
     # the session while the viewport keeps rendering.
+    from . import physics_live_kinematics
+    # Blender rebuilds depsgraph.updates on every access (O(scene) per read).
+    # Read it once here and hand the snapshot to every callee that iterates
+    # it; callees still receive the real depsgraph for evaluated_get.
+    updates = depsgraph_updates.snapshot(depsgraph)
+    # A key edit can be flushed by a kinematic sampling or suppressed frame
+    # change; frame changes alone never tag an Action, so always note it.
+    edited_actions = [
+        update for update in updates
+        if str(getattr(getattr(getattr(update, "id", None), "bl_rna", None), "identifier", "")) == "Action"
+    ]
+    if edited_actions:
+        physics_live_kinematics.note_animation_edit()
+        # Re-read their F-curve paths at the next frame change (physics_frame_changed).
+        from . import physics_edit_snapshot
+        physics_edit_snapshot.forget_animation_paths(
+            int(getattr(getattr(getattr(update, "id", None), "original", None), "session_uid", 0) or 0)
+            for update in edited_actions)
+    if physics_live_kinematics.evaluating():
+        # Kinematic sampling steps transient frames; they are not user edits and
+        # must not reach the runtime as timeline changes. Membership changes
+        # (Collection/Scene updates) are not observed here, so latch them for
+        # the next main-thread physics observation instead of dropping them.
+        if any(
+            str(getattr(getattr(getattr(update, "id", None), "bl_rna", None), "identifier", ""))
+            in {"Collection", "Scene"}
+            for update in updates
+        ):
+            scene_generation_sessions.note_physics_authoring_changed(scene)
+        return
+    _with_updates = depsgraph_updates.keyword
     try:
-        affected_ids = scene_generation_sessions.affected_blender_ids(depsgraph)
-        identity_changes = scene_generation_sessions.topology_identity_changes(scene)
+        physics_changes = scene_generation_sessions.observe_physics_depsgraph(
+            scene, depsgraph,
+            **_with_updates(scene_generation_sessions.observe_physics_depsgraph, updates))
+        if (physics_changes.restart or physics_changes.redraw or physics_changes.pending_anchor) and not physics_changes.body_input:
+            # Physics RNA edits are restart intent only. In particular joint
+            # Empty transforms must not enter the live render/body value path.
+            return
+        affected_ids = scene_generation_sessions.affected_blender_ids(
+            depsgraph, **_with_updates(scene_generation_sessions.affected_blender_ids, updates))
+        update_provenance = scene_generation_sessions.affected_blender_update_provenance(
+            depsgraph, **_with_updates(scene_generation_sessions.affected_blender_update_provenance, updates))
+        capture_geometry_ids = _capture_mesh_geometry_ids(
+            scene, depsgraph, **_with_updates(_capture_mesh_geometry_ids, updates))
+        capture_visibility_ids = _capture_visibility_ids(
+            scene, depsgraph, update_provenance, **_with_updates(_capture_visibility_ids, updates))
+        identity_changes = (
+            set()
+            if scene_generation_sessions.shader_only_generation_update(
+                scene, depsgraph,
+                **_with_updates(scene_generation_sessions.shader_only_generation_update, updates))
+            else scene_generation_sessions.topology_identity_changes_for_depsgraph(
+                scene, depsgraph,
+                **_with_updates(scene_generation_sessions.topology_identity_changes_for_depsgraph, updates))
+        )
         results = submit_depsgraph_interactive_edits_to_active_viewports(
             depsgraph,
             context=_selection_context_for_scene(scene, depsgraph),
             scene=scene,
+            **_with_updates(submit_depsgraph_interactive_edits_to_active_viewports, updates),
         )
         replacement_requested = any(
             result.plan is not None
@@ -706,7 +1274,7 @@ def _live_interactive_edit_depsgraph_handler(scene: Any, depsgraph: Any) -> None
         scene_update = any(
             str(getattr(getattr(getattr(update, "id", update), "bl_rna", None), "identifier", ""))
             == "Scene"
-            for update in getattr(depsgraph, "updates", ())
+            for update in updates
         )
         if (
             scene_update
@@ -717,15 +1285,20 @@ def _live_interactive_edit_depsgraph_handler(scene: Any, depsgraph: Any) -> None
         if (
             not _interactive_edit_bridge_suppressed()
             and not scene_generation_sessions.is_reconciling(scene)
-            and (replacement_requested or identity_changes)
+            and (replacement_requested or identity_changes or capture_geometry_ids or capture_visibility_ids)
         ):
-            if identity_changes and not replacement_requested:
-                affected_ids = set(identity_changes)
+            if not replacement_requested:
+                affected_ids = set(identity_changes) | capture_geometry_ids | capture_visibility_ids
             else:
                 affected_ids.update(identity_changes)
+                affected_ids.update(capture_geometry_ids)
+                affected_ids.update(capture_visibility_ids)
             scene_generation_sessions.mark_scene_dirty(
                 scene,
                 affected_ids,
+                **({"update_provenance": {identity: update_provenance[identity] for identity in affected_ids
+                                         if identity in update_provenance and identity not in identity_changes}}
+                   if any(identity in update_provenance and identity not in identity_changes for identity in affected_ids) else {}),
                 defer_world_reconciliation=any(
                     getattr(engine, "_viewport_scene", None) is scene
                     for engine in _live_viewport_engines()
@@ -747,6 +1320,29 @@ class _SceneSelectionContext:
     selected_objects: tuple[Any, ...]
 
 
+def _same_rna_struct(left: Any, right: Any) -> bool:
+    """Whether two RNA wrappers address the same Blender struct.
+
+    ViewLayer is not an ID, so bpy builds a fresh Python wrapper on every
+    attribute access and ``is`` never holds between ``context.view_layer`` and
+    ``depsgraph.view_layer``. Compare the underlying struct pointers instead;
+    plain Python stand-ins without ``as_pointer`` keep identity semantics.
+    """
+
+    if left is None or right is None:
+        return False
+    if left is right:
+        return True
+    left_pointer = getattr(left, "as_pointer", None)
+    right_pointer = getattr(right, "as_pointer", None)
+    if not callable(left_pointer) or not callable(right_pointer):
+        return False
+    try:
+        return int(left_pointer()) == int(right_pointer())
+    except Exception:
+        return False
+
+
 def _selection_context_for_scene(scene: Any, depsgraph: Any) -> Any | None:
     if bpy is None or scene is None:
         return None
@@ -756,6 +1352,11 @@ def _selection_context_for_scene(scene: Any, depsgraph: Any) -> Any | None:
 
     view_layer = getattr(depsgraph, "view_layer", None)
     if view_layer is not None:
+        if (getattr(context, "scene", None) is scene
+                and _same_rna_struct(getattr(context, "view_layer", None), view_layer)):
+            # Blender maintains this selection list for the exact active layer.
+            # A foreign callback layer must retain explicit select_get checks.
+            return context
         return _SceneSelectionContext(
             scene=scene,
             view_layer=view_layer,
@@ -905,7 +1506,7 @@ def _render_callback_adapter(
         )
     else:
         adapter = BlenderRenderCallbackAdapter(
-            generation_for_scene=scene_generation_sessions.generation_for_scene,
+            generation_for_scene=scene_generation_sessions.generation_for_final_render,
             viewport_generation_for_scene=(
                 scene_generation_sessions.generation_for_viewport
             ),
@@ -975,37 +1576,22 @@ def _engine_signal_id(engine: Any) -> str:
     return f"{ENGINE_ID}:{identity:x}"
 
 
-#: Main-thread poll cadence for render-thread publication notifications.
-#: Blender's application-timer registry is a lock-free global list, so timer
-#: registration itself must stay on the main thread. Returning zero keeps the
-#: callback due for the next event-loop cycle. BLI executes each registered
-#: callback at most once per cycle, so this does not recurse or prevent the
-#: notifier/draw phases that follow timer execution.
-PUBLICATION_REDRAW_POLL_INTERVAL_SECONDS = 0.0
-
-#: A Blender WindowManager timer produces real window events, unlike an
-#: application timer, whose callbacks are only serviced opportunistically.
-#: One session-scoped wake at 120 Hz keeps publication polling responsive in
-#: an otherwise idle viewport without limiting the render cadence below the
-#: expected display rate.
-PUBLICATION_REDRAW_WAKE_INTERVAL_SECONDS = 1.0 / 120.0
-
-
 class _PublicationRedrawSignaler:
     """Coalesced publication→redraw signaling for one engine (task02-05).
 
     The render thread announces frame publications; Blender presents on the
-    main thread. Blender 5.2's ``BLI_timer_register`` mutates a global
-    lock-free list and does not wake the window event loop, so registering a
-    ``bpy.app.timers`` callback from the render thread is neither a safe nor a
-    prompt thread crossing. ``start`` is called on Blender's main thread once
-    per viewport session and installs a small recurring poller. ``signal``
-    then touches only this object's lock-protected state: it latches one
-    pending redraw and timestamps the first publication in the burst. The
-    main-thread poller consumes the latch, tags the owning viewport through a
-    weakref, and keeps polling until ``stop`` retires its generation. Bursts
-    still collapse onto the latest frame, but no Blender API or timer registry
-    is touched by the render thread.
+    main thread. ``bpy.app.timers.register`` is the documented thread-safe
+    entry to main-thread execution and is the only Blender API this class
+    touches from the render thread — the single crossing. ``signal()`` sets
+    an atomic ``redraw_pending`` flag and registers a one-shot timer only on
+    the False→True transition, so any burst of publications before the timer
+    fires collapses into one main-thread redraw request (the next draw reads
+    the newest frame anyway). The timer callback clears the flag, tags the
+    owning viewport's redraw through a weakref to the engine (a dead
+    reference makes the callback a no-op), and returns ``None`` so the timer
+    unregisters itself. When ``engine.tag_redraw()`` raises (engine freed
+    between the reference check and the call), the exception-guarded VIEW_3D
+    area scan (``_tag_viewport_redraws``) is the fallback.
 
     ``redraw_requested_monotonic_ns`` is stamped when the pending flag
     latches (publication time, render-thread side) so the publish→draw span
@@ -1017,170 +1603,58 @@ class _PublicationRedrawSignaler:
         self._engine_ref = weakref.ref(engine)
         self._lock = threading.Lock()
         self._pending = False
-        self._poller_active = False
-        self._poller_generation = 0
-        self._poller_callback: Callable[[], float | None] | None = None
-        self._event_timer: Any | None = None
-        self._event_timer_manager: Any | None = None
         self._requested_monotonic_ns = 0
         self._signal_count = 0
         self._timer_registrations = 0
         self._timer_fires = 0
-        self._redraw_dispatches = 0
-        self._area_redraw_dispatches = 0
-        self._area_redraw_failures = 0
         self._fallback_redraws = 0
         self._registration_failures = 0
-        self._event_timer_additions = 0
-        self._event_timer_removals = 0
-        self._event_timer_failures = 0
 
-    def start(self) -> None:
-        """Install the session poller; must be called on Blender's main thread."""
+    def signal(self) -> None:
+        """Request one coalesced main-thread redraw; safe from any thread."""
 
         with self._lock:
-            if self._poller_active:
+            self._signal_count += 1
+            if self._pending:
+                # Absorbed: a redraw is already pending and the next draw
+                # reads the newest published frame anyway.
                 return
-            self._poller_active = True
-            self._poller_generation += 1
-            generation = self._poller_generation
-        signaler_ref = weakref.ref(self)
-
-        def _poll() -> float | None:
-            signaler = signaler_ref()
-            if signaler is None:
-                return None
-            return signaler._poll_redraw(generation)
-
-        with self._lock:
-            self._poller_callback = _poll
-        event_timer = None
-        event_timer_manager = None
+            self._pending = True
+            self._requested_monotonic_ns = time.perf_counter_ns()
         try:
             if bpy is None:
                 raise RuntimeError("bpy is unavailable")
-            event_timer_manager = bpy.context.window_manager
-            event_timer = event_timer_manager.event_timer_add(
-                PUBLICATION_REDRAW_WAKE_INTERVAL_SECONDS,
-                window=bpy.context.window,
-            )
+            bpy.app.timers.register(self._fire_redraw, first_interval=0.0)
         except Exception:
-            # Headless/fake contexts can lack a window timer. The app-timer
-            # poller remains functional when some other event source drives
-            # Blender; record the reduced wake capability explicitly.
+            # Best-effort registration (Blender shutting down, or timers
+            # unavailable under test): release the latch so the next
+            # publication retries instead of wedging redraws forever.
             with self._lock:
-                self._event_timer_failures += 1
-        else:
-            with self._lock:
-                if self._poller_generation == generation:
-                    self._event_timer = event_timer
-                    self._event_timer_manager = event_timer_manager
-                    self._event_timer_additions += 1
-        try:
-            if bpy is None:
-                raise RuntimeError("bpy is unavailable")
-            bpy.app.timers.register(_poll, first_interval=0.0)
-        except Exception:
-            with self._lock:
-                if self._poller_generation == generation:
-                    self._poller_active = False
-                    self._poller_callback = None
-                    self._pending = False
+                self._pending = False
                 self._registration_failures += 1
-            if event_timer is not None and event_timer_manager is not None:
-                try:
-                    event_timer_manager.event_timer_remove(event_timer)
-                except Exception:
-                    with self._lock:
-                        self._event_timer_failures += 1
-                else:
-                    with self._lock:
-                        self._event_timer = None
-                        self._event_timer_manager = None
-                        self._event_timer_removals += 1
             return
         with self._lock:
             self._timer_registrations += 1
 
-    def stop(self) -> None:
-        """Retire the poller and remove its main-thread window wake timer."""
+    def _fire_redraw(self) -> None:
+        """Main-thread timer callback: clear the latch, tag, unregister."""
 
         with self._lock:
-            self._poller_active = False
-            self._poller_generation += 1
-            self._poller_callback = None
             self._pending = False
-            self._requested_monotonic_ns = 0
-            event_timer = self._event_timer
-            event_timer_manager = self._event_timer_manager
-            self._event_timer = None
-            self._event_timer_manager = None
-        if event_timer is not None and event_timer_manager is not None:
-            try:
-                event_timer_manager.event_timer_remove(event_timer)
-            except Exception:
-                with self._lock:
-                    self._event_timer_failures += 1
-            else:
-                with self._lock:
-                    self._event_timer_removals += 1
-
-    def signal(self) -> None:
-        """Latch one coalesced redraw request; safe from any thread."""
-
-        with self._lock:
-            self._signal_count += 1
-            if not self._poller_active:
-                # Teardown stops the main-thread poller before joining the
-                # render loop. Ignore a publication racing that boundary so
-                # it cannot leak a pending mark into the next session.
-                return
-            if self._pending:
-                # Absorbed: the next poll reads the newest published frame.
-                return
-            self._pending = True
-            self._requested_monotonic_ns = time.perf_counter_ns()
-
-    def _poll_redraw(self, generation: int) -> float | None:
-        """Main-thread timer callback: consume one coalesced publication."""
-
-        with self._lock:
-            if (
-                not self._poller_active
-                or generation != self._poller_generation
-            ):
-                return None
             self._timer_fires += 1
-            pending = self._pending
-            self._pending = False
-            if pending:
-                self._redraw_dispatches += 1
         engine = self._engine_ref()
         if engine is None:
-            # This callback runs on the main thread, so it can retire both
-            # timer mechanisms safely when the owning engine has vanished.
-            # Leaving the WindowManager timer behind would keep generating
-            # wake events after the viewport/session no longer exists.
-            self.stop()
             return None
-        if pending:
-            try:
-                engine.tag_redraw()
-            except Exception:
-                with self._lock:
-                    self._fallback_redraws += 1
-            # RenderEngine.tag_redraw() only sets RE_ENGINE_DO_DRAW; it does
-            # not enqueue a window/region redraw. The main-thread poller must
-            # also tag the VIEW_3D area so Blender actually invokes view_draw.
+        try:
+            engine.tag_redraw()
+        except Exception:
+            with self._lock:
+                self._fallback_redraws += 1
             try:
                 engine._tag_viewport_redraws()
             except Exception:
-                with self._lock:
-                    self._area_redraw_failures += 1
-            else:
-                with self._lock:
-                    self._area_redraw_dispatches += 1
-        return PUBLICATION_REDRAW_POLL_INTERVAL_SECONDS
+                pass
+        return None
 
     def consume_request_mark(self) -> int | None:
         """Return-and-clear the newest publication-side redraw stamp."""
@@ -1196,19 +1670,11 @@ class _PublicationRedrawSignaler:
         with self._lock:
             return {
                 "redraw_pending": self._pending,
-                "poller_active": self._poller_active,
                 "signals": self._signal_count,
                 "timer_registrations": self._timer_registrations,
                 "timer_fires": self._timer_fires,
-                "redraw_dispatches": self._redraw_dispatches,
-                "area_redraw_dispatches": self._area_redraw_dispatches,
-                "area_redraw_failures": self._area_redraw_failures,
                 "fallback_redraws": self._fallback_redraws,
                 "registration_failures": self._registration_failures,
-                "event_timer_active": self._event_timer is not None,
-                "event_timer_additions": self._event_timer_additions,
-                "event_timer_removals": self._event_timer_removals,
-                "event_timer_failures": self._event_timer_failures,
             }
 
 
@@ -1227,27 +1693,75 @@ def _new_tick_absorb_counters() -> dict[str, int]:
     }
 
 
-def _rgba8_to_float_array(payload: bytes) -> Any:
+def _rgba8_to_float_array(payload: bytes | memoryview) -> Any:
     try:
         import numpy as np  # type: ignore
 
-        return np.frombuffer(payload, dtype=np.uint8).astype(np.float32) * np.float32(1.0 / 255.0)
+        # Convert and normalize into one owned float buffer. The intermediate
+        # astype array otherwise doubles allocation and memory traffic on every
+        # frame on Blender builds that require FLOAT texture uploads.
+        return np.multiply(
+            np.frombuffer(payload, dtype=np.uint8),
+            np.float32(1.0 / 255.0),
+            dtype=np.float32,
+        )
     except Exception:
         return array("f", (value / 255.0 for value in payload))
 
 
-def _rgba16f_to_float_array(payload: bytes) -> Any:
+def _rgba16f_to_float_array(payload: bytes, staging: dict | None = None, key: tuple | None = None,
+                          *, prepared_rgba32f: bytes | memoryview = b"") -> Any:
+    if prepared_rgba32f and len(prepared_rgba32f) != len(payload) * 2:
+        raise RenderClientError("HDR upload plane size differs from the half-float frame")
     try:
         import numpy as np  # type: ignore
 
-        rgba = np.frombuffer(payload, dtype=np.float16).astype(np.float32)
+        source = np.frombuffer(prepared_rgba32f, dtype=np.float32) if prepared_rgba32f else np.frombuffer(payload, dtype=np.float16)
+        cached = staging.get("rgba") if staging is not None else None
+        if (cached is not None and staging.get("key") == key
+                and cached.dtype == np.float32 and cached.size == source.size):
+            rgba = cached
+        else:
+            rgba = np.empty(source.size, dtype=np.float32)
+            if staging is not None:
+                staging.clear()
+                staging.update(key=key, rgba=rgba)
+        # Owned storage only: GPU Buffer exposes writable memory, whereas the
+        # SHM/protobuf source must stay immutable. Texture creation/update
+        # consumes this storage synchronously before the next draw reuses it.
+        np.copyto(rgba, source, casting="unsafe")
         rgba[3::4] = np.float32(1.0)
         return rgba
     except Exception:
-        rgba = array("f", (float(value[0]) for value in struct.iter_unpack("<e", payload)))
+        rgba = array("f", (float(value[0]) for value in struct.iter_unpack(
+            "<f" if prepared_rgba32f else "<e", prepared_rgba32f or payload)))
         for index in range(3, len(rgba), 4):
             rgba[index] = 1.0
         return rgba
+
+
+def _rgba8_upload_buffer(gpu: Any, render_result: RenderResult, diagnostics: dict[str, Any]) -> Any:
+    payload = render_result.rgba8
+    if isinstance(payload, memoryview):
+        # Blender's current GPU Buffer aliases inputs but exports them writable.
+        # Never expose immutable protobuf storage through that API. This one
+        # explicit staging copy replaces the former native copy + row copies;
+        # it is deliberately NOT described as zero-copy GPU upload.
+        payload = bytearray(payload)
+        diagnostics["texture_buffer_storage"] = "owned_mutable_staging"
+        diagnostics["texture_buffer_copy_bytes"] += len(payload)
+    else:
+        diagnostics["texture_buffer_storage"] = "legacy_bytes"
+    return gpu.types.Buffer("UBYTE", len(payload), payload)
+
+
+def _viewport_texture_draw_rect(
+    render_result: RenderResult, x: float, y: float, width: float, height: float,
+) -> tuple[tuple[float, float], float, float]:
+    """Flip native top-down pixels at draw, without reversing CPU rows."""
+    if render_result.rgba8_origin == "top_left":
+        return (x, y + height), width, -height
+    return (x, y), width, height
 
 
 def _upload_viewport_texture(
@@ -1260,6 +1774,7 @@ def _upload_viewport_texture(
     snapshot_index: int,
     accepts_rgba8: bool,
     cached_texture_color_mode: str = color_presentation.FRAME_COLOR_MODE_DISPLAY_LDR,
+    float_staging: dict | None = None,
 ) -> _ViewportTextureUpload:
     texture_size = (
         render_result.width,
@@ -1284,6 +1799,8 @@ def _upload_viewport_texture(
         render_result.frame_format == color_presentation.FRAME_FORMAT_RGBA16F
         and bool(render_result.linear_rgba16f)
     )
+    if not (display_transform or linear) and float_staging is not None:
+        float_staging.clear()
     update_available = _gpu_texture_update_available(cached_texture)
     payload_bytes = (
         len(render_result.linear_rgba16f)
@@ -1300,6 +1817,9 @@ def _upload_viewport_texture(
         "texture_buffer_ms": 0.0,
         "texture_create_ms": 0.0,
         "texture_filter_ms": 0.0,
+        "texture_buffer_copy_bytes": 0,
+        "texture_buffer_storage": "none",
+        "rgba8_origin": render_result.rgba8_origin,
         "display_transform": display_transform,
         "frame_color_mode": color_mode,
     }
@@ -1325,8 +1845,8 @@ def _upload_viewport_texture(
     # frame (or a mode flip) always rebuilds the texture so an RGBA8 update is
     # never applied to an RGBA16F texture (or vice versa).
     if (
-        not display_transform
-        and same_color_mode
+        same_color_mode
+        and os.environ.get("OVRTX_VIEWPORT_TEXTURE_UPDATE", "1") != "0"
         and cached_texture is not None
         and cached_texture_size == texture_size
     ):
@@ -1336,7 +1856,8 @@ def _upload_viewport_texture(
                 update_started_ns = time.perf_counter_ns()
                 if linear:
                     convert_started_ns = time.perf_counter_ns()
-                    rgba = _rgba16f_to_float_array(render_result.linear_rgba16f)
+                    rgba = _rgba16f_to_float_array(render_result.linear_rgba16f, float_staging, texture_size,
+                        prepared_rgba32f=render_result.presentation_rgba32f)
                     diagnostics["texture_convert_ms"] += (
                         time.perf_counter_ns() - convert_started_ns
                     ) / 1_000_000.0
@@ -1348,7 +1869,7 @@ def _upload_viewport_texture(
                     update(buffer, format="FLOAT")
                 else:
                     buffer_started_ns = time.perf_counter_ns()
-                    buffer = gpu.types.Buffer("UBYTE", len(render_result.rgba8), render_result.rgba8)
+                    buffer = _rgba8_upload_buffer(gpu, render_result, diagnostics)
                     diagnostics["texture_buffer_ms"] += (
                         time.perf_counter_ns() - buffer_started_ns
                     ) / 1_000_000.0
@@ -1373,6 +1894,7 @@ def _upload_viewport_texture(
         accepts_rgba8,
         diagnostics,
         display_transform=display_transform,
+        float_staging=float_staging,
     )
     diagnostics["texture_path"] = texture_path
     diagnostics["texture_cache_hit"] = False
@@ -1388,6 +1910,15 @@ def _upload_viewport_texture(
     )
 
 
+# Direct UBYTE->RGBA8 GPU texture upload measured unsupported on this Blender
+# build: GPUTexture accepts only Buffer(format="FLOAT") (raises ValueError on a
+# UBYTE buffer). The RGBA8 fast path below therefore can never succeed here, so
+# every LDR frame pays the RGBA8->float conversion (~5.8 ms / 17% of the frame).
+# Recovering it needs Blender PR 161912 (GPUTexture.update / UBYTE support), not
+# an add-on change. _new_viewport_texture records the real error in diagnostics
+# (texture_rgba8_fast_path_error) instead of swallowing it.
+
+
 def _new_viewport_texture(
     gpu: Any,
     render_result: RenderResult,
@@ -1395,6 +1926,7 @@ def _new_viewport_texture(
     diagnostics: dict[str, Any],
     *,
     display_transform: bool = False,
+    float_staging: dict | None = None,
 ) -> tuple[Any, bool, str, int]:
     if display_transform or (
         render_result.frame_format == color_presentation.FRAME_FORMAT_RGBA16F
@@ -1405,7 +1937,9 @@ def _new_viewport_texture(
         # draw (the exactly-once application point) — never an LDR-encoded
         # payload, so no RGBA8 fast path here.
         convert_started_ns = time.perf_counter_ns()
-        rgba = _rgba16f_to_float_array(render_result.linear_rgba16f)
+        rgba = _rgba16f_to_float_array(render_result.linear_rgba16f, float_staging,
+            (render_result.width, render_result.height, render_result.frame_format),
+            prepared_rgba32f=render_result.presentation_rgba32f)
         diagnostics["texture_convert_ms"] += (
             time.perf_counter_ns() - convert_started_ns
         ) / 1_000_000.0
@@ -1434,7 +1968,7 @@ def _new_viewport_texture(
         create_started_ns = None
         try:
             buffer_started_ns = time.perf_counter_ns()
-            buffer = gpu.types.Buffer("UBYTE", len(render_result.rgba8), render_result.rgba8)
+            buffer = _rgba8_upload_buffer(gpu, render_result, diagnostics)
             diagnostics["texture_buffer_ms"] += (
                 time.perf_counter_ns() - buffer_started_ns
             ) / 1_000_000.0
@@ -1450,12 +1984,18 @@ def _new_viewport_texture(
                 time.perf_counter_ns() - filter_started_ns
             ) / 1_000_000.0
             return texture, accepts_rgba8, "new_texture", len(render_result.rgba8)
-        except Exception:
+        except Exception as exc:
             if create_started_ns is not None:
                 diagnostics["texture_create_ms"] += (
                     time.perf_counter_ns() - create_started_ns
                 ) / 1_000_000.0
+            # Latch off for the session (a retry cannot succeed on this build). The
+            # original bug was that this was swallowed silently; record the real
+            # reason so it is diagnosable. Recovering the fast path needs Blender
+            # PR 161912 (GPUTexture.update / UBYTE support), not an add-on change.
             accepts_rgba8 = False
+            diagnostics["texture_rgba8_fast_path_failed"] = True
+            diagnostics["texture_rgba8_fast_path_error"] = f"{type(exc).__name__}: {exc}"
 
     convert_started_ns = time.perf_counter_ns()
     rgba = _rgba8_to_float_array(render_result.rgba8)
@@ -1481,7 +2021,10 @@ def _new_viewport_texture(
 
 
 def _gpu_texture_update_available(texture: Any | None) -> bool:
-    return texture is not None and callable(getattr(texture, "update", None))
+    return (
+        os.environ.get("OVRTX_VIEWPORT_TEXTURE_UPDATE", "1") != "0"
+        and texture is not None and callable(getattr(texture, "update", None))
+    )
 
 
 def _buffer_upload_bytes(buffer_data: Any, default_item_size: int) -> int:
@@ -1507,7 +2050,8 @@ def build_request_from_scene(
     return _render_callback_adapter().translate(source, intent, scene, context)
 
 
-#: Ceiling for a main-thread scene-preparation round trip during F12.
+#: Deadline for claiming queued scene preparation or requesting its result be discarded.
+#: A claimed synchronous Blender export must finish before its depsgraph is released.
 _MAIN_THREAD_SCENE_PREP_TIMEOUT_S = 600.0
 
 
@@ -1515,6 +2059,8 @@ def _run_on_main_thread(
     function: Callable[[], Any],
     *,
     timeout: float = _MAIN_THREAD_SCENE_PREP_TIMEOUT_S,
+    cancel_requested: Callable[[], bool] | None = None,
+    on_discard: Callable[[Any], None] | None = None,
 ) -> Any:
     """Run ``function`` on Blender's main thread and return its result.
 
@@ -1527,29 +2073,58 @@ def _run_on_main_thread(
     therefore be marshalled onto the main thread. ``bpy.app.timers.register`` is
     the documented thread-safe entry to main-thread execution (already used here
     for redraws); the render thread blocks on the result while Blender's main
-    event loop runs the callback. On the main thread (or with ``bpy`` absent
-    under test) the function runs inline.
+    event loop runs the callback. The timeout limits queue waiting and requests
+    refusal after that deadline. It cannot preempt a claimed synchronous Blender
+    export: the caller waits for it to finish, settles any discarded result, then
+    reports timeout/cancellation. On the main thread (or with ``bpy`` absent under
+    test) the function runs inline.
     """
 
     if bpy is None or threading.current_thread() is threading.main_thread():
         return function()
-    done = threading.Event()
-    outcome: dict[str, Any] = {}
+    from . import main_thread_waits
 
-    def _invoke() -> None:
-        try:
-            outcome["result"] = function()
-        except BaseException as exc:  # noqa: BLE001 - re-raised on the caller thread
-            outcome["error"] = exc
-        finally:
-            done.set()
-        return None
+    with main_thread_waits.Wait() as wait:
+        # The caller's owner may join this thread from the main thread; it
+        # cancels the wait first (``main_thread_waits.cancel_waits_of``).
+        outcome = wait.outcome
 
-    bpy.app.timers.register(_invoke, first_interval=0.0)
-    if not done.wait(timeout):
-        raise BlenderSignalTranslationError(
-            "Scene preparation on Blender's main thread timed out"
-        )
+        def _invoke() -> None:
+            if not wait.claim():
+                return None
+            try:
+                outcome["result"] = function()
+            except BaseException as exc:  # noqa: BLE001 - re-raised on the caller thread
+                outcome["error"] = exc
+            finally:
+                wait.done.set()
+            return None
+
+        bpy.app.timers.register(_invoke, first_interval=0.0)
+        deadline = time.monotonic() + timeout
+        refusal = None
+        timed_out = False
+        while not wait.done.wait(0.05):
+            if refusal is None:
+                if cancel_requested is not None and cancel_requested():
+                    refusal = "Final render canceled during scene preparation"
+                elif time.monotonic() >= deadline:
+                    refusal = "Scene preparation on Blender's main thread timed out"
+                    timed_out = True
+                if refusal is not None:
+                    wait.cancel(refusal)
+            # A claimed stock export is synchronous Blender work. Let it leave
+            # the callback before destroying the render depsgraph, then discard
+            # its result. An unclaimed canceled timer never touches the scene.
+    if refusal is None and cancel_requested is not None and cancel_requested():
+        refusal = "Final render canceled during scene preparation"
+    if refusal is not None:
+        if "result" in outcome and on_discard is not None:
+            _run_on_main_thread(lambda: on_discard(outcome["result"]), timeout=timeout)
+        if timed_out:
+            raise BlenderSignalTranslationError(
+                BlenderRenderSignalSource.FINAL_RENDER, refusal)
+        raise main_thread_waits.MainThreadWaitCancelled(refusal)
     error = outcome.get("error")
     if error is not None:
         raise error
@@ -1595,6 +2170,12 @@ FINAL_RENDER_STATUS_CANCELLED = "cancelled"
 
 FINAL_RENDER_PROGRESS_STARTING = "Starting final render"
 FINAL_RENDER_PROGRESS_RENDERING = "Rendering"
+FINAL_RENDER_PROGRESS_RESTARTING = "Restarting renderer"
+
+#: Times one final-render job continues after its worker's sample count fell
+#: back (a replacement worker). Session recovery bounds real restarts; this
+#: stops a job whose worker count never advances.
+FINAL_RENDER_MAX_ACCUMULATION_RESTARTS = 4
 
 
 def _final_render_progress() -> dict[str, Any]:
@@ -1654,7 +2235,9 @@ def _run_final_render_job(
     prepared authoring controller and composition, while the viewport-hosted
     and standalone exact-stage routes let this job own a dedicated final
     controller. The job owns its progress and requests bounded sample chunks
-    that grow toward its fixed endpoint;
+    that grow toward its fixed endpoint, measured by the samples the
+    rendering worker reports it has accumulated (a worker replaced mid-job
+    re-accumulates from its own count);
     ``cancel_event`` — flagged by the render job thread when
     ``test_break()`` reports a user cancel — is checked between batches.
 
@@ -1698,22 +2281,44 @@ def _run_final_render_job(
         _note_progress(FINAL_RENDER_PROGRESS_RENDERING)
         endpoint = max(1, int(request.max_samples))
         result: RenderResult | None = None
+        # Samples the rendering worker has actually accumulated. A worker
+        # replaced by session recovery mid-job starts again from zero, so the
+        # job sizes its chunks from, and reports, the worker's own count.
         completed_samples = 0
+        accumulation_restarts = 0
         cancelled = _cancelled()
+        accumulation_started = time.perf_counter()
+        sample_chunk_ms = []
+        sample_chunk_counts = []
         while not cancelled:
             additional_samples = min(
                 endpoint - completed_samples,
                 max(1, completed_samples),
             )
+            chunk_started = time.perf_counter()
             acquired = controller.render(
                 request,
                 additional_samples=additional_samples,
             )
-            completed_samples += additional_samples
-            result = replace(acquired, completed_samples=completed_samples)
+            sample_chunk_ms.append((time.perf_counter()-chunk_started)*1000)
+            worker_samples = int(acquired.completed_samples)
+            sample_chunk_counts.append(worker_samples)
+            if worker_samples < completed_samples + additional_samples:
+                # The worker lost its accumulation (replacement worker):
+                # keep rendering on it until it reaches the endpoint.
+                accumulation_restarts += 1
+                if accumulation_restarts > FINAL_RENDER_MAX_ACCUMULATION_RESTARTS:
+                    raise RenderClientError(
+                        "Final render sample accumulation restarted "
+                        f"{accumulation_restarts} times (worker reported "
+                        f"{worker_samples} samples after requesting "
+                        f"{additional_samples} more on {completed_samples})"
+                    )
+            completed_samples = worker_samples
+            result = acquired
             _note_progress(
                 FINAL_RENDER_PROGRESS_RENDERING,
-                completed_samples,
+                min(completed_samples, endpoint),
             )
             cancelled = _cancelled()
             if cancelled or completed_samples >= endpoint:
@@ -1728,6 +2333,10 @@ def _run_final_render_job(
             "status": FINAL_RENDER_STATUS_COMPLETED,
             "result": result,
             "composition": composition,
+            "timings": {'accumulation_ms': (time.perf_counter()-accumulation_started)*1000,
+                        'sample_chunk_ms': sample_chunk_ms, 'sample_chunks': len(sample_chunk_ms),
+                        'sample_chunk_counts': sample_chunk_counts,
+                        'accumulation_restarts': accumulation_restarts},
         }
     finally:
         # Dedicated exact-stage controllers own their teardown here. A
@@ -1759,7 +2368,11 @@ if bpy is not None:
         bl_use_postprocess = FINAL_RENDER_USE_POSTPROCESS
         bl_use_eevee_viewport = False
         bl_use_shading_nodes_custom = False
-        bl_use_gpu_context = True
+        # Rendering and readback run in the external SDK process. Holding
+        # Blender's render GPU context blocks the UI GPU boundary before its
+        # main-thread timers, deadlocking per-frame stock USD preparation.
+        # view_draw already receives the viewport's own GPU context.
+        bl_use_gpu_context = False
 
         def __init__(self, *args: Any, **kwargs: Any) -> None:
             super().__init__(*args, **kwargs)
@@ -1818,11 +2431,14 @@ if bpy is not None:
             self._render_count = 0
             self._viewport_camera_update_count = 0
             self._viewport_session_started_ns = 0
+            # Worker failures the viewport reported (logs and matched lines).
+            self._viewport_worker_failures: list[dict[str, Any]] = []
             self._runtime_startup_diagnostics: dict[str, Any] = {"render_worker": {"status": "not_started"}}
             self._viewport_lifecycle_phase = ""
             self._viewport_start_failure_count = 0
             self._viewport_restart_count = 0
             self._viewport_session_outputs_written = False
+            self._viewport_output_id = uuid.uuid4().hex
             self._viewport_crash_marker: dict[str, Any] = {}
             self._viewport_log_diagnostics: dict[str, Any] = session_lifecycle.log_diagnostics()
             self._viewport_cleanup_diagnostics: dict[str, Any] = {"status": "not_requested"}
@@ -1859,6 +2475,14 @@ if bpy is not None:
             self._thread_model_final: dict[str, Any] = {}
             self._presented_publication_index = 0
             self._presented_frame: viewport_handoff.FrameState | None = None
+            self._ready_presentation_frame = None
+            self._mirrored_frame = None
+            self._presentation_commit_pending = False
+            self._pending_presentation_frame = None
+            self._presentation_prepare_registered = False
+            self._mirrored_publication_index = None
+            self._viewport_display_epoch = object()
+            self._queued_display_work = None
             self._written_snapshot_key: tuple[Any, ...] | None = None
 
         def __del__(self) -> None:
@@ -1871,12 +2495,16 @@ if bpy is not None:
                 _teardown_engine_runtime(runtime)
             finally:
                 _untrack_viewport_engine(self, runtime)
-                if runtime is None or runtime.get("stop_confirmed") is not False:
+                if runtime is None or (
+                    runtime.get("stop_confirmed") is not False
+                    and not runtime.get("stop_pending")
+                ):
                     _ENGINE_RUNTIMES.pop(id(self), None)
 
         def update_render_passes(self, scene: Any = None, renderlayer: Any = None) -> None:
             self.register_pass(scene, renderlayer, "Combined", 4, "RGBA", "COLOR")
 
+        @performance_profile.timed("main.interactive_edit_submit")
         def submit_interactive_edit(self, edit: InteractiveEdit) -> EditWorkflowResult:
             runtime = self._viewport_generation_runtime
             if runtime is not None:
@@ -1951,11 +2579,12 @@ if bpy is not None:
             selection_resolution: Mapping[str, Any] | None = None,
             value_edit_conversion_policies: ValueEditConversionPolicies | None = None,
             edit_translator_factory: EditTranslatorFactory | None = None,
+            updates: tuple[Any, ...] | None = None,
         ) -> list[InteractiveEdit]:
             request = self._viewport_request
             resolver = self._usd_prim_resolver
             light_objects = (
-                tuple(getattr(getattr(bpy, "data", None), "objects", ()) or ())
+                getattr(getattr(bpy, "data", None), "objects", ())
                 if bpy is not None
                 else ()
             )
@@ -1994,7 +2623,9 @@ if bpy is not None:
                     usd_prim_resolver=resolver,
                     light_objects=light_objects,
                     worlds=worlds,
+                    materials=tuple(getattr(getattr(bpy, "data", None), "materials", ()) or ()),
                     value_edit_conversion_policies=value_edit_conversion_policies,
+                    updates=updates,
                 )
             )
             return list(edits)
@@ -2035,21 +2666,39 @@ if bpy is not None:
             self._physics_playback_lock_reported_message = message
 
         def update(self, data: Any, depsgraph: Any) -> None:
-            self.update_stats("ovrtx", "Render engine ready")
+            with performance_profile.timer("render_job.update"):
+                self.update_stats("ovrtx", "Render engine ready")
 
         def render(self, depsgraph: Any) -> None:
+            with performance_profile.capture("final-render"):
+                with performance_profile.timer("render_job.final_render"):
+                    return self._render_profiled(depsgraph)
+
+        def _render_profiled(self, depsgraph: Any) -> None:
+            from . import main_thread_waits
             try:
                 adapter = _render_callback_adapter(_engine_signal_id(self))
-                # The request is normally authored on the main thread by the
-                # render_init handler (bpy.ops export + bpy.data reads need the main
-                # thread); render() is on the render job thread. Consume it here. Fall
-                # back to inline authoring only when render() itself runs on the main
-                # thread (e.g. bpy.ops.render.render() EXEC), where bpy access is safe.
-                global _FINAL_RENDER_REQUEST
-                request = _FINAL_RENDER_REQUEST
-                _FINAL_RENDER_REQUEST = None
+                # EXEC may have a prepared request; GUI INVOKE prepares each
+                # evaluated frame on the main event loop while this job waits.
+                request, init_error = _consume_final_render_request(depsgraph.scene)
+                if request is None and init_error is not None:
+                    # Preserve an explicit preparation refusal without retrying.
+                    if isinstance(init_error, BlenderSignalTranslationError):
+                        raise init_error
+                    raise BlenderSignalTranslationError(
+                        BlenderRenderSignalSource.FINAL_RENDER,
+                        f"could not be prepared: {init_error}",
+                    ) from init_error
                 if request is None:
-                    request = _run_on_main_thread(lambda: adapter.final_render(depsgraph))
+                    request = _run_on_main_thread(
+                        lambda: _prepare_final_render_request(lambda: adapter.final_render(depsgraph)),
+                        cancel_requested=self.test_break,
+                        on_discard=lambda prepared: scene_generation_sessions.discard_final_render_request(
+                            depsgraph.scene, prepared),
+                    )
+            except main_thread_waits.MainThreadWaitCancelled:
+                self._report_final_cancelled()
+                return
             except BlenderSignalTranslationError as exc:
                 self._report_final({"ERROR"}, str(exc))
                 return
@@ -2067,57 +2716,71 @@ if bpy is not None:
                 # render synchronously through the generation runtime's
                 # controller after ending any live viewport sessions so the
                 # worker is free for this lane.
-                if not _end_active_viewport_sessions(
-                    ViewportSessionEndReason.SESSION_REPLACED
-                ):
+                if not _end_viewports_for_final(self.test_break):
                     self._report_final(
                         {"ERROR"},
                         "OVRTX final render cannot start while viewport teardown is unconfirmed",
                     )
                     return
                 self.update_stats("ovrtx", "Rendering")
-                controller = OvrtxSessionController()
-                runtime = None
-                restore_status = "stopped"
-                render_error = None
-                try:
-                    runtime = scene_generation_sessions.activate_for_final_render(
-                        scene,
-                        request,
-                        controller=controller,
-                    )
-                    outcome = _run_final_render_job(
-                        request,
-                        threading.Event(),
-                        controller=runtime.controller,
-                        composition=runtime.last_ensure_result.composition,
-                        cancel_requested=self.test_break,
-                    )
-                except (RenderClientError, RuntimeError) as exc:
-                    render_error = exc
-                finally:
+                retry_available = True
+                while True:
+                    controller = OvrtxSessionController()
+                    runtime = None
+                    restore_status = "stopped"
+                    render_error = None
                     try:
-                        if runtime is not None:
-                            restore_status = runtime.deactivate()
+                        runtime = scene_generation_sessions.activate_for_final_render(
+                            scene,
+                            request,
+                            controller=controller,
+                        )
+                        outcome = _run_final_render_job(
+                            request,
+                            threading.Event(),
+                            controller=runtime.controller,
+                            composition=runtime.last_ensure_result.composition,
+                            cancel_requested=self.test_break,
+                        )
+                    except (RenderClientError, RuntimeError) as exc:
+                        render_error = exc
                     finally:
-                        controller.shutdown()
+                        try:
+                            if runtime is not None:
+                                restore_status = runtime.deactivate()
+                        finally:
+                            controller.shutdown()
+                    if (
+                        retry_available
+                        and restore_status != "failed"
+                        and self._final_job_retryable(render_error)
+                    ):
+                        # The runtime was deactivated above; the retry
+                        # activates it again and reruns the whole job.
+                        retry_available = False
+                        self._report_final_restart(render_error)
+                        continue
+                    break
                 if restore_status == "failed":
                     message = "Could not restore prepared viewport state"
                     if render_error is not None:
-                        message = f"{message} after render failure: {render_error}"
+                        message = worker_failure_logs.describe(
+                            render_error, f"{message} after render failure: {render_error}")
                     self.report({"ERROR"}, message)
                     return
                 if render_error is not None:
-                    self.report({"ERROR"}, str(render_error))
+                    self.report({"ERROR"}, worker_failure_logs.describe(render_error))
                     return
                 if outcome.get("status") != FINAL_RENDER_STATUS_COMPLETED:
+                    if outcome.get("status") == FINAL_RENDER_STATUS_CANCELLED:
+                        self._report_final_cancelled()
                     return
                 render_result = outcome["result"]
                 composition = outcome.get("composition")
             else:
                 self.update_stats("ovrtx", "Rendering")
                 host, dead_viewports_stopped = _viewport_final_render_host(scene)
-                if not dead_viewports_stopped:
+                if not dead_viewports_stopped and not _wait_final_render_teardowns(self.test_break):
                     self._report_final(
                         {"ERROR"},
                         "OVRTX final render cannot start while viewport teardown is unconfirmed",
@@ -2134,9 +2797,7 @@ if bpy is not None:
                     # No viewport session serves this scene, so F12 owns a
                     # short-lived RPC context. Any unrelated viewport ends
                     # first to release the exclusive GPU lease.
-                    if not _end_active_viewport_sessions(
-                        ViewportSessionEndReason.SESSION_REPLACED
-                    ):
+                    if not _end_viewports_for_final(self.test_break):
                         self._report_final(
                             {"ERROR"},
                             "OVRTX final render cannot start while viewport teardown is unconfirmed",
@@ -2146,6 +2807,11 @@ if bpy is not None:
                     if outcome is None:
                         return
                     render_result, composition = outcome
+            if int(getattr(request, "supersample", 1)) > 1:
+                # Rendered above the output size for edge anti-aliasing: average
+                # back down to the Blender render size (supersample.py).
+                with performance_profile.timer("render_job.final_supersample_downsample"):
+                    render_result = supersample_module.downsample_result(render_result, request.supersample)
             self._write_blender_result(render_result)
             self._write_result_artifact(
                 render_result,
@@ -2172,7 +2838,7 @@ if bpy is not None:
             blocks here on the future, polling ``test_break()`` between
             bounded waits — a user cancel flags the shared event, the job
             observes it between sample batches and deletes the final-render
-            simulation, and this method returns ``None`` silently. Errors
+            simulation, and this method propagates cancellation to Blender. Errors
             and a viewport thread dying mid-render report through
             ``self.report({'ERROR'})`` and return ``None``.
             """
@@ -2189,8 +2855,9 @@ if bpy is not None:
             suspend_host_session = getattr(host_controller, "suspend", None)
             cancel_event = threading.Event()
             progress = _final_render_progress()
-            try:
-                future = loop.call(
+
+            def submit() -> viewport_render_thread.RenderThreadResult:
+                return loop.call(
                     lambda: _run_final_render_job(
                         request,
                         cancel_event,
@@ -2199,11 +2866,14 @@ if bpy is not None:
                     ),
                     label="final-render",
                 )
+
+            try:
+                future = submit()
             except viewport_render_thread.RenderThreadError as exc:
                 self._report_final({"ERROR"}, f"OVRTX final render could not start: {exc}")
                 return None
             return self._await_final_render_outcome(
-                future, cancel_event, request, progress
+                future, cancel_event, request, progress, resubmit=submit
             )
 
         def _final_render_standalone(
@@ -2235,13 +2905,18 @@ if bpy is not None:
             )
             cancel_event = threading.Event()
             progress = _final_render_progress()
+
+            def submit() -> viewport_render_thread.RenderThreadResult:
+                # Each job owns a fresh controller, so a retry gets a new worker.
+                return render_thread.call(
+                    lambda: _run_final_render_job(request, cancel_event, progress),
+                    label="final-render",
+                )
+
             try:
                 try:
                     render_thread.start()
-                    future = render_thread.call(
-                        lambda: _run_final_render_job(request, cancel_event, progress),
-                        label="final-render",
-                    )
+                    future = submit()
                 except Exception as exc:
                     # Deliberately broader than the viewport route's
                     # RenderThreadError catch: a failing Thread.start()
@@ -2253,7 +2928,7 @@ if bpy is not None:
                     )
                     return None
                 return self._await_final_render_outcome(
-                    future, cancel_event, request, progress
+                    future, cancel_event, request, progress, resubmit=submit
                 )
             finally:
                 # Retire the short-lived thread with the bounded join
@@ -2287,41 +2962,63 @@ if bpy is not None:
             future: viewport_render_thread.RenderThreadResult,
             cancel_event: threading.Event,
             request: RenderRequest,
-            progress: Mapping[str, Any] | None = None,
+            progress: MutableMapping[str, Any] | None = None,
+            resubmit: Callable[[], viewport_render_thread.RenderThreadResult] | None = None,
         ) -> tuple[RenderResult, ovrtx_scene_composition.OvrtxSceneComposition | None] | None:
             """Block the render job thread on a final-render job future.
 
             Shared by the viewport-hosted and standalone routes: polls
             ``test_break()`` between bounded waits (a user cancel flags the
             shared event, the job cleans up at its next batch boundary, and
-            this returns ``None`` silently — Blender's cancel semantics)
-            and reports errors through ``self.report({'ERROR'})``.
+            this returns ``None`` after notifying Blender's render pipeline)
+            and reports errors through ``self.report({'ERROR'})``. A job that
+            failed because its worker was lost or hit a fatal device error is
+            submitted once more through ``resubmit``, unless cancelled.
             """
             observed_progress: tuple[str, int] | None = None
             cancelled = False
-            while not future.wait(FINAL_RENDER_BREAK_POLL_SECONDS):
-                state = (
-                    str((progress or {}).get("status", FINAL_RENDER_PROGRESS_STARTING)),
-                    int((progress or {}).get("completed_samples", 0) or 0),
-                )
-                if state != observed_progress:
-                    observed_progress = state
-                    status, completed_samples = state
-                    if completed_samples:
-                        status = (
-                            f"{status} samples {completed_samples}/"
-                            f"{max(1, int(request.max_samples))}"
-                        )
-                    self.update_stats("ovrtx", status)
-                if not cancelled and self.test_break():
-                    # Cancel between thread-job milestones: the job checks
-                    # the event between sample batches and cleans up.
-                    cancel_event.set()
-                    cancelled = True
+            while True:
+                while not future.wait(FINAL_RENDER_BREAK_POLL_SECONDS):
+                    state = (
+                        str((progress or {}).get("status", FINAL_RENDER_PROGRESS_STARTING)),
+                        int((progress or {}).get("completed_samples", 0) or 0),
+                    )
+                    if state != observed_progress:
+                        observed_progress = state
+                        status, completed_samples = state
+                        if completed_samples:
+                            status = (
+                                f"{status} samples {completed_samples}/"
+                                f"{max(1, int(request.max_samples))}"
+                            )
+                        self.update_stats("ovrtx", status)
+                    if not cancelled and self.test_break():
+                        # Cancel between thread-job milestones: the job checks
+                        # the event between sample batches and cleans up.
+                        cancel_event.set()
+                        cancelled = True
+                if resubmit is None or cancelled or cancel_event.is_set():
+                    break
+                error = future.exception(0)
+                if not self._final_job_retryable(error):
+                    break
+                retry, resubmit = resubmit, None
+                self._report_final_restart(error)
+                if progress is not None:
+                    progress.update(_final_render_progress())
+                    # Keep "Restarting renderer" shown until the retried job renders.
+                    observed_progress = (str(progress["status"]), 0)
+                try:
+                    future = retry()
+                except Exception as exc:
+                    self._report_final(
+                        {"ERROR"}, f"OVRTX final render could not restart: {exc}"
+                    )
+                    return None
             try:
                 outcome = future.result(0)
             except RenderClientError as exc:
-                self._report_final({"ERROR"}, str(exc))
+                self._report_final({"ERROR"}, worker_failure_logs.describe(exc))
                 return None
             except Exception as exc:
                 # RenderThreadRejectedError lands here when the viewport
@@ -2329,13 +3026,44 @@ if bpy is not None:
                 # job's error path (task02-01 contract).
                 self._report_final(
                     {"ERROR"},
-                    f"OVRTX final render failed: {type(exc).__name__}: {exc}",
+                    worker_failure_logs.describe(
+                        exc, f"OVRTX final render failed: {type(exc).__name__}: {exc}"),
                 )
                 return None
             if outcome.get("status") != FINAL_RENDER_STATUS_COMPLETED:
-                # User cancel: no result, no error report.
+                if outcome.get("status") == FINAL_RENDER_STATUS_CANCELLED:
+                    self._report_final_cancelled()
                 return None
             return outcome["result"], outcome.get("composition")
+
+        def _final_job_retryable(self, error: BaseException | None) -> bool:
+            """Whether a failed final-render job gets its one retry.
+
+            Only a lost worker or a fatal device error that the session could
+            not recover itself, and never after a user cancel.
+            """
+            if error is None or not is_worker_failure(error):
+                return False
+            return not self.test_break()
+
+        def _report_final_restart(self, error: BaseException) -> None:
+            self.update_stats("ovrtx", FINAL_RENDER_PROGRESS_RESTARTING)
+            self._report_final(
+                {"WARNING"},
+                worker_failure_logs.describe(
+                    error,
+                    f"OVRTX renderer failed; restarting it and retrying the final render once: {error}",
+                ),
+            )
+
+        def _report_final_cancelled(self) -> None:
+            # Blender 5.2's stock job-cancel button sets the job stop flag,
+            # which test_break() observes, but its still pipeline gates file
+            # output and render_cancel on the separate global break flag.
+            # An ERROR report is the public engine API that propagates that
+            # cancellation after our job/owned cleanup has completed. Without
+            # it Blender can write an empty Render Result as a successful still.
+            self._report_final({"ERROR"}, "OVRTX render cancelled")
 
         def _write_blender_result(self, render_result: RenderResult) -> None:
             # F12 keeps passing float scene-linear pixels for HdrColor frames
@@ -2347,11 +3075,11 @@ if bpy is not None:
             if viewport_handoff.frame_applies_blender_display_transform(render_result):
                 if len(render_result.linear_rgba16f) != render_result.width * render_result.height * 8:
                     raise RenderClientError("OVRTX render result size does not match its RGBA16F payload")
-                rgba = _rgba16f_to_float_array(render_result.linear_rgba16f)
+                rgba = _rgba16f_to_float_array(render_result.linear_rgba16f_bytes())
             else:
                 if len(render_result.rgba8) != render_result.width * render_result.height * 4:
                     raise RenderClientError("OVRTX render result size does not match its RGBA payload")
-                rgba = _rgba8_to_float_array(render_result.rgba8)
+                rgba = _rgba8_to_float_array(render_result.rgba8_bytes())
             blender_result = self.begin_result(0, 0, render_result.width, render_result.height)
             layer = blender_result.layers[0].passes["Combined"]
             layer.rect.foreach_set(rgba)
@@ -2400,6 +3128,7 @@ if bpy is not None:
                 "authored_generation_digest": request.authored_generation_digest,
                 "authored_generation": request.authored_generation,
                 "render_product_path": request.render_product_path,
+                "result_product_id": render_result.product_id,
                 "addon_path": str(Path(__file__).resolve().parent),
                 "color_presentation": color_presentation.diagnostics_from_request_result(request, render_result),
                 "blender_postprocess_enabled": FINAL_RENDER_USE_POSTPROCESS,
@@ -2416,11 +3145,11 @@ if bpy is not None:
             try:
                 if render_result.linear_rgba16f:
                     hdr_path = Path(path).with_suffix(".HdrColor.rgba16f")
-                    hdr_path.write_bytes(render_result.linear_rgba16f)
+                    hdr_path.write_bytes(render_result.linear_rgba16f_bytes())
                     artifact["hdr_artifact"] = {
                         "path": str(hdr_path),
                         "size_bytes": len(render_result.linear_rgba16f),
-                        "sha256": hashlib.sha256(render_result.linear_rgba16f).hexdigest(),
+                        "sha256": hashlib.sha256(render_result.linear_rgba16f_bytes()).hexdigest(),
                         "encoding": "rgba16f",
                         "color_space": "scene_linear",
                     }
@@ -2429,6 +3158,10 @@ if bpy is not None:
                 self._report_final({"ERROR"}, f"Could not write render artifact: {exc}")
 
         def view_update(self, context: Any, depsgraph: Any) -> None:
+            with performance_profile.timer("main.viewport.view_update"):
+                return self._view_update_profiled(context, depsgraph)
+
+        def _view_update_profiled(self, context: Any, depsgraph: Any) -> None:
             """Translate + reconcile on the main thread, hand off, return.
 
             No service RPCs, no sleeps, no waiting for activation (spec
@@ -2437,6 +3170,18 @@ if bpy is not None:
             render thread receives only add-on-owned payloads.
             """
 
+            if _FINAL_RENDER_ACTIVE:
+                return
+            from . import physics_live_kinematics
+            if physics_live_kinematics.evaluating():
+                # Kinematic sampling steps transient frames; publishing them would
+                # read as timeline scrubs and reset physics.
+                return
+            if _viewport_session_end_in_progress():
+                # Re-entered from a session end's view-layer evaluation; start
+                # after the end completes.
+                _schedule_viewport_redraw()
+                return
             if (
                 _EXACT_STAGE_CONFIGURATION is None
                 and scene_generation_sessions.is_authoring(depsgraph.scene)
@@ -2452,12 +3197,19 @@ if bpy is not None:
                 self._begin_async_viewport_session(request, depsgraph.scene, depsgraph)
                 self._write_viewport_camera_snapshot(request, {}, {})
             except (BlenderSignalTranslationError, RenderClientError) as exc:
+                if getattr(exc, "pending", False):
+                    self._report_viewport_pending()
+                    return
                 self._report_viewport_error(exc)
                 return
             self.update_stats("ovrtx", self._viewport_status_message())
             self.tag_redraw()
 
         def view_draw(self, context: Any, depsgraph: Any) -> None:
+            with performance_profile.timer("main.viewport.view_draw"):
+                return self._view_draw_profiled(context, depsgraph)
+
+        def _view_draw_profiled(self, context: Any, depsgraph: Any) -> None:
             """Snapshot to the mailbox, present the latest published frame.
 
             Remaining main-thread phases (spec success criterion 2): request
@@ -2466,6 +3218,8 @@ if bpy is not None:
             on the per-session render thread (``LatestViewRenderLoop``).
             """
 
+            if _FINAL_RENDER_ACTIVE:
+                return
             if (
                 _EXACT_STAGE_CONFIGURATION is None
                 and scene_generation_sessions.is_authoring(depsgraph.scene)
@@ -2537,11 +3291,17 @@ if bpy is not None:
                 # on the thread by the loop's lifecycle policy (task02-06),
                 # never by the draw callback.
                 if self._render_loop_needs_start():
+                    if _viewport_session_end_in_progress():
+                        _schedule_viewport_redraw()
+                        return
                     self._begin_async_viewport_session(request, getattr(depsgraph, "scene", None), depsgraph)
                 else:
                     self._note_translated_request(request)
                 snapshot = self._write_viewport_camera_snapshot(request, timings, span_boundaries)
             except (BlenderSignalTranslationError, RenderClientError) as exc:
+                if getattr(exc, "pending", False):
+                    self._report_viewport_pending()
+                    return
                 self._report_viewport_error(exc)
                 return
 
@@ -2571,6 +3331,12 @@ if bpy is not None:
                 self.update_stats("ovrtx", frame.detail or "Re-syncing scene")
                 return
 
+            frame = self._frame_for_presentation(frame)
+            prepared_presentation = getattr(self, '_ready_presentation_frame', None)
+            if prepared_presentation is not None and prepared_presentation[0] is not frame:
+                prepared_presentation = None
+            if frame is None:
+                return
             render_result = frame.render_result
             new_publication = frame.publication_index != self._presented_publication_index
             self._current_result = render_result
@@ -2588,12 +3354,37 @@ if bpy is not None:
             self._texture_upload["texture_upload_ms"] = timings["texture_upload_ms"]
             draw_started_ns = time.perf_counter_ns()
             span_boundaries["viewport_draw_started_monotonic_ns"] = draw_started_ns
+            self._queued_display_work = None
             self._draw_viewport_texture(
                 context,
                 texture,
                 render_result,
                 getattr(depsgraph, "scene", None),
             )
+            deferred, self._queued_display_work = self._queued_display_work, None
+            completion = dict(frame=frame, request=request, snapshot=snapshot,
+                timings=timings, span_boundaries=span_boundaries,
+                view_draw_started_at_ns=view_draw_started_at_ns,
+                view_draw_started_ns=view_draw_started_ns,
+                rgba_available_monotonic_ns=rgba_available_monotonic_ns,
+                draw_started_ns=draw_started_ns, scene=getattr(depsgraph, "scene", None),
+                prepared_presentation=prepared_presentation)
+            if deferred is not None:
+                completion["deferred_queued_ns"] = time.perf_counter_ns()
+                deferred.completion = completion
+                return
+            self._finish_viewport_presentation(**completion)
+            # HDR: the image was drawn here; the standalone indicator pass uses its poses.
+            _DISPLAY_OVERLAY.note_direct(context, self,
+                prepared_presentation if self._presented_frame is frame else None)
+
+        def _finish_viewport_presentation(self, *, frame, request, snapshot,
+                timings, span_boundaries, view_draw_started_at_ns,
+                view_draw_started_ns, rgba_available_monotonic_ns,
+                draw_started_ns, scene, deferred_queued_ns=None, prepared_presentation=None):
+            """Commit publication/capture state only after its actual GPU draw."""
+            render_result = frame.render_result
+            new_publication = frame.publication_index != self._presented_publication_index
             draw_completed_ns = time.perf_counter_ns()
             span_boundaries["viewport_draw_completed_monotonic_ns"] = draw_completed_ns
             timings["viewport_texture_draw_ms"] = (draw_completed_ns - draw_started_ns) / 1_000_000.0
@@ -2641,10 +3432,20 @@ if bpy is not None:
                 # Publication count is the thread-side render count proxy
                 # until task02-09 embeds the loop diagnostics directly.
                 self._render_count = frame.publication_index
+            if not self._commit_frame_pose_mirror(frame, prepared=prepared_presentation):
+                return
             self._presented_publication_index = frame.publication_index
             self._presented_frame = frame
 
-            timings["viewport_callback_ms"] = (time.perf_counter_ns() - view_draw_started_ns) / 1_000_000.0
+            ended_ns = time.perf_counter_ns()
+            timings["viewport_presentation_elapsed_ms"] = (ended_ns - view_draw_started_ns) / 1_000_000.0
+            timings["viewport_callback_ms"] = (
+                (ended_ns - view_draw_started_ns) / 1_000_000.0
+                if deferred_queued_ns is None else
+                (deferred_queued_ns - view_draw_started_ns + ended_ns - draw_started_ns) / 1_000_000.0
+            )
+            if deferred_queued_ns is not None:
+                timings["deferred_display_wait_ms"] = (draw_started_ns - deferred_queued_ns) / 1_000_000.0
             timings["callback_overhead_ms"] = max(
                 0.0,
                 timings["viewport_callback_ms"]
@@ -2690,11 +3491,20 @@ if bpy is not None:
                 if max_samples == 0
                 else f"{completed_samples}/{max_samples}"
             )
-            self.update_stats("ovrtx", f"Viewport samples {sample_progress}")
+            physics_error = scene_generation_sessions.physics_playback_error(
+                scene
+            )
+            self.update_stats(
+                "ovrtx",
+                f"Physics not updated: {physics_error}"
+                if physics_error
+                else f"Viewport samples {sample_progress}",
+            )
             # No draw-tail redraw polling: refinement progress is presented
             # by the publication-driven redraw timer (task02-05) — every
             # published step schedules exactly one coalesced redraw.
 
+        @performance_profile.timed("main.viewport.begin_session")
         def _begin_async_viewport_session(
             self,
             request: RenderRequest,
@@ -2710,6 +3520,9 @@ if bpy is not None:
             to the per-session render thread. Never waits for activation.
             """
 
+            scene_generation_sessions._require_session_open()
+            if not _finish_pending_engine_teardowns():
+                raise RenderClientError("Viewport runtime cannot restart while owner-thread teardown is unconfirmed")
             authored = bool(
                 scene is not None
                 and scene_generation_sessions.owns_request(scene, request)
@@ -2756,6 +3569,7 @@ if bpy is not None:
                 return True
             return render_thread.status() != viewport_render_thread.STATUS_RUNNING
 
+        @performance_profile.timed("main.viewport.ensure_render_loop")
         def _ensure_render_loop(
             self,
             request: RenderRequest,
@@ -2791,6 +3605,15 @@ if bpy is not None:
             if runtime is not None:
                 # This pre-thread decision stays authoritative for the
                 # complete lifetime of the thread created below.
+                completion = runtime.get("cleanup_completion")
+                if completion is not None:
+                    if not completion.is_set() or runtime.get("stop_confirmed") is not True:
+                        raise RenderClientError("Previous viewport cleanup is unconfirmed")
+                    for key in ("cleanup_completion", "cleanup_thread", "stop_outcome",
+                                "stop_caller_ident", "teardown_submitted", "stop_pending",
+                                "cleanup_finished", "thread_model_final", "output_completion",
+                                "output_failure", "finish_outputs"):
+                        runtime.pop(key, None)
                 runtime["authored"] = authored
                 runtime["scene"] = self._viewport_scene
                 runtime["stop_confirmed"] = None
@@ -2808,6 +3631,10 @@ if bpy is not None:
                     runtime["generation_runtime"] = generation_runtime
             else:
                 self._prepare_direct_session(request)
+            # The first mailbox snapshot may be consumed before a subsequent
+            # view_draw calls _note_translated_request. Both ownership routes
+            # must publish their translated base before starting the thread.
+            self._viewport_request = request
             controller = self._ovrtx_session_controller
             if controller is None:
                 raise RenderClientError("No active OVRTX session controller")
@@ -2821,8 +3648,16 @@ if bpy is not None:
             self._frame_slot = viewport_handoff.LatestFrameSlot()
             self._presented_publication_index = 0
             self._presented_frame = None
+            self._ready_presentation_frame = None
+            self._mirrored_frame = None
+            self._presentation_commit_pending = False
+            self._pending_presentation_frame = None
+            self._presentation_prepare_registered = False
+            self._mirrored_publication_index = None
+            self._presented_pose_identity = None
             self._written_snapshot_key = None
             self._viewport_session_outputs_written = False
+            self._viewport_output_id = uuid.uuid4().hex
             # Fresh session, fresh teardown ledger: a leak recorded by a
             # previous session on this engine must not bleed into the new
             # session's artifacts (the leaked session already wrote its
@@ -2858,21 +3693,38 @@ if bpy is not None:
             # the engine alive (Blender frees engines by dropping the last
             # reference; __del__ is what stops this thread).
             engine_ref = weakref.ref(self)
+            # Blender can free the engine's RNA while the thread is inside a
+            # hook (F12, shading change, closing the area); every access then
+            # raises ReferenceError. That is a release, not a thread failure:
+            # the loop parks in its failed state until the owner stops it.
 
             def _request_for_snapshot(snapshot: viewport_handoff.ViewSnapshot) -> RenderRequest:
                 engine = engine_ref()
                 if engine is None:
                     raise RenderClientError("Viewport engine was released")
-                return engine._render_request_for_snapshot(snapshot)
+                try:
+                    return engine._render_request_for_snapshot(snapshot)
+                except ReferenceError as exc:
+                    raise RenderClientError("Viewport engine was released") from exc
 
             mailbox = self._camera_mailbox
             # Publishers go through the signaling wrapper so every
             # publication (frame, resync, failure state) schedules exactly
             # one coalesced main-thread redraw (task02-05). The engine's
             # read path (peek_latest) keeps using the raw slot.
+            def _published_frame():
+                engine = engine_ref()
+                if engine is not None:
+                    try:
+                        if engine._render_loop is not loop:
+                            return
+                        engine._queue_frame_presentation(engine._frame_slot.peek_latest())
+                    except ReferenceError:
+                        return
+                    engine._redraw_signaler.signal()
             frame_slot = viewport_render_thread.RedrawSignalingFrameSlot(
                 self._frame_slot,
-                self._redraw_signaler.signal,
+                _published_frame,
             )
             # Discard any request stamp left over from a previous session so
             # the new session's first publish→draw span starts clean.
@@ -2886,21 +3738,30 @@ if bpy is not None:
                 engine = engine_ref()
                 if engine is None:
                     raise RenderClientError("Viewport engine was released")
-                return engine._thread_ensure_session(loop_request)
+                try:
+                    return engine._thread_ensure_session(loop_request)
+                except ReferenceError as exc:
+                    raise RenderClientError("Viewport engine was released") from exc
 
             def _replacement_reason(loop_request: RenderRequest) -> str:
                 engine = engine_ref()
                 if engine is None:
                     return ""
-                return engine._thread_replacement_reason(loop_request)
+                try:
+                    return engine._thread_replacement_reason(loop_request)
+                except ReferenceError:
+                    return ""
 
             def _retry_allowed() -> bool:
                 engine = engine_ref()
                 if engine is None:
                     return False
-                return session_lifecycle.should_auto_retry(
-                    engine._viewport_start_failure_count
-                )
+                try:
+                    return session_lifecycle.should_auto_retry(
+                        engine._viewport_start_failure_count
+                    )
+                except ReferenceError:
+                    return False
 
             # Pose-mirror handoff (task02-07): every successful tick's
             # result crosses to the main-thread absorb timer. Data-only on
@@ -2915,9 +3776,15 @@ if bpy is not None:
                 engine = engine_ref()
                 if engine is None:
                     return
-                engine._handoff_runtime_tick_result(
-                    result, loop_request, source_loop=loop
-                )
+                try:
+                    # Healthy poses cross with their completed image. Solver
+                    # failures still restore authoring independently of draws.
+                    if result.status in {RuntimeTickStatus.FAILED, RuntimeTickStatus.NOT_ENABLED}:
+                        engine._handoff_runtime_tick_result(
+                            result, loop_request, source_loop=loop
+                        )
+                except ReferenceError:
+                    return
 
             def _controller_provider() -> Any:
                 # Resolve the engine's current controller each step: the
@@ -2926,7 +3793,10 @@ if bpy is not None:
                 # session. None (engine released/cleared) becomes a retryable
                 # "No active OVRTX session".
                 engine = engine_ref()
-                return None if engine is None else engine._ovrtx_session_controller
+                try:
+                    return None if engine is None else engine._ovrtx_session_controller
+                except ReferenceError:
+                    return None
 
             loop = viewport_render_thread.LatestViewRenderLoop(
                 mailbox=mailbox,
@@ -2960,22 +3830,18 @@ if bpy is not None:
                 runtime["teardown_state"] = teardown_state
 
             try:
-                # Main-thread half of publication signaling. Install the
-                # poller before the render thread can publish; the thread
-                # itself only latches a Python-owned pending bit.
-                self._redraw_signaler.start()
                 new_thread.start()
                 # The loop is the thread's long-lived submit command; its
                 # first adopted snapshot triggers the startup ensure on the
                 # thread (session work never runs from view_draw).
                 new_thread.submit(loop.run, label="latest-view-loop")
             except Exception as exc:
-                self._redraw_signaler.stop()
                 self._stop_render_loop()
                 raise RenderClientError(
                     f"Viewport render thread could not start: {type(exc).__name__}: {exc}"
                 ) from exc
 
+        @performance_profile.timed("render_thread.ensure_session")
         def _thread_ensure_session(self, request: RenderRequest) -> RuntimeScheduler:
             """Render-thread session ensure/replace (startup and resync).
 
@@ -3024,6 +3890,7 @@ if bpy is not None:
                 raise RenderClientError("No translated viewport request is available")
             return viewport_handoff.request_from_snapshot(base, snapshot)
 
+        @performance_profile.timed("main.viewport.snapshot_handoff")
         def _write_viewport_camera_snapshot(
             self,
             request: RenderRequest,
@@ -3100,12 +3967,22 @@ if bpy is not None:
         def _present_cached_frame(self, context: Any) -> None:
             """Redraw the last presented frame (resync presentation)."""
 
-            presented = self._presented_frame
+            presented = self._frame_for_presentation(self._presented_frame)
             if presented is None or presented.render_result is None:
                 return
+            packet = getattr(self, '_ready_presentation_frame', None)
             self._snapshot_index = presented.publication_index
             texture = self._upload_viewport_texture(presented.render_result)
+            self._queued_display_work = None
             self._draw_viewport_texture(context, texture, presented.render_result)
+            deferred, self._queued_display_work = self._queued_display_work, None
+            if deferred is not None:
+                deferred.presentation_frame = presented
+                deferred.presentation_packet = packet
+            else:
+                self._finish_cached_frame_presentation(presented, packet)
+                _DISPLAY_OVERLAY.note_direct(context, self,
+                    packet if packet is not None and packet[0] is presented else None)
 
         def _viewport_status_message(self) -> str:
             latest = self._frame_slot.peek_latest()
@@ -3135,22 +4012,7 @@ if bpy is not None:
 
             if loop is None and render_thread is None:
                 return
-            capture: dict[str, Any] = {}
-            if render_thread is not None:
-                try:
-                    capture["render_thread"] = render_thread.diagnostics()
-                except Exception:
-                    pass
-            if loop is not None:
-                try:
-                    capture["render_loop"] = loop.diagnostics()
-                except Exception:
-                    pass
-                try:
-                    capture["render_loop_records"] = loop.iteration_records()
-                except Exception:
-                    pass
-            self._thread_model_final = capture
+            self._thread_model_final = _thread_model_snapshot(loop, render_thread)
 
         def _thread_model_state(self) -> dict[str, Any]:
             """Thread/loop diagnostics for the artifact: live, else final.
@@ -3184,71 +4046,32 @@ if bpy is not None:
             return state
 
         def _stop_render_loop(self, *, teardown: Any | None = None) -> dict[str, Any]:
-            """Stop the loop, run owner-thread teardown, and join once.
-
-            ``teardown`` is queued behind the exiting loop and ahead of the
-            stop sentinel. The interactive thread owns a single 600-second
-            join attempt; exceeding it permanently disables runtime reuse.
-            """
+            """Detach presentation immediately; cleanup retains the native owner."""
 
             loop = self._render_loop
             render_thread = self._render_thread
-            if loop is not None:
-                loop.request_stop()
-            if render_thread is None:
-                runtime = _ENGINE_RUNTIMES.get(id(self))
-                if runtime is not None and runtime.get("stop_confirmed") is False:
-                    return {
-                        "status": "teardown_unconfirmed",
-                        "joined": False,
-                        "leaked_thread": True,
-                        "join_timeout_seconds": VIEWPORT_SESSION_TEARDOWN_TIMEOUT_SECONDS,
-                    }
-                self._capture_thread_model(loop, render_thread)
-                self._render_loop = None
-                return {"status": "no_thread", "joined": True, "leaked_thread": False}
-            if teardown is not None:
-                try:
-                    render_thread.submit(teardown, label="session-teardown")
-                except Exception:
-                    # Dead or already-stopping thread rejects the command;
-                    # the caller runs the teardown on the main thread after
-                    # the confirmed join hands RPC ownership back.
-                    pass
-            try:
-                outcome = render_thread.stop()
-            except Exception:
-                outcome = {
-                    "status": "stop_failed",
-                    "joined": False,
-                    "leaked_thread": False,
-                    "join_timeout_seconds": VIEWPORT_SESSION_TEARDOWN_TIMEOUT_SECONDS,
-                    "failure": "render thread stop raised",
-                }
-            # Preserve the ending session's thread/loop diagnostics for the
-            # artifact written after the references are cleared (task02-09).
+            runtime = _ENGINE_RUNTIMES.setdefault(id(self), {
+                "signal_id": _engine_signal_id(self),
+                "authored": self._viewport_generation_runtime is not None,
+                "generation_runtime": self._viewport_generation_runtime,
+            })
+            if runtime.get("cleanup_completion") is None:
+                runtime["render_loop"] = loop
+                runtime["render_thread"] = render_thread
+                if teardown is not None:
+                    runtime["teardown"] = teardown
+            joined = _teardown_engine_runtime(runtime)
             self._capture_thread_model(loop, render_thread)
-            # The tick handoff belongs to the loop that produced it: drop
-            # any pending absorb once the loop is stopped (its pose set and
-            # owning generation are stale for whatever comes next; a
-            # still-registered absorb timer no-ops on the empty handoff).
             with self._tick_absorb_lock:
                 self._pending_tick_absorb = None
-            if not outcome.get("joined", False):
-                self._record_unconfirmed_teardown(render_thread, outcome)
             self._render_loop = None
             self._render_thread = None
-            runtime = _ENGINE_RUNTIMES.get(id(self))
-            if runtime is not None:
-                runtime["stop_confirmed"] = bool(outcome.get("joined", False))
-                if runtime["stop_confirmed"]:
-                    runtime["render_loop"] = None
-                    runtime["render_thread"] = None
-                    runtime["teardown"] = None
-                    runtime["teardown_state"] = None
-                    runtime["generation_runtime"] = None
-                    runtime["scene"] = None
-            return outcome
+            return {
+                **runtime.get("stop_outcome", {}),
+                "status": "stopped" if joined else "teardown_pending",
+                "joined": joined,
+                "join_deferred": bool(runtime.get("stop_pending")),
+            }
 
         def _record_unconfirmed_teardown(
             self,
@@ -3307,6 +4130,16 @@ if bpy is not None:
             controller = self._ovrtx_session_controller
             prepared = self._viewport_generation_runtime
             scene = self._viewport_scene
+            controller_runtime = (
+                None
+                if scene is None
+                else scene_generation_sessions.active_runtime_for_scene(scene)
+            )
+            controller_is_generation_owned = bool(
+                controller_runtime is not None
+                and getattr(getattr(controller_runtime, "ovrtx", None), "controller", None)
+                is controller
+            )
             state: dict[str, Any] = {"ran": False, "errors": []}
 
             def _teardown() -> None:
@@ -3322,16 +4155,6 @@ if bpy is not None:
                         state["errors"].append(
                             f"scheduler_shutdown: {type(exc).__name__}: {exc}"
                         )
-                controller_runtime = (
-                    None
-                    if scene is None
-                    else scene_generation_sessions.active_runtime_for_scene(scene)
-                )
-                controller_is_generation_owned = bool(
-                    controller_runtime is not None
-                    and getattr(getattr(controller_runtime, "ovrtx", None), "controller", None)
-                    is controller
-                )
                 if (
                     prepared is None
                     and controller is not None
@@ -3341,7 +4164,8 @@ if bpy is not None:
                         adopt = getattr(controller, "adopt_owning_thread", None)
                         if callable(adopt):
                             adopt()
-                        controller.shutdown()
+                        if controller.shutdown() == "failed":
+                            state["errors"].append("controller_shutdown: failed")
                     except Exception as exc:
                         state["errors"].append(
                             f"controller_shutdown: {type(exc).__name__}: {exc}"
@@ -3349,6 +4173,7 @@ if bpy is not None:
 
             return _teardown, state
 
+        @performance_profile.timed("render_thread.ensure_viewport_session")
         def _ensure_viewport_session(
             self,
             request: RenderRequest,
@@ -3370,10 +4195,7 @@ if bpy is not None:
             # raise the typed deferral before any activation (the authored path
             # would otherwise wrap it and lose the type). The loop holds the
             # loading state and retries.
-            if runtime_services.owner.diagnostics().get("status") == "starting":
-                raise RuntimeServicesPreparingError(
-                    "Runtime services are still preparing"
-                )
+            _require_viewport_runtime_ready()
             controller = self._ovrtx_session_controller
             if controller is None:
                 controller = OvrtxSessionController()
@@ -3491,6 +4313,7 @@ if bpy is not None:
                 self._render_count = 0
                 self._viewport_camera_update_count = 0
                 self._viewport_session_started_ns = time.time_ns()
+                self._viewport_worker_failures = []
                 self._viewport_artifact_recorder.reset()
 
         def _use_native_viewport_fallback(self, presentation: Mapping[str, Any]) -> bool:
@@ -3572,6 +4395,7 @@ if bpy is not None:
                 not result.physics_pose_set
                 and not at_initial_condition
                 and not isinstance(result.update.get("update_result"), Mapping)
+                and result.status not in {RuntimeTickStatus.FAILED, RuntimeTickStatus.NOT_ENABLED}
             ):
                 # Nothing to absorb: no poses to mirror, no lock-clear
                 # opportunity, no update result to record. Idle ticks must
@@ -3581,6 +4405,17 @@ if bpy is not None:
                 return
             with self._tick_absorb_lock:
                 self._pending_tick_absorb = (result, at_initial_condition)
+                self._pending_tick_timeline = (
+                    request.timeline_controls_enabled,
+                    request.timeline_frame,
+                    request.timeline_start,
+                )
+                runtime = getattr(self, "_viewport_generation_runtime", None)
+                adapter = getattr(runtime, "ovphysx", None)
+                self._pending_tick_identity = (id(runtime), id(getattr(adapter, "controller", None)),
+                                               getattr(adapter, "active_generation", None),
+                                               getattr(adapter, "physics_generation", None),
+                                               scene_generation_sessions._presentation_epoch)
                 self._tick_absorb_counters["handoffs"] += 1
                 if self._tick_absorb_timer_pending:
                     # Coalesced: the pending timer reads the newest handoff.
@@ -3591,7 +4426,8 @@ if bpy is not None:
                 if bpy is None:
                     raise RuntimeError("bpy is unavailable")
                 bpy.app.timers.register(
-                    self._absorb_pending_tick_result, first_interval=0.0
+                    _live_engine_timer(self._absorb_pending_tick_result),
+                    first_interval=0.0,
                 )
             except Exception:
                 # Best-effort registration (Blender shutting down, or
@@ -3610,6 +4446,8 @@ if bpy is not None:
             with self._tick_absorb_lock:
                 self._tick_absorb_timer_pending = False
                 pending = self._pending_tick_absorb
+                pending_identity = getattr(self, "_pending_tick_identity", None)
+                pending_timeline = getattr(self, "_pending_tick_timeline", None)
                 self._pending_tick_absorb = None
                 if pending is None:
                     self._tick_absorb_counters["absorbs_empty"] += 1
@@ -3617,6 +4455,23 @@ if bpy is not None:
                     self._tick_absorb_counters["absorbs_applied"] += 1
             if pending is None:
                 return None
+            runtime = getattr(self, "_viewport_generation_runtime", None)
+            adapter = getattr(runtime, "ovphysx", None)
+            identity = (id(runtime), id(getattr(adapter, "controller", None)), getattr(adapter, "active_generation", None),
+                        getattr(adapter, "physics_generation", None),
+                        scene_generation_sessions._presentation_epoch)
+            if pending_identity is not None and pending_identity != identity:
+                return None
+            scene = self._viewport_scene
+            if scene is not None and pending_timeline is not None:
+                enabled, frame, start = pending_timeline
+                current_frame = int(getattr(scene, "frame_current", frame))
+                if enabled and current_frame < frame:
+                    # The image/tick completed after a main-thread rewind.
+                    # Its poses must not relock or overwrite restored inputs
+                    # while the solver rebuilds for the rewound timeline.
+                    self._pending_pose_mirror = {}
+                    return None
             result, at_initial_condition = pending
             self._apply_runtime_tick_result_main(
                 result, at_initial_condition=at_initial_condition
@@ -3653,7 +4508,9 @@ if bpy is not None:
             update_result = result.update.get("update_result")
             if self._interactive_edit_workflow is not None and isinstance(update_result, Mapping):
                 self._interactive_edit_workflow.record_update_result(update_result)
-            if result.status == RuntimeTickStatus.FAILED:
+            if result.status in {RuntimeTickStatus.FAILED, RuntimeTickStatus.NOT_ENABLED}:
+                self._physics_playback_lock.clear(reason="physics_runtime_error")
+                self._pending_pose_mirror = {}
                 return
             lock_was_active = self._physics_playback_lock.is_active()
             if at_initial_condition and lock_was_active:
@@ -3691,16 +4548,29 @@ if bpy is not None:
             tick handoff.
             """
 
+            scene = self._viewport_scene
+            if scene is not None and scene_generation_sessions.presentation_stopped(scene):
+                return {"enabled": False, "reason": "physics_presentation_stopped"}
+            number, epoch, targets = scene_generation_sessions.current_presentation_context(scene)
             pending, diagnostics = operator_state.prepare_runtime_pose_mirror(
                 physics_pose_set,
                 bpy,
-                None,
+                SimpleNamespace(scene=scene) if scene is not None else None,
                 lock_runtime_owned=lock_runtime_owned,
                 owning_generation=owning_generation,
                 last_applied=self._applied_pose_mirror,
+                object_paths_by_session_uid=scene_generation_sessions.current_generation_object_paths(scene),
+                presentation_targets=targets,
+                scene_generation_number=number,
+                presentation_epoch=epoch,
             )
             if pending:
                 self._pending_pose_mirror = pending
+                runtime = getattr(self, "_viewport_generation_runtime", None)
+                adapter = getattr(runtime, "ovphysx", None)
+                self._pending_pose_mirror_reset_identity = (
+                    id(runtime), id(getattr(adapter, "controller", None)),
+                    getattr(adapter, "physics_generation", None))
                 self._ensure_pose_mirror_timer()
             return dict(diagnostics)
 
@@ -3708,7 +4578,7 @@ if bpy is not None:
             if bpy is None or self._pose_mirror_timer_registered:
                 return
             try:
-                bpy.app.timers.register(self._apply_pending_pose_mirror, first_interval=0.0)
+                bpy.app.timers.register(_live_engine_timer(self._apply_pending_pose_mirror), first_interval=0.0)
             except Exception as exc:
                 self._pose_mirror = {
                     "enabled": False,
@@ -3722,6 +4592,12 @@ if bpy is not None:
             self._pose_mirror_timer_registered = False
             pending = self._pending_pose_mirror
             self._pending_pose_mirror = {}
+            runtime = getattr(self, "_viewport_generation_runtime", None)
+            adapter = getattr(runtime, "ovphysx", None)
+            identity = (id(runtime), id(getattr(adapter, "controller", None)),
+                        getattr(adapter, "physics_generation", None))
+            if getattr(self, "_pending_pose_mirror_reset_identity", identity) != identity:
+                return None
             applied_diagnostics = operator_state.apply_pending_runtime_pose_mirror(
                 bpy,
                 pending,
@@ -3736,6 +4612,163 @@ if bpy is not None:
             self._applied_pose_mirror = dict(applied_diagnostics)
             self._pose_mirror = applied_diagnostics
             return None
+
+        def _presentation_identity(self):
+            runtime = getattr(self, "_viewport_generation_runtime", None)
+            adapter = getattr(runtime, "ovphysx", None)
+            return (id(runtime), id(getattr(adapter, "controller", None)),
+                    getattr(adapter, "physics_generation", None),
+                    scene_generation_sessions._presentation_epoch,
+                    id(getattr(getattr(runtime, 'owner', None), 'current_generation', None)),
+                    self._viewport_display_epoch)
+
+        def _queue_frame_presentation(self, frame):
+            """Data-only publication crossing; coalesce to one prepared frame."""
+            if frame is None or getattr(frame, 'runtime_tick_result', None) is None or not frame.runtime_tick_result.physics_pose_set:
+                return
+            with self._tick_absorb_lock:
+                self._pending_presentation_frame = (frame, self._presentation_identity())
+                if getattr(self, '_presentation_prepare_registered', False):
+                    return
+                self._presentation_prepare_registered = True
+            epoch = self._viewport_display_epoch
+            engine_ref = weakref.ref(self)
+            def prepare():
+                engine = engine_ref()
+                try:
+                    if engine is not None and engine._viewport_display_epoch is epoch:
+                        return engine._prepare_frame_presentation()
+                except ReferenceError:
+                    return None
+                return None
+            try:
+                bpy.app.timers.register(prepare, first_interval=0.0)
+            except Exception as error:
+                with self._tick_absorb_lock:
+                    self._presentation_prepare_registered = False
+                self._pose_mirror = {'enabled':False, 'status':'failed',
+                    'reason':f'presentation_timer_registration_failed:{type(error).__name__}'}
+
+        def _prepare_frame_presentation(self):
+            """Prepare Blender targets in a timer; hold the displayed world."""
+            with self._tick_absorb_lock:
+                item = getattr(self, '_pending_presentation_frame', None)
+                self._pending_presentation_frame = None
+                self._presentation_prepare_registered = False
+            if item is None:
+                return
+            frame, identity = item
+            if identity != self._presentation_identity():
+                return
+            timeline = frame.runtime_tick_timeline
+            scene = self._viewport_scene
+            if scene is None:
+                scene = getattr(getattr(bpy, 'context', None), 'scene', None)
+            if timeline and timeline[0] and scene is not None and int(getattr(scene, 'frame_current', timeline[1])) < timeline[1]:
+                return
+            if scene is not None and scene_generation_sessions.presentation_stopped(scene):
+                return
+            tick = frame.runtime_tick_result
+            initial = bool(not getattr(frame, 'runtime_tick_playing', False)
+                and tick.step_count == 0 and tick.simulation_time_ns == 0
+                and (tick.timeline_reset or (timeline and timeline[0] and timeline[1] <= timeline[2])))
+            number, epoch, targets = scene_generation_sessions.current_presentation_context(scene)
+            pending, diagnostics = operator_state.prepare_runtime_pose_mirror(
+                tick.physics_pose_set, bpy, SimpleNamespace(scene=scene) if scene is not None else None,
+                lock_runtime_owned=not initial, owning_generation=tick.generation,
+                last_applied=self._applied_pose_mirror,
+                object_paths_by_session_uid=scene_generation_sessions.current_generation_object_paths(scene),
+                presentation_targets=targets, scene_generation_number=number, presentation_epoch=epoch)
+            if not pending:
+                return
+            from .physics_pose_transaction import apply
+            try:
+                applied = apply(bpy, scene, pending, self._physics_playback_lock,
+                    initial=initial, still_current=lambda: identity == self._presentation_identity())
+            except Exception as error:
+                self._report_viewport_error(RenderClientError(str(error)))
+                return
+            if not applied.get('enabled', False):
+                self._pose_mirror = dict(applied, presentation_commit_pending=True)
+                return
+            # Writable timer admission: drop every older deferred GPU job
+            # before exposing a different mirrored world to the next redraw.
+            # The drawer (handler, shader, buffers) stays for the next frame.
+            _DISPLAY_OVERLAY.discard_work(self)
+            self._queued_display_work = None
+            self._ready_presentation_frame = (frame, identity, pending, dict(applied), initial)
+            self._mirrored_frame = frame
+            self._presentation_commit_pending = True
+            self._applied_pose_mirror = dict(applied)
+            self._pose_mirror = dict(applied, presentation_commit_pending=True)
+            self._tag_viewport_redraws()
+
+        def _retire_physics_presentation(self):
+            # Called only after the scene's producer/native ownership drain and
+            # authored-RNA restoration, before baked Action assignment.
+            _DISPLAY_OVERLAY.discard_owner(self)
+            with self._tick_absorb_lock:
+                self._viewport_display_epoch = object()
+                self._pending_presentation_frame = None
+                self._presentation_prepare_registered = False
+                self._pending_tick_absorb = None
+                self._pending_pose_mirror = {}
+            self._queued_display_work = None
+            self._ready_presentation_frame = None
+            self._mirrored_frame = None
+            self._presented_frame = None
+            self._presented_pose_identity = None
+            self._mirrored_publication_index = None
+            self._presentation_commit_pending = False
+            self._applied_pose_mirror = {}
+            self._pose_mirror = {}
+            self._tag_viewport_redraws()
+
+        def _presentation_packet_is_current(self, packet):
+            if packet is None:
+                return getattr(self, '_mirrored_frame', None) is None
+            current = self._presentation_identity()
+            # A solver may already be preparing the next reset. Retain this
+            # admitted image/world until its replacement has a complete image.
+            return (packet[0] is getattr(self, '_mirrored_frame', None)
+                and all(packet[1][i] == current[i] for i in (0, 1, 3, 4, 5)))
+
+        def _frame_for_presentation(self, frame):
+            packet = getattr(self, '_ready_presentation_frame', None)
+            if packet is not None and self._presentation_packet_is_current(packet):
+                return packet[0]
+            if self._frame_has_no_physics_presentation(frame):
+                return frame if getattr(self, '_mirrored_frame', None) is None else None
+            return None
+
+        @staticmethod
+        def _frame_has_no_physics_presentation(frame):
+            tick = getattr(frame, 'runtime_tick_result', None)
+            return tick is None or (not tick.enabled
+                and tick.status == RuntimeTickStatus.NOT_ENABLED
+                and not tick.physics_pose_set)
+
+        def _commit_frame_pose_mirror(self, frame, *, prepared=None, gpu_committed=False):
+            """Certify the already mirrored packet; no RNA/scan/RPC on draw."""
+            packet = prepared if prepared is not None else getattr(self, '_ready_presentation_frame', None)
+            if packet is None:
+                if not self._presentation_packet_is_current(None) or not self._frame_has_no_physics_presentation(frame):
+                    return False
+                self._runtime_tick_result = getattr(frame, 'runtime_tick_result', None)
+                return True
+            if packet[0] is not frame or not self._presentation_packet_is_current(packet):
+                return False
+            self._runtime_tick_result = frame.runtime_tick_result
+            self._presentation_commit_pending = False
+            self._pose_mirror = dict(self._pose_mirror, presentation_commit_pending=False)
+            self._presented_pose_identity = packet[1]
+            self._mirrored_publication_index = frame.publication_index
+            return True
+
+        def _finish_cached_frame_presentation(self, frame, packet):
+            if self._commit_frame_pose_mirror(frame, prepared=packet):
+                self._presented_frame = frame
+                self._presented_publication_index = frame.publication_index
 
         def _tag_viewport_redraws(self) -> None:
             try:
@@ -3760,9 +4793,12 @@ if bpy is not None:
                 )
             return self._interactive_edit_workflow
 
+        @performance_profile.timed("main.viewport.texture_upload")
         def _upload_viewport_texture(self, render_result: RenderResult) -> Any:
             import gpu  # type: ignore
 
+            if not hasattr(self, "_viewport_float_staging"):
+                self._viewport_float_staging = {}
             upload = _upload_viewport_texture(
                 gpu,
                 render_result,
@@ -3772,6 +4808,7 @@ if bpy is not None:
                 snapshot_index=self._snapshot_index,
                 accepts_rgba8=self._viewport_texture_accepts_rgba8,
                 cached_texture_color_mode=self._viewport_texture_color_mode,
+                float_staging=self._viewport_float_staging,
             )
             self._viewport_texture = upload.texture
             self._viewport_texture_size = upload.texture_size
@@ -3781,6 +4818,7 @@ if bpy is not None:
             self._texture_upload = dict(upload.diagnostics)
             return upload.texture
 
+        @performance_profile.timed("main.viewport.texture_draw")
         def _draw_viewport_texture(
             self,
             context: Any,
@@ -3812,11 +4850,10 @@ if bpy is not None:
             draw_y = float(draw_rect["y"])
             draw_width = float(draw_rect["width"])
             draw_height = float(draw_rect["height"])
-            # Scene-linear frames route through Blender's display-space shader
-            # so the scene's View Transform, Look, Exposure, and Gamma are
-            # applied exactly once by Blender on draw (task02-05, contract
-            # step 4). LDR frames are already display-encoded by OVRTX and draw
-            # raw — binding the shader for them would double-transform.
+            # Blender5.2 applies scene OCIO later to the base render attachment.
+            # bind_display_space_shader itself binds IMAGE; it is not the OCIO
+            # boundary. Keep the proven HDR base path, while display-encoded LDR
+            # is deferred to the separate overlay attachment after that transform.
             display_transform = (
                 viewport_handoff.frame_applies_blender_display_transform(
                     render_result
@@ -3832,6 +4869,7 @@ if bpy is not None:
                 # also records ``display_space_shader_bind_error``.
                 "frame_display_transform": display_transform,
                 "frame_color_mode": str(render_result.frame_color_mode),
+                "rgba8_origin": render_result.rgba8_origin,
             }
             scene_camera_delta = render_requests.scene_camera_pose_delta(context)
             if scene_camera_delta is not None:
@@ -3840,12 +4878,23 @@ if bpy is not None:
 
             framebuffer = gpu.state.active_framebuffer_get()
             framebuffer.clear(color=(0.0, 0.0, 0.0, 1.0))
+            if not display_transform:
+                _DISPLAY_OVERLAY.register(bpy, lambda: _FINAL_RENDER_ACTIVE)
+                position, width, height = _viewport_texture_draw_rect(
+                    render_result, draw_x, draw_y, draw_width, draw_height)
+                self._viewport_last_operator_view["display_draw_stage"] = "POST_VIEW"
+                self._viewport_last_operator_view["display_transform_applied_by_blender"] = False
+                self._queued_display_work = _DISPLAY_OVERLAY.queue(context, self, texture, render_result,
+                    position, (width, height))
+                return
+            _DISPLAY_OVERLAY.discard_owner(self)
+            self._viewport_last_operator_view["display_draw_stage"] = "view_draw"
             display_shader_bound = False
             if display_transform:
                 display_shader_bound = self._bind_display_space_shader(scene)
-            self._viewport_last_operator_view[
-                "display_transform_applied_by_blender"
-            ] = display_shader_bound
+            self._viewport_last_operator_view["display_space_shader_bound"] = display_shader_bound
+            self._viewport_last_operator_view["display_transform_applied_by_blender"] = display_transform
+            self._viewport_last_operator_view["display_transform_stage"] = "viewport_compositor"
             # Premultiplied alpha while the display-space shader is bound
             # matches Blender's custom-engine draw template; LDR keeps the
             # opaque raw blend.
@@ -3857,20 +4906,21 @@ if bpy is not None:
                     with gpu.matrix.push_pop_projection():
                         gpu.matrix.load_matrix(Matrix.Identity(4))
                         gpu.matrix.load_projection_matrix(_ortho_2d(region_width, region_height))
-                        draw_texture_2d(texture, (draw_x, draw_y), draw_width, draw_height)
+                        position, width, height = _viewport_texture_draw_rect(
+                            render_result, draw_x, draw_y, draw_width, draw_height,
+                        )
+                        draw_texture_2d(texture, position, width, height)
             finally:
                 if display_shader_bound:
                     self._unbind_display_space_shader()
                     gpu.state.blend_set("NONE")
 
         def _bind_display_space_shader(self, scene: Any) -> bool:
-            """Bind Blender's linear->display GPU shader for the scene.
+            """Bind the stock base-render shader for the HDR presentation path.
 
-            Wraps ``RenderEngine.bind_display_space_shader`` (task02-05, the
-            exactly-once application point for scene-linear frames). Returns
-            ``True`` when the shader was bound so the caller knows to unbind.
-            A missing scene or a harness without the base-class method (tests)
-            fails closed to no bind and a raw draw.
+            Matching Blender5.2 binds IMAGE here; scene OCIO is applied later by
+            the viewport compositor. This records the bind result, not proof that
+            a display transform has already run.
             """
 
             bind = getattr(self, "bind_display_space_shader", None)
@@ -3908,14 +4958,29 @@ if bpy is not None:
         ) -> None:
             self._viewport_session_outputs_written = False
             self._viewport_draw_count += 1
+            if render_result is not getattr(self, '_last_distinct_drawn_result', None):
+                self._last_distinct_drawn_result = render_result
+                self._distinct_drawn_frames = getattr(self, '_distinct_drawn_frames', 0) + 1
+            if not _viewport_profile_enabled():
+                return
             request = self._viewport_request
             # Correlation with the render thread's per-iteration records
             # (task02-09): the presented publication carries the index and
             # snapshot key both streams share.
             presented = self._presented_frame
+            pose_produced_ns = getattr(getattr(presented, 'runtime_tick_result', None),
+                                       'physics_pose_produced_monotonic_ns', 0)
             record = {
                 "thread": "main",
                 "draw_index": self._viewport_draw_count,
+                "distinct_frames_drawn": getattr(self, '_distinct_drawn_frames', 0),
+                "matching_pose_produced_monotonic_ns": pose_produced_ns,
+                "matching_pose_age_ns": max(0, time.monotonic_ns() - pose_produced_ns) if pose_produced_ns else None,
+                "matching_pose_step_count": getattr(getattr(presented, 'runtime_tick_result', None), 'step_count', 0),
+                "owned_image_age_ns": max(0, ended_monotonic_ns -
+                    int(getattr(presented, 'timing_marks', {}).get('render_call_completed_monotonic_ns', ended_monotonic_ns))),
+                "presentation_cost": {key: value for key, value in getattr(self, '_pose_mirror', {}).items()
+                    if key.startswith('presentation_') and (key.endswith('_ns') or key.endswith('_count'))},
                 "snapshot_index": self._snapshot_index,
                 "publication_index": (
                     int(presented.publication_index)
@@ -4005,7 +5070,7 @@ if bpy is not None:
             )
             prim_resolution_diagnostics = self._usd_prim_resolver.diagnostics()
             thread_model = self._thread_model_state()
-            return self._viewport_artifact_recorder.artifact(
+            artifact = self._viewport_artifact_recorder.artifact(
                 viewport_artifact_recorder.State(
                     simulation_id=controller_diagnostics["simulation_id"],
                     request=request,
@@ -4060,8 +5125,19 @@ if bpy is not None:
                     redraw_signaling=self._redraw_signaler.diagnostics(),
                     tick_absorb=self._tick_absorb_diagnostics(),
                     render_loop_records=thread_model["render_loop_records"],
+                    worker_failures=self._viewport_worker_failure_records(),
                 )
             )
+            artifact["session_output_id"] = self._viewport_output_id
+            return artifact
+
+        def _viewport_worker_failure_records(self) -> list[dict[str, Any]]:
+            """Reported worker failures plus recoveries seen during this session."""
+            records = {record["worker_log"]: record for record in self._viewport_worker_failures}
+            if self._viewport_session_started_ns:
+                for record in worker_failure_logs.recent(self._viewport_session_started_ns):
+                    records.setdefault(record["worker_log"], record)
+            return list(records.values())
 
         def _session_lifecycle_diagnostics(
             self,
@@ -4129,11 +5205,13 @@ if bpy is not None:
                 "runtime_failure": runtime_failure,
             }
 
+        @performance_profile.timed("main.viewport.artifact_write")
         def _write_viewport_artifact(
             self,
             *,
             running: bool,
             end_reason: ViewportSessionEndReason | str = "",
+            outputs: list | None = None,
         ) -> float:
             artifact_path = os.environ.get("OV_BLENDER_EXAMPLE_VIEWPORT_ARTIFACT", "")
             if not artifact_path:
@@ -4147,15 +5225,15 @@ if bpy is not None:
             if self._image_artifact:
                 artifact["image_artifact"] = dict(self._image_artifact)
             try:
-                Path(artifact_path).write_text(
-                    json.dumps(artifact, indent=2, sort_keys=True) + "\n",
-                    encoding="utf-8",
-                )
+                viewport_artifact_recorder.write_output(artifact_path, artifact)
+                if outputs is not None:
+                    outputs.append((artifact_path, artifact))
             except OSError as exc:
                 self._report_viewport_error(RenderClientError(f"Could not write viewport artifact: {exc}"))
                 return 0.0
             return (time.perf_counter_ns() - started_ns) / 1_000_000.0
 
+        @performance_profile.timed("main.viewport.session_outputs")
         def _write_viewport_session_outputs(
             self,
             *,
@@ -4178,18 +5256,26 @@ if bpy is not None:
                 return
 
             if self._pending_pose_mirror:
-                self._apply_pending_pose_mirror()
+                if threading.current_thread() is threading.main_thread():
+                    self._apply_pending_pose_mirror()
+                else:
+                    # F12's job thread cannot write Blender data; the ending
+                    # session's last poses are not mirrored.
+                    self._pending_pose_mirror = {}
             if (
                 self._pose_mirror.get("status") == "scheduled"
                 and self._applied_pose_mirror
             ):
                 self._pose_mirror = dict(self._applied_pose_mirror)
             profile_path = os.environ.get("OV_BLENDER_EXAMPLE_VIEWPORT_PROFILE", "")
+            outputs = []
             artifact_write_ms = self._write_viewport_artifact(
                 running=False,
                 end_reason=end_reason,
+                outputs=outputs,
             )
             if not profile_path or profile_path == "1":
+                self._queue_viewport_session_outputs(outputs)
                 return
             profile = {
                 # Version 3 removes the redundant controller refinement ledger;
@@ -4206,11 +5292,19 @@ if bpy is not None:
                 ),
             }
             try:
-                Path(profile_path).write_text(json.dumps(profile, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+                viewport_artifact_recorder.write_output(profile_path, profile)
+                outputs.append((profile_path, profile))
             except OSError as exc:
                 self._report_viewport_error(RenderClientError(f"Could not write viewport profile: {exc}"))
+                self._queue_viewport_session_outputs(outputs)
                 return
             self._viewport_session_outputs_written = True
+            self._queue_viewport_session_outputs(outputs)
+
+        def _queue_viewport_session_outputs(self, outputs: list) -> None:
+            runtime = _ENGINE_RUNTIMES.get(id(self))
+            if outputs and runtime is not None and runtime.get("cleanup_completion") is not None:
+                _queue_viewport_outputs(runtime, outputs)
 
         def _request_viewport_session_reconnect(self) -> tuple[bool, bool]:
             had_session = (
@@ -4269,12 +5363,31 @@ if bpy is not None:
                 pass
             user_messages.mirror_to_console(level, message)
 
+        def _report_viewport_pending(self) -> None:
+            """The first scene generation is still building on the main thread:
+            show it as a lifecycle status, not a viewport failure. The build's
+            own completion redraws the viewport."""
+
+            message = "Preparing scene for OVRTX"
+            self._report_lifecycle_transition(message)
+            self.update_stats("ovrtx", message)
+
         def _report_viewport_error(
             self,
             exc: BlenderSignalTranslationError | RenderClientError,
         ) -> None:
-            message = str(exc)
+            message = worker_failure_logs.describe(exc)
             if message != self._viewport_reported_error:
+                worker_log = worker_failure_logs.details_path(message)
+                if worker_log:
+                    # Matched error lines go to the artifact; the client already
+                    # mirrored them to the console when the worker failed.
+                    failure = worker_failure_logs.lookup(worker_log)
+                    self._viewport_worker_failures = [
+                        *(record for record in self._viewport_worker_failures[-7:]
+                          if record.get("worker_log") != worker_log),
+                        dict(failure, reported_error=message),
+                    ]
                 self.report({"ERROR"}, message)
                 # ``self.report`` does not reach the Info window from the
                 # viewport-draw / render-thread context this runs in, so the
@@ -4318,12 +5431,20 @@ if bpy is not None:
                 pass
             user_messages.report_info(message, context=f"lifecycle:{id(self)}")
 
+        @performance_profile.timed("main.viewport.end_session")
         def _end_viewport_session(self, reason: ViewportSessionEndReason) -> bool:
+            with _ViewportSessionEnding():
+                return self._end_viewport_session_guarded(reason)
+
+        def _end_viewport_session_guarded(self, reason: ViewportSessionEndReason) -> bool:
             # One linear teardown: stop request → loop exit → exact-stage
             # scheduler/controller teardown → one bounded join. A current-
             # scene loop only detaches from its authoring runtime here.
-            self._redraw_signaler.stop()
             teardown, teardown_state = self._runtime_teardown_state()
+            sidecar = _ENGINE_RUNTIMES.get(id(self))
+            if sidecar is not None and sidecar.get("cleanup_completion") is None:
+                sidecar["teardown"] = teardown
+                sidecar["teardown_state"] = teardown_state
             outcome = self._stop_render_loop(teardown=teardown)
             joined = bool(outcome.get("joined", False))
             # Drop any tick handoff the stopped loop left behind: its pose
@@ -4333,22 +5454,6 @@ if bpy is not None:
                 self._pending_tick_absorb = None
             if self._viewport_crash_marker.get("marker_active"):
                 self._viewport_crash_marker = session_lifecycle.clear_crash_marker()
-            if joined and not teardown_state["ran"]:
-                # No running thread accepted the teardown command (never
-                # started, already stopped, or failed): the confirmed join
-                # handed RPC ownership back to this thread, so adopt the
-                # controller (RPC thread guard) and tear down here. The
-                # defensive ``stop_failed`` outcome (stop() raising) keeps
-                # ``joined`` False and lands in neither branch: with the
-                # thread state unknown, running RPCs here would race it.
-                controller = self._ovrtx_session_controller
-                adopt = getattr(controller, "adopt_owning_thread", None)
-                if callable(adopt):
-                    try:
-                        adopt()
-                    except Exception:
-                        pass
-                teardown()
             if teardown_state["errors"]:
                 # Merged before the outputs write so the ending session's
                 # artifact (session_lifecycle.cleanup) carries them.
@@ -4364,7 +5469,19 @@ if bpy is not None:
             self._viewport_generation_runtime = None
             physics_lock = getattr(self, "_physics_playback_lock", None)
             if physics_lock is not None and authored_runtime is None:
-                physics_lock.clear(reason="viewport_shutdown")
+                engine_ref = weakref.ref(self)
+
+                def _lock_still_idle() -> bool:
+                    # A deferred release must not clear a session started since.
+                    engine = engine_ref()
+                    try:
+                        return engine is None or engine._render_thread is None
+                    except ReferenceError:
+                        return True
+
+                operator_state.clear_playback_lock_when_writable(
+                    physics_lock, reason="viewport_shutdown", still_wanted=_lock_still_idle
+                )
             # Exact-stage scheduler shutdown lives behind the thread boundary;
             # a current-scene scheduler remains owned by the authoring runtime.
             self._runtime_scheduler = None
@@ -4411,6 +5528,10 @@ if bpy is not None:
         def _clear_ovrtx_runtime_state(self) -> None:
             """Main-thread state clearing shared by every session-close path."""
 
+            _DISPLAY_OVERLAY.discard_owner(self)
+            self._viewport_display_epoch = object()
+            self._queued_display_work = None
+
             self._viewport_scene = None
             self._ovrtx_session_controller = None
             self._viewport_request = None
@@ -4432,7 +5553,22 @@ if bpy is not None:
             self._frame_slot = viewport_handoff.LatestFrameSlot()
             self._presented_publication_index = 0
             self._presented_frame = None
+            self._ready_presentation_frame = None
+            self._mirrored_frame = None
+            self._presentation_commit_pending = False
+            self._pending_presentation_frame = None
+            self._presentation_prepare_registered = False
+            self._mirrored_publication_index = None
+            self._presented_pose_identity = None
             self._written_snapshot_key = None
+
+        # Keep the normal add-on path free of the wrapper/delegation cost in
+        # Blender's hottest callbacks.  Profiling is a launch-time opt-in, so
+        # these aliases are stable for the lifetime of the registered class.
+        if not performance_profile.enabled():
+            render = _render_profiled
+            view_update = _view_update_profiled
+            view_draw = _view_draw_profiled
 
 else:
     OvrtxExampleRenderEngine = None  # type: ignore[assignment]
@@ -4442,12 +5578,8 @@ def _write_image(path: str, render_result: RenderResult | None) -> dict[str, Any
     if not path or render_result is None:
         return {}
     try:
-        row_size = render_result.width * 4
-        # OVRTX rows are bottom-up for GPU upload; PNG scanlines are top-down.
-        rgba8 = b"".join(
-            render_result.rgba8[row * row_size : (row + 1) * row_size]
-            for row in reversed(range(render_result.height))
-        )
+        # PNG scanlines are top-down, independently of viewport storage order.
+        rgba8 = render_result.rgba8_bytes(origin="top_left")
         return write_rgba_png(
             Path(path), render_result.width, render_result.height, rgba8
         )

@@ -5,8 +5,10 @@
 from __future__ import annotations
 
 from typing import Any, Callable, Iterable, Mapping
+import time
 
 from . import blender_interactive_edit_builders
+from . import depsgraph_updates
 from . import interactive_operator_state
 from .blender_signals import (
     BlenderEditSignal,
@@ -28,7 +30,7 @@ from .interactive_edit_planner import (
 from .interactive_edit_workflow import EditWorkflowResult
 from .render_requests import RenderRequest
 from .properties import DEFAULT_RENDER_PRODUCT_PATH
-from .scene_generation import SceneGenerationError, blender_id
+from .scene_generation import SceneGenerationError, SceneGenerationPending, blender_id
 from .usd_prim_resolver import UsdPrimResolver
 from .value_edit_conversion import ValueEditConversionPolicies
 
@@ -114,13 +116,42 @@ class BlenderRenderCallbackAdapter:
         scene: Any,
         context: Any | None,
     ) -> RenderRequest:
+        started = time.perf_counter()
+        self._preparation_timings = {}
         try:
+            from .scene_generation_sessions import require_supported_render_generation
+            require_supported_render_generation(scene)
+            from .physics_authoring import AuthoringError, require_scene_ready
+            try:
+                from .scene_generation_sessions import viewport_joint_admission_clear
+                if (source is BlenderRenderSignalSource.FINAL_RENDER
+                        or not viewport_joint_admission_clear(scene)):
+                    require_scene_ready(
+                        scene,
+                        allow_pending_anchors=source is not BlenderRenderSignalSource.FINAL_RENDER,
+                    )
+            except AuthoringError as exc:
+                raise SceneGenerationError(str(exc)) from exc
+            self._preparation_timings['physics_admission_ms'] = (time.perf_counter()-started)*1000
             provider = (
                 self._generation_for_scene
                 if source is BlenderRenderSignalSource.FINAL_RENDER
                 else self._viewport_generation_for_scene
             )
-            generation = provider(scene)
+            from .physics_colliders import ColliderError
+            from .physics_endpoints import EndpointError
+            from .physics_joint_conversion import JointError
+            try:
+                phase_started = time.perf_counter()
+                generation = provider(scene)
+                self._preparation_timings['generation_provider_ms'] = (time.perf_counter()-phase_started)*1000
+            except (ColliderError, EndpointError, JointError) as exc:
+                # Invalid physics authoring is a reportable scene error, not a
+                # draw-callback crash.
+                raise SceneGenerationError(str(exc)) from exc
+            # Population snapshots cache this admission decision. Reused camera
+            # and draw requests must not rescan every Blender object.
+            require_supported_render_generation(scene, generation)
             camera = getattr(scene, "camera", None)
             if camera is None:
                 raise SceneGenerationError("Current Blender scene has no active camera.")
@@ -129,10 +160,14 @@ class BlenderRenderCallbackAdapter:
                 raise SceneGenerationError(
                     f"Scene generation has no mapped prim for active camera {camera.name!r}."
                 )
+            phase_started = time.perf_counter()
             input_usd_path = generation.materialize_usd()
+            self._preparation_timings['generation_materialize_ms'] = (time.perf_counter()-phase_started)*1000
         except SceneGenerationError as exc:
-            raise BlenderSignalTranslationError(source, str(exc)) from exc
-        return self._translator.translate(
+            raise BlenderSignalTranslationError(
+                source, str(exc), pending=isinstance(exc, SceneGenerationPending)) from exc
+        phase_started = time.perf_counter()
+        request = self._translator.translate(
             BlenderRenderSignal(
                 source=source,
                 intent=intent,
@@ -145,6 +180,15 @@ class BlenderRenderCallbackAdapter:
                 current_scene_generation=True,
             )
         )
+        self._preparation_timings['signal_translation_ms'] = (time.perf_counter()-phase_started)*1000
+        from . import scene_generation_sessions, direct_scene_updates
+        owner = scene_generation_sessions._owners.get(int(getattr(scene, 'session_uid', 0)))
+        phase_started = time.perf_counter()
+        if owner is not None:
+            direct_scene_updates.initialize(owner, scene, generation, request)
+        self._preparation_timings['direct_contract_capture_ms'] = (time.perf_counter()-phase_started)*1000
+        self._preparation_timings['total_ms'] = (time.perf_counter()-started)*1000
+        return request
 
 class ExactStageRenderCallbackAdapter:
     """Build render requests for explicit internal exact-stage harnesses."""
@@ -261,7 +305,9 @@ class BlenderEditCallbackAdapter:
         *,
         context: Any | None = None,
         scene: Any | None = None,
+        updates: tuple[Any, ...] | None = None,
     ) -> list[EditWorkflowResult]:
+        """``updates`` is the caller's snapshot of ``depsgraph.updates`` (None: read it)."""
         active_engines = list(self._active_engines())
         active_engine_count = len(active_engines)
         if self._bridge_suppressed():
@@ -299,6 +345,9 @@ class BlenderEditCallbackAdapter:
                 },
                 usd_prim_resolver=resolver,
                 light_objects=light_objects,
+                materials=_material_owners_for_depsgraph(scene, depsgraph, updates=updates),
+                worlds=(scene.world,) if getattr(scene, "world", None) is not None else (),
+                updates=updates,
             )
             results = self._observe_edits(scene, edits, selection_resolution)
             self._record_bridge_diagnostics(
@@ -329,6 +378,9 @@ class BlenderEditCallbackAdapter:
                 },
                 usd_prim_resolver=resolver,
                 light_objects=light_objects,
+                materials=_material_owners_for_depsgraph(scene, depsgraph, updates=updates),
+                worlds=(scene.world,) if getattr(scene, "world", None) is not None else (),
+                updates=updates,
             )
             if (
                 not active_engines and selection_blocks
@@ -371,6 +423,7 @@ class BlenderEditCallbackAdapter:
                     depsgraph,
                     context=context,
                     selection_resolution=selection_resolution,
+                    updates=updates,
                 )
                 submitted_edit_count += len(edits)
                 submitter = getattr(engine, "submit_interactive_edit", None)
@@ -385,6 +438,7 @@ class BlenderEditCallbackAdapter:
                     depsgraph,
                     context=context,
                     selection_resolution=selection_resolution,
+                    updates=updates,
                 )
             results.extend(self._observe_edits(scene, edits, selection_resolution))
             submitted_edit_count = len(edits)
@@ -430,11 +484,15 @@ class BlenderEditCallbackAdapter:
         usd_prim_resolver: UsdPrimResolver | None = None,
         light_objects: Any = (),
         worlds: Any = (),
+        materials: Any = (),
         value_edit_conversion_policies: ValueEditConversionPolicies | None = None,
+        updates: tuple[Any, ...] | None = None,
     ) -> tuple[InteractiveEdit, ...]:
         signal = BlenderEditSignal(
             source=BlenderEditSignalSource.DEPSGRAPH,
-            id_items=depsgraph_id_items(depsgraph),
+            id_items=depsgraph_id_items(depsgraph, updates=updates),
+            depsgraph=depsgraph,
+            updates=updates,
             context=context,
             input_usd_path=input_usd_path,
             ignored_layer_identifiers=tuple(ignored_layer_identifiers),
@@ -444,6 +502,7 @@ class BlenderEditCallbackAdapter:
             usd_prim_resolver=usd_prim_resolver,
             light_objects=light_objects,
             worlds=worlds,
+            materials=materials,
             value_edit_conversion_policies=(
                 value_edit_conversion_policies
                 or self._value_edit_conversion_policies
@@ -459,6 +518,7 @@ class BlenderEditCallbackAdapter:
         *,
         context: Any | None,
         selection_resolution: Mapping[str, Any],
+        updates: tuple[Any, ...] | None = None,
     ) -> list[InteractiveEdit]:
         resolver = getattr(engine, "build_interactive_edits_from_depsgraph", None)
         if callable(resolver):
@@ -469,6 +529,7 @@ class BlenderEditCallbackAdapter:
                     selection_resolution=selection_resolution,
                     value_edit_conversion_policies=self._value_edit_conversion_policies,
                     edit_translator_factory=self._edit_translator_factory,
+                    **depsgraph_updates.keyword(resolver, updates),
                 )
             )
         return list(
@@ -476,6 +537,7 @@ class BlenderEditCallbackAdapter:
                 depsgraph,
                 context=context,
                 selection_resolution=selection_resolution,
+                updates=updates,
             )
         )
 
@@ -494,8 +556,47 @@ class BlenderEditCallbackAdapter:
         self._bridge_diagnostics_recorder(**kwargs)
 
 
-def depsgraph_id_items(depsgraph: Any) -> tuple[Any, ...]:
+def depsgraph_id_items(depsgraph: Any, *, updates: tuple[Any, ...] | None = None) -> tuple[Any, ...]:
     return tuple(
         getattr(update, "id", update)
-        for update in getattr(depsgraph, "updates", ())
+        for update in (getattr(depsgraph, "updates", ()) if updates is None else updates)
     )
+
+
+def _bound_scene_materials(scene: Any) -> tuple[Any, ...]:
+    """Snapshot material owners for the scene-owner callback route."""
+    result = {}
+    for obj in tuple(getattr(scene, "objects", ()) or ()):
+        slots = getattr(obj, "material_slots", None)
+        materials = (tuple(getattr(slot, "material", None) for slot in slots)
+                     if slots is not None else tuple(getattr(getattr(obj, "data", None), "materials", ()) or ()))
+        for material in materials:
+            if material is not None:
+                pointer = getattr(material, "as_pointer", None)
+                key = int(pointer()) if callable(pointer) else id(material)
+                result[key] = material
+    return tuple(result.values())
+
+
+def _material_owners_for_depsgraph(
+    scene: Any, depsgraph: Any, *, updates: tuple[Any, ...] | None = None,
+) -> tuple[Any, ...]:
+    """Only indirect shader/image updates need a scene material-owner walk.
+
+    Direct Material IDs already carry their owner. A pose-only Object update
+    must not enumerate every unrelated object's slots. Unknown ID kinds keep
+    the previous conservative behavior, including plain-Python integrations.
+    """
+    direct_kinds = {"Object", "Mesh", "Material", "Light", "Camera", "World",
+                    "Scene", "Collection", "Action", "Armature", "Curve"}
+    for update in getattr(depsgraph, "updates", ()) if updates is None else updates:
+        value = getattr(update, "id", update)
+        value = getattr(value, "original", value)
+        kind = str(getattr(getattr(value, "bl_rna", None), "identifier", ""))
+        if kind not in direct_kinds:
+            from .scene_generation_sessions import current_generation_shader_context
+            context = current_generation_shader_context(scene)
+            if context is not None:
+                return context.materials
+            return _bound_scene_materials(scene)
+    return ()

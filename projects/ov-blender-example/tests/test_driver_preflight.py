@@ -12,18 +12,20 @@ from ovrtx_blender_example import bundled_runtime, preflight  # noqa: E402
 
 def test_driver_preflight_blocks_below_floor(monkeypatch) -> None:
     monkeypatch.setattr(bundled_runtime, "current_platform_id", lambda: "linux-x64")
-    monkeypatch.setattr(preflight, "_detect_nvidia_driver_version", lambda: "570.158.00")
+    monkeypatch.setattr(preflight, "_detect_nvidia_driver_version", lambda: "580.65.05")
 
     check = preflight._driver_version_check()
 
     assert not check.ok
-    assert "570.158.01" in check.message
+    assert "580.65.06" in check.message
 
 
 def test_driver_preflight_passes_at_or_above_floor(monkeypatch) -> None:
     monkeypatch.setattr(bundled_runtime, "current_platform_id", lambda: "windows-x64")
-    monkeypatch.setattr(preflight, "_detect_nvidia_driver_version", lambda: "573.39")
+    monkeypatch.setattr(preflight, "_detect_nvidia_driver_version", lambda: "580.88")
     assert preflight._driver_version_check().ok
+    monkeypatch.setattr(preflight, "_detect_nvidia_driver_version", lambda: "573.39")
+    assert not preflight._driver_version_check().ok
     monkeypatch.setattr(preflight, "_detect_nvidia_driver_version", lambda: "595.97")
     assert preflight._driver_version_check().ok
 

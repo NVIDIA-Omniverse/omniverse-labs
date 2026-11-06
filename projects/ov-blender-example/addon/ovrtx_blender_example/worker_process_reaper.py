@@ -1,37 +1,9 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
-"""Best-effort backstop that terminates orphaned runtime worker processes.
+"""Best-effort finalization for explicitly registered, owned worker children.
 
-DISCUSSION ARTIFACT (dev/jomiller/fix-ovphysx-server-orphan). On Blender close
-``ovphysx-bridge-server`` orphans while ``ovrtx-bridge-server`` does not: Blender
-does not reliably run add-on ``unregister()`` on application quit, there is no
-``atexit`` hook, and the native ``start_worker`` result exposes no PID/handle to
-Python (only ``worker_process_alive``/``address``). So Python cannot cleanly
-target its own workers — it has to scrape the process table by executable name.
-
-That awkwardness is the argument for moving the fix **down into the native
-client**, which owns the spawn handle and can place the worker in a Windows Job
-Object (``JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE``) — covering crashes and hard
-kills this backstop cannot. This module is the narrow, low-risk Python-side
-mitigation for the graceful-quit case, and the seam (``register_worker_pid``)
-for the native fix if the client is taught to report its PID.
-
-Why this is safe to run at interpreter finalization:
-
-- No ``bpy``/RNA access, no gRPC, no thread joins — only OS process calls.
-- It only ever targets a process that BOTH matches a known worker executable
-  basename AND is a direct child of this process; never an unrelated PID.
-- ``TerminateProcess`` (not the native gRPC ``shutdown``) is used deliberately:
-  a hard OS kill needs no gRPC channel or thread coordination, both of which
-  are unstable while the interpreter is being torn down.
-- Every operation is guarded and swallows exceptions; a failure to reap never
-  raises out of the ``atexit`` handler.
-- The handler is registered exactly once and removed on ``unregister()`` so an
-  add-on reload/disable can neither leak nor double-register it.
-
-Coverage limits (further arguments for the native fix): only fires on graceful
-interpreter exit (not crashes/``TerminateProcess``/Task-Manager kill), and only
-matches workers that are *direct* children of this process.
+Current external sessions own Windows jobs/process groups. This generic backstop
+has no implicit worker executable names and never targets unrelated processes.
 """
 
 from __future__ import annotations
@@ -41,18 +13,7 @@ import os
 import threading
 
 
-#: Fixed worker executables this add-on spawns. Matches ``bundled_runtime``:
-#: ``ovrtx-bridge-server{suffix}`` and ``ovphysx-bridge-server{suffix}``. Compared
-#: case-insensitively by basename. ``register_worker_executable`` can widen this
-#: if a native client ever reports a different path.
-_DEFAULT_WORKER_BASENAMES = frozenset(
-    {
-        "ovrtx-bridge-server",
-        "ovrtx-bridge-server.exe",
-        "ovphysx_grpc_server",
-        "ovphysx_grpc_server.exe",
-    }
-)
+_DEFAULT_WORKER_BASENAMES = frozenset()
 
 _lock = threading.Lock()
 _installed = False

@@ -77,6 +77,10 @@ def _load_engine_with_fake_bpy(monkeypatch: pytest.MonkeyPatch):
     module = importlib.util.module_from_spec(spec)
     monkeypatch.setitem(sys.modules, module_name, module)
     spec.loader.exec_module(module)
+    # The fake RPC client models an explicitly selected external SDK sidecar.
+    # Actual sidecar admission/rejection is covered by the runtime install tests.
+    from ovrtx_blender_example import bundled_runtime
+    monkeypatch.setattr(bundled_runtime, "public_sdk_python", lambda: sys.executable)
     return module
 
 
@@ -272,6 +276,43 @@ def test_view_draw_presents_newest_publication_without_rpcs_or_sleeps(
     # The profile record attributes only main-thread phases to the callback.
     record = engine._viewport_artifact_recorder._profile["recent_draws"][-1]
     assert record["timings_ms"]["ensure_session_ms"] == 0.0
+
+
+def test_deferred_display_commits_drawn_publication_and_capture_after_gpu_success(monkeypatch):
+    module = _load_engine_with_fake_bpy(monkeypatch)
+    request = _request(module)
+    engine, _ = _engine_with_stubbed_session(module, monkeypatch, request)
+    engine._render_thread = SimpleNamespace(status=lambda: module.viewport_render_thread.STATUS_RUNNING)
+    engine._upload_viewport_texture = lambda result: object()
+    deferred = SimpleNamespace(completion=None)
+    def production_draw(*args):
+        engine._queued_display_work=deferred
+    def observing_wrapper(*args):
+        # Existing native acceptance instrumentation discards the historical
+        # None return. Completion must remain bound to the actual queued work.
+        production_draw(*args)
+    engine._draw_viewport_texture = observing_wrapper
+    captures=[];profiles=[]
+    engine._write_viewport_artifact = lambda **kwargs: captures.append(engine._presented_frame)
+    engine._record_profile = lambda result,*a,**kw: profiles.append((result,kw))
+    snapshot = module.viewport_handoff.snapshot_from_render_request(request).key
+    first = _result(1)
+    engine._frame_slot.publish(module.viewport_handoff.FrameState(render_result=first,snapshot_key=snapshot,completed_samples=1))
+    engine.view_draw(_viewport_context(),SimpleNamespace(scene=SimpleNamespace()))
+    assert engine._presented_frame is None and engine._presented_publication_index==0
+    assert captures==profiles==[] and deferred.completion is not None
+    # Publication arriving after scheduling cannot steal attribution from the
+    # immutable frame/texture actually drawn by POST_VIEW.
+    second = _result(4)
+    engine._frame_slot.publish(module.viewport_handoff.FrameState(render_result=second,snapshot_key=snapshot,completed_samples=4))
+    completion=deferred.completion
+    completion['draw_started_ns']=module.time.perf_counter_ns()
+    engine._finish_viewport_presentation(**completion)
+    assert engine._presented_publication_index==1
+    assert engine._presented_frame.render_result is first
+    assert captures==[engine._presented_frame] and profiles[0][0] is first
+    assert completion['timings']['deferred_display_wait_ms']>=0
+    assert completion['timings']['viewport_callback_ms']<=completion['timings']['viewport_presentation_elapsed_ms']
 
 
 def test_view_draw_reuses_texture_identity_for_unchanged_publication(
@@ -552,10 +593,15 @@ def test_direct_route_ensures_and_renders_on_the_render_thread(
         }
     finally:
         stopped_thread = engine._render_thread
+        runtime = module._ENGINE_RUNTIMES[id(engine)]
         engine._end_viewport_session(module.ViewportSessionEndReason.ENGINE_DESTROYED)
         assert engine._render_thread is None
         assert engine._render_loop is None
         if stopped_thread is not None:
+            # Presentation detaches immediately; the retained owner finishes
+            # teardown asynchronously. Observe completion before checking it.
+            assert runtime["cleanup_completion"].wait(WAIT_S)
+            assert runtime["stop_confirmed"] is True
             assert stopped_thread.status() in (
                 module.viewport_render_thread.STATUS_STOPPED,
                 module.viewport_render_thread.STATUS_FAILED,
@@ -570,6 +616,53 @@ def test_direct_route_ensures_and_renders_on_the_render_thread(
         if name in {"delete_simulation", "shutdown"}
     }
     assert cleanup_idents == foreign
+
+
+def test_authored_first_snapshot_has_translated_request_before_any_view_draw(monkeypatch):
+    """The first real loop adoption must not depend on a later UI draw."""
+    module = _load_engine_with_fake_bpy(monkeypatch)
+    client = _ThreadRecordingClient()
+    monkeypatch.setattr(controller_module, '_runtime_client_from_request', lambda _request: client)
+    controller = controller_module.OvrtxSessionController()
+    scheduler = RuntimeScheduler(config_factory=lambda _path: SimpleNamespace(enabled=False))
+    runtime = SimpleNamespace(ovrtx=SimpleNamespace(controller=controller), scheduler=scheduler,
+                              playback_lock=SimpleNamespace())
+    monkeypatch.setattr(module.scene_generation_sessions, 'runtime_for_viewport', lambda *args, **kwargs: runtime)
+    engine = module.OvrtxExampleRenderEngine()
+    engine._runtime_teardown_state = lambda: (None, {'ran': False, 'errors': []})
+    def ensure(request):
+        controller.ensure(request)
+        return scheduler
+    engine._thread_ensure_session = ensure
+    request = _request(module)
+    try:
+        assert engine._viewport_request is None
+        engine._ensure_render_loop(request, scene=SimpleNamespace(), authored=True)
+        # No _note_translated_request or view_draw between startup and handoff.
+        engine._camera_mailbox.write(module.viewport_handoff.snapshot_from_render_request(request))
+        frame = engine._frame_slot.wait_for_newer(0, timeout=WAIT_S)
+        assert frame is not None, engine._render_thread.diagnostics()
+        assert frame.status == 'frame', frame.detail
+        assert frame.snapshot_key == module.viewport_handoff.snapshot_from_render_request(request).key
+        assert engine._viewport_request is request
+        assert client.render_calls > 0
+        assert all(ident != threading.get_ident() for _, ident in client.rpc_thread_idents)
+    finally:
+        loop, thread = engine._render_loop, engine._render_thread
+        if loop is not None:
+            loop.request_stop()
+        if thread is not None:
+            if thread.is_alive():
+                closed = threading.Event()
+                def close_owned_controller():
+                    controller.shutdown()
+                    closed.set()
+                thread.submit(close_owned_controller, label='test-owned-controller-shutdown')
+                assert closed.wait(WAIT_S)
+            assert thread.stop(timeout=WAIT_S)['joined']
+        engine._render_loop = engine._render_thread = engine._ovrtx_session_controller = None
+        engine._viewport_generation_runtime = None
+        module._ENGINE_RUNTIMES.pop(id(engine), None)
 
 
 def test_teardown_deadline_fails_closed_without_caller_thread_rpcs(
@@ -624,12 +717,15 @@ def test_teardown_deadline_fails_closed_without_caller_thread_rpcs(
         module.ViewportSessionEndReason.RECONNECT_REQUESTED
     ) is False
 
+    sidecar = module._ENGINE_RUNTIMES[id(engine)]
+    assert sidecar["cleanup_completion"].wait(2)
     assert submitted and shutdowns == []
     assert engine._render_thread is None
     assert engine._runtime_scheduler is None
     assert engine._ovrtx_session_controller is None
     assert module._DIRECT_VIEWPORT_REUSE_BLOCKED is True
-    assert engine._viewport_cleanup_diagnostics["status"] == "teardown_deadline_exceeded"
+    assert sidecar["stop_confirmed"] is False
+    assert sidecar["stop_outcome"]["failure"] == "deadline exceeded"
     assert warnings and "runtime reuse disabled" in warnings[0]
     with pytest.raises(RenderClientError, match="cannot restart"):
         engine._begin_async_viewport_session(_request(module))
@@ -919,7 +1015,10 @@ def test_thread_side_ensure_failure_publishes_failure_and_survives(
         assert len(start_attempts) == 2
         assert engine._viewport_start_failure_count == 2
     finally:
+        runtime = module._ENGINE_RUNTIMES[id(engine)]
         engine._end_viewport_session(module.ViewportSessionEndReason.ENGINE_DESTROYED)
+        assert runtime["cleanup_completion"].wait(WAIT_S)
+        assert runtime["stop_confirmed"] is True
 
 
 def test_thread_side_ensure_retries_stop_after_auto_retry_policy(
@@ -972,4 +1071,7 @@ def test_thread_side_ensure_retries_stop_after_auto_retry_policy(
         assert status["status"] == module.session_lifecycle.STATUS_FAILED
         assert status["auto_retry_allowed"] is False
     finally:
+        runtime = module._ENGINE_RUNTIMES[id(engine)]
         engine._end_viewport_session(module.ViewportSessionEndReason.ENGINE_DESTROYED)
+        assert runtime["cleanup_completion"].wait(WAIT_S)
+        assert runtime["stop_confirmed"] is True

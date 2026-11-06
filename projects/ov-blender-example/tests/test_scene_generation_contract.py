@@ -43,7 +43,7 @@ def test_real_blender_scene_generation_contract(tmp_path: Path) -> None:
     assert result["generation_numbers"] == list(range(13))
     assert result["reused_generation"] == 0
     assert result["first_generation_retained"] is True
-    assert result["first_generation_opinion_records"] == 2
+    assert result["first_generation_opinion_records"] == 4  # physics/material plus mesh/light visibility
     assert result["first_generation_sparse_change_replacements"] == 0
     assert result["first_generation_sparse_record"] is True
     assert result["first_generation_add_on_physics_material"] is True
@@ -59,7 +59,8 @@ def test_real_blender_scene_generation_contract(tmp_path: Path) -> None:
     assert result["current_scene_callback_contract"] is True
     assert result["predecessor_retained_value_reuse"] is True
     assert result["retained_value_final_handoff"] is True
-    assert result["first_generation_mesh_count"] == 1
+    # The stock render mesh plus its generated, invisible convex-hull collider.
+    assert result["first_generation_mesh_count"] == 2
     assert result["second_generation_paths"]["MESH:Sphere"]["schema_path"].endswith(
         "/Sphere"
     )
@@ -86,6 +87,7 @@ def test_real_blender_scene_generation_contract(tmp_path: Path) -> None:
     assert result["blocked_affected_before_undo"]
     assert result["undo_reused_accepted_generation"] is True
     assert result["blocked_after_undo"] == {}
+    assert result["orthographic_camera"] == {"type": "Camera", "projection": "orthographic"}
     assert result["point_light_runtime"]["status"] in {
         "not_requested",
         "pass-real",

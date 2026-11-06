@@ -7,7 +7,18 @@ across threads is unproven, so every srtx RPC is funneled through the one
 render thread that owns the session. Other threads (Blender main, Blender
 render job) interact only by submitting commands and reading published
 state. Stdlib only: ``threading.Thread`` (daemon), ``queue.Queue``, and a
-small event-based future wrapper — no asyncio, no concurrent.futures.
+small event-based future wrapper — no concurrent.futures, and no new OS
+threads for RPCs.
+
+When ``OVRTX_RENDER_PIPELINE_DEPTH`` requests it (performance-improvements
+Phase 03), :class:`LatestViewRenderLoop` drives sample acquisition through a
+private ``asyncio`` event loop it owns and runs exclusively on this same
+render thread — never a second thread. This lets one sample's write
+(``begin_render``) go out while a prior sample's read ticket
+(``ReadWorldStateTicket.poll()``, itself guaranteed non-blocking) is still
+outstanding, without ever handing the native client to more than one thread
+at a time. The default depth of ``1`` preserves the pre-existing fully
+synchronous ``render()`` call path exactly.
 
 :class:`LatestViewRenderLoop` (task02-03) is the loop body that runs *on*
 this thread under the latest-view contract (ADR 0013): take the newest
@@ -21,19 +32,21 @@ polling runs here; when fully refined with no pending work the loop parks on
 
 from __future__ import annotations
 
+import asyncio
+import collections
 import hashlib
 import os
 import queue
 import threading
 import time
 import traceback
-from collections import deque
 from collections.abc import Mapping
 from contextlib import nullcontext
-from dataclasses import dataclass, replace as _dataclass_replace
+from dataclasses import replace as _dataclass_replace
 from typing import Any, Callable
 
 from . import camera_value_conversion
+from . import performance_profile
 from . import render_requests
 from . import usd_paths
 from . import user_messages
@@ -51,9 +64,11 @@ from .ovrtx_runtime_client import (
     RenderClientError,
     RenderResult,
     RuntimeServicesPreparingError,
+    ValueUpdateRecoveryRequired,
+    ValueUpdateValidationError,
 )
-from .ovrtx_session_controller import OvrtxSessionRetirementRequiredError
 from .ovrtx_value_updates import OvrtxAttributeValue, OvrtxTransformValue
+from .direct_runtime_session import is_worker_failure
 from .runtime_scheduler import RuntimeTickResult, RuntimeTickStatus
 from .shared_stage_errors import SharedStageCompositionError
 from .viewport_handoff import (
@@ -67,6 +82,41 @@ from .viewport_handoff import (
 )
 
 RENDER_THREAD_JOIN_TIMEOUT_SECONDS = 5.0
+MAX_PENDING_RENDER_COMMANDS = 64
+MAX_PENDING_EXCLUSIVE_JOBS = 64
+
+#: How many samples may have a write issued and a read outstanding at once
+#: (performance-improvements Phase 03). ``1`` (default) is the pre-existing
+#: fully synchronous path: no pipelining, ``render()`` is used unchanged.
+#: Values above ``1`` require the native client's async ``ReadWorldState``
+#: capability (``OvrtxSessionController.begin_render``/``poll_render``); the
+#: loop falls back to depth 1 automatically when that capability is absent.
+RENDER_PIPELINE_DEPTH_ENV = "OVRTX_RENDER_PIPELINE_DEPTH"
+
+#: performance-improvements Phase 03 follow-up (n-03-08): a pending ticket
+#: that resolves between outer-loop passes still costs a whole extra
+#: ``_iterate()`` pass (mailbox take, scheduler due-checks, GIL handoff with
+#: the main/draw thread) to notice — n-03-07 measured ~40 such passes per
+#: published frame at depth 2. ``_pipeline_tick_async`` polls in a short
+#: bounded inner loop instead of once, so one outer pass usually suffices.
+#: Only read (and only matters) when ``_pipeline_depth > 1``.
+RENDER_PIPELINE_POLL_BUDGET_MS_ENV = "OVRTX_RENDER_PIPELINE_POLL_BUDGET_MS"
+DEFAULT_RENDER_PIPELINE_POLL_BUDGET_MS = 8.0
+#: n-03-08 result (PHASE03-render-pipeline-poll-budget-fix-result.md):
+#: ``asyncio.sleep()`` with any nonzero interval is subject to Windows'
+#: default ~15.6ms timer-resolution floor, which single-handedly blew the
+#: entire poll budget on the first retry and made cadence worse, not
+#: better. ``ticket.poll()`` itself is a guaranteed-non-blocking mutex
+#: check (README), not a wait, so the inner loop below uses
+#: ``asyncio.sleep(0)`` (a pure event-loop yield, ~0.01ms measured) to
+#: pace retries instead of a real timed sleep.
+
+#: n-03-09: minimum quiet time after a pipelined ticket is actually
+#: cancelled (proven wasted) before a *new* one is started. Bounds how much
+#: wasted WriteWorldState/render work continuous camera motion can cause;
+#: see ``_pipeline_cancelled_at_monotonic_ns`` at construction.
+RENDER_PIPELINE_CANCEL_COOLDOWN_MS_ENV = "OVRTX_RENDER_PIPELINE_CANCEL_COOLDOWN_MS"
+DEFAULT_RENDER_PIPELINE_CANCEL_COOLDOWN_MS = 100.0
 
 #: Pacing between retry attempts while the loop is in a failed state and
 #: pending view updates keep requesting work. Without it a persistently
@@ -75,14 +125,10 @@ RENDER_THREAD_JOIN_TIMEOUT_SECONDS = 5.0
 #: false forever) — the task02-03 follow-up this constant closes.
 FAILURE_RETRY_BACKOFF_SECONDS = 0.5
 
-#: Capability-gated native asynchronous read.  The bounded pipeline keeps one
-#: read in flight, up to two transform-only successors submitted behind it,
-#: and one latest-wins deferred Blender snapshot.  The switch exists for
-#: reproducible synchronous/async A/B runs.
-ASYNC_RENDER_READ_ENV = "OV_BLENDER_EXAMPLE_ASYNC_RENDER_READ"
-DEFAULT_ASYNC_RENDER_READ_ENABLED = True
-
-_CAMERA_SUCCESSOR_QUEUE_CAPACITY = 2
+#: While a converged view is idle, how often the loop checks whether the
+#: renderer worker has exited. No request is sent while idle, so nothing else
+#: would notice a worker that died between requests.
+WORKER_EXIT_WATCH_SECONDS = 1.0
 
 #: Pending-ensure reason recorded for the first session of a loop run.
 SESSION_STARTUP_REASON = "startup"
@@ -114,71 +160,6 @@ ITERATION_TIMING_SPANS = {
         "render_call_started_monotonic_ns",
     ),
 }
-
-
-def _async_render_read_enabled(env: Mapping[str, str] = os.environ) -> bool:
-    value = str(env.get(ASYNC_RENDER_READ_ENV, "1")).strip().lower()
-    if value in {"0", "false", "no", "off"}:
-        return False
-    if value in {"1", "true", "yes", "on"}:
-        return True
-    return DEFAULT_ASYNC_RENDER_READ_ENABLED
-
-
-class _RenderReadCancelled(Exception):
-    """Internal control-flow signal; cancellation is not a render failure."""
-
-
-@dataclass(frozen=True)
-class _RenderAttribution:
-    """Immutable identity and revision bundle for one submitted sample."""
-
-    controller: Any
-    session_revision: int
-    snapshot: ViewSnapshot
-    request: Any
-    tick_result: RuntimeTickResult
-    generation: int
-    presentation_revision: int
-    applied_revision: int
-
-
-@dataclass(frozen=True)
-class _QueuedCameraSuccessor:
-    """One newer-camera write rendered behind the active read.
-
-    The native side still owns only one read ticket.  This state freezes the
-    successor attribution after its camera update/tick/write so the current
-    frame can finish and publish first.
-    """
-
-    attribution: _RenderAttribution
-    submission: Any
-    marks: dict[str, int]
-
-
-@dataclass(frozen=True)
-class _PrefetchedCameraSuccessor:
-    """The FIFO head whose sole native read is already in flight.
-
-    The successor is not activated as the loop's current Blender attribution
-    until its turn is consumed.  That lets the predecessor publish while this
-    ticket transfers, without ever exposing the successor's pixels under the
-    predecessor snapshot key.
-    """
-
-    queued: _QueuedCameraSuccessor
-    ticket: Any
-
-
-@dataclass(frozen=True)
-class _PendingCameraSuccessorFailure:
-    """A prefetch failure deferred until the predecessor has published."""
-
-    queued: _QueuedCameraSuccessor | None
-    marks: dict[str, int]
-    error: BaseException
-
 
 #: ``ovrtx_session.reuse_decision`` reason string for an output resize.
 #: Resize-triggered replacement is debounced: it starts only when two
@@ -278,6 +259,10 @@ class RenderThreadTimeoutError(RenderThreadError, TimeoutError):
     """Waiting on a render-thread result exceeded the caller's timeout."""
 
 
+class _RenderLoopStopped(RuntimeError):
+    """Controller ownership disappeared after this loop was asked to stop."""
+
+
 class RenderThreadResult:
     """Future-like handle for ``call``: completion event + value/exception."""
 
@@ -362,7 +347,9 @@ class ViewportRenderThread:
         self._session_id = str(session_id)
         self._name = f"ovrtx-render-{self._session_id}"
         self._join_timeout_seconds = float(join_timeout_seconds)
-        self._queue: queue.Queue[Any] = queue.Queue()
+        # One reserved cleanup command and one stop sentinel must remain
+        # admissible even when ordinary callers exhaust the finite budget.
+        self._queue: queue.Queue[Any] = queue.Queue(MAX_PENDING_RENDER_COMMANDS + 2)
         self._lock = threading.Lock()
         self._thread: threading.Thread | None = None
         self._status = STATUS_CREATED
@@ -378,6 +365,9 @@ class ViewportRenderThread:
         self._commands_failed = 0
         self._commands_rejected = 0
         self._pending_commands = 0
+        self._pending_high_water = 0
+        self._capacity_rejections = 0
+        self._cleanup_command_queued = False
         self._last_command_label = ""
         self._last_command_ms = 0.0
 
@@ -449,20 +439,29 @@ class ViewportRenderThread:
         )
         with self._lock:
             thread = self._thread
+            first_stop = not self._stop_requested
             self._stop_requested = True
             if thread is None:
                 if self._status == STATUS_CREATED:
                     self._status = STATUS_STOPPED
                     self._ended_time_ns = time.time_ns()
-            else:
-                self._queue.put(_STOP)
+            elif first_stop:
+                self._queue.put_nowait(_STOP)
         if thread is None:
             self._drain_pending("render thread was stopped before it started")
             return self._stop_outcome(joined=True, timeout=join_timeout)
         if thread is threading.current_thread():
             # A command asked its own thread to stop; the loop exits on the
             # sentinel. Joining here would deadlock.
-            return self._stop_outcome(joined=False, timeout=join_timeout)
+            return {
+                **self._stop_outcome(joined=False, timeout=join_timeout),
+                "join_deferred": True,
+            }
+        # The thread may wait on Blender's main thread, which cannot service it
+        # while joining here, or while it waits on this joiner (F12's
+        # render_init runs on the render job thread).
+        from .main_thread_waits import cancel_waits_of
+        cancel_waits_of(thread, "viewport render thread is stopping")
         thread.join(join_timeout)
         if thread.is_alive():
             with self._lock:
@@ -502,6 +501,9 @@ class ViewportRenderThread:
                 "commands_failed": self._commands_failed,
                 "commands_rejected": self._commands_rejected,
                 "pending_commands": self._pending_commands,
+                "pending_capacity": MAX_PENDING_RENDER_COMMANDS,
+                "pending_high_water": self._pending_high_water,
+                "capacity_rejections": self._capacity_rejections,
                 "last_command_label": self._last_command_label,
                 "last_command_ms": self._last_command_ms,
             }
@@ -522,13 +524,25 @@ class ViewportRenderThread:
                     f"render thread {self._name} rejected command"
                     f"{f' {label!r}' if label else ''}: {reason}"
                 )
+            cleanup = label == "session-teardown"
+            if ((cleanup and self._cleanup_command_queued)
+                    or (not cleanup and self._pending_commands >= MAX_PENDING_RENDER_COMMANDS)):
+                self._commands_rejected += 1
+                self._capacity_rejections += 1
+                raise RenderThreadRejectedError(
+                    f"render thread {self._name} command capacity exhausted"
+                )
+            self._queue.put_nowait(_Command(fn, result, str(label)))
+            self._cleanup_command_queued = self._cleanup_command_queued or cleanup
             self._commands_submitted += 1
             self._pending_commands += 1
+            self._pending_high_water = max(self._pending_high_water, self._pending_commands)
             # Enqueue under the lock so no command can land behind the stop
             # sentinel (stop() sets the flag and enqueues the sentinel while
             # holding the same lock).
-            self._queue.put(_Command(fn, result, str(label)))
 
+    @performance_profile.profiled_thread("viewport-render-thread")
+    @performance_profile.timed("render_thread.lifetime")
     def _run(self) -> None:
         with self._lock:
             self._thread_ident = threading.get_ident()
@@ -543,7 +557,11 @@ class ViewportRenderThread:
                     self._pending_commands -= 1
                 started_monotonic_ns = time.monotonic_ns()
                 try:
-                    value = command.fn()
+                    command_scope = command.label or "unlabeled"
+                    with performance_profile.timer(
+                        f"render_thread.command.{command_scope}"
+                    ):
+                        value = command.fn()
                 except BaseException as exc:
                     self._record_command(command, started_monotonic_ns, failed=True)
                     if command.result is not None:
@@ -775,6 +793,10 @@ class LatestViewRenderLoop:
         if controller_provider is None:
             controller_provider = lambda captured=controller: captured
         self._controller_provider = controller_provider
+        # The RNA-backed provider can become unreadable before __del__ asks
+        # this loop to stop. Cleanup retains the last resolved Python owner;
+        # rendering still requires a live provider and never uses this fallback.
+        self._last_controller = controller
         self._scheduler = scheduler
         self._owns_scheduler = bool(owns_scheduler)
         self._wake_hook_setter: Callable[[Any], None] | None = None
@@ -799,6 +821,8 @@ class LatestViewRenderLoop:
         # ensure/replacement.
         self._job_lock = threading.Lock()
         self._pending_jobs: list[_Command] = []
+        self._job_pending_high_water = 0
+        self._job_capacity_rejections = 0
         self._jobs_closed = False
         self._job_active = False
         self._job_count = 0
@@ -813,35 +837,78 @@ class LatestViewRenderLoop:
         self._snapshot_key: tuple[Any, ...] | None = None
         self._completed_samples = 0
         self._current_result: RenderResult | None = None
-        self._async_render_read_enabled = _async_render_read_enabled()
-        self._active_render_read: tuple[Any, Any] | None = None
-        self._deferred_snapshot: ViewSnapshot | None = None
-        self._queued_camera_successors: deque[_QueuedCameraSuccessor] = deque()
-        self._prefetched_camera_successor: _PrefetchedCameraSuccessor | None = None
-        self._pending_camera_successor_failure: (
-            _PendingCameraSuccessorFailure | None
-        ) = None
-        self._async_read_begin_count = 0
-        self._async_read_completion_count = 0
-        self._async_read_cancel_count = 0
-        self._async_read_cancel_failure_count = 0
-        self._async_read_poll_count = 0
-        self._async_read_pending_poll_count = 0
-        self._deferred_snapshot_count = 0
-        self._deferred_snapshot_replacement_count = 0
-        self._camera_successor_submission_count = 0
-        self._camera_successor_completion_count = 0
-        self._camera_successor_discard_count = 0
-        self._camera_successor_failure_count = 0
-        self._camera_successor_peak = 0
-        self._async_read_peak_active = 0
-        self._deferred_snapshot_peak = 0
-        self._synchronous_acquisition_count = 0
-        self._render_read_last_mode = "not_started"
         self._failed = False
-        self._render_recovery_attempted = False
-        self._render_recovery_wait_for_input = False
-        self._render_recovery_unavailable = False
+        # Read pipelining (performance-improvements Phase 03): depth 1 is
+        # the pre-existing fully synchronous path (no event loop created).
+        # Above that, samples are begun/polled through a private asyncio
+        # event loop this instance owns and drives only from this render
+        # thread — never a second OS thread.
+        self._pipeline_depth = max(1, int(os.environ.get(RENDER_PIPELINE_DEPTH_ENV, "1")))
+        # Default public-SDK timeline acquisition uses one asynchronous ticket.
+        # Explicit depth=1 retains the user's synchronous override. Idle
+        # multiframe overlap remains opt-in (historic depth livelock guard).
+        self._automatic_timeline_async = RENDER_PIPELINE_DEPTH_ENV not in os.environ
+        self._pending_samples: collections.deque[Any] = collections.deque()
+        # Keep the immutable submission snapshot with its exact async ticket.
+        # Same-key mailbox rewrites can advance self._snapshot while it is pending.
+        self._pending_sample_snapshots: dict[int, ViewSnapshot] = {}
+        self._pending_sample_contexts: dict[int, tuple[Any, Any]] = {}
+        self._pending_sample_update_marks: dict[int, dict[str, int]] = {}
+        self._resolved_sample_update_marks: dict[str, int] = {}
+        self._resolved_sample_context: tuple[Any, Any] | None = None
+        self._submitted_frame_count = 0
+        self._completed_frame_count = 0
+        self._cancelled_frame_count = 0
+        self._resolved_sample_snapshot: ViewSnapshot | None = None
+        # Set when a pipelined ticket resolves so the published frame's
+        # latency starts at the original sample submission, not at the later
+        # polling iteration that happened to observe completion.
+        self._resolved_sample_started_ns: int | None = None
+        self._pipeline_loop: asyncio.AbstractEventLoop | None = (
+            asyncio.new_event_loop() if self._pipeline_depth > 1 else None
+        )
+        self._pipeline_poll_budget_ns = int(
+            float(
+                os.environ.get(
+                    RENDER_PIPELINE_POLL_BUDGET_MS_ENV,
+                    str(DEFAULT_RENDER_PIPELINE_POLL_BUDGET_MS),
+                )
+            )
+            * 1_000_000.0
+        )
+        # n-03-09: during continuous camera navigation, every camera-value
+        # change resets _completed_samples to 0 (below), which disables
+        # pipelining for exactly one tick and then re-enables it the very
+        # next tick -- eagerly starting a new WriteWorldState+ticket that
+        # the *next* camera change cancels before it ever resolves. Measured
+        # live: 100% of pipelined attempts wasted during active navigation,
+        # doubling the worker's real write/render volume per published
+        # frame versus depth=1 (592 WriteWorldState calls for 148 published
+        # frames vs depth=1's 480 for 241). This cooldown skips starting a
+        # *new* pipelined ticket for a short window after a pending sample
+        # was actually cancelled (i.e., proven wasted), so continuous camera
+        # motion falls back to the synchronous path (matching depth=1) and
+        # pipelining only re-engages once the camera has been still for a
+        # bit -- when it can actually complete before the next reset.
+        self._pipeline_cooldown_ns = int(
+            float(
+                os.environ.get(
+                    RENDER_PIPELINE_CANCEL_COOLDOWN_MS_ENV,
+                    str(DEFAULT_RENDER_PIPELINE_CANCEL_COOLDOWN_MS),
+                )
+            )
+            * 1_000_000.0
+        )
+        self._pipeline_cancelled_at_monotonic_ns: int | None = None
+        # Public SDK camera navigation retains one exact predecessor until its
+        # read completes, rather than cancelling every ticket on each mouse move.
+        # Successors coalesce in one slot; scene/session changes bypass this path.
+        self._pipeline_warm_session: tuple[int, int] | None = None
+        self._deferred_camera_snapshot: ViewSnapshot | None = None
+        self._camera_deferred_at_ns = 0
+        self._camera_deferred_publication = 0
+        self._camera_deferral_count = 0
+        self._readback_prearm_count = 0
         self._camera_update_needed = False
         # Camera value live-honor probe state (task04-05). The probe is
         # per viewport render session (this loop's lifetime): it persists
@@ -872,10 +939,16 @@ class LatestViewRenderLoop:
         self._render_setting_rejection_count = 0
         self._presented_scheduler_revision = 0
         self._observed_applied_revision = 0
+        # Last applied_revision whose in-flight samples were already
+        # dropped and restarted. Distinct from ``_observed_applied_revision``,
+        # which only advances on FRAME publish — using that for cancel made
+        # depth>1 livelock after scene activation's note_applied_content().
+        self._sampling_applied_revision = 0
         self._observed_session_revision = int(
             getattr(self._controller, "_session_revision", 0) or 0
         )
         self._snapshot_changed_pending = False
+        self._timeline_transition_pending = False
         self._tick_should_request_redraw = False
         self._last_tick_result: RuntimeTickResult | None = None
         self._last_timeline_reset = False
@@ -907,6 +980,17 @@ class LatestViewRenderLoop:
         self._camera_update_count = 0
         self._publication_count = 0
         self._failure_count = 0
+        self._failure_attempts = 0
+        self._failure_permanent = False
+        self._failure_retry_at = 0.0
+        self._failure_input_pending = False
+        self._failure_edit_revision = 0
+        # A lost worker or fatal device error earns one retry without new
+        # input; it is used up until a frame completes again.
+        self._failure_worker_retry = False
+        self._worker_retry_used = False
+        self._worker_failure_retry_count = 0
+        self._idle_worker_exit_count = 0
         self._park_count = 0
         self._retry_wait_count = 0
         # Per-loop-iteration timing records (task02-09): appended only on
@@ -920,10 +1004,26 @@ class LatestViewRenderLoop:
         """Resolve the current controller; raise the retryable render error
         (not an ``AttributeError``) if teardown has cleared it."""
 
-        controller = self._controller_provider()
+        try:
+            controller = self._controller_provider()
+        except ReferenceError as exc:
+            if self._stop.is_set():
+                raise _RenderLoopStopped() from exc
+            raise RenderClientError("Viewport engine was released") from exc
         if controller is None:
+            if self._stop.is_set():
+                raise _RenderLoopStopped()
             raise RenderClientError("No active OVRTX session")
+        self._last_controller = controller
         return controller
+
+    def _cleanup_controller(self) -> Any:
+        """Resolve teardown handles even after the Blender RNA wrapper dies."""
+        try:
+            controller = self._controller_provider()
+        except ReferenceError:
+            controller = None
+        return controller if controller is not None else self._last_controller
 
     @property
     def _controller(self) -> Any:
@@ -956,7 +1056,7 @@ class LatestViewRenderLoop:
 
         self._stop.set()
         self._mailbox.wake()
-        wake_transport = getattr(self._controller, "_wake_serialized_transport", None)
+        wake_transport = getattr(self._cleanup_controller(), "_wake_serialized_transport", None)
         if callable(wake_transport):
             wake_transport()
 
@@ -988,12 +1088,17 @@ class LatestViewRenderLoop:
                     "latest-view render loop rejected job"
                     f"{f' {label!r}' if label else ''}: the loop is stopped"
                 )
+            if len(self._pending_jobs) >= MAX_PENDING_EXCLUSIVE_JOBS:
+                self._job_rejection_count += 1
+                self._job_capacity_rejections += 1
+                raise RenderThreadRejectedError("latest-view render loop job capacity exhausted")
             request_exclusive = getattr(
                 self._controller, "_request_exclusive_transport", None
             )
             if callable(request_exclusive):
                 request_exclusive()
             self._pending_jobs.append(_Command(fn, result, str(label)))
+            self._job_pending_high_water = max(self._job_pending_high_water, len(self._pending_jobs))
         # Wake a parked loop; the one-shot latch also covers a job landing
         # between the loop's timeout computation and its mailbox take.
         self._mailbox.wake()
@@ -1003,6 +1108,7 @@ class LatestViewRenderLoop:
         with self._job_lock:
             return bool(self._pending_jobs)
 
+    @performance_profile.timed("render_thread.final_jobs")
     def _run_pending_jobs(self) -> bool:
         """Run queued exclusive jobs in submission order (loop thread only).
 
@@ -1012,7 +1118,17 @@ class LatestViewRenderLoop:
         """
 
         ran_job = False
-        while True:
+        if self._has_pending_jobs():
+            self._cancel_pending_samples()
+            controller = self._active_controller()
+            cancel = getattr(controller, "cancel_pending_renders", None)
+            if callable(cancel):
+                cancel()
+            if not self._drain_render_cancellations():
+                return False
+        with self._job_lock:
+            batch_size = len(self._pending_jobs)
+        for _ in range(batch_size):
             with self._job_lock:
                 if not self._pending_jobs or self._stop.is_set():
                     return ran_job
@@ -1026,9 +1142,6 @@ class LatestViewRenderLoop:
                     self._controller, "_exclusive_transport", None
                 )
                 with transaction() if callable(transaction) else nullcontext():
-                    # An active viewport read belongs to the session and
-                    # presentation state that preceded this exclusive job.
-                    self._cancel_active_render_read()
                     try:
                         value = command.fn()
                     except BaseException as exc:
@@ -1040,14 +1153,28 @@ class LatestViewRenderLoop:
                         self._schedule_replacement_after_job()
                     if self._ensure_pending and not self._stop.is_set():
                         self._run_pending_ensure({}, transport_owned=True)
+            except BaseException as exc:
+                # Admission can fail after dequeue but before command.fn's
+                # handler. That job is no longer visible to exit rejection.
+                if not command.result.done():
+                    if isinstance(exc, _RenderLoopStopped):
+                        self._job_rejection_count += 1
+                        command.result._reject(RenderThreadRejectedError(
+                            "latest-view render loop stopped before job admission"
+                        ))
+                    else:
+                        self._job_failure_count += 1
+                        command.result._reject(exc)
+                raise
             finally:
                 release_exclusive = getattr(
-                    self._controller, "_release_exclusive_transport", None
+                    self._cleanup_controller(), "_release_exclusive_transport", None
                 )
                 if callable(release_exclusive):
                     release_exclusive()
                 with self._job_lock:
                     self._job_active = False
+        return ran_job
 
     def _schedule_replacement_after_job(self) -> None:
         """Re-ensure a viewport session suspended by an exclusive final job."""
@@ -1072,12 +1199,13 @@ class LatestViewRenderLoop:
             self._job_rejection_count += len(pending)
         for command in pending:
             release_exclusive = getattr(
-                self._controller, "_release_exclusive_transport", None
+                self._cleanup_controller(), "_release_exclusive_transport", None
             )
             if callable(release_exclusive):
                 release_exclusive()
             command.result._reject(RenderThreadRejectedError(reason))
 
+    @performance_profile.timed("render_thread.latest_view_loop")
     def run(self) -> None:
         """Consume the mailbox until stop; designed as a thread ``submit``."""
 
@@ -1088,21 +1216,20 @@ class LatestViewRenderLoop:
                 )
             self._running = True
         try:
-            # Everything from attachment onward sits inside the try so a
+            # Everything from adoption onward sits inside the try so a
             # thread-fatal setup failure still uninstalls the wake hook
             # and releases the running latch (the 02-01 contract fails
             # the thread; the loop instance must not lie about running).
-            startup_controller = self._active_controller()
-            attach = getattr(startup_controller, "_attach_presentation", None)
+            adopt = getattr(self._active_controller(), "adopt_owning_thread", None)
+            if callable(adopt):
+                adopt()
+            attach = getattr(self._controller, "_attach_presentation", None)
             if callable(attach):
                 attach(
                     id(self),
                     self._mailbox.wake,
                     self._restore_native_output_shape,
                 )
-            adopt = getattr(startup_controller, "adopt_owning_thread", None)
-            if callable(adopt):
-                adopt()
             hook_setter = (
                 getattr(self._scheduler, "set_edit_wake_hook", None)
                 if self._owns_scheduler
@@ -1112,37 +1239,7 @@ class LatestViewRenderLoop:
                 self._wake_hook_setter = hook_setter
                 self._wake_hook_setter(self._mailbox.wake)
             while not self._stop.is_set():
-                if self._pending_camera_successor_failure is not None:
-                    self._iterate_pending_camera_successor_failure()
-                    continue
-                if self._prefetched_camera_successor is not None:
-                    prefetched = self._prefetched_camera_successor
-                    if not self._queued_camera_successor_valid(
-                        prefetched.queued
-                    ):
-                        self._discard_prefetched_camera_successor(
-                            requeue_newest_snapshot=True
-                        )
-                        self._discard_queued_camera_successors(
-                            requeue_newest_snapshot=True
-                        )
-                        if self._pending_camera_successor_failure is not None:
-                            continue
-                    else:
-                        self._iterate_prefetched_camera_successor()
-                        continue
-                if self._queued_camera_successors:
-                    queued = self._queued_camera_successors[0]
-                    if not self._queued_camera_successor_valid(
-                        queued
-                    ):
-                        self._discard_queued_camera_successors(
-                            requeue_newest_snapshot=True
-                        )
-                    else:
-                        self._iterate_queued_camera_successor()
-                        continue
-                snapshot = self._take_next_snapshot()
+                snapshot = self._mailbox.take(self._take_timeout())
                 if self._stop.is_set():
                     break
                 # Exclusive jobs (task05-01) run here, between iterations:
@@ -1157,46 +1254,18 @@ class LatestViewRenderLoop:
                     if newest is not None:
                         snapshot = newest
                 restore_output_shape = self._restore_output_shape_needed.is_set()
-                snapshot_content_changed = False
+                if snapshot is None and self._deferred_camera_due():
+                    snapshot = self._deferred_camera_snapshot
                 if snapshot is not None:
-                    snapshot_content_changed = self._adopt_snapshot(snapshot)
+                    self._adopt_snapshot(snapshot)
                     if restore_output_shape:
                         # Preserve newest-wins input, then confirm the native
                         # size once more for the existing resize debounce.
                         self._mailbox.wake()
                 elif restore_output_shape and self._snapshot is not None:
                     self._restore_output_shape_needed.clear()
-                    snapshot_content_changed = self._adopt_snapshot(self._snapshot)
+                    self._adopt_snapshot(self._snapshot)
                 if self._request is None:
-                    continue
-                if self._render_recovery_unavailable:
-                    # A direct/lifecycle-less loop can adopt the newest view
-                    # for diagnostics, but has no authority to recreate its
-                    # retired controller. Preserve the originating failure.
-                    continue
-                if (
-                    snapshot is not None
-                    and not snapshot_content_changed
-                    and self._failed
-                    and self._render_recovery_wait_for_input
-                    and not restore_output_shape
-                    and not ran_jobs
-                    and not bool(
-                        getattr(
-                            self._scheduler,
-                            "has_pending_view_updates",
-                            False,
-                        )
-                        or getattr(
-                            self._scheduler,
-                            "has_pending_sim_updates",
-                            False,
-                        )
-                    )
-                ):
-                    # Failure publication can itself provoke a redraw and an
-                    # identical snapshot. Do not mistake that feedback for
-                    # user input and restart the failed session indefinitely.
                     continue
                 if snapshot is None and not self._work_due_without_new_snapshot():
                     # Woken without input (stale self-wake from the loop's
@@ -1205,32 +1274,22 @@ class LatestViewRenderLoop:
                     # no-op (or failure-retrying) iteration.
                     continue
                 self._iterate()
+        except _RenderLoopStopped:
+            # Stop can invalidate the provider between any two loop checks.
+            # Unwind to cleanup so queued teardown still runs on the RPC thread.
+            # Active ownership loss and unrelated render errors retain their
+            # existing failure handling; only confirmed stop emits this signal.
+            pass
         finally:
-            # A ticket is created, cancelled, and terminally drained only on
-            # this owning RPC thread. The runtime bounds that drain; on timeout
-            # it retains ownership and switches lifecycle cleanup to abort-only.
-            active_cancel_failed = False
-            try:
-                self._cancel_active_render_read()
-            except Exception:
-                # The runtime retains nonterminal ownership and marks cleanup
-                # abort-only; continue detaching so Blender teardown is bounded.
-                active_cancel_failed = True
-            prefetched = self._prefetched_camera_successor
-            if prefetched is not None and not active_cancel_failed:
-                self._release_prefetched_read_reservation(
-                    prefetched.queued.attribution.controller
-                )
-            self._prefetched_camera_successor = None
-            self._pending_camera_successor_failure = None
-            self._discard_queued_camera_successors(
-                requeue_newest_snapshot=False
-            )
             # Exclusive jobs never outlive the loop: reject queued futures
             # so an F12 job caught by a session stop resolves instead of
             # blocking its render job thread until the wait deadline.
             self._reject_pending_jobs("latest-view render loop exited")
-            detach = getattr(self._controller, "_detach_presentation", None)
+            self._cancel_pending_samples()
+            if self._pipeline_loop is not None:
+                self._pipeline_loop.close()
+                self._pipeline_loop = None
+            detach = getattr(self._cleanup_controller(), "_detach_presentation", None)
             if callable(detach):
                 detach(id(self))
             if self._owns_scheduler and self._wake_hook_setter is not None:
@@ -1252,26 +1311,13 @@ class LatestViewRenderLoop:
             with self._run_lock:
                 self._running = False
 
-    def _take_next_snapshot(self) -> ViewSnapshot | None:
-        """Return the deferred snapshot first, closing its mailbox race.
-
-        Async read polling consumes camera writes so Blender never waits on
-        native readback.  Only the newest consumed value is retained.  Before
-        adopting it, take the mailbox once more nonblocking so a write racing
-        read completion wins as well.
-        """
-
-        snapshot = self._deferred_snapshot
-        if snapshot is None:
-            return self._mailbox.take(self._take_timeout())
-        self._deferred_snapshot = None
-        newest = self._mailbox.take(0.0)
-        if newest is not None:
-            snapshot = newest
-        return snapshot
-
     def diagnostics(self) -> dict[str, Any]:
         snapshot = self._snapshot
+        # Session-end evidence outlives the engine's active controller provider.
+        # Read the retained owner without reopening an active rendering session.
+        controller = self._cleanup_controller()
+        shared = getattr(controller, "_has_shared_presentations", None)
+        shared_presentations = bool(callable(shared) and shared())
         return {
             "running": self._running,
             "stop_requested": self._stop.is_set(),
@@ -1296,6 +1342,17 @@ class LatestViewRenderLoop:
             "camera_probe_conclusions": self._camera_probe_conclusion_count,
             "camera_value_probe": self._camera_value_probe.diagnostics(),
             "publications": self._publication_count,
+            "distinct_frames_submitted": self._submitted_frame_count,
+            "distinct_frames_completed": self._completed_frame_count,
+            "distinct_frames_cancelled": self._cancelled_frame_count,
+            "render_queue_depth": max(len(self._pending_samples), int(getattr(controller, "pending_native_render_count", 0))),
+            "render_cancellation_fence": bool(getattr(controller, "has_pending_render_cancellations", False)),
+            "render_stage_fenced": self._stage_fenced() or bool(getattr(controller, "has_pending_render_cancellations", False)),
+            "timeline_acquisition_mode": ("sync_shared_presentations" if shared_presentations
+                else "async_stage_fenced" if self._stage_fenced()
+                else "sync_default_nonphysics" if self._pipeline_depth == 1 and self._automatic_timeline_async and not self._live_physics()
+                else "sync_explicit_depth_one" if self._pipeline_depth == 1 and not self._automatic_timeline_async
+                else "capability_and_warmup_gated"),
             "failures": self._failure_count,
             "parks": self._park_count,
             "retry_waits": self._retry_wait_count,
@@ -1304,6 +1361,9 @@ class LatestViewRenderLoop:
             "exclusive_job_rejections": self._job_rejection_count,
             "exclusive_job_active": self._job_active,
             "exclusive_jobs_pending": len(self._pending_jobs),
+            "exclusive_jobs_capacity": MAX_PENDING_EXCLUSIVE_JOBS,
+            "exclusive_jobs_high_water": self._job_pending_high_water,
+            "exclusive_jobs_capacity_rejections": self._job_capacity_rejections,
             "last_exclusive_job_label": self._last_job_label,
             "session_ensures": self._session_ensure_count,
             "session_replacements": self._session_replacement_count,
@@ -1321,63 +1381,14 @@ class LatestViewRenderLoop:
             "last_resync_reason": self._last_resync_reason,
             "resize_debounce_pending": self._resize_debounce_pending,
             "retry_blocked": bool(self._failed and not self._retry_allowed()),
+            "worker_failure_retries": self._worker_failure_retry_count,
+            "worker_failure_retry_pending": self._failure_worker_retry,
+            "idle_worker_exits": self._idle_worker_exit_count,
             "completed_samples": self._completed_samples,
+            "camera_deferrals": self._camera_deferral_count,
+            "readback_prearms": self._readback_prearm_count,
+            "camera_successor_pending": self._deferred_camera_snapshot is not None,
             "max_samples": int(snapshot.max_samples) if snapshot is not None else 0,
-            "render_pipeline": {
-                "async_enabled": self._async_render_read_enabled,
-                "active_read": self._active_render_read is not None,
-                "prefetched_camera_successor": (
-                    self._prefetched_camera_successor is not None
-                ),
-                "pending_camera_successor_failure": (
-                    self._pending_camera_successor_failure is not None
-                ),
-                "deferred_snapshot": self._deferred_snapshot is not None,
-                "queued_camera_successor": bool(
-                    self._queued_camera_successors
-                ),
-                "queued_camera_successor_count": len(
-                    self._queued_camera_successors
-                ),
-                "retirement_recovery_attempted": (
-                    self._render_recovery_attempted
-                ),
-                "retirement_recovery_wait_for_input": (
-                    self._render_recovery_wait_for_input
-                ),
-                "retirement_recovery_unavailable": (
-                    self._render_recovery_unavailable
-                ),
-                "async_read_begins": self._async_read_begin_count,
-                "async_read_completions": self._async_read_completion_count,
-                "async_read_cancels": self._async_read_cancel_count,
-                "async_read_cancel_failures": (
-                    self._async_read_cancel_failure_count
-                ),
-                "async_read_polls": self._async_read_poll_count,
-                "async_read_pending_polls": self._async_read_pending_poll_count,
-                "deferred_snapshots": self._deferred_snapshot_count,
-                "deferred_snapshot_replacements": (
-                    self._deferred_snapshot_replacement_count
-                ),
-                "camera_successor_submissions": (
-                    self._camera_successor_submission_count
-                ),
-                "camera_successor_completions": (
-                    self._camera_successor_completion_count
-                ),
-                "camera_successor_discards": (
-                    self._camera_successor_discard_count
-                ),
-                "camera_successor_failures": (
-                    self._camera_successor_failure_count
-                ),
-                "peak_queued_camera_successors": self._camera_successor_peak,
-                "peak_active_reads": self._async_read_peak_active,
-                "peak_deferred_snapshots": self._deferred_snapshot_peak,
-                "synchronous_acquisitions": self._synchronous_acquisition_count,
-                "last_mode": self._render_read_last_mode,
-            },
             "generation": self._generation,
             "last_timeline_reset": self._last_timeline_reset,
             "camera_controls_mode": self._camera_controls_mode,
@@ -1448,6 +1459,8 @@ class LatestViewRenderLoop:
     def _take_timeout(self) -> float | None:
         """Latest-view park policy: 0 while work is due, else cadence/park."""
 
+        if self._deferred_camera_snapshot is not None:
+            return 0.0
         if self._has_pending_jobs():
             # A queued exclusive job (task05-01) must run promptly even on
             # a fully-refined view. Defense-in-depth: the submitter's
@@ -1455,48 +1468,28 @@ class LatestViewRenderLoop:
             # policy should agree rather than rely on that latch.
             return 0.0
         if self._request is not None:
-            pending_runtime_updates = bool(
-                getattr(self._scheduler, "has_pending_view_updates", False)
-                or getattr(self._scheduler, "has_pending_sim_updates", False)
-            )
-            if self._failed and self._render_recovery_attempted:
-                if (
-                    self._render_recovery_wait_for_input
-                    and not pending_runtime_updates
-                ):
-                    # One automatic replacement already reproduced the
-                    # failure. Keep the invalid session fail-closed, but
-                    # require changed input/edit before another attempt.
-                    self._park_count += 1
-                    return None
-                # The first owner-driven replacement, and edit-driven retries
-                # after it, retain the established failed-view pacing.
-                self._retry_wait_count += 1
-                return self._failure_retry_backoff_seconds
             if self._controller_session_due():
                 return 0.0
-            if (
-                self._ensure_pending
-                and not self._ensure_failed
-                and not self._ensure_deferred
-            ):
-                # A split-render failure can taint an otherwise unchanged
-                # session. Its owner-driven replacement is recovery work, not
-                # a retry of the failed render, and must not park behind the
-                # generic failed-view policy.
-                return 0.0
             if self._failed:
-                if self._retry_allowed() and pending_runtime_updates:
+                if self._retry_allowed() and bool(
+                    self._failure_input_pending
+                    or self._failure_worker_retry
+                    or getattr(self._scheduler, "has_pending_view_updates", False)
+                    or getattr(self._scheduler, "has_pending_sim_updates", False)
+                ):
                     # Pending edits may fix the failure, but a tick that
                     # fails without draining them must not busy-loop at 0:
                     # pace retries by the backoff interval (task02-06).
                     self._retry_wait_count += 1
-                    return self._failure_retry_backoff_seconds
+                    return max(0.1, self._failure_retry_backoff_seconds,
+                               self._failure_retry_at - time.monotonic())
                 # A failed view parks until fresh input (snapshot write or
                 # edit wake) — or indefinitely once the auto-retry policy
                 # is exhausted (a session restart is the recovery path).
                 self._park_count += 1
                 return None
+            if getattr(self._controller, "has_pending_render_cancellations", False):
+                return 0.0
             if self._ensure_pending:
                 if self._ensure_deferred:
                     # Runtime services (re)starting: pace the retry by the
@@ -1524,33 +1517,59 @@ class LatestViewRenderLoop:
                 # and the next snapshot take.
                 return 0.0
         self._park_count += 1
+        if self._request is not None and not self._failed and self._worker_exit_state() is not None:
+            # Converged and idle: wake now and then to notice a worker that
+            # exited between requests.
+            return WORKER_EXIT_WATCH_SECONDS
         return None
+
+    def _worker_exit_state(self) -> bool | None:
+        """Whether the session's worker has exited; ``None`` if the controller cannot tell."""
+
+        try:
+            probe = getattr(self._controller, "worker_exited", None)
+        except (RenderClientError, _RenderLoopStopped):
+            return None
+        if not callable(probe):
+            return None
+        state = probe()
+        return None if state is None else bool(state)
+
+    def _idle_worker_exited(self) -> bool:
+        """Restart refinement when the idle view's worker has exited.
+
+        The next render request respawns the worker and replays the session
+        (``RuntimeSession`` recovery); if that fails, the failure gets the
+        one worker-failure retry.
+        """
+
+        if self._failed or self._request is None or not self._worker_exit_state():
+            return False
+        self._idle_worker_exit_count += 1
+        self._last_reset_reason = "worker_exited"
+        self._completed_samples = 0
+        self._current_result = None
+        self._cancel_pending_samples()
+        return True
 
     def _work_due_without_new_snapshot(self) -> bool:
         """Whether an input-less wake still has work: mirrors the park policy."""
 
-        pending_runtime_updates = bool(
-            getattr(self._scheduler, "has_pending_view_updates", False)
-            or getattr(self._scheduler, "has_pending_sim_updates", False)
-        )
-        if self._failed and self._render_recovery_attempted:
-            return (
-                not self._render_recovery_wait_for_input
-                or pending_runtime_updates
-            )
         if self._controller_session_due():
-            return True
-        if (
-            self._ensure_pending
-            and not self._ensure_failed
-            and not self._ensure_deferred
-        ):
             return True
         if self._failed:
             # Failed views retry on fresh input, or — paced by the retry
-            # backoff — while pending edits keep requesting work and the
-            # auto-retry policy still allows an attempt.
-            return self._retry_allowed() and pending_runtime_updates
+            # backoff — while pending edits keep requesting work (or once
+            # after a worker failure) and the auto-retry policy still allows
+            # an attempt.
+            return self._retry_allowed() and bool(
+                self._failure_input_pending
+                or self._failure_worker_retry
+                or getattr(self._scheduler, "has_pending_view_updates", False)
+                or getattr(self._scheduler, "has_pending_sim_updates", False)
+            )
+        if getattr(self._controller, "has_pending_render_cancellations", False):
+            return True
         if self._ensure_pending:
             return True
         if bool(getattr(self._scheduler, "has_pending_view_updates", False)):
@@ -1570,7 +1589,9 @@ class LatestViewRenderLoop:
             self._completed_samples, self._snapshot.max_samples
         ):
             return True
-        return self._tick_should_request_redraw
+        if self._tick_should_request_redraw:
+            return True
+        return self._idle_worker_exited()
 
     def _retry_allowed(self) -> bool:
         """Whether a failed state may attempt again.
@@ -1581,6 +1602,12 @@ class LatestViewRenderLoop:
         retry behavior.
         """
 
+        revision = int(getattr(self._scheduler, "edit_submission_revision", 0))
+        if revision != self._failure_edit_revision:
+            self._failure_attempts = 0
+            self._failure_edit_revision = revision
+        if self._failure_permanent or self._failure_attempts >= 3:
+            return False
         if not self._ensure_failed or self._lifecycle is None:
             return True
         return bool(self._lifecycle.retry_allowed())
@@ -1622,31 +1649,16 @@ class LatestViewRenderLoop:
             else nullcontext((False, False))
         )
 
-    @staticmethod
-    def _same_snapshot_content(first: ViewSnapshot, second: ViewSnapshot) -> bool:
-        """Compare input semantics while ignoring profiling-only timestamps."""
-
-        return _dataclass_replace(
-            first,
-            written_monotonic_ns=1,
-            timing_marks={},
-        ) == _dataclass_replace(
-            second,
-            written_monotonic_ns=1,
-            timing_marks={},
-        )
-
-    def _adopt_snapshot(self, snapshot: ViewSnapshot) -> bool:
+    def _adopt_snapshot(self, snapshot: ViewSnapshot) -> None:
+        if self._defer_camera_snapshot(snapshot):
+            return
+        self._deferred_camera_snapshot = None
         previous = self._snapshot
-        content_changed = previous is None or not self._same_snapshot_content(
-            previous,
-            snapshot,
-        )
         key = snapshot.key
-        key_changed = key != self._snapshot_key
-        if content_changed and not self._render_recovery_unavailable:
-            self._render_recovery_attempted = False
-            self._render_recovery_wait_for_input = False
+        key_changed = key != self._snapshot_key or (
+            previous is not None and
+            (previous.width, previous.height) != (snapshot.width, snapshot.height)
+        )
         self._snapshot = snapshot
         self._request = self._with_shared_output_shape(
             self._with_rtpt_digest_route(
@@ -1654,29 +1666,30 @@ class LatestViewRenderLoop:
             )
         )
         self._snapshots_taken += 1
+        if key_changed:
+            self._failure_attempts = 0
+        if self._failed:
+            self._failure_input_pending = True
         # Fresh input clears a failure latch when the retry policy allows
         # it: render failures always retry on a new snapshot (the per-draw
         # retry this mirrors); ensure failures follow
         # ``session_lifecycle.should_auto_retry``.
-        if (
-            self._failed
-            and not self._render_recovery_unavailable
-            and self._retry_allowed()
-            and (
-                content_changed
-                or not self._render_recovery_wait_for_input
-                or bool(
-                    getattr(self._scheduler, "has_pending_view_updates", False)
-                    or getattr(self._scheduler, "has_pending_sim_updates", False)
-                )
-            )
-        ):
+        if self._failed and self._retry_allowed() and time.monotonic() >= self._failure_retry_at:
             self._failed = False
         self._evaluate_replacement(snapshot)
+        if (previous is not None and
+                (previous.timeline_playing != snapshot.timeline_playing or
+                 snapshot.timeline_frame < previous.timeline_frame or
+                 snapshot.timeline_start != previous.timeline_start or
+                 snapshot.timeline_end != previous.timeline_end or
+                 snapshot.timeline_controls_enabled != previous.timeline_controls_enabled or
+                 snapshot.simulation_reset_token != previous.simulation_reset_token)):
+            self._timeline_transition_pending = True
+            self._cancel_pending_samples()
         if not key_changed:
-            # Same view identity (timeline/cursor fields may still differ
-            # and flow into the next tick request) — no refinement reset.
-            return content_changed
+            # Same camera identity; the next successful physics tick consumes
+            # any timeline ownership transition before resetting refinement.
+            return
         if previous is not None and render_requests.viewport_sampling_due(
             self._completed_samples, previous.max_samples
         ):
@@ -1685,10 +1698,71 @@ class LatestViewRenderLoop:
             camera_value_conversion.PROBE_INCONCLUSIVE_POSE_CHANGED
         )
         self._snapshot_key = key
-        self._reset_refinement()
+        self._completed_samples = 0
+        self._current_result = None
+        self._cancel_pending_samples()
         self._snapshot_changed_pending = True
         self._refresh_camera_state()
-        return content_changed
+
+    def _camera_read_can_continue(self) -> bool:
+        """Keep only an idle, single-presentation public SDK read alive."""
+        controller = self._active_controller()
+        shared = getattr(controller, "_has_shared_presentations", None)
+        return bool(
+            self._pipeline_depth > 1
+            and getattr(controller, "supports_camera_successor_deferral", False)
+            and self._pending_samples
+            and not self._failed
+            and not self._ensure_pending
+            and not self._restore_output_shape_needed.is_set()
+            and not self._controller_session_due()
+            and not self._scheduler_applied_due()
+            and not self._scheduler_presentation_due()
+            and not self._has_pending_jobs()
+            and not (callable(shared) and shared())
+            and not getattr(self._scheduler, "has_pending_view_updates", False)
+            and not getattr(self._scheduler, "has_pending_sim_updates", False)
+            and not self._tick_should_request_redraw
+        )
+
+    def _deferred_camera_due(self) -> bool:
+        return bool(self._deferred_camera_snapshot is not None and (
+            not self._camera_read_can_continue()
+            or self._publication_count > self._camera_deferred_publication
+            # Bound a stalled predecessor; latest input remains recoverable.
+            or time.perf_counter_ns() - self._camera_deferred_at_ns >= 250_000_000
+        ))
+
+    def _defer_camera_snapshot(self, candidate: ViewSnapshot) -> bool:
+        current = self._snapshot
+        if current is None or not self._camera_read_can_continue():
+            return False
+        if self._deferred_camera_due():
+            return False
+        # Timeline/physics, projection, quality, shape, output and identity
+        # changes require the established cancellation/replacement path.
+        # Authored viewports always expose timeline controls, including while
+        # paused. Playback is active work; unchanged paused controls are not.
+        # The full comparison below still rejects frame/range/reset changes.
+        if (candidate.timeline_playing
+                or current.camera_matrix is None or candidate.camera_matrix is None
+                or current.camera_matrix == candidate.camera_matrix):
+            return False
+        comparable = _dataclass_replace(candidate, camera_matrix=current.camera_matrix,
+            written_monotonic_ns=current.written_monotonic_ns,
+            timing_marks=current.timing_marks)
+        if comparable != current:
+            return False
+        request = self._with_shared_output_shape(self._with_rtpt_digest_route(
+            self._with_camera_value_route(self._request_for_snapshot(candidate))))
+        if _dataclass_replace(request, camera_matrix=self._request.camera_matrix) != self._request:
+            return False
+        if self._deferred_camera_snapshot is None:
+            self._camera_deferred_at_ns = time.perf_counter_ns()
+            self._camera_deferred_publication = self._publication_count
+        self._deferred_camera_snapshot = candidate
+        self._camera_deferral_count += 1
+        return True
 
     def _with_shared_output_shape(self, request: Any) -> Any:
         """Use one session shape while several panes borrow the controller."""
@@ -1734,10 +1808,11 @@ class LatestViewRenderLoop:
 
         route = self._camera_value_probe.value_route_classes()
         current = getattr(request, "camera_value_route_classes", None)
-        if current is None or tuple(current) == route:
+        if current is None:
             return request
         try:
-            return _dataclass_replace(request, camera_value_route_classes=route)
+            return _dataclass_replace(request, camera_value_route_classes=route,
+                                      output_size_value_route=True)
         except TypeError:
             return request
 
@@ -2138,9 +2213,21 @@ class LatestViewRenderLoop:
         self._ensure_pending = True
         self._pending_ensure_reason = reason
 
+    @performance_profile.timed("render_thread.iteration")
     def _iterate(self) -> None:
         """One tick + one acquisition + one publication (or failure state)."""
 
+        if not self._controller_session_due():
+            if self._failed and not self._retry_allowed():
+                return
+            if time.monotonic() < self._failure_retry_at:
+                self._failed = True
+                return
+        self._failure_input_pending = False
+        if self._failure_worker_retry:
+            self._failure_worker_retry = False
+            self._worker_retry_used = True
+            self._worker_failure_retry_count += 1
         self._iterations += 1
         snapshot = self._snapshot
         marks: dict[str, int] = dict(snapshot.timing_marks)
@@ -2164,7 +2251,12 @@ class LatestViewRenderLoop:
                 if session_changed:
                     self._observed_session_revision = session_revision
                     self._failed = False
-                    self._reset_refinement()
+                    self._failure_permanent = False
+                    self._failure_attempts = 0
+                    self._worker_retry_used = False
+                    self._completed_samples = 0
+                    self._current_result = None
+                    self._cancel_pending_samples()
                 shared_presentations = getattr(
                     self._controller, "_has_shared_presentations", None
                 )
@@ -2173,6 +2265,20 @@ class LatestViewRenderLoop:
                     and callable(shared_presentations)
                     and shared_presentations()
                 )
+                if self._stage_fenced() and (bind_presentation or self._shared_stage_presentations()):
+                    # A second viewport can take stage ownership between pump
+                    # iterations. Never publish that displaced submission.
+                    self._cancel_pending_samples()
+                if not self._stage_fenced() and self._pending_samples and (
+                        bind_presentation or self._scheduler_presentation_due()
+                        or self._scheduler_applied_due()
+                        or getattr(self._scheduler, "has_pending_view_updates", False)
+                        or getattr(self._scheduler, "has_pending_sim_updates", False)):
+                    # Idle refinement also owns native stage readers. An edit
+                    # may arrive without changing the camera snapshot key.
+                    self._cancel_pending_samples()
+                if not self._drain_render_cancellations():
+                    return
                 if bind_presentation:
                     self._refresh_camera_state()
                     replacement_reason = (
@@ -2199,128 +2305,138 @@ class LatestViewRenderLoop:
                             marks,
                         )
                         return
-                camera_update = self._pending_camera_update(
-                    presentation_changed=bind_presentation
-                )
-                new_camera_probe, changed_camera_values = (
-                    self._pending_camera_value_edits()
-                )
-                takeover_camera_probe, takeover_camera_values = (
-                    self._presentation_camera_values(
-                        presentation_changed=bind_presentation,
-                        allow_probe=new_camera_probe is None,
-                    )
-                )
-                if new_camera_probe is None:
-                    new_camera_probe = takeover_camera_probe
-                    probe_camera_values = takeover_camera_values
+                if self._stage_fenced():
+                    # Poll the exact submitted stage without consuming a newer
+                    # solver pose or applying edits until owned pixels exist.
+                    tick_result, submitted_request = self._pending_sample_contexts[id(self._pending_samples[0])]
+                    scheduler_revision = tick_result.presentation_revision
+                    applied_revision = tick_result.applied_revision
                 else:
-                    probe_camera_values = changed_camera_values
-                camera_values = tuple(
-                    {
-                        (value.prim_path, value.attribute): value
-                        for value in takeover_camera_values + changed_camera_values
-                    }.values()
-                )
-                tick_result = self._apply_runtime_tick(
-                    marks,
-                    camera_update=camera_update,
-                    camera_values=camera_values,
-                )
-                for value in changed_camera_values:
-                    self._applied_camera_values[value.attribute] = value.value
-                self._camera_value_update_count += len(changed_camera_values)
-                if camera_update is not None:
-                    self._camera_update_needed = False
-                    self._camera_update_count += 1
-                    camera_changed = True
-                self._last_tick_result = tick_result
-                self._tick_should_request_redraw = bool(
-                    tick_result.should_request_redraw
-                )
-                self._last_timeline_reset = bool(tick_result.timeline_reset)
-                self._generation = int(tick_result.generation)
-                if self._tick_result_sink is not None:
-                    # Pose mirroring must be handed off even if acquisition fails.
-                    self._tick_result_sink(tick_result, self._request)
-                scheduler_revision = tick_result.presentation_revision
-                applied_revision = tick_result.applied_revision
-                applied_revision_changed = (
-                    applied_revision > self._observed_applied_revision
-                )
-                if new_camera_probe is not None:
-                    if probe_camera_values and not tick_result.values_written:
-                        new_camera_probe["applied_revision"] = applied_revision
-                        self._pending_camera_probe = new_camera_probe
-                    else:
-                        self._camera_value_probe.record_inconclusive(
-                            str(new_camera_probe["probe_class"]),
-                            camera_value_conversion.PROBE_INCONCLUSIVE_CONCURRENT_EDITS,
+                    camera_update = self._pending_camera_update(
+                        presentation_changed=bind_presentation
+                    )
+                    new_camera_probe, changed_camera_values = (
+                        self._pending_camera_value_edits()
+                    )
+                    takeover_camera_probe, takeover_camera_values = (
+                        self._presentation_camera_values(
+                            presentation_changed=bind_presentation,
+                            allow_probe=new_camera_probe is None,
                         )
-                elif (
-                    self._pending_camera_probe is not None
-                    and applied_revision_changed
-                    and applied_revision
-                    > int(self._pending_camera_probe["applied_revision"])
-                ):
-                    self._cancel_camera_probe(
-                        camera_value_conversion.PROBE_INCONCLUSIVE_CONCURRENT_EDITS
                     )
-                if self._pending_camera_probe is not None and (
-                    tick_result.should_request_redraw
-                    or bool(getattr(self._snapshot, "timeline_playing", False))
-                ):
-                    self._cancel_camera_probe(
-                        camera_value_conversion.PROBE_INCONCLUSIVE_PHYSICS_ACTIVE
+                    if new_camera_probe is None:
+                        new_camera_probe = takeover_camera_probe
+                        probe_camera_values = takeover_camera_values
+                    else:
+                        probe_camera_values = changed_camera_values
+                    camera_values = tuple(
+                        {
+                            (value.prim_path, value.attribute): value
+                            for value in takeover_camera_values + changed_camera_values
+                        }.values()
                     )
-                refinement_reset = (
-                    tick_result.should_reset_refinement
-                    or applied_revision_changed
-                    or bool(changed_camera_values)
-                    or takeover_camera_probe is not None
-                    or session_changed
-                )
-                if refinement_reset:
-                    self._reset_refinement()
-                acquired = self._acquire_sample(marks)
-        except _RenderReadCancelled:
-            return
+                    tick_result = self._apply_runtime_tick(
+                        marks,
+                        camera_update=camera_update,
+                        camera_values=camera_values,
+                    )
+                    for value in changed_camera_values:
+                        self._applied_camera_values[value.attribute] = value.value
+                    self._camera_value_update_count += len(changed_camera_values)
+                    if camera_update is not None:
+                        self._camera_update_needed = False
+                        self._camera_update_count += 1
+                        camera_changed = True
+                    self._last_tick_result = tick_result
+                    self._tick_should_request_redraw = bool(
+                        tick_result.should_request_redraw
+                    )
+                    self._last_timeline_reset = bool(tick_result.timeline_reset)
+                    tick_ready = tick_result.status not in {RuntimeTickStatus.FAILED, RuntimeTickStatus.BUSY}
+                    generation_changed = tick_ready and int(tick_result.generation) != self._generation
+                    if tick_ready:
+                        self._generation = int(tick_result.generation)
+                    scheduler_revision = tick_result.presentation_revision
+                    applied_revision = tick_result.applied_revision
+                    applied_revision_changed = (
+                        applied_revision > self._observed_applied_revision
+                    )
+                    applied_revision_unacked = (
+                        applied_revision > self._sampling_applied_revision
+                    )
+                    if new_camera_probe is not None:
+                        if probe_camera_values and not tick_result.values_written:
+                            new_camera_probe["applied_revision"] = applied_revision
+                            self._pending_camera_probe = new_camera_probe
+                        else:
+                            self._camera_value_probe.record_inconclusive(
+                                str(new_camera_probe["probe_class"]),
+                                camera_value_conversion.PROBE_INCONCLUSIVE_CONCURRENT_EDITS,
+                            )
+                    elif (
+                        self._pending_camera_probe is not None
+                        and applied_revision_changed
+                        and applied_revision
+                        > int(self._pending_camera_probe["applied_revision"])
+                    ):
+                        self._cancel_camera_probe(
+                            camera_value_conversion.PROBE_INCONCLUSIVE_CONCURRENT_EDITS
+                        )
+                    if self._pending_camera_probe is not None and (
+                        tick_result.should_request_redraw
+                        or bool(getattr(self._snapshot, "timeline_playing", False))
+                    ):
+                        self._cancel_camera_probe(
+                            camera_value_conversion.PROBE_INCONCLUSIVE_PHYSICS_ACTIVE
+                        )
+                    timeline_transition = self._timeline_transition_pending and tick_result.enabled and tick_ready
+                    if timeline_transition or (not tick_result.enabled
+                            and tick_result.status == RuntimeTickStatus.NOT_ENABLED):
+                        self._timeline_transition_pending = False
+                    refinement_reset = (
+                        generation_changed or timeline_transition
+                        or tick_result.should_reset_refinement
+                        or applied_revision_unacked
+                        or bool(changed_camera_values)
+                        or takeover_camera_probe is not None
+                        or session_changed
+                    )
+                    if refinement_reset:
+                        self._completed_samples = 0
+                        self._current_result = None
+                        self._cancel_pending_samples()
+                        self._sampling_applied_revision = max(
+                            self._sampling_applied_revision, applied_revision
+                        )
+                acquired = None
+                try:
+                    acquired = self._acquire_sample(marks)
+                except (RenderClientError, SharedStageCompositionError):
+                    self._cancel_pending_samples()
+                    raise
+                finally:
+                    if self._tick_result_sink is not None and (acquired is not None or not self._pending_samples):
+                        # A synchronous physics render can take hundreds of
+                        # milliseconds. Do not move Blender's overlays to the
+                        # next solver pose while the old image is still held.
+                        # Keep the failure handoff so restoration/locks remain
+                        # independent of successful image presentation.
+                        handoff_tick, handoff_request = (
+                            self._resolved_sample_context if acquired is not None
+                            and self._resolved_sample_context is not None
+                            else (tick_result, self._request))
+                        self._tick_result_sink(handoff_tick, handoff_request)
         except (RenderClientError, SharedStageCompositionError) as exc:
             self._publish_failure(exc, marks)
             return
-        self._finish_iteration(
-            attribution=_RenderAttribution(
-                controller=self._active_controller(),
-                session_revision=session_revision,
-                snapshot=snapshot,
-                request=self._request,
-                tick_result=tick_result,
-                generation=int(tick_result.generation),
-                presentation_revision=scheduler_revision,
-                applied_revision=applied_revision,
-            ),
-            marks=marks,
-            acquired=acquired,
-            camera_changed=camera_changed,
-            refinement_reset=refinement_reset,
-        )
-
-    def _finish_iteration(
-        self,
-        *,
-        attribution: _RenderAttribution,
-        marks: dict[str, int],
-        acquired: RenderResult | None,
-        camera_changed: bool,
-        refinement_reset: bool,
-    ) -> None:
-        """Publish one terminal acquisition using its frozen attribution."""
-
-        snapshot = attribution.snapshot
-        tick_result = attribution.tick_result
-        scheduler_revision = attribution.presentation_revision
-        applied_revision = attribution.applied_revision
-        result = acquired or self._current_result
+        if acquired is not None and self._resolved_sample_context is not None:
+            tick_result, submitted_request = self._resolved_sample_context
+            snapshot = self._resolved_sample_snapshot or snapshot
+            scheduler_revision = tick_result.presentation_revision
+            applied_revision = tick_result.applied_revision
+        else:
+            submitted_request = self._request
+        result = acquired or (None if tick_result.enabled else self._current_result)
         snapshot_changed = self._snapshot_changed_pending
         self._snapshot_changed_pending = False
         reset_reason = ""
@@ -2355,10 +2471,10 @@ class LatestViewRenderLoop:
             # lifts the resync presentation with content that is still
             # valid for the reused session.
             validate_session = getattr(
-                attribution.controller, "_validated_session", None
+                self._controller, "_validated_session", None
             )
             with (
-                validate_session(attribution.session_revision)
+                validate_session(session_revision)
                 if callable(validate_session)
                 else nullcontext(True)
             ) as session_current:
@@ -2369,9 +2485,13 @@ class LatestViewRenderLoop:
                             render_result=result,
                             snapshot_key=snapshot.key,
                             completed_samples=self._completed_samples,
-                            generation=attribution.generation,
+                            generation=tick_result.generation,
                             presentation_revision=scheduler_revision,
                             applied_revision=applied_revision,
+                            runtime_tick_result=tick_result,
+                            runtime_tick_timeline=(submitted_request.timeline_controls_enabled,
+                                submitted_request.timeline_frame, submitted_request.timeline_start),
+                            runtime_tick_playing=submitted_request.timeline_playing,
                             timing_marks=marks,
                         )
                     )
@@ -2418,10 +2538,12 @@ class LatestViewRenderLoop:
         # A completed iteration clears a failure latch even without fresh
         # input (the paced pending-edit retry path recovers here).
         self._failed = False
-        self._render_recovery_attempted = False
-        self._render_recovery_wait_for_input = False
-        self._render_recovery_unavailable = False
+        self._failure_attempts = 0
+        self._failure_retry_at = 0.0
+        self._failure_worker_retry = False
+        self._worker_retry_used = False
 
+    @performance_profile.timed("render_thread.session_ensure")
     def _run_pending_ensure(
         self, marks: dict[str, int], *, transport_owned: bool = False
     ) -> bool:
@@ -2457,7 +2579,12 @@ class LatestViewRenderLoop:
             ) as (_, exclusive_pending):
                 if exclusive_pending:
                     return False
-                self._cancel_active_render_read()
+                self._cancel_pending_samples()
+                cancel = getattr(self._active_controller(), "cancel_pending_renders", None)
+                if callable(cancel):
+                    cancel()
+                if not self._drain_render_cancellations():
+                    return False
                 self._request = self._with_shared_output_shape(self._request)
                 if replacing:
                     self._publish_resyncing(reason, marks)
@@ -2509,7 +2636,9 @@ class LatestViewRenderLoop:
         # The new session restarts acquisition and re-applies the
         # newest camera pose — a replaced session lost the live pose value
         # update that was applied to its predecessor.
-        self._reset_refinement()
+        self._completed_samples = 0
+        self._current_result = None
+        self._cancel_pending_samples()
         self._snapshot_changed_pending = True
         self._refresh_camera_state()
         # The ensured session composed the request's current camera values
@@ -2621,6 +2750,7 @@ class LatestViewRenderLoop:
                 )
         return probe_context, tuple(values)
 
+    @performance_profile.timed("render_thread.runtime_tick")
     def _apply_runtime_tick(
         self,
         marks: dict[str, int],
@@ -2629,12 +2759,19 @@ class LatestViewRenderLoop:
         camera_values: tuple[OvrtxAttributeValue, ...] = (),
     ) -> RuntimeTickResult:
         marks["runtime_update_started_monotonic_ns"] = time.perf_counter_ns()
-        tick_request = render_requests.tick(
-            self._request,
-            now_ns=time.monotonic_ns(),
-        )
+        tick_request = render_requests.tick(self._request, now_ns=time.monotonic_ns())
+        prefetch = getattr(self._scheduler, "prefetch_kinematic", None)
+        if callable(prefetch):
+            # Before any runtime lock: this may wait for Blender's main thread.
+            prefetch(tick_request)
 
         def _tick_and_bind_camera(ovrtx_updates, project_complete_pose):
+            validator = getattr(ovrtx_updates, "validate_camera_update", None)
+            if callable(validator):
+                try:
+                    validator(camera_update, camera_values)
+                except Exception as exc:
+                    raise ValueUpdateValidationError(f"Viewport camera update validation failed: {exc}") from exc
             result = self._scheduler.tick_viewport(
                 tick_request,
                 ovrtx_updates=ovrtx_updates,
@@ -2673,935 +2810,293 @@ class LatestViewRenderLoop:
         # the same tick genuinely failed.
         if result.render_setting_rejected:
             self._handle_render_setting_rejection(result.render_setting_rejected)
-        if result.status == RuntimeTickStatus.FAILED:
-            raise RenderClientError(
+        if result.status == RuntimeTickStatus.FAILED and not result.physics_only_failure:
+            errors = []
+            recovery_required = False
+            retryable = True
+            pending = [result.update]
+            while pending:
+                entry = pending.pop()
+                if not isinstance(entry, Mapping):
+                    continue
+                if entry.get("error"):
+                    errors.append(str(entry["error"]))
+                recovery_required |= bool(entry.get("recovery_required"))
+                retryable &= bool(entry.get("retryable", True))
+                pending.extend(entry.get("updates", ()))
+                pending.extend(value for value in entry.values() if isinstance(value, Mapping))
+            error_type = (ValueUpdateRecoveryRequired if recovery_required else
+                          RenderClientError if retryable else ValueUpdateValidationError)
+            raise error_type(
                 "Shared-stage composition failed: "
                 f"{result.skipped_reason or result.status.value}"
+                + (": " + "; ".join(dict.fromkeys(errors)) if errors else "")
             )
         return result
 
+    @performance_profile.timed("render_thread.acquire_sample")
     def _acquire_sample(self, marks: dict[str, int]) -> RenderResult | None:
+        self._resolved_sample_snapshot = None
+        self._resolved_sample_context = None
+        # Cold start (completed_samples==0) stays on the synchronous
+        # render() path: that retries DEADLINE_EXCEEDED across a 600s
+        # budget, which is what first-frame populate+shader cook needs.
+        # Pipelining a second WriteWorldState during that window starts
+        # the first async ticket's 30s gRPC clock before cook finishes.
+        use_pipeline = (
+            (self._pipeline_depth > 1 or
+             (self._automatic_timeline_async and self._live_physics() and
+              getattr(self._active_controller(), "supports_camera_successor_deferral", False)))
+            and (self._pipeline_warm_session == (
+                id(self._active_controller()), self._controller_session_revision())
+                if getattr(self._active_controller(), "supports_camera_successor_deferral", False)
+                else self._completed_samples > 0)
+            and not (self._moving_stage() and self._shared_stage_presentations())
+            and self._active_controller().supports_pipelined_render()
+            and not self._pipeline_in_cancel_cooldown()
+        )
+        if use_pipeline:
+            if self._pipeline_loop is None:
+                self._pipeline_loop = asyncio.new_event_loop()
+            return self._acquire_sample_pipelined(marks)
+        return self._acquire_sample_sync(marks)
+
+    def _shared_stage_presentations(self) -> bool:
+        shared = getattr(self._controller, "_has_shared_presentations", None)
+        return bool(callable(shared) and shared())
+
+    def _live_physics(self) -> bool:
+        return bool(self._last_tick_result is not None and self._last_tick_result.enabled)
+
+    def _moving_stage(self) -> bool:
+        return bool(self._snapshot.timeline_playing or
+                    (self._last_tick_result is not None and self._last_tick_result.enabled))
+
+    def _stage_fenced(self) -> bool:
+        if not self._pending_samples:
+            return False
+        pending = self._pending_samples[0]
+        tick, request = self._pending_sample_contexts.get(id(pending), (None, None))
+        submitted = self._pending_sample_snapshots.get(id(pending))
+        return bool((tick is not None and tick.enabled) or
+                    (submitted is not None and submitted.timeline_playing))
+
+    def _pipeline_in_cancel_cooldown(self) -> bool:
+        cancelled_at = self._pipeline_cancelled_at_monotonic_ns
+        if cancelled_at is None:
+            return False
+        return time.perf_counter_ns() - cancelled_at < self._pipeline_cooldown_ns
+
+    @performance_profile.timed("render_thread.acquire_sample.sync")
+    def _acquire_sample_sync(self, marks: dict[str, int]) -> RenderResult | None:
         if not render_requests.viewport_sampling_due(
             self._completed_samples, self._snapshot.max_samples
         ):
             return None
         marks["render_call_started_monotonic_ns"] = time.perf_counter_ns()
         controller = self._active_controller()
-        async_controller = self._async_render_controller(controller)
-        if async_controller is None:
-            result = controller.render(self._request, additional_samples=1)
-            self._synchronous_acquisition_count += 1
-            self._render_read_last_mode = "synchronous"
-        else:
-            result = self._acquire_async_sample(async_controller, marks)
+        session_revision = self._controller_session_revision()
+        self._submitted_frame_count += 1
+        result = controller.render(
+            self._request, additional_samples=1
+        )
         marks["render_call_completed_monotonic_ns"] = time.perf_counter_ns()
         self._completed_samples += 1
+        self._completed_frame_count += 1
         self._current_result = _dataclass_replace(
             result,
             completed_samples=self._completed_samples,
         )
+        self._pipeline_warm_session = (
+            id(controller), session_revision)
         return self._current_result
 
-    def _async_render_controller(self, controller: Any) -> Any | None:
-        """Return a controller exposing the complete opt-in async boundary."""
+    @performance_profile.timed("render_thread.acquire_sample.pipelined")
+    def _acquire_sample_pipelined(self, marks: dict[str, int]) -> RenderResult | None:
+        """Depth>1 path (performance-improvements Phase 03): a sample's
+        write can go out while a prior sample's read ticket is still
+        outstanding, driven through a private asyncio loop confined to this
+        render thread (see the module docstring)."""
 
-        if not self._async_render_read_enabled:
-            return None
-        shared = getattr(controller, "_has_shared_presentations", None)
-        if callable(shared) and shared():
-            # A different pane can request controller-wide exclusivity while
-            # this pane owns the transport lease. Until that demand is exposed
-            # as a shared cancellation predicate, use the proven sync path.
-            return None
-        supports = getattr(controller, "_supports_async_render_read", None)
-        if callable(supports) and not supports():
-            return None
-        if not all(
-            callable(getattr(controller, name, None))
-            for name in (
-                "submit_render_sample",
-                "begin_render_sample_read",
-                "poll_render_sample_read",
-                "cancel_render_sample_read",
+        assert self._pipeline_loop is not None
+        poll_started_ns = time.perf_counter_ns()
+        marks["render_call_started_monotonic_ns"] = poll_started_ns
+        self._resolved_sample_started_ns = None
+        acquired = self._pipeline_loop.run_until_complete(self._pipeline_tick_async(marks))
+        if acquired is not None:
+            # Update spans belong to this ticket, not the completion pass.
+            for key in ("runtime_update_started_monotonic_ns", "runtime_update_completed_monotonic_ns"):
+                marks.pop(key, None)
+            marks.update(self._resolved_sample_update_marks)
+            # Any owns the actual async submission boundary.
+            # Keep the polling boundary as a compatibility fallback for test
+            # doubles or older clients that do not expose that timestamp.
+            marks["render_call_started_monotonic_ns"] = (
+                self._resolved_sample_started_ns or poll_started_ns
             )
-        ):
-            return None
-        return controller
+            marks["render_call_completed_monotonic_ns"] = time.perf_counter_ns()
+            if self._resolved_sample_snapshot is not None:
+                marks["snapshot_written_monotonic_ns"] = self._resolved_sample_snapshot.written_monotonic_ns
+                # Redraw request belongs to that submission, not a later draw.
+                marks.pop("redraw_requested_monotonic_ns", None)
+                redraw_ns = self._resolved_sample_snapshot.timing_marks.get("redraw_requested_monotonic_ns")
+                if redraw_ns:
+                    marks["redraw_requested_monotonic_ns"] = redraw_ns
+        return acquired
 
-    def _acquire_async_sample(
-        self,
-        controller: Any,
-        marks: dict[str, int],
-    ) -> RenderResult:
-        """Poll one native read while retaining only the newest Blender input."""
-
-        submission = controller.submit_render_sample(self._request)
-        return self._complete_async_submission(
-            controller,
-            submission,
-            failure_marks=marks,
-        )
-
-    def _complete_async_submission(
-        self,
-        controller: Any,
-        submission: Any,
-        *,
-        failure_marks: dict[str, int],
-        prefetched: _PrefetchedCameraSuccessor | None = None,
-    ) -> RenderResult:
-        """Begin/poll one exact-time submission and fill the bounded FIFO."""
-
-        if prefetched is None:
-            try:
-                # Native read begin starts the bridge fetch/copy immediately;
-                # put already-deferred camera steps ahead of that transfer so
-                # readback cannot starve render submission.
-                self._try_queue_camera_successor(controller)
-                ticket = controller.begin_render_sample_read(submission)
-            except Exception:
-                self._discard_render_submission(controller, submission)
-                # Successors prepared before read begin are still locally
-                # owned if begin fails. Preserve only their newest view for
-                # the retirement/replacement path.
-                self._discard_queued_camera_successors(
-                    requeue_newest_snapshot=True
-                )
-                raise
-            self._set_active_render_read(controller, ticket)
-        else:
-            ticket = prefetched.ticket
-            if (
-                self._prefetched_camera_successor is not prefetched
-                or self._active_render_read != (controller, ticket)
-                or prefetched.queued.submission is not submission
-            ):
-                raise RenderClientError(
-                    "OVRTX prefetched camera successor ownership changed"
-                )
-        try:
-            # Close the narrow mailbox race across native read begin. If the
-            # pre-begin attempt already consumed the deferred input or filled
-            # the bounded FIFO this is a cheap no-op.
-            self._try_queue_camera_successor(controller)
-            while True:
-                if (
-                    self._stop.is_set()
-                    or self._has_pending_jobs()
-                    or self._controller_exclusive_pending(controller)
+    async def _pipeline_tick_async(self, marks: dict[str, int] | None = None) -> RenderResult | None:
+        acquired: RenderResult | None = None
+        if self._pending_samples:
+            oldest = self._pending_samples[0]
+            polled = await self._poll_pending_async(oldest)
+            # n-03-08: a ticket that resolves between outer-loop passes still
+            # costs a whole extra _iterate() pass to notice (n-03-07 measured
+            # ~40 such passes per published frame). Keep polling within a
+            # short bounded budget instead of returning after one check, so
+            # one outer pass usually suffices. self._pending_samples is only
+            # ever mutated from this render thread, so it is safe to keep
+            # referencing ``oldest`` across these awaits.
+            if polled is None:
+                deadline_ns = time.perf_counter_ns() + self._pipeline_poll_budget_ns
+                while (
+                    polled is None
+                    and not self._stop.is_set()
+                    and time.perf_counter_ns() < deadline_ns
                 ):
-                    self._cancel_active_render_read()
-                    raise _RenderReadCancelled()
-                self._async_read_poll_count += 1
-                result = controller.poll_render_sample_read(ticket)
-                if result is not None:
-                    if prefetched is not None:
-                        if self._prefetched_camera_successor is not prefetched:
-                            raise RenderClientError(
-                                "OVRTX prefetched camera successor terminalized "
-                                "without ownership"
-                            )
-                    self._active_render_read = None
-                    if prefetched is not None:
-                        self._prefetched_camera_successor = None
-                        self._release_prefetched_read_reservation(controller)
-                    self._async_read_completion_count += 1
-                    # Close the callback/mailbox race before attribution is
-                    # finalized; this input is adopted only next iteration.
-                    newest = self._mailbox.take(0.0)
-                    if newest is not None:
-                        self._defer_snapshot(newest)
-                    # Pre-arm the FIFO head before returning this result to
-                    # publication. Its transfer and any replenishing camera
-                    # submission therefore overlap predecessor presentation.
-                    self._prefetch_next_camera_successor(
-                        controller,
-                        failure_marks=failure_marks,
+                    # Native completion releases the GIL while waiting. Keep the
+                    # bounded owner-thread budget so camera/stop updates remain
+                    # responsive; older clients retain the nonblocking fallback.
+                    self._wait_pending_native(
+                        oldest, max(0.0, (deadline_ns - time.perf_counter_ns()) / 1_000_000.0)
                     )
-                    return result
-                self._async_read_pending_poll_count += 1
-                newest = self._mailbox.take(0.001)
-                if newest is not None:
-                    self._defer_snapshot(newest)
-                self._try_queue_camera_successor(controller)
-        except _RenderReadCancelled:
-            raise
-        except BaseException:
-            try:
-                self._cancel_active_render_read()
-            except Exception:
-                pass
-            raise
-
-    def _set_active_render_read(self, controller: Any, ticket: Any) -> None:
-        if self._active_render_read is not None:
-            raise RenderClientError(
-                "OVRTX attempted to begin a second active render read"
-            )
-        self._active_render_read = (controller, ticket)
-        self._async_read_begin_count += 1
-        self._async_read_peak_active = max(self._async_read_peak_active, 1)
-        self._render_read_last_mode = "async"
-
-    @staticmethod
-    def _controller_exclusive_pending(controller: Any) -> bool:
-        pending = getattr(controller, "_has_pending_exclusive_transport", None)
-        return bool(pending()) if callable(pending) else False
-
-    def _prefetch_next_camera_successor(
-        self,
-        controller: Any,
-        *,
-        failure_marks: dict[str, int],
-    ) -> bool:
-        """Begin the FIFO head, then replenish its freed unstarted slot."""
-
-        if (
-            self._active_render_read is not None
-            or self._prefetched_camera_successor is not None
-            or self._pending_camera_successor_failure is not None
-        ):
-            raise RenderClientError(
-                "OVRTX camera successor prefetch ownership was not empty"
-            )
-
-        # A camera arriving in the terminal poll/mailbox race has not yet
-        # acquired a prepared slot. Submit it first so it can still be armed
-        # before the predecessor publication.
-        if not self._queued_camera_successors:
-            try:
-                self._try_queue_camera_successor(controller)
-            except Exception as exc:
-                self._pending_camera_successor_failure = (
-                    _PendingCameraSuccessorFailure(
-                        queued=None,
-                        marks=dict(failure_marks),
-                        error=exc,
-                    )
-                )
-                return False
-        if not self._queued_camera_successors:
-            return False
-
-        queued = self._queued_camera_successors[0]
-        if (
-            queued.attribution.controller is not controller
-            or not self._queued_camera_successor_valid(queued)
-        ):
-            self._discard_queued_camera_successors(
-                requeue_newest_snapshot=True
-            )
-            return False
-        popped = self._queued_camera_successors.popleft()
-        if popped is not queued:
-            raise RenderClientError(
-                "OVRTX camera successor FIFO ownership changed during prefetch"
-            )
-
-        reserve = getattr(controller, "_reserve_prefetched_render_read", None)
-        if not callable(reserve) or not reserve(id(self)):
-            # A second presentation attach or global exclusive request won the
-            # gate race. No native read has begun: restore the FIFO head and
-            # release every unstarted submission, preserving only the newest
-            # Blender view for the serialized/shared fallback path.
-            self._queued_camera_successors.appendleft(queued)
-            self._discard_queued_camera_successors(
-                requeue_newest_snapshot=True
-            )
-            return False
-
-        try:
-            ticket = controller.begin_render_sample_read(queued.submission)
-        except Exception as exc:
-            self._release_prefetched_read_reservation(controller)
-            self._discard_render_submission(controller, queued.submission)
-            self._discard_queued_camera_successors(
-                requeue_newest_snapshot=True
-            )
-            self._pending_camera_successor_failure = (
-                _PendingCameraSuccessorFailure(
-                    queued=queued,
-                    marks=queued.marks,
-                    error=exc,
-                )
-            )
-            return False
-
-        self._set_active_render_read(controller, ticket)
-        prefetched = _PrefetchedCameraSuccessor(queued=queued, ticket=ticket)
-        self._prefetched_camera_successor = prefetched
-        try:
-            # B now owns the sole active ticket. The queue has one newly free
-            # unstarted slot, so a genuinely newer D can render behind C while
-            # B transfers and A has not yet published.
-            self._try_queue_camera_successor(controller)
-        except Exception as exc:
-            try:
-                self._cancel_active_render_read()
-            except Exception:
-                # A retirement-required failure transfers nonterminal native
-                # ownership to the controller's abort-only teardown. Keep the
-                # local record for _publish_failure to make one final bounded
-                # cancellation attempt before it clears that ownership.
-                pass
-            self._discard_queued_camera_successors(
-                requeue_newest_snapshot=True
-            )
-            self._pending_camera_successor_failure = (
-                _PendingCameraSuccessorFailure(
-                    queued=queued,
-                    marks=queued.marks,
-                    error=exc,
-                )
-            )
-            return False
-        return True
-
-    @staticmethod
-    def _pure_camera_successor(
-        current: ViewSnapshot,
-        candidate: ViewSnapshot,
-    ) -> bool:
-        """Whether ``candidate`` differs only by a usable camera transform."""
-
-        return bool(
-            current.camera_matrix is not None
-            and candidate.camera_matrix is not None
-            and current.camera_matrix != candidate.camera_matrix
-            and current.camera_prim_path == candidate.camera_prim_path
-            and current.camera_projection == candidate.camera_projection
-            and current.min_samples == candidate.min_samples
-            and current.max_samples == candidate.max_samples
-            and current.selected_sensor_paths == candidate.selected_sensor_paths
-            and current.render_var == candidate.render_var
-            and current.width == candidate.width
-            and current.height == candidate.height
-            and current.timeline_controls_enabled
-            == candidate.timeline_controls_enabled
-            and current.timeline_playing == candidate.timeline_playing
-            and current.timeline_frame == candidate.timeline_frame
-            and current.timeline_start == candidate.timeline_start
-            and current.timeline_end == candidate.timeline_end
-            and current.simulation_reset_token == candidate.simulation_reset_token
-        )
-
-    @staticmethod
-    def _tick_allows_camera_successor(
-        tick_result: RuntimeTickResult | None,
-    ) -> bool:
-        """Whether the predecessor tick left a camera-only continuation."""
-
-        return bool(
-            tick_result is not None
-            and tick_result.status
-            in {RuntimeTickStatus.NOT_ENABLED, RuntimeTickStatus.NOOP}
-            and not tick_result.timeline_reset
-            and not tick_result.stage_changed
-            and not tick_result.values_written
-            and not tick_result.should_reset_refinement
-            and not tick_result.should_request_redraw
-            and not tick_result.physics_pose_set
-            and tick_result.complete_pose_projected is None
-            and tick_result.render_setting_rejected is None
-        )
-
-    def _try_queue_camera_successor(self, controller: Any) -> bool:
-        """Append one genuinely newer camera to the bounded submission FIFO."""
-
-        candidate = self._deferred_snapshot
-        queued_tail = (
-            self._queued_camera_successors[-1]
-            if self._queued_camera_successors
-            else None
-        )
-        prefetched = self._prefetched_camera_successor
-        if queued_tail is not None:
-            predecessor = queued_tail.attribution
-            current = predecessor.snapshot
-            current_request = predecessor.request
-            frozen_tick = predecessor.tick_result
-            predecessor_controller = predecessor.controller
-            predecessor_session_revision = predecessor.session_revision
-        elif prefetched is not None:
-            predecessor = prefetched.queued.attribution
-            current = predecessor.snapshot
-            current_request = predecessor.request
-            frozen_tick = predecessor.tick_result
-            predecessor_controller = predecessor.controller
-            predecessor_session_revision = predecessor.session_revision
-        else:
-            current = self._snapshot
-            current_request = self._request
-            frozen_tick = self._last_tick_result
-            predecessor_controller = controller
-            predecessor_session_revision = int(
-                getattr(controller, "_session_revision", 0) or 0
-            )
-        prepare = getattr(
-            controller,
-            "submit_render_sample_after_transforms",
-            None,
-        )
-        shared = getattr(controller, "_has_shared_presentations", None)
-        try:
-            active_controller = self._active_controller()
-        except RenderClientError:
-            return False
-        if (
-            candidate is None
-            or current is None
-            or current_request is None
-            or len(self._queued_camera_successors)
-            >= _CAMERA_SUCCESSOR_QUEUE_CAPACITY
-            or not self._pure_camera_successor(current, candidate)
-            or candidate.written_monotonic_ns
-            <= current.written_monotonic_ns
-            or candidate.timeline_controls_enabled
-            or candidate.timeline_playing
-            or not self._tick_allows_camera_successor(frozen_tick)
-            or self._tick_should_request_redraw
-            or self._failed
-            or self._ensure_pending
-            or self._resync_recovery_pending
-            or self._resize_debounce_pending
-            or self._restore_output_shape_needed.is_set()
-            or self._pending_camera_probe is not None
-            or self._has_pending_jobs()
-            or self._controller_exclusive_pending(controller)
-            or self._stop.is_set()
-            or active_controller is not controller
-            or predecessor_controller is not controller
-            or (callable(shared) and shared())
-            or not callable(prepare)
-            or bool(getattr(self._scheduler, "has_pending_view_updates", False))
-            or bool(getattr(self._scheduler, "has_pending_sim_updates", False))
-            or not usd_paths.known_usd_path(candidate.camera_prim_path)
-        ):
-            return False
-
-        session_revision = int(
-            getattr(controller, "_session_revision", 0) or 0
-        )
-        presentation_revision = self._scheduler_presentation_revision()
-        applied_revision = self._scheduler_applied_revision()
-        if (
-            session_revision != predecessor_session_revision
-            or presentation_revision != frozen_tick.presentation_revision
-            or applied_revision != frozen_tick.applied_revision
-        ):
-            return False
-
-        request = self._with_shared_output_shape(
-            self._with_rtpt_digest_route(
-                self._with_camera_value_route(
-                    self._request_for_snapshot(candidate)
-                )
-            )
-        )
-        try:
-            expected_request = _dataclass_replace(
-                current_request,
-                camera_matrix=candidate.camera_matrix,
-            )
-        except TypeError:
-            return False
-        if request != expected_request:
-            return False
-        replacement_reason = (
-            self._lifecycle.replacement_reason
-            if self._lifecycle is not None
-            else getattr(controller, "would_replace", None)
-        )
-        try:
-            if callable(replacement_reason) and replacement_reason(request):
-                return False
-        except (RenderClientError, SharedStageCompositionError):
-            return False
-
-        marks = dict(candidate.timing_marks)
-        marks["snapshot_written_monotonic_ns"] = candidate.written_monotonic_ns
-        camera_update = OvrtxTransformValue(
-            prim_path=candidate.camera_prim_path,
-            matrix=[list(row) for row in candidate.camera_matrix],
-        )
-        # Eligibility ends here. Once the camera write begins, an ambiguous
-        # failure cannot be downgraded to "not eligible": retrying the same
-        # exact-time write is a WorldState write conflict, and discarding a
-        # local submission would not roll the renderer back.
-        self._deferred_snapshot = None
-        try:
-            marks["runtime_update_started_monotonic_ns"] = time.perf_counter_ns()
-            marks["render_call_started_monotonic_ns"] = time.perf_counter_ns()
-            prepared = prepare(
-                request,
-                (camera_update,),
-                expected_session_revision=session_revision,
-            )
-            marks["runtime_update_completed_monotonic_ns"] = (
-                time.perf_counter_ns()
-            )
-            if int(prepared.session_revision) != session_revision:
-                raise RenderClientError(
-                    "OVRTX camera successor was prepared for another session"
-                )
-            submission = prepared.submission
-            update_result = prepared.update_result
-        except OvrtxSessionRetirementRequiredError as exc:
-            # The ambiguous session will be retired after the predecessor read
-            # is cancelled. Preserve the view that triggered the mutation so
-            # the replacement session renders it even if Blender emits no
-            # further camera callback; a newer mailbox value still wins.
-            self._deferred_snapshot = candidate
-            self._note_camera_successor_failure(exc)
-            raise
-        except (RenderClientError, SharedStageCompositionError) as exc:
-            self._note_camera_successor_failure(exc)
-            raise
-        except Exception as exc:
-            wrapped = RenderClientError(
-                f"OVRTX camera successor preparation failed: {exc}"
-            )
-            self._note_camera_successor_failure(wrapped)
-            raise wrapped from exc
-
-        tick_result = RuntimeTickResult(
-            status=RuntimeTickStatus.NOOP,
-            enabled=bool(frozen_tick.enabled),
-            generation=int(frozen_tick.generation),
-            presentation_revision=presentation_revision,
-            applied_revision=applied_revision,
-            update={
-                "camera_successor": dict(
-                    getattr(update_result, "diagnostics", {}) or {}
-                )
-            },
-        )
-
-        self._camera_update_count += 1
-        self._queued_camera_successors.append(
-            _QueuedCameraSuccessor(
-                attribution=_RenderAttribution(
-                    controller=controller,
-                    session_revision=session_revision,
-                    snapshot=candidate,
-                    request=request,
-                    tick_result=tick_result,
-                    generation=int(tick_result.generation),
-                    presentation_revision=presentation_revision,
-                    applied_revision=applied_revision,
-                ),
-                submission=submission,
-                marks=marks,
-            ),
-        )
-        self._camera_successor_submission_count += 1
-        self._camera_successor_peak = max(
-            self._camera_successor_peak,
-            len(self._queued_camera_successors),
-        )
-        return True
-
-    def _discard_queued_camera_successors(
-        self,
-        *,
-        requeue_newest_snapshot: bool,
-    ) -> bool:
-        if not self._queued_camera_successors:
-            return False
-        queued = tuple(self._queued_camera_successors)
-        self._queued_camera_successors.clear()
-        for item in queued:
-            self._discard_render_submission(
-                item.attribution.controller,
-                item.submission,
-            )
-            self._camera_successor_discard_count += 1
-        if requeue_newest_snapshot:
-            self._requeue_snapshot_if_newer(queued[-1].attribution.snapshot)
-        return True
-
-    def _requeue_snapshot_if_newer(self, snapshot: ViewSnapshot) -> None:
-        deferred = self._deferred_snapshot
-        if (
-            deferred is None
-            or snapshot.written_monotonic_ns > deferred.written_monotonic_ns
-        ):
-            self._deferred_snapshot = snapshot
-
-    def _discard_prefetched_camera_successor(
-        self,
-        *,
-        requeue_newest_snapshot: bool,
-    ) -> bool:
-        """Cancel the armed FIFO head without treating it as unstarted."""
-
-        prefetched = self._prefetched_camera_successor
-        if prefetched is None:
-            return False
-        try:
-            self._cancel_active_render_read()
-        except Exception as exc:
-            if self._pending_camera_successor_failure is None:
-                self._pending_camera_successor_failure = (
-                    _PendingCameraSuccessorFailure(
-                        queued=prefetched.queued,
-                        marks=prefetched.queued.marks,
-                        error=exc,
-                    )
-                )
-            return False
-        if requeue_newest_snapshot:
-            self._requeue_snapshot_if_newer(
-                prefetched.queued.attribution.snapshot
-            )
-        return True
-
-    def _queued_camera_successor_valid(
-        self,
-        queued: _QueuedCameraSuccessor,
-    ) -> bool:
-        """Revalidate a prepared frame before claiming or presenting it."""
-
-        attribution = queued.attribution
-        controller = attribution.controller
-        shared = getattr(controller, "_has_shared_presentations", None)
-        try:
-            active_controller = self._active_controller()
-        except RenderClientError:
-            return False
-        if (
-            self._stop.is_set()
-            or self._has_pending_jobs()
-            or self._controller_exclusive_pending(controller)
-            or self._failed
-            or self._ensure_pending
-            or self._resync_recovery_pending
-            or self._resize_debounce_pending
-            or self._restore_output_shape_needed.is_set()
-            or self._pending_camera_probe is not None
-            or active_controller is not controller
-            or int(getattr(controller, "_session_revision", 0) or 0)
-            != attribution.session_revision
-            or (callable(shared) and shared())
-            or bool(getattr(self._scheduler, "has_pending_view_updates", False))
-            or bool(getattr(self._scheduler, "has_pending_sim_updates", False))
-            or self._scheduler_presentation_revision()
-            != attribution.presentation_revision
-            or self._scheduler_applied_revision() != attribution.applied_revision
-        ):
-            return False
-        # The routed request was proven reusable before submission. With the
-        # same controller/session revision and immutable request attribution,
-        # rebuilding its composition here would be redundant hot-path work.
-        return True
-
-    def _activate_queued_camera_successor(
-        self,
-        queued: _QueuedCameraSuccessor,
-    ) -> None:
-        attribution = queued.attribution
-        previous = self._snapshot
-        if previous is not None and render_requests.viewport_sampling_due(
-            self._completed_samples,
-            previous.max_samples,
-        ):
-            self._snapshots_superseded += 1
-        self._cancel_camera_probe(
-            camera_value_conversion.PROBE_INCONCLUSIVE_POSE_CHANGED
-        )
-        self._snapshot = attribution.snapshot
-        self._request = attribution.request
-        self._snapshot_key = attribution.snapshot.key
-        self._snapshots_taken += 1
-        self._last_snapshot_size = (
-            int(attribution.snapshot.width),
-            int(attribution.snapshot.height),
-        )
-        self._completed_samples = 0
-        self._current_result = None
-        self._snapshot_changed_pending = True
-        self._camera_update_needed = False
-        self._last_tick_result = attribution.tick_result
-        self._tick_should_request_redraw = bool(
-            attribution.tick_result.should_request_redraw
-        )
-        self._last_timeline_reset = bool(attribution.tick_result.timeline_reset)
-        self._generation = attribution.generation
-
-    def _iterate_queued_camera_successor(self) -> None:
-        """Read and publish the oldest prepared successor in exact FIFO order."""
-
-        if not self._queued_camera_successors:
-            return
-        queued = self._queued_camera_successors[0]
-        attribution = queued.attribution
-        self._iterations += 1
-        try:
-            with self._serialized_viewport_iteration() as (
-                _presentation_changed,
-                exclusive_pending,
-            ):
-                if exclusive_pending:
-                    self._discard_queued_camera_successors(
-                        requeue_newest_snapshot=True
-                    )
-                    return
-                if not self._queued_camera_successor_valid(queued):
-                    self._discard_queued_camera_successors(
-                        requeue_newest_snapshot=True
-                    )
-                    return
-                popped = self._queued_camera_successors.popleft()
-                if popped is not queued:
-                    raise RenderClientError(
-                        "OVRTX camera successor FIFO ownership changed"
-                    )
-                self._activate_queued_camera_successor(queued)
-                acquired = self._complete_async_submission(
-                    attribution.controller,
-                    queued.submission,
-                    failure_marks=queued.marks,
-                )
-                queued.marks["render_call_completed_monotonic_ns"] = (
-                    time.perf_counter_ns()
-                )
-                self._completed_samples = 1
+                    await asyncio.sleep(0)
+                    polled = await self._poll_pending_async(oldest)
+            if polled is not None:
+                self._pending_samples.popleft()
+                self._resolved_sample_snapshot = self._pending_sample_snapshots.pop(id(oldest))
+                self._resolved_sample_context = self._pending_sample_contexts.pop(id(oldest))
+                self._resolved_sample_update_marks = self._pending_sample_update_marks.pop(id(oldest), {})
+                self._completed_frame_count += 1
+                native_started_ns = int(getattr(oldest, "native_started_ns", 0) or 0)
+                self._resolved_sample_started_ns = native_started_ns or None
+                self._completed_samples += 1
                 self._current_result = _dataclass_replace(
-                    acquired,
-                    completed_samples=1,
+                    polled,
+                    completed_samples=self._completed_samples,
                 )
                 acquired = self._current_result
-        except _RenderReadCancelled:
-            return
-        except (RenderClientError, SharedStageCompositionError) as exc:
-            self._note_camera_successor_failure(exc)
-            self._publish_failure(exc, queued.marks)
-            return
-
-        self._camera_successor_completion_count += 1
-        self._finish_iteration(
-            attribution=attribution,
-            marks=queued.marks,
-            acquired=acquired,
-            camera_changed=True,
-            refinement_reset=True,
-        )
-
-    def _iterate_prefetched_camera_successor(self) -> None:
-        """Consume the already-armed FIFO head without beginning another read."""
-
-        prefetched = self._prefetched_camera_successor
-        if prefetched is None:
-            return
-        queued = prefetched.queued
-        attribution = queued.attribution
-        self._iterations += 1
-        try:
-            with self._serialized_viewport_iteration() as (
-                _presentation_changed,
-                exclusive_pending,
-            ):
-                if exclusive_pending:
-                    self._discard_prefetched_camera_successor(
-                        requeue_newest_snapshot=True
-                    )
-                    self._discard_queued_camera_successors(
-                        requeue_newest_snapshot=True
-                    )
-                    return
-                if not self._queued_camera_successor_valid(queued):
-                    self._discard_prefetched_camera_successor(
-                        requeue_newest_snapshot=True
-                    )
-                    self._discard_queued_camera_successors(
-                        requeue_newest_snapshot=True
-                    )
-                    return
-                self._activate_queued_camera_successor(queued)
-                acquired = self._complete_async_submission(
-                    attribution.controller,
-                    queued.submission,
-                    failure_marks=queued.marks,
-                    prefetched=prefetched,
-                )
-                queued.marks["render_call_completed_monotonic_ns"] = (
-                    time.perf_counter_ns()
-                )
-                self._completed_samples = 1
-                self._current_result = _dataclass_replace(
-                    acquired,
-                    completed_samples=1,
-                )
-                acquired = self._current_result
-        except _RenderReadCancelled:
-            return
-        except (RenderClientError, SharedStageCompositionError) as exc:
-            self._note_camera_successor_failure(exc)
-            self._publish_failure(exc, queued.marks)
-            return
-
-        self._camera_successor_completion_count += 1
-        self._finish_iteration(
-            attribution=attribution,
-            marks=queued.marks,
-            acquired=acquired,
-            camera_changed=True,
-            refinement_reset=True,
-        )
-
-    def _iterate_pending_camera_successor_failure(self) -> None:
-        """Publish an armed-successor failure after its predecessor frame."""
-
-        pending = self._pending_camera_successor_failure
-        if pending is None:
-            return
-        self._pending_camera_successor_failure = None
-        self._iterations += 1
-        # The failure happened while the predecessor owned a serialized
-        # viewport transaction. Re-enter that same boundary before changing
-        # attribution or retiring the session; an already-pending exclusive
-        # job grants this caller the lock, so cleanup still precedes the job.
-        with self._serialized_viewport_iteration():
-            if pending.queued is not None:
-                self._activate_queued_camera_successor(pending.queued)
-            self._note_camera_successor_failure(pending.error)
-            self._publish_failure(pending.error, pending.marks)
-
-    def _reset_refinement(self) -> None:
-        """Reset local accumulation for the newly adopted view."""
-
-        self._completed_samples = 0
-        self._current_result = None
-
-    def _discard_render_submission(self, controller: Any, submission: Any) -> None:
-        discard = getattr(controller, "discard_render_sample", None)
-        if not callable(discard):
-            return
-        try:
-            discard(submission)
-        except Exception:
-            # Begin may already have claimed the one-shot submission, or a
-            # replacement may have retired its session. Cleanup must not mask
-            # the original outcome.
-            pass
-
-    def _note_camera_successor_failure(self, exc: BaseException) -> None:
-        """Count one successor failure across nested prepare/read owners."""
-
-        marker = "_ovrtx_camera_successor_failure_counted"
-        if bool(getattr(exc, marker, False)):
-            return
-        self._camera_successor_failure_count += 1
-        try:
-            setattr(exc, marker, True)
-        except Exception:
-            # Built-in exception subclasses normally own a dict; retain the
-            # counter even if an external exception type forbids attributes.
-            pass
-
-    def _defer_snapshot(self, snapshot: ViewSnapshot) -> None:
-        if self._deferred_snapshot is not None:
-            self._deferred_snapshot_replacement_count += 1
-        self._deferred_snapshot = snapshot
-        self._deferred_snapshot_count += 1
-        self._deferred_snapshot_peak = max(self._deferred_snapshot_peak, 1)
-
-    def _cancel_active_render_read(self) -> bool:
-        active = self._active_render_read
-        if active is None:
-            return False
-        controller, ticket = active
-        try:
-            controller.cancel_render_sample_read(ticket)
-        except Exception:
-            self._async_read_cancel_failure_count += 1
-            raise
-        self._active_render_read = None
-        prefetched = self._prefetched_camera_successor
+        in_flight_or_done = self._completed_samples + len(self._pending_samples)
         if (
-            prefetched is not None
-            and prefetched.queued.attribution.controller is controller
-            and prefetched.ticket is ticket
+            len(self._pending_samples) < self._pipeline_depth
+            and render_requests.viewport_sampling_due(
+                in_flight_or_done, self._snapshot.max_samples
+            )
+            and not self._pipeline_in_cancel_cooldown()
+            and self._deferred_camera_snapshot is None
+            and not (self._moving_stage() and (self._pending_samples or acquired is not None))
         ):
-            self._prefetched_camera_successor = None
-            self._release_prefetched_read_reservation(controller)
-        self._async_read_cancel_count += 1
-        return True
+            snapshot = self._snapshot
+            pending = self._active_controller().begin_render(self._request)
+            self._pending_sample_snapshots[id(pending)] = snapshot
+            self._pending_sample_contexts[id(pending)] = (self._last_tick_result, self._request)
+            self._pending_sample_update_marks[id(pending)] = {
+                key: value for key, value in (marks or {}).items()
+                if key in ("runtime_update_started_monotonic_ns", "runtime_update_completed_monotonic_ns")
+            }
+            self._submitted_frame_count += 1
+            self._pending_samples.append(pending)
+        return acquired
 
-    def _release_prefetched_read_reservation(self, controller: Any) -> bool:
-        release = getattr(controller, "_release_prefetched_render_read", None)
-        return bool(release(id(self))) if callable(release) else False
+    @staticmethod
+    def _wait_pending_native(pending: Any, timeout_ms: float) -> None:
+        resolved = getattr(pending, "resolved_frames", {})
+        for path, ticket in getattr(pending, "tickets", {}).items():
+            if path not in resolved:
+                wait = getattr(ticket, "wait", None)
+                if callable(wait):
+                    wait(min(1000.0, timeout_ms))
+                return
+
+    async def _poll_pending_async(self, pending: Any) -> RenderResult | None:
+        # ``poll_render`` -> ``ReadWorldStateTicket.poll()`` is guaranteed
+        # non-blocking (a mutex-protected flag check, never a wait); the
+        # ``await`` point is what makes this idiomatically asyncio and
+        # leaves room for a genuinely async transport later.
+        await asyncio.sleep(0)
+        controller = self._active_controller()
+        if getattr(controller, "supports_camera_successor_deferral", False):
+            return controller.poll_render(pending, before_copy=self._prearm_refinement_before_copy)
+        return controller.poll_render(pending)
+
+    def _prearm_refinement_before_copy(self) -> None:
+        """Queue one native refinement while predecessor SHM is copied.
+
+        The public worker has already packed the predecessor into owned CUDA
+        storage. begin_render schedules native work but never publishes SHM;
+        the sole predecessor transfer therefore retains its ACK hold.
+        """
+        if (self._stop.is_set() or self._deferred_camera_snapshot is not None
+                or not self._camera_read_can_continue()
+                or self._moving_stage()
+                or len(self._pending_samples) >= self._pipeline_depth
+                or not render_requests.viewport_sampling_due(
+                    self._completed_samples + len(self._pending_samples),
+                    self._snapshot.max_samples)):
+            return
+        snapshot = self._snapshot
+        pending = self._active_controller().begin_render(self._request)
+        self._pending_sample_snapshots[id(pending)] = snapshot
+        self._pending_sample_contexts[id(pending)] = (self._last_tick_result, self._request)
+        self._pending_sample_update_marks[id(pending)] = {}
+        self._submitted_frame_count += 1
+        self._pending_samples.append(pending)
+        self._readback_prearm_count += 1
+
+    def _drain_render_cancellations(self) -> bool:
+        drain = getattr(self._active_controller(), "drain_render_cancellations", None)
+        return bool(drain()) if callable(drain) else True
+
+    def _cancel_pending_samples(self) -> None:
+        """Obsolete in-flight images; the client retains native cancellation
+        fences until completion (bounded polling before stage work) — called wherever a
+        session change already resets ``_completed_samples``/
+        ``_current_result``, and on loop teardown, so no stale ticket
+        outlives a session replacement."""
+
+        if not self._pending_samples:
+            return
+        self._pipeline_cancelled_at_monotonic_ns = time.perf_counter_ns()
+        pending_samples, self._pending_samples = self._pending_samples, collections.deque()
+        self._pending_sample_snapshots.clear()
+        self._pending_sample_contexts.clear()
+        self._pending_sample_update_marks.clear()
+        self._cancelled_frame_count += len(pending_samples)
+        for pending in pending_samples:
+            for ticket in getattr(pending, "tickets", {}).values():
+                cancel = getattr(ticket, "cancel", None)
+                if callable(cancel):
+                    try:
+                        cancel()
+                    except Exception:
+                        pass
 
     def _publish_failure(self, exc: BaseException, marks: dict[str, int]) -> None:
-        try:
-            self._cancel_active_render_read()
-        except Exception:
-            pass
-        if isinstance(exc, OvrtxSessionRetirementRequiredError):
-            active = self._active_render_read
-            if active is not None and active[0] is exc.controller:
-                # Poll/cancel failures transfer any nonterminal native
-                # ownership to the controller's abort-only retirement path.
-                # Do not let a stale loop ticket block the replacement ensure.
-                self._active_render_read = None
-                prefetched = self._prefetched_camera_successor
-                if (
-                    prefetched is not None
-                    and prefetched.queued.attribution.controller is exc.controller
-                ):
-                    self._prefetched_camera_successor = None
-                    self._release_prefetched_read_reservation(exc.controller)
-        self._discard_queued_camera_successors(
-            requeue_newest_snapshot=True
-        )
-        retirement_detail = ""
-        if isinstance(exc, OvrtxSessionRetirementRequiredError):
-            try:
-                retire = getattr(exc.controller, "retire_render_session", None)
-                retirement_status = (
-                    str(
-                        retire(
-                            expected_session_revision=exc.session_revision,
-                        )
-                    )
-                    if callable(retire)
-                    else "unsupported"
-                )
-            except Exception as retirement_exc:
-                retirement_status = "failed"
-                retirement_detail = (
-                    "; session retirement failed: "
-                    f"{type(retirement_exc).__name__}: {retirement_exc}"
-                )
-            if self._lifecycle is not None and not self._stop.is_set():
-                # A failed first retirement remains recoverable: ensure sees
-                # the controller's invalid-revision marker, refuses reuse, and
-                # retries teardown under the normal lifecycle backoff policy.
-                self._ensure_pending = True
-                self._pending_ensure_reason = "render_operation_failed"
-                if self._render_recovery_attempted:
-                    self._render_recovery_wait_for_input = True
-                else:
-                    self._render_recovery_attempted = True
-                    self._render_recovery_wait_for_input = False
-            elif self._lifecycle is None:
-                # Direct/test loops have no mechanism to recreate a retired
-                # controller. Preserve the originating failure and fail closed
-                # instead of immediately retrying an inactive session.
-                self._render_recovery_attempted = True
-                self._render_recovery_wait_for_input = True
-                self._render_recovery_unavailable = True
-            if (
-                retirement_status
-                not in {"stopped", "not_found", "superseded"}
-                and not retirement_detail
-            ):
-                retirement_detail = (
-                    f"; session retirement status: {retirement_status}"
-                )
         self._failed = True
         self._failure_count += 1
-        detail = f"{type(exc).__name__}: {exc}{retirement_detail}"
+        self._failure_attempts += 1
+        if getattr(exc, "retryable", True) is False:
+            self._failure_attempts = 3
+        self._failure_edit_revision = int(getattr(self._scheduler, "edit_submission_revision", 0))
+        self._failure_permanent = isinstance(exc, ValueUpdateRecoveryRequired)
+        self._failure_retry_at = time.monotonic() + max(0.1, self._failure_retry_backoff_seconds)
+        # A lost worker or fatal device error retries once without new input:
+        # the session replaces the worker on its next request.
+        self._failure_worker_retry = bool(
+            not self._failure_permanent
+            and not self._worker_retry_used
+            and is_worker_failure(exc)
+        )
+        detail = f"{type(exc).__name__}: {exc}"
         self._last_failure_detail = detail
         published = self._frame_slot.publish(
             FrameState(
@@ -3621,9 +3116,7 @@ class LatestViewRenderLoop:
 
 
 __all__ = [
-    "ASYNC_RENDER_READ_ENV",
     "CAMERA_VALUES_UNHONORED_REASON",
-    "DEFAULT_ASYNC_RENDER_READ_ENABLED",
     "RENDER_SETTING_UNHONORED_REASON",
     "FAILURE_RETRY_BACKOFF_SECONDS",
     "ITERATION_RECORD_LIMIT",
@@ -3643,6 +3136,5 @@ __all__ = [
     "RenderThreadTimeoutError",
     "SessionLifecycleHooks",
     "ViewportRenderThread",
-    "_async_render_read_enabled",
     "render_result_digest",
 ]

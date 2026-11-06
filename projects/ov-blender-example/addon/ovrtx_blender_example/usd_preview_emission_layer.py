@@ -7,6 +7,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import hashlib
 import json
+import time
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 
@@ -27,6 +28,28 @@ class _EmissionRecord:
     scale: float = 1.0
     color_space: str = "sRGB"
     uv_path: str = ""
+
+
+@dataclass(frozen=True)
+class _ConstantEmissionRecord:
+    material_name: str
+    preview_surface_path: str
+    color: tuple[float, float, float]
+
+
+@dataclass(frozen=True)
+class _EmissionSurfaceRecord:
+    """Preview surface for an emissive graph stock export leaves without one."""
+
+    material_name: str
+    material_path: str
+    shader_path: str
+    base_color: tuple[float, float, float]
+    color: tuple[float, float, float]
+    texture_path: str = ""
+    scale: float = 1.0
+    color_space: str = "sRGB"
+    opacity: float = 1.0
 
 
 @dataclass(frozen=True)
@@ -54,30 +77,101 @@ class _SurfaceFallbackRecord:
     shader_path: str
 
 
+@dataclass(frozen=True)
+class PresentationIndexes:
+    """Only material/light records needed by one translation; never retained."""
+
+    binding_identity: Mapping[str, Any]
+    preview_materials: Mapping[str, Mapping[str, Any]]
+    lights: Mapping[str, Mapping[str, str]]
+    timings: Mapping[str, float]
+
+
+def presentation_indexes(input_usd_path: str) -> PresentationIndexes | None:
+    """Open the current composition once and collect three indexes in one pass."""
+
+    if not input_usd_path:
+        return None
+    try:
+        from pxr import Usd, UsdShade  # type: ignore
+    except ModuleNotFoundError:
+        return None
+    from . import light_scene_layer
+
+    started = time.perf_counter_ns()
+    stage = Usd.Stage.Open(str(input_usd_path))
+    opened = time.perf_counter_ns()
+    if stage is None:
+        return None
+    materials: list[str] = []
+    bindings: list[dict[str, str]] = []
+    bindings_by_material: dict[str, list[dict[str, str]]] = {}
+    materials_by_name: dict[str, list[str]] = {}
+    previews: dict[str, dict[str, Any]] = {}
+    lights: dict[str, dict[str, str]] = {}
+    for prim in stage.Traverse():
+        path = materialx_openpbr_conversion._prim_path(prim)
+        if not path:
+            continue
+        if materialx_openpbr_conversion._is_material_prim(prim, UsdShade.Material):
+            materials.append(path)
+            materials_by_name.setdefault(path.rstrip("/").rsplit("/", 1)[-1], []).append(path)
+            record = _usd_preview_material_record(prim)
+            if record is not None:
+                previews[path] = record
+        material_path = materialx_openpbr_conversion._bound_material_path(prim)
+        if material_path:
+            binding = {"material_path": material_path, "binding_target": path}
+            bindings.append(binding)
+            bindings_by_material.setdefault(material_path, []).append(binding)
+        light = light_scene_layer._stock_light_record(prim)
+        if light is not None:
+            name, record = light
+            lights.setdefault(name, record)
+    finished = time.perf_counter_ns()
+    return PresentationIndexes(
+        binding_identity={"available": True, "reason": "",
+                          "material_paths": tuple(materials), "bindings": tuple(bindings),
+                          "bindings_by_material": bindings_by_material,
+                          "materials_by_name": materials_by_name},
+        preview_materials=previews,
+        lights=lights,
+        timings={"presentation_stage_open_ms": (opened - started) / 1_000_000.0,
+                 "presentation_index_ms": (finished - opened) / 1_000_000.0},
+    )
+
+
 def scene_layer_from_materials(
     materials: Iterable[Any],
     input_usd_path: str,
+    *,
+    presentation: PresentationIndexes | None = None,
+    known_material_paths: Mapping[int, str] | None = None,
 ) -> MaterialPresentationLayer | None:
     """Patch USDPreview material links Blender's USD exporter leaves out."""
 
     selected = tuple(materials)
     if not selected or not input_usd_path:
         return None
-    identity = materialx_openpbr_conversion._materialx_binding_identity(input_usd_path)
+    identity = (presentation.binding_identity if presentation is not None
+                else materialx_openpbr_conversion._materialx_binding_identity(input_usd_path))
     if not identity.get("available", False):
         return None
-    material_index = _usd_preview_material_index(input_usd_path)
-    if not material_index:
-        return None
+    # A scene whose only materials are surfaceless emitters has an empty index
+    # and still needs repair; an empty result returns no layer below.
+    material_index = (presentation.preview_materials if presentation is not None
+                      else _usd_preview_material_index(input_usd_path)) or {}
 
     emission_records: list[_EmissionRecord] = []
+    constant_records: list[_ConstantEmissionRecord] = []
+    emission_surface_records: list[_EmissionSurfaceRecord] = []
     diffuse_records: list[_DiffuseRecord] = []
     opacity_records: list[_OpacityRecord] = []
     surface_records: list[_SurfaceFallbackRecord] = []
     skipped: list[dict[str, str]] = []
     seen_material_paths: set[str] = set()
     for material in selected:
-        binding = materialx_openpbr_conversion._resolve_binding(material, identity)
+        binding = materialx_openpbr_conversion._resolve_binding(material, identity, known_material_paths)
         material_name = str(binding.get("material_name", ""))
         material_path = str(binding.get("material_path", ""))
         if not material_path or material_path in seen_material_paths:
@@ -88,6 +182,19 @@ def scene_layer_from_materials(
             surface_record = _surface_fallback_record(material_name, material_path, material)
             if surface_record is not None:
                 surface_records.append(surface_record)
+                continue
+            emission_surface = _emission_surface_record(
+                material_name,
+                material_path,
+                materialx_openpbr_conversion._classify_material(
+                    material,
+                    tuple(str(path) for path in binding.get("binding_targets", ()) if str(path)),
+                    (),
+                    identity,
+                ),
+            )
+            if emission_surface is not None:
+                emission_surface_records.append(emission_surface)
                 continue
             skipped.append(
                 {
@@ -117,6 +224,17 @@ def scene_layer_from_materials(
             continue
         texture = _emission_texture_record(classified)
         if texture is None:
+            # Stock export authors constant emission for Principled BSDF only;
+            # an Add Shader + Emission branch arrives without it.
+            color = _constant_emission_color(classified)
+            if color is not None and not material_info.get("emissive_authored"):
+                constant_records.append(
+                    _ConstantEmissionRecord(
+                        material_name=material_name,
+                        preview_surface_path=str(material_info["preview_surface_path"]),
+                        color=color,
+                    )
+                )
             continue
         asset_path = str(texture.get("asset_path", ""))
         if not asset_path:
@@ -138,6 +256,8 @@ def scene_layer_from_materials(
         opacity_records,
         surface_records,
         skipped,
+        constant_records,
+        emission_surface_records,
     )
 
 
@@ -153,53 +273,65 @@ def _usd_preview_material_index(input_usd_path: str) -> dict[str, dict[str, Any]
     for prim in stage.Traverse():
         if prim.GetTypeName() != "Material":
             continue
-        preview_surface_path = ""
-        uv_path = ""
-        diffuse_connection = ""
-        emissive_connection = ""
-        opacity_connection = ""
-        textures_by_path: dict[str, dict[str, Any]] = {}
-        textures_by_stem: dict[str, str] = {}
-        for child in prim.GetChildren():
-            if child.GetTypeName() != "Shader":
-                continue
-            shader_id = child.GetAttribute("info:id").Get()
-            if shader_id == "UsdPreviewSurface":
-                preview_surface_path = str(child.GetPath())
-                diffuse = child.GetAttribute("inputs:diffuseColor")
-                connections = diffuse.GetConnections() if diffuse and diffuse.IsValid() else ()
-                diffuse_connection = str(connections[0].GetPrimPath()) if connections else ""
-                emissive = child.GetAttribute("inputs:emissiveColor")
-                connections = emissive.GetConnections() if emissive and emissive.IsValid() else ()
-                emissive_connection = str(connections[0].GetPrimPath()) if connections else ""
-                opacity = child.GetAttribute("inputs:opacity")
-                connections = opacity.GetConnections() if opacity and opacity.IsValid() else ()
-                opacity_connection = str(connections[0].GetPrimPath()) if connections else ""
-            elif shader_id == "UsdPrimvarReader_float2" and not uv_path:
-                uv_path = str(child.GetPath())
-            elif shader_id == "UsdUVTexture":
-                file_attr = child.GetAttribute("inputs:file")
-                asset_path = _asset_path_text(file_attr.Get()) if file_attr else ""
-                texture_path = str(child.GetPath())
-                textures_by_path[texture_path] = {
-                    "asset_path": asset_path,
-                    "stem": Path(asset_path).stem,
-                    "has_bias": bool(child.HasAttribute("inputs:bias")),
-                    "has_scale": bool(child.HasAttribute("inputs:scale")),
-                }
-                if asset_path:
-                    textures_by_stem.setdefault(Path(asset_path).stem, texture_path)
-        if preview_surface_path:
-            result[str(prim.GetPath())] = {
-                "preview_surface_path": preview_surface_path,
-                "uv_path": uv_path,
-                "diffuse_connection": diffuse_connection,
-                "emissive_connection": emissive_connection,
-                "opacity_connection": opacity_connection,
-                "textures_by_path": textures_by_path,
-                "textures_by_stem": textures_by_stem,
-            }
+        record = _usd_preview_material_record(prim)
+        if record is not None:
+            result[str(prim.GetPath())] = record
     return result
+
+
+def _usd_preview_material_record(prim: Any) -> dict[str, Any] | None:
+    preview_surface_path = ""
+    uv_path = ""
+    diffuse_connection = ""
+    emissive_connection = ""
+    emissive_authored = False
+    opacity_connection = ""
+    textures_by_path: dict[str, dict[str, Any]] = {}
+    textures_by_stem: dict[str, str] = {}
+    for child in prim.GetChildren():
+        if child.GetTypeName() != "Shader":
+            continue
+        shader_id = child.GetAttribute("info:id").Get()
+        if shader_id == "UsdPreviewSurface":
+            preview_surface_path = str(child.GetPath())
+            diffuse = child.GetAttribute("inputs:diffuseColor")
+            connections = diffuse.GetConnections() if diffuse and diffuse.IsValid() else ()
+            diffuse_connection = str(connections[0].GetPrimPath()) if connections else ""
+            emissive = child.GetAttribute("inputs:emissiveColor")
+            connections = emissive.GetConnections() if emissive and emissive.IsValid() else ()
+            emissive_connection = str(connections[0].GetPrimPath()) if connections else ""
+            # An authored black emissiveColor carries no emission to keep.
+            authored = emissive.Get() if emissive and emissive.IsValid() and emissive.HasAuthoredValue() else None
+            emissive_authored = authored is not None and any(abs(float(c)) > 1.0e-6 for c in authored)
+            opacity = child.GetAttribute("inputs:opacity")
+            connections = opacity.GetConnections() if opacity and opacity.IsValid() else ()
+            opacity_connection = str(connections[0].GetPrimPath()) if connections else ""
+        elif shader_id == "UsdPrimvarReader_float2" and not uv_path:
+            uv_path = str(child.GetPath())
+        elif shader_id == "UsdUVTexture":
+            file_attr = child.GetAttribute("inputs:file")
+            asset_path = _asset_path_text(file_attr.Get()) if file_attr else ""
+            texture_path = str(child.GetPath())
+            textures_by_path[texture_path] = {
+                "asset_path": asset_path,
+                "stem": Path(asset_path).stem,
+                "has_bias": bool(child.HasAttribute("inputs:bias")),
+                "has_scale": bool(child.HasAttribute("inputs:scale")),
+            }
+            if asset_path:
+                textures_by_stem.setdefault(Path(asset_path).stem, texture_path)
+    if preview_surface_path:
+        return {
+            "preview_surface_path": preview_surface_path,
+            "uv_path": uv_path,
+            "diffuse_connection": diffuse_connection,
+            "emissive_connection": emissive_connection,
+            "emissive_authored": emissive_authored,
+            "opacity_connection": opacity_connection,
+            "textures_by_path": textures_by_path,
+            "textures_by_stem": textures_by_stem,
+        }
+    return None
 
 
 def _emission_texture_record(record: Mapping[str, Any]) -> Mapping[str, Any] | None:
@@ -210,7 +342,8 @@ def _emission_texture_record(record: Mapping[str, Any]) -> Mapping[str, Any] | N
     if not isinstance(textures, Mapping):
         return None
     texture = textures.get("emission_color")
-    return texture if isinstance(texture, Mapping) else None
+    # Repairs sample the exported default UV; never author a mapped texture untransformed.
+    return texture if isinstance(texture, Mapping) and not texture.get("uv_transform") else None
 
 
 def _base_color_texture_record(record: Mapping[str, Any]) -> Mapping[str, Any] | None:
@@ -221,7 +354,7 @@ def _base_color_texture_record(record: Mapping[str, Any]) -> Mapping[str, Any] |
     if not isinstance(textures, Mapping):
         return None
     texture = textures.get("base_color")
-    return texture if isinstance(texture, Mapping) else None
+    return texture if isinstance(texture, Mapping) and not texture.get("uv_transform") else None
 
 
 def _emission_scale(record: Mapping[str, Any]) -> float:
@@ -234,6 +367,76 @@ def _emission_scale(record: Mapping[str, Any]) -> float:
     return max(
         0.0,
         float(luminance) / float(materialx_openpbr_conversion._EMISSION_LUMINANCE_SCALE),
+    )
+
+
+def _mapped_emission_texture(record: Mapping[str, Any]) -> bool:
+    values = record.get("openpbr_values")
+    textures = values.get("textures") if isinstance(values, Mapping) else None
+    texture = textures.get("emission_color") if isinstance(textures, Mapping) else None
+    return isinstance(texture, Mapping) and bool(texture.get("uv_transform"))
+
+
+def _constant_emission_color(record: Mapping[str, Any]) -> tuple[float, float, float] | None:
+    """Preview emissive radiance (color x Blender strength) for a constant emitter."""
+
+    values = record.get("openpbr_values")
+    if not isinstance(values, Mapping) or _mapped_emission_texture(record):
+        return None
+    scale = _emission_scale(record)
+    color = values.get("emission_color")
+    if scale <= 0.0 or not isinstance(color, (tuple, list)) or len(color) != 3:
+        return None
+    radiance = tuple(float(channel) * scale for channel in color)
+    if not any(channel > 1.0e-6 for channel in radiance):
+        return None
+    return radiance  # type: ignore[return-value]
+
+
+def _emission_surface_record(
+    material_name: str,
+    material_path: str,
+    classified: Mapping[str, Any],
+) -> _EmissionSurfaceRecord | None:
+    """Emissive preview surface for a graph stock export wrote no surface for."""
+
+    values = classified.get("openpbr_values")
+    if not isinstance(values, Mapping):
+        return None
+    base = values.get("base_color", (0.0, 0.0, 0.0))
+    base_color = tuple(float(channel) for channel in base) if isinstance(base, (tuple, list)) and len(base) == 3 else (0.0, 0.0, 0.0)
+    shader_path = f"{material_path}/OVRTX_Emission_Surface"
+    try:
+        opacity = min(1.0, max(0.0, float(values.get("geometry_opacity", 1.0))))
+    except (TypeError, ValueError):
+        opacity = 1.0
+    texture = _emission_texture_record(classified)
+    if texture is not None:
+        asset_path = str(texture.get("asset_path", ""))
+        scale = _emission_scale(classified)
+        if not asset_path or scale <= 0.0:
+            return None
+        return _EmissionSurfaceRecord(
+            material_name=material_name,
+            material_path=material_path,
+            shader_path=shader_path,
+            base_color=base_color,  # type: ignore[arg-type]
+            color=(0.0, 0.0, 0.0),
+            texture_path=asset_path,
+            scale=scale,
+            color_space=str(texture.get("color_space", "sRGB") or "sRGB"),
+            opacity=opacity,
+        )
+    color = _constant_emission_color(classified)
+    if color is None:
+        return None
+    return _EmissionSurfaceRecord(
+        material_name=material_name,
+        material_path=material_path,
+        shader_path=shader_path,
+        base_color=base_color,  # type: ignore[arg-type]
+        color=color,
+        opacity=opacity,
     )
 
 
@@ -338,16 +541,22 @@ def _layer_from_records(
     opacity_records: Iterable[_OpacityRecord] = (),
     surface_records: Iterable[_SurfaceFallbackRecord] = (),
     skipped: Iterable[Mapping[str, str]] = (),
+    constant_records: Iterable[_ConstantEmissionRecord] = (),
+    emission_surface_records: Iterable[_EmissionSurfaceRecord] = (),
 ) -> MaterialPresentationLayer | None:
     selected_emission = tuple(emission_records)
     selected_diffuse = tuple(diffuse_records)
     selected_opacity = tuple(opacity_records)
     selected_surface = tuple(surface_records)
+    selected_constant = tuple(constant_records)
+    selected_emission_surface = tuple(emission_surface_records)
     if (
         not selected_emission
         and not selected_diffuse
         and not selected_opacity
         and not selected_surface
+        and not selected_constant
+        and not selected_emission_surface
     ):
         return None
     definitions: list[tuple[str, str, list[str]]] = []
@@ -454,6 +663,68 @@ def _layer_from_records(
                 ],
             )
         )
+    for record in selected_constant:
+        definitions.append(
+            (
+                record.preview_surface_path,
+                "",
+                [f"color3f inputs:emissiveColor = ({', '.join(_float(c) for c in record.color)})"],
+            )
+        )
+    for record in selected_emission_surface:
+        surface_attributes = [
+            'uniform token info:id = "UsdPreviewSurface"',
+            f"color3f inputs:diffuseColor = ({', '.join(_float(c) for c in record.base_color)})",
+            "float inputs:metallic = 0",
+            "float inputs:roughness = 1",
+            f"float inputs:opacity = {_float(record.opacity)}",
+        ]
+        if record.texture_path:
+            uv_path = f"{record.material_path}/OVRTX_Emission_UV"
+            texture_path = f"{record.material_path}/OVRTX_Emission_Texture"
+            definitions.append(
+                (
+                    uv_path,
+                    "Shader",
+                    [
+                        'uniform token info:id = "UsdPrimvarReader_float2"',
+                        # Stock export renames the active UV map to ``st``.
+                        'string inputs:varname = "st"',
+                        "float2 outputs:result",
+                    ],
+                )
+            )
+            texture_attributes = [
+                'uniform token info:id = "UsdUVTexture"',
+                "asset inputs:file = "
+                f"@{materialx_openpbr_conversion._usda_asset_path(record.texture_path)}@",
+                f'token inputs:sourceColorSpace = "{_usda_string(record.color_space)}"',
+            ]
+            if abs(record.scale - 1.0) > 1.0e-6:
+                texture_attributes.append(
+                    f"float4 inputs:scale = ({_float(record.scale)}, {_float(record.scale)}, {_float(record.scale)}, 1)"
+                )
+            texture_attributes += [
+                f"float2 inputs:st.connect = <{uv_path}.outputs:result>",
+                "color3f outputs:rgb",
+            ]
+            definitions.append((texture_path, "Shader", texture_attributes))
+            surface_attributes.append(
+                f"color3f inputs:emissiveColor.connect = <{texture_path}.outputs:rgb>"
+            )
+        else:
+            surface_attributes.append(
+                f"color3f inputs:emissiveColor = ({', '.join(_float(c) for c in record.color)})"
+            )
+        surface_attributes.append("token outputs:surface")
+        definitions.append((record.shader_path, "Shader", surface_attributes))
+        definitions.append(
+            (
+                record.material_path,
+                "",
+                [f"token outputs:surface.connect = <{record.shader_path}.outputs:surface>"],
+            )
+        )
     layer_body = "\n".join(
         ovrtx_scene_composition._usda_typed_def_tree(_merged_definitions(definitions))
     ).rstrip()
@@ -497,11 +768,33 @@ def _layer_from_records(
             "shader_path": record.shader_path,
         }
         for record in selected_surface
+    ] + [
+        {
+            "kind": "constant_emission",
+            "material_name": record.material_name,
+            "preview_surface_path": record.preview_surface_path,
+            "color": list(record.color),
+        }
+        for record in selected_constant
+    ] + [
+        {
+            "kind": "emission_surface",
+            "material_name": record.material_name,
+            "material_path": record.material_path,
+            "shader_path": record.shader_path,
+            "base_color": list(record.base_color),
+            "color": list(record.color),
+            "texture_path": record.texture_path,
+            "scale": record.scale,
+            "color_space": record.color_space,
+            "opacity": record.opacity,
+        }
+        for record in selected_emission_surface
     ]
     target_paths = [
         record.preview_surface_path
-        for record in (*selected_emission, *selected_diffuse, *selected_opacity)
-    ] + [record.material_path for record in selected_surface]
+        for record in (*selected_emission, *selected_diffuse, *selected_opacity, *selected_constant)
+    ] + [record.material_path for record in (*selected_surface, *selected_emission_surface)]
     return MaterialPresentationLayer(
         target_path=min(target_paths),
         layer_body=layer_body,
@@ -522,6 +815,14 @@ def _layer_from_records(
         + tuple(
             (record.material_path, "outputs:surface")
             for record in selected_surface
+        )
+        + tuple(
+            (record.preview_surface_path, "inputs:emissiveColor")
+            for record in selected_constant
+        )
+        + tuple(
+            (record.material_path, "outputs:surface")
+            for record in selected_emission_surface
         ),
         digest_content={"source": _SOURCE, "records": digest_records},
         diagnostics={
@@ -568,3 +869,75 @@ def _float(value: Any) -> str:
 
 
 __all__ = ["scene_layer_from_materials"]
+
+
+def with_repairs_for_unconverted(
+    conversion: Any,
+    materials: Iterable[Any],
+    input_usd_path: str,
+    *,
+    presentation: PresentationIndexes | None = None,
+    known_material_paths: Mapping[int, str] | None = None,
+) -> MaterialPresentationLayer | None:
+    """Add USD Preview repairs for materials MaterialX conversion left on stock export.
+
+    ``conversion`` is a MaterialX ``MaterialSceneConversionResult`` produced
+    with stock fallback. A rejected material keeps its stock UsdPreviewSurface,
+    which still carries Blender exporter mistakes (inverted opacity, missing
+    emission); repair exactly those materials. Converted materials are rebound
+    to generated OpenPBR materials and receive no preview opinions.
+    """
+
+    materialx_layer = getattr(conversion, "value", None)
+    records = getattr(conversion, "diagnostics", {}) or {}
+    unconverted = {
+        str(record.get("material_name", ""))
+        for record in records.get("materials", ())
+        if isinstance(record, Mapping)
+        and str(record.get("status", "")) != materialx_openpbr_conversion._STATUS_GENERATED
+    }
+    selected = tuple(
+        material for material in materials
+        if materialx_openpbr_conversion._material_name(material) in unconverted
+    )
+    repair_layer = (
+        scene_layer_from_materials(
+            selected,
+            input_usd_path,
+            **({"presentation": presentation} if presentation is not None else {}),
+            **({"known_material_paths": known_material_paths} if known_material_paths else {}),
+        )
+        if selected
+        else None
+    )
+    if repair_layer is None:
+        return materialx_layer
+    if materialx_layer is None:
+        return repair_layer
+    return _merged_presentation_layer(materialx_layer, repair_layer)
+
+
+def _merged_presentation_layer(
+    primary: MaterialPresentationLayer,
+    repair: MaterialPresentationLayer,
+) -> MaterialPresentationLayer:
+    """One presentation layer holding the MaterialX overlay and preview repairs."""
+
+    from pxr import Sdf, UsdUtils  # type: ignore
+
+    merged = Sdf.Layer.CreateAnonymous("material-presentation.usda")
+    if not merged.ImportFromString("#usda 1.0\n" + primary.layer_body):
+        raise ValueError("invalid MaterialX presentation layer")
+    weak = Sdf.Layer.CreateAnonymous("preview-repair.usda")
+    if not weak.ImportFromString("#usda 1.0\n" + repair.layer_body):
+        raise ValueError("invalid USD Preview repair layer")
+    UsdUtils.StitchLayers(merged, weak)
+    text = merged.ExportToString()
+    body = text.split("\n", 1)[1].lstrip("\n").rstrip() if text.startswith("#usda") else text.rstrip()
+    return MaterialPresentationLayer(
+        target_path=min(primary.target_path, repair.target_path),
+        layer_body=body,
+        authored_properties=tuple(primary.authored_properties) + tuple(repair.authored_properties),
+        digest_content={**dict(primary.digest_content), "preview_repair": dict(repair.digest_content)},
+        diagnostics={**dict(primary.diagnostics), "preview_repair": dict(repair.diagnostics)},
+    )

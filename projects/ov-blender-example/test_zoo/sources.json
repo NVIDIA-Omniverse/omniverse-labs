@@ -1,0 +1,21 @@
+{
+  "research_date": "2026-09-30",
+  "sources": [
+    {"topic":"USD export boundary and evaluated geometry", "url":"https://docs.blender.org/manual/en/latest/files/import_export/usd.html"},
+    {"topic":"Geometry Nodes instance realization", "url":"https://docs.blender.org/manual/en/latest/modeling/geometry_nodes/instances/realize_instances.html"},
+    {"topic":"Geometry Nodes simulation and bake dependencies", "url":"https://docs.staging.blender.org/manual/en/latest/modeling/geometry_nodes/baking.html"},
+    {"topic":"Shape-key animation", "url":"https://docs.staging.blender.org/manual/en/latest/animation/shape_keys/introduction.html"},
+    {"topic":"Hair curve authoring", "url":"https://docs.staging.blender.org/manual/en/latest/modeling/curves_new/properties.html"},
+    {"topic":"Light types and physical authoring units", "url":"https://docs.staging.blender.org/manual/en/latest/render/lights/light_object.html"},
+    {"topic":"Color management and scene-linear versus display values", "url":"https://docs.staging.blender.org/manual/en/latest/render/color_management/displays_views.html"},
+    {"topic":"Linked libraries and data ownership", "url":"https://docs.staging.blender.org/manual/en/latest/files/linked_libraries/link_append.html"},
+    {"topic":"Volume/VDB data", "url":"https://docs.blender.org/manual/en/4.2/modeling/volumes/introduction.html"},
+    {"topic":"Rigid body authoring", "url":"https://docs.blender.org/manual/en/latest/physics/rigid_body/introduction.html"},
+    {"topic":"OpenPBR Surface1.1.1 parameter names, types, units", "url":"https://raw.githubusercontent.com/AcademySoftwareFoundation/OpenPBR/main/parametrization.md.html"},
+    {"topic":"MaterialX OpenPBR node definition", "url":"https://raw.githubusercontent.com/AcademySoftwareFoundation/MaterialX/main/libraries/bxdf/open_pbr_surface.mtlx"},
+    {"topic":"NVIDIA OpenPBR rendering-mode limitations", "url":"https://docs.omniverse.nvidia.com/materials-and-rendering/latest/templates/OpenPBR.html"},
+    {"topic":"Public OVStage material binding writes", "url":"https://nvidia-omniverse.github.io/ovrtx/materials/material_binding.html"},
+    {"topic":"CC0 asset license", "url":"https://polyhaven.com/license"}
+  ],
+  "interpretation": "Documentation defines intended workflows, not installed SDK acceptance. Each scene records observed author/export/conversion/native states separately."
+}

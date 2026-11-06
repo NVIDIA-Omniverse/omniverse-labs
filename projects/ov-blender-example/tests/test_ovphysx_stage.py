@@ -25,6 +25,52 @@ from ovrtx_blender_example.shared_stage_config import InteractiveSharedStageConf
 BODY = "/World/PhysicsIsland/DynamicBodies/Cube_00"
 
 
+def test_publication_read_counters_survive_diagnostics_summary():
+    from ovrtx_blender_example.ovphysx_stage import _physics_diagnostics_summary
+    counters = dict(publication_state_reads=1, publication_substeps=4,
+                    state_read_calls=9, state_read_ms=2.5)
+    assert _physics_diagnostics_summary(dict(counters, private_payload=[1])) == counters
+
+
+def test_healthy_reset_reloads_authored_state_and_replays_overrides_in_same_client():
+    class ReloadPhysics(_Physics):
+        supports_verified_simulation_reload = True
+        loads = 0
+
+        def create_simulation(self):
+            self.loads += 1
+            self.steps.clear()  # Reload, rather than pose teleport, resets history.
+            return super().create_simulation()
+
+    physics = ReloadPhysics()
+    controller = _controller(physics)
+    initial = BodyPose(BODY, (0., 8., 0.), (0., 0., 0., 1.))
+    controller.tick(initial_condition_values=(initial,))
+    controller.tick()
+    # A drained asynchronous producer may be ahead of the last applied pose.
+    controller._pose_producer.sync_position(step_count=100, simulation_time_ns=1000000000)
+    old_generation = controller.composition_generation
+    result = controller.reset_simulation(config=controller.config,
+                                         initial_condition_values=(initial,))
+    assert result.status == OvphysxStageStatus.OK
+    assert physics.loads == 2 and physics.shutdown_count == 0
+    assert controller._physics_client is physics
+    assert controller.step_count == 0 and controller.current_simulation_time_ns <= 2
+    assert result.pose_set == (initial,)
+    assert physics.writes[-1][0] == (initial,)
+    assert controller.composition_generation > old_generation
+    controller.tick()
+    assert controller.step_count > 0
+
+
+def test_failed_controller_cannot_use_healthy_reset():
+    physics = _Physics()
+    controller = _controller(physics)
+    controller.failed = True
+    with pytest.raises(RuntimeError, match="healthy"):
+        controller.reset_simulation(config=controller.config)
+
+
 def _config(*, max_steps: int = 3, update_fps: float = 1000.0) -> InteractiveSharedStageConfig:
     return InteractiveSharedStageConfig(
         enabled=True,
@@ -293,6 +339,7 @@ def test_startup_initial_conditions_are_applied_before_publication() -> None:
         assert result.status == OvphysxStageStatus.OK
         assert result.pose_set == (pose,)
         assert physics.writes[0][0] == (pose,)
+        assert physics.writes[0][1] > 1  # Population has sealed ordinal 1.
         assert result.dirty_paths == (BODY,)
     finally:
         controller.shutdown()
@@ -326,6 +373,7 @@ def test_initial_condition_application_resets_generation_and_publishes_stage() -
 
         assert result.status == OvphysxStageStatus.OK
         assert result.generation > initial.generation
+        assert physics.writes[0][1] > 1
         assert result.step_count == 0
         assert result.pose_set == (pose,)
         assert result.dirty_paths == (BODY,)
@@ -362,6 +410,36 @@ def test_initial_condition_write_failure_is_terminal() -> None:
         assert failed.status == OvphysxStageStatus.FAILED
         assert failed.reason == "initial_condition_value_write_error"
         assert controller.failed is True
+    finally:
+        controller.shutdown()
+
+
+def test_mass_edit_keeps_controller_time_and_steps():
+    physics = _Physics()
+    physics.write_body_masses = lambda values: {"status": "ok", "body_count": len(values), "masses": {BODY: 2.0}}
+    controller = _controller(physics)
+    try:
+        controller.tick(); controller.tick()
+        before = (controller.step_count, controller.current_simulation_time_ns)
+        controller.apply_body_mass_edits(({"prim_path": BODY, "mass": 2.0},))
+        assert (controller.step_count, controller.current_simulation_time_ns) == before
+        assert not controller.failed
+        assert controller.last_body_mass_write["masses"] == {BODY: 2.0}
+    finally:
+        controller.shutdown()
+
+
+def test_partial_mass_acknowledgement_stops_controller():
+    physics = _Physics()
+    physics.write_body_masses = lambda values: {"status": "ok", "body_count": 0}
+    controller = _controller(physics)
+    try:
+        controller.tick()
+        with pytest.raises(RuntimeError):
+            controller.apply_body_mass_edits(({"prim_path": BODY, "mass": 2.0},))
+        assert controller.failed and controller.completed
+        with pytest.raises(RuntimeError, match="healthy"):
+            controller.apply_body_mass_edits(({"prim_path": BODY, "mass": 2.0},))
     finally:
         controller.shutdown()
 

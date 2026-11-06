@@ -601,7 +601,7 @@ def test_update_stream_applies_camera_target_as_view_value_update() -> None:
     ]
 
 
-def test_update_stream_retains_scene_transform_when_queued() -> None:
+def test_update_stream_retains_scene_transform_only_after_ack() -> None:
     retained = []
     stream = ViewUpdateStream(transform_sink=lambda values: retained.extend(values))
     ovrtx_updates = _RenderPort()
@@ -614,9 +614,7 @@ def test_update_stream_retains_scene_transform_when_queued() -> None:
 
     stream.queue(_edit_intent(DataAuthority.VIEW, "/World/Cube", matrix))
 
-    assert retained == [
-        OvrtxTransformValue("/World/Cube", [list(row) for row in matrix])
-    ]
+    assert retained == []
 
     stream.apply_pending(ovrtx_updates)
 
@@ -964,6 +962,7 @@ def test_update_stream_classifies_all_public_light_policy_properties_as_light() 
     ovrtx_updates = _RenderPort()
     path = "/World/Key/KeyLight"
     attributes = (
+        ("inputs:exposure", "exposure", 2.0),
         ("inputs:enableColorTemperature", "use_temperature", False),
         ("inputs:radius", "shadow_soft_size", 0.25),
         ("inputs:angle", "angle", 0.5),
@@ -999,8 +998,8 @@ def test_update_stream_fails_closed_for_unproven_light_attribute() -> None:
         _light_edit_intent(
             "/World/Key/KeyLight",
             2.0,
-            usd_attribute="inputs:exposure",
-            blender_property_path="exposure",
+            usd_attribute="inputs:unproven",
+            blender_property_path="unproven",
         )
     )
     diagnostics = stream.apply_pending(ovrtx_updates)

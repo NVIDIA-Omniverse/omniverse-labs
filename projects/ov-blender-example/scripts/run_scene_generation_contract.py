@@ -10,7 +10,9 @@ import math
 import os
 from pathlib import Path
 import sys
+from contextlib import nullcontext
 from types import SimpleNamespace
+import uuid
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -23,6 +25,7 @@ from ovrtx_blender_example.scene_generation import (  # noqa: E402
     blender_id,
 )
 from ovrtx_blender_example import authoring_properties  # noqa: E402
+from ovrtx_blender_example.physics_endpoints import initialize_owner  # noqa: E402
 from ovrtx_blender_example.blender_callback_adapters import (  # noqa: E402
     BlenderRenderCallbackAdapter,
 )
@@ -50,22 +53,31 @@ def _output_path() -> Path:
     return Path(sys.argv[separator + 1]).expanduser().resolve()
 
 
+def _add_collider(obj: object, shape: str) -> object:
+    record = obj.ov.physics.colliders.add()
+    record.name = record.persistent_id = uuid.uuid4().hex
+    record.schema_opinion = authoring_properties.APPLY
+    record.shape = shape
+    return record
+
+
 def _create_scene() -> tuple[object, object]:
     bpy.ops.mesh.primitive_cube_add()
     cube = bpy.context.object
     cube.name = "Cube"
     material = bpy.data.materials.new("Cube")
     cube.data.materials.append(material)
+    initialize_owner(cube)
     cube.ov.physics.rigid_body.schema_opinion = authoring_properties.APPLY
     cube.ov.physics.rigid_body.mass_kg = 12.5
-    cube.ov.physics.collision.schema_opinion = authoring_properties.APPLY
-    cube.ov.physics.collision.hide_from_render = True
+    cube_collider = _add_collider(cube, "CONVEX_HULL")
+    cube_collider.hide_from_render = True
     physics_material = bpy.data.materials.new("Physics Rubber")
     physics_material.ov.physics.schema_opinion = authoring_properties.APPLY
     physics_material.ov.physics.static_friction = 0.8
     physics_material.ov.physics.dynamic_friction = 0.7
     physics_material.ov.physics.restitution = 0.2
-    cube.ov.physics.collision.physics_material = physics_material
+    cube_collider.physics_material = physics_material
     bpy.ops.object.light_add(type="SUN")
     bpy.context.object.name = "Sun"
     bpy.ops.object.camera_add(location=(4.0, -4.0, 3.0))
@@ -365,16 +377,26 @@ def main() -> None:
     cube_mapping = first.blender_prim_paths[blender_id(cube, "OBJECT")]
     cube_root = first_stage.GetPrimAtPath(cube_mapping.object_path)
     cube_mesh = first_stage.GetPrimAtPath(cube_mapping.schema_path)
+    cube_collider_path = (
+        cube_mapping.object_path + "/Colliders/c_" + cube.ov.physics.colliders[0].persistent_id
+    )
+    cube_collider = first_stage.GetPrimAtPath(cube_collider_path)
     if "PhysicsRigidBodyAPI" not in cube_root.GetAppliedSchemas():
         raise RuntimeError("mapped cube has no sparse rigid-body opinion")
-    if "PhysicsCollisionAPI" not in cube_mesh.GetAppliedSchemas():
-        raise RuntimeError("mapped cube has no sparse collision opinion")
+    if "PhysicsCollisionAPI" in cube_mesh.GetAppliedSchemas():
+        raise RuntimeError("mapped cube render mesh must not carry the generated collision")
+    if (
+        cube_collider.GetTypeName() != "Mesh"
+        or "PhysicsCollisionAPI" not in cube_collider.GetAppliedSchemas()
+        or cube_collider.GetAttribute("physics:approximation").Get() != "convexHull"
+    ):
+        raise RuntimeError("cube has no generated convex-hull collider")
     cube_mass = UsdPhysics.MassAPI(cube_root).GetMassAttr().Get()
-    cube_visibility = UsdGeom.Imageable(cube_mesh).GetVisibilityAttr().Get()
+    cube_visibility = UsdGeom.Imageable(cube_collider).GetVisibilityAttr().Get()
     object_record = next(
         record
         for record in first.opinion_records
-        if record.diagnostics.get("blender_owner") == "Cube"
+        if record.usd_prim_path == cube_mapping.object_path
     )
     material_record = next(
         record
@@ -386,15 +408,27 @@ def main() -> None:
         raise RuntimeError("could not inspect add-on USD opinion record")
     record_root = record_layer.GetPrimAtPath(cube_mapping.object_path)
     record_mesh = record_layer.GetPrimAtPath(cube_mapping.schema_path)
+    record_collider = record_layer.GetPrimAtPath(cube_collider_path)
+    # The stock render mesh is never redefined and the root is never retyped;
+    # only the generated collider is new geometry. Defining the generated
+    # <body>/Colliders/c_<id> child makes USD author typeless ancestor defs.
     sparse_record = (
-        record_root.specifier == Sdf.SpecifierOver
-        and record_mesh.specifier == Sdf.SpecifierOver
-        and record_layer.GetPropertyAtPath(
-            record_mesh.path.AppendProperty("points")
-        ) is None
+        record_root is not None
+        and not record_root.typeName
+        and (
+            record_mesh is None
+            or (
+                record_mesh.specifier == Sdf.SpecifierOver
+                and record_layer.GetPropertyAtPath(
+                    record_mesh.path.AppendProperty("points")
+                ) is None
+            )
+        )
+        and record_collider is not None
+        and record_collider.specifier == Sdf.SpecifierDef
     )
     physics_material_prim = first_stage.GetPrimAtPath(material_record.usd_prim_path)
-    binding_targets = cube_mesh.GetRelationship("material:binding:physics").GetTargets()
+    binding_targets = cube_collider.GetRelationship("material:binding:physics").GetTargets()
     add_on_physics_material = (
         physics_material_prim.GetTypeName() == "Material"
         and "PhysicsMaterialAPI" in physics_material_prim.GetAppliedSchemas()
@@ -452,11 +486,11 @@ def main() -> None:
     bpy.ops.mesh.primitive_uv_sphere_add(location=(2.0, 0.0, 0.0))
     sphere = bpy.context.object
     sphere.name = "Sphere"
+    initialize_owner(sphere)
     sphere.ov.physics.rigid_body.schema_opinion = authoring_properties.APPLY
     sphere.ov.physics.rigid_body.mass_kg = 80.0
-    sphere.ov.physics.collision.schema_opinion = authoring_properties.APPLY
-    sphere.ov.physics.collision.shape = "ANALYTIC_SPHERE"
-    sphere.ov.physics.collision.radius_m = 0.65
+    sphere_record = _add_collider(sphere, "ANALYTIC_SPHERE")
+    sphere_record.radius_m = 0.65
     second = _preserved_selection(
         camera,
         lambda: owner.reconcile(
@@ -472,7 +506,7 @@ def main() -> None:
     sphere_mapping = second.blender_prim_paths[blender_id(sphere, "OBJECT")]
     sphere_root = second_stage.GetPrimAtPath(sphere_mapping.object_path)
     sphere_collider = second_stage.GetPrimAtPath(
-        sphere_mapping.object_path + "/Collider"
+        sphere_mapping.object_path + "/Colliders/c_" + sphere_record.persistent_id
     )
 
     bpy.data.objects.remove(cube, do_unlink=True)
@@ -658,6 +692,9 @@ def main() -> None:
     bpy.ops.object.camera_add()
     unsupported = bpy.context.object
     unsupported.name = "UnsupportedCamera"
+    # Perspective and orthographic camera additions are supported. Exercise
+    # recovery with a projection that has no USD Camera schema.
+    unsupported.data.type = "PANO"
     unsupported_id = blender_id(unsupported, "OBJECT")
     scene_generation_sessions.mark_scene_dirty(bpy.context.scene, {unsupported_id})
     blocked_count = 0
@@ -674,6 +711,26 @@ def main() -> None:
         bpy.context.scene, work_root=session_root
     )
     blocked_after_undo = scene_generation_sessions.diagnostics()
+    # Stock export omits orthographic camera data; the generation authors it.
+    bpy.ops.object.camera_add()
+    orthographic = bpy.context.object
+    orthographic.name = "OrthographicCamera"
+    orthographic.data.type = "ORTHO"
+    orthographic_id = blender_id(orthographic, "OBJECT")
+    scene_generation_sessions.mark_scene_dirty(bpy.context.scene, {orthographic_id})
+    orthographic_generation = scene_generation_sessions.generation_for_scene(
+        bpy.context.scene, work_root=session_root
+    )
+    from pxr import Usd
+    orthographic_stage = Usd.Stage.Open(orthographic_generation.usd_path)
+    orthographic_camera = orthographic_stage.GetPrimAtPath(
+        orthographic_generation.blender_prim_paths[orthographic_id].schema_path
+    )
+    orthographic_result = {
+        "type": str(orthographic_camera.GetTypeName()),
+        "projection": str(orthographic_camera.GetAttribute("projection").Get()),
+    }
+    bpy.data.objects.remove(orthographic, do_unlink=True)
     scene_generation_sessions.close()
 
     handoff_predecessor = owner.current_generation
@@ -701,28 +758,9 @@ def main() -> None:
         (retained_material, retained_light)
     )
 
-    class _FinalAdapter:
-        fail = False
-        activations = []
-        last_error = ""
-
-        def __init__(self, _controller: object) -> None:
-            self.last_ensure_result = SimpleNamespace(composition=None)
-
-        def update_request(self, _request: object) -> None:
-            pass
-
-        def activate(self, generation: object, **values: object) -> bool:
-            self.activations.append((generation, values))
-            if self.fail:
-                self.last_error = "contract handoff failure"
-                return False
-            return True
-
-        def deactivate(self) -> str:
-            return "stopped"
-
     class _FinalController:
+        _serialized_transport = staticmethod(nullcontext)
+
         def render(self, _request: object) -> object:
             return SimpleNamespace(
                 result=RenderResult(
@@ -738,12 +776,41 @@ def main() -> None:
         def shutdown(self) -> None:
             pass
 
+    class _FinalAdapter:
+        """Scene runtime retained across final renders; records retained replay."""
+
+        fail = False
+        activations = []
+
+        def __init__(self, _controller: object, runtime_owner: object) -> None:
+            self.owner = runtime_owner
+            self.scene_uid = 0
+            self.viewport_ids = ()
+            self.reuse_blocked = False
+            self._request = None
+            self.scheduler = SimpleNamespace(baked_playback_paused=False)
+            self.ovrtx = SimpleNamespace(
+                controller=_FinalController(),
+                last_ensure_result=SimpleNamespace(composition=None),
+            )
+
+        def activate_blocking(self, generation: object, request: object, *, predecessor: object = None) -> None:
+            transforms, attributes, _initial = self.owner.retained_values_for(generation)
+            self._request = request
+            self.activations.append(
+                (generation, {"transform_values": transforms, "attribute_values": attributes})
+            )
+            if self.fail:
+                raise RuntimeError("contract handoff failure")
+
+        activate = activate_blocking
+
     scene_uid = int(bpy.context.scene.session_uid)
     scene_generation_sessions._owners[scene_uid] = owner
     scene_generation_sessions._dirty.pop(scene_uid, None)
-    original_adapter = scene_generation_sessions.OvrtxGenerationAdapter
+    original_runtime = scene_generation_sessions.AuthoringGenerationRuntime
     original_controller = engine_module.OvrtxSessionController
-    scene_generation_sessions.OvrtxGenerationAdapter = _FinalAdapter
+    scene_generation_sessions.AuthoringGenerationRuntime = _FinalAdapter
     engine_module.OvrtxSessionController = _FinalController
     engine_module._RENDER_CALLBACK_ADAPTERS.clear()
     engine_registered = hasattr(bpy.types, "OvrtxExampleRenderEngine")
@@ -790,8 +857,9 @@ def main() -> None:
         bpy.ops.render.render()
         final_candidate = owner.current_generation
     finally:
-        scene_generation_sessions.OvrtxGenerationAdapter = original_adapter
+        scene_generation_sessions.AuthoringGenerationRuntime = original_runtime
         engine_module.OvrtxSessionController = original_controller
+        scene_generation_sessions._runtimes.pop(scene_uid, None)
         engine_module._RENDER_CALLBACK_ADAPTERS.clear()
         scene_generation_sessions._owners.pop(scene_uid, None)
         scene_generation_sessions._dirty.pop(scene_uid, None)
@@ -934,6 +1002,7 @@ def main() -> None:
         ],
         "undo_reused_accepted_generation": recovered.number == accepted.number,
         "blocked_after_undo": blocked_after_undo["blocked_reconciliations"],
+        "orthographic_camera": orthographic_result,
     }
     scene_generation_sessions.close()
     owner.close()

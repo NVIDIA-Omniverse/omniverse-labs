@@ -28,11 +28,12 @@ class SimUpdateStream:
         *,
         value_sink: Callable[[Sequence[BodyPose]], None] | None = None,
         retain_values: bool = True,
+        pending_lock: Any | None = None,
     ) -> None:
         self._pending: dict[tuple[str, str, str], EditIntent] = {}
         # latest desired value per semantic target is the queue.
         # Dict replacement preserves deterministic first-target order.
-        self._pending_lock = threading.Lock()
+        self._pending_lock = pending_lock if pending_lock is not None else threading.Lock()
         self._accepted: dict[str, BodyPose] = {}
         self._accepted_velocities: dict[str, BodyVelocity] = {}
         self._value_sink = value_sink

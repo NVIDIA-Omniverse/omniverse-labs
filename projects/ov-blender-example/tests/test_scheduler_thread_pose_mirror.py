@@ -3,7 +3,7 @@
 """Runtime scheduler on the render thread and the pose-mirror handoff (task02-07).
 
 The scheduler tick runs on the render thread; its result crosses to the
-main thread through ``engine._handoff_runtime_tick_result`` — a data-only
+main thread through ``engine._handoff_runtime_tick_result`` â€” a data-only
 render-thread half that registers a coalesced one-shot ``bpy.app.timers``
 absorb callback (the documented thread-safe crossing). Every Blender data
 read and write stays on the main thread: the scene-object scan in
@@ -84,14 +84,9 @@ class _FakeTimers:
         with self._lock:
             callbacks = list(self.pending)
             self.pending.clear()
-        recurring: list[object] = []
         for fn in callbacks:
-            interval = fn()
-            if interval is not None:
-                assert interval >= 0.0
-                recurring.append(fn)
-        with self._lock:
-            self.pending.extend(recurring)
+            # One-shot contract: the callback returns None to unregister.
+            assert fn() is None
         return len(callbacks)
 
 
@@ -185,6 +180,10 @@ def _load_engine_with_fake_bpy(monkeypatch: pytest.MonkeyPatch):
     module = importlib.util.module_from_spec(spec)
     monkeypatch.setitem(sys.modules, module_name, module)
     spec.loader.exec_module(module)
+    # The fake RPC client models an explicitly selected external SDK sidecar.
+    # Actual sidecar admission/rejection is covered by the runtime install tests.
+    from ovrtx_blender_example import bundled_runtime
+    monkeypatch.setattr(bundled_runtime, "public_sdk_python", lambda: sys.executable)
     module._test_scene = scene
     module._test_access_log = access_log
     module._test_view3d_area = view3d_area
@@ -259,6 +258,103 @@ def _handoff_from_worker(engine, result, request) -> int:
 # ---------------------------------------------------------------------------
 
 
+def test_reset_publication_holds_old_world_until_complete_image_admission(monkeypatch):
+    module = _load_engine_with_fake_bpy(monkeypatch)
+    engine = module.OvrtxExampleRenderEngine()
+    old = SimpleNamespace(runtime_tick_result=None, publication_index=1)
+    engine._presented_frame = old
+    engine._mirrored_frame = old
+    engine._ready_presentation_frame = (old, engine._presentation_identity(), {}, {}, False)
+    world = {'position': 'old'}
+    tick = _tick_result(module, tx=3.0)
+    frame = SimpleNamespace(runtime_tick_result=tick,
+        runtime_tick_timeline=(False, 1, 1), publication_index=2)
+    monkeypatch.setattr(module.scene_generation_sessions, 'current_presentation_context', lambda scene: (5,0,()))
+    monkeypatch.setattr(module.operator_state, 'prepare_runtime_pose_mirror',
+        lambda *args, **kwargs: ({'position':'reset', 'poses_by_path':{}}, {'enabled':True}))
+    def apply(bpy, pending, lock):
+        world.update(pending)
+        return {'enabled':True, 'status':'applied'}
+    monkeypatch.setattr(module.operator_state, 'apply_pending_runtime_pose_mirror', apply)
+    engine._queue_frame_presentation(frame)
+    assert engine._frame_for_presentation(frame) is old
+    assert world['position'] == 'old'
+    module.bpy.app.timers.run_pending()
+    assert world['position'] == 'reset'
+    assert engine._frame_for_presentation(frame) is frame
+    monkeypatch.setattr(module.operator_state, 'apply_pending_runtime_pose_mirror',
+        lambda *args: pytest.fail('GPU commit must never scan or mutate RNA'))
+    assert engine._commit_frame_pose_mirror(frame)  # certify already matched packet
+    assert world['position'] == 'reset'
+    assert engine._runtime_tick_result is tick
+
+
+def test_prepared_frame_from_old_reset_epoch_cannot_mutate_world(monkeypatch):
+    module = _load_engine_with_fake_bpy(monkeypatch)
+    engine = module.OvrtxExampleRenderEngine()
+    adapter = SimpleNamespace(controller=object(), physics_generation=1)
+    engine._viewport_generation_runtime = SimpleNamespace(ovphysx=adapter)
+    old = SimpleNamespace(runtime_tick_result=None, publication_index=1)
+    engine._presented_frame = old
+    frame = SimpleNamespace(runtime_tick_result=_tick_result(module),
+        runtime_tick_timeline=(False, 1, 1), publication_index=2)
+    monkeypatch.setattr(module.scene_generation_sessions, 'current_presentation_context', lambda scene: (5,0,()))
+    monkeypatch.setattr(module.operator_state, 'prepare_runtime_pose_mirror',
+        lambda *args, **kwargs: ({'position':'stale'}, {'enabled':True}))
+    applied=[]
+    monkeypatch.setattr(module.operator_state, 'apply_pending_runtime_pose_mirror', lambda *args: applied.append(True))
+    engine._queue_frame_presentation(frame)
+    adapter.physics_generation = 2
+    module.bpy.app.timers.run_pending()
+    assert engine._frame_for_presentation(frame) is None
+    assert not engine._commit_frame_pose_mirror(frame)
+    assert applied == []
+
+
+def test_cached_resync_draw_uses_new_admitted_packet_and_no_rna(monkeypatch):
+    module=_load_engine_with_fake_bpy(monkeypatch)
+    engine=module.OvrtxExampleRenderEngine()
+    old=SimpleNamespace(render_result='old-image',publication_index=1,runtime_tick_result=None)
+    new=SimpleNamespace(render_result='new-image',publication_index=2,runtime_tick_result=_tick_result(module))
+    engine._presented_frame=old;engine._mirrored_frame=new
+    packet=(new,engine._presentation_identity(),{}, {'enabled':True},False)
+    engine._ready_presentation_frame=packet
+    draws=[]
+    monkeypatch.setattr(engine,'_upload_viewport_texture',lambda result:result)
+    monkeypatch.setattr(engine,'_draw_viewport_texture',lambda context,texture,result:draws.append(result))
+    monkeypatch.setattr(module.operator_state,'apply_pending_runtime_pose_mirror',lambda *args:pytest.fail('draw RNA'))
+    engine._present_cached_frame(None)
+    assert draws==['new-image'] and engine._presented_frame is new
+    assert not engine._commit_frame_pose_mirror(old,prepared=(old,packet[1],{}, {},False))
+
+
+def test_old_renderer_timer_cannot_consume_new_renderer_pending_packet(monkeypatch):
+    module=_load_engine_with_fake_bpy(monkeypatch)
+    engine=module.OvrtxExampleRenderEngine()
+    frame=SimpleNamespace(runtime_tick_result=_tick_result(module),runtime_tick_timeline=(False,2,1),publication_index=1)
+    engine._queue_frame_presentation(frame)
+    old_callback=module.bpy.app.timers.pending.pop()
+    engine._clear_ovrtx_runtime_state()
+    engine._queue_frame_presentation(frame)
+    pending=engine._pending_presentation_frame
+    assert old_callback() is None
+    assert engine._pending_presentation_frame is pending and engine._presentation_prepare_registered
+    assert engine._ready_presentation_frame is None and engine._mirrored_publication_index is None
+
+
+def test_failed_presentation_timer_registration_allows_next_publication_retry(monkeypatch):
+    module=_load_engine_with_fake_bpy(monkeypatch)
+    engine=module.OvrtxExampleRenderEngine()
+    frame=SimpleNamespace(runtime_tick_result=_tick_result(module),runtime_tick_timeline=(False,2,1),publication_index=1)
+    timers=module.bpy.app.timers;register=timers.register
+    monkeypatch.setattr(timers,'register',lambda *args,**kwargs:(_ for _ in ()).throw(RuntimeError('temporarily unavailable')))
+    engine._queue_frame_presentation(frame)
+    assert not engine._presentation_prepare_registered
+    monkeypatch.setattr(timers,'register',register)
+    engine._queue_frame_presentation(frame)
+    assert engine._presentation_prepare_registered and timers.pending
+
+
 def test_handoff_coalesces_and_absorbs_newest_result_on_main_thread(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -327,7 +423,7 @@ def test_initial_condition_handoff_clears_playback_lock_on_main_thread(
     assert engine._physics_playback_lock.is_active() is False
 
 
-def test_failed_tick_handoff_records_update_result_without_transitions(
+def test_failed_tick_handoff_records_update_result_and_releases_ownership(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     module = _load_engine_with_fake_bpy(monkeypatch)
@@ -349,9 +445,55 @@ def test_failed_tick_handoff_records_update_result_without_transitions(
     timers.run_pending()
 
     assert recorded == [{"failed": True, "skipped_reason": "boom"}]
-    # FAILED ticks perform no lock transitions and schedule no mirror.
-    assert engine._physics_playback_lock.is_active() is True
+    # A failed worker must not leave Blender output channels owned indefinitely.
+    assert engine._physics_playback_lock.is_active() is False
     assert engine._pending_pose_mirror == {}
+
+
+def test_queued_tick_from_replaced_controller_cannot_mirror(monkeypatch):
+    module = _load_engine_with_fake_bpy(monkeypatch)
+    engine = module.OvrtxExampleRenderEngine()
+    adapter = SimpleNamespace(controller=object(), active_generation=3)
+    engine._viewport_generation_runtime = SimpleNamespace(ovphysx=adapter)
+    _handoff_from_worker(engine, _tick_result(module), _request(module))
+    adapter.controller = object()
+    adapter.active_generation = 4
+    module.bpy.app.timers.run_pending()
+    assert engine._pending_pose_mirror == {}
+    assert not engine._physics_playback_lock.is_active()
+
+
+def test_same_controller_reset_rejects_queued_tick_and_pending_mirror(monkeypatch):
+    module = _load_engine_with_fake_bpy(monkeypatch)
+    engine = module.OvrtxExampleRenderEngine()
+    adapter = SimpleNamespace(controller=object(), active_generation=3, physics_generation=1)
+    engine._viewport_generation_runtime = SimpleNamespace(ovphysx=adapter)
+    _handoff_from_worker(engine, _tick_result(module), _request(module))
+    adapter.physics_generation += 1
+    module.bpy.app.timers.run_pending()
+    assert engine._pending_pose_mirror == {}
+    assert engine._runtime_tick_result is None
+    _handoff_from_worker(engine, _tick_result(module), _request(module))
+    module.bpy.app.timers.run_pending()  # Prepare mirror for current history.
+    adapter.physics_generation += 1
+    module.bpy.app.timers.run_pending()  # Reject it after another reset.
+    assert not engine._physics_playback_lock.is_active()
+
+
+def test_tick_completed_after_rewind_cannot_restore_old_pose_or_lock(monkeypatch):
+    module = _load_engine_with_fake_bpy(monkeypatch)
+    engine = module.OvrtxExampleRenderEngine()
+    scene = module._test_scene
+    engine._viewport_scene = scene
+    scene.frame_current = 40
+    _handoff_from_worker(engine, _tick_result(module), _request(
+        module, timeline_controls_enabled=True, timeline_frame=40, timeline_start=1
+    ))
+    scene.frame_current = 1
+    module.bpy.app.timers.run_pending()
+    assert engine._pending_pose_mirror == {}
+    assert not engine._physics_playback_lock.is_active()
+    assert engine._runtime_tick_result is None
 
 
 def test_idle_tick_results_do_not_register_absorb_timers(
@@ -490,7 +632,7 @@ class _PoseProducingScheduler:
 def test_tick_on_render_thread_mirrors_pose_via_main_thread_timer(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Acceptance seam: tick on thread → timer-applied mirror → redraw."""
+    """Acceptance seam: tick on thread â†’ timer-applied mirror â†’ redraw."""
 
     module = _load_engine_with_fake_bpy(monkeypatch)
     timers = module.bpy.app.timers
@@ -529,10 +671,12 @@ def test_tick_on_render_thread_mirrors_pose_via_main_thread_timer(
         assert scheduler.tick_idents
         assert threading.get_ident() not in scheduler.tick_idents
         render_thread_ident = scheduler.tick_idents[0]
-        # The handoff registered the absorb timer; firing it prepares the
-        # mirror (main-thread scene scan) and chains the apply timer.
+        # Target scans prepare the exact published mirror on a timer. RNA
+        # mutation occurs with that frame's successful GPU presentation.
         assert timers.run_pending() >= 1
-        assert timers.run_pending() >= 1
+        prepared = engine._frame_for_presentation(newest)
+        assert prepared.runtime_tick_result.physics_pose_set
+        engine._commit_frame_pose_mirror(prepared)
         obj = module._test_scene.objects[0]
         assert engine._pose_mirror["status"] == "applied"
         assert obj.matrix_world.loc == (4.0, 5.0, 6.0)
@@ -544,11 +688,42 @@ def test_tick_on_render_thread_mirrors_pose_via_main_thread_timer(
         read_idents = {ident for _key, ident in module._test_access_log}
         assert render_thread_ident not in read_idents
     finally:
+        sidecar = module._ENGINE_RUNTIMES[id(engine)]
         engine._end_viewport_session(module.ViewportSessionEndReason.ENGINE_DESTROYED)
-    # Shutdown ordering: the loop shut the scheduler down on the render
-    # thread (before the join returned); the engine's main-thread fallback
-    # call is the idempotent second entry.
+        assert sidecar["cleanup_completion"].wait(WAIT_S)
+        assert sidecar["stop_confirmed"] is True
+    # Teardown is asynchronous: wait for its completion before checking that
+    # the loop shut the scheduler down on the render thread. The queued
+    # teardown command makes the idempotent second call on that same thread.
     assert scheduler.shutdown_idents
     assert scheduler.shutdown_idents[0] == render_thread_ident
     # The stopped loop's tick handoff was dropped with the session.
     assert engine._pending_tick_absorb is None
+
+
+def test_disabled_physics_frame_certifies_exact_displayed_tick_without_pose_packet(monkeypatch):
+    module = _load_engine_with_fake_bpy(monkeypatch)
+    engine = module.OvrtxExampleRenderEngine()
+    tick = module.RuntimeTickResult(status=RuntimeTickStatus.NOT_ENABLED,
+        enabled=False, should_request_redraw=False, generation=0, physics_pose_set=())
+    frame = SimpleNamespace(runtime_tick_result=tick, publication_index=4)
+    assert engine._frame_for_presentation(frame) is frame
+    engine._finish_cached_frame_presentation(frame, None)
+    assert engine._presented_frame is frame
+    assert engine._runtime_tick_result is tick
+    assert engine._presented_publication_index == 4
+    engine._mirrored_frame = SimpleNamespace(publication_index=3)
+    assert engine._frame_for_presentation(frame) is None
+    assert not engine._commit_frame_pose_mirror(frame)
+
+
+def test_enabled_empty_or_physical_tick_requires_prepared_mirror_packet(monkeypatch):
+    module = _load_engine_with_fake_bpy(monkeypatch)
+    engine = module.OvrtxExampleRenderEngine()
+    empty = module.RuntimeTickResult(status=RuntimeTickStatus.STEPPED,
+        enabled=True, should_request_redraw=False, generation=1, physics_pose_set=())
+    for tick in (empty, _tick_result(module)):
+        frame = SimpleNamespace(runtime_tick_result=tick, publication_index=1)
+        assert engine._frame_for_presentation(frame) is None
+        assert not engine._commit_frame_pose_mirror(frame)
+    assert engine._presented_frame is None

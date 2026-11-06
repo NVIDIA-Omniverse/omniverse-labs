@@ -73,7 +73,18 @@ class StageMutation:
 
 
 class RuntimeStageHost:
-    """Minimal demo-local scene authority for the first composition validation."""
+    """Minimal demo-local scene authority for the first composition validation.
+
+    SUPERSEDED for the RENDER path by node n-03-02a: the render worker now
+    renders from its application-owned in-process ovstage (OvrtxManager owns the
+    ovstage instance and drives committed stage state through the canonical
+    ovstage population sequence via ``stepStage``/``driveStageFromOvstage``; the
+    worker no longer depends on a demo-local host as its stage backing). This
+    class remains ONLY as the demo-local Python authority used by the OVPhysX
+    shared-stage *composition probe* (ovphysx_stage.OvphysxStageController) — a
+    separate diagnostic path, not the gRPC frame render path. The gRPC frame
+    bridge (CreateSimulation / WriteWorldState) is unchanged by the swap.
+    """
 
     def __init__(self, scene_id: str) -> None:
         self.scene_id = scene_id

@@ -1,0 +1,40 @@
+{
+  "reference_path": "_build/blender-ovrtx-ovstream/render-outputs/bd1/proof/result.json",
+  "receipt_path": "_build/blender-ovrtx-ovstream/render-outputs/bd1/receipt.json",
+  "shared_scene_sha256": "e1c9c724f047d36d043e75aa973fb5a4cb1a42048b300a858ebfcb894035d9f5",
+  "baseline_worker_sha256": "9871e969eae96901eba7797bf3f7b6cb1c34b48fc8cef42b409394145285a75d",
+  "baseline_addon_pin": "365a167c07b3f2670c68d275c943b19fce5d5b6c",
+  "files": {
+    "_build/blender-ovrtx-ovstream/render-outputs/bd1/proof/result.json": "3a875c6d66d228252f309507920369159d09640eb8f3f6d0a4dbaffd10e07fd4",
+    "_build/blender-ovrtx-ovstream/render-outputs/bd1/receipt.json": "dca1363787712e2d0b95395dd546bf720637c1060fca57f73cbe290cdae97494",
+    "_build/blender-ovrtx-ovstream/render-outputs/bd1/root-diagnostic-audit.json": "8d82733c7008474eb0a6eff0db78aee245cf1765e8a6d1d1454be0e3d8d318ee",
+    "_build/blender-ovrtx-ovstream/render-outputs/baseline-viewport-v1/proof/result.json": "92f2d6d1ba98e58f3eb7212f8b274e6f93dc911ab62c8827e0fbe0bd0a3c2a1c",
+    "_build/blender-ovrtx-ovstream/camera/native-build-vs2026/bin/ovrtx-bridge-server.exe": "9871e969eae96901eba7797bf3f7b6cb1c34b48fc8cef42b409394145285a75d",
+    "_build/official-addon/runtime-store/runtimes/windows-x64/current/native/client/ovrtx_bridge_client.cp313-win_amd64.pyd": "04fa2cdf65342d9b8cd5d7195cae96a1a05f563b75160fb9e7d726efcb989475",
+    "_build/blender-ovrtx-ovstream/render-outputs/bd1/proof/dlss_default-0.npy": "2475160d2681fbc4a8bc64045bbaa8fca0eb3f05ea528d88110027340f3c3645",
+    "_build/blender-ovrtx-ovstream/render-outputs/bd1/proof/dlss_default-composed.usda": "1ef44d20c3b59d4796e933783cae82fe06253d87b650176635dc93a16769faf2",
+    "_build/blender-ovrtx-ovstream/render-outputs/bd1/proof/dlss_default-worker-config.json": "500f9f277f40770f24589ec2fe5b0a0481ed188c8eb8a0c9cdb62de2540b5206",
+    "_build/blender-ovrtx-ovstream/render-outputs/bd1/proof/dlss_performance-0.npy": "ede8a0419906089bee091013b7fcc613d32697731dff13610ddd76f6ca7b833d",
+    "_build/blender-ovrtx-ovstream/render-outputs/bd1/proof/dlss_performance-composed.usda": "762b8fdffd1ab5b5d773adc15d72d2627c59411a550cb92c45511c90e5d93929",
+    "_build/blender-ovrtx-ovstream/render-outputs/bd1/proof/dlss_performance-worker-config.json": "2d72efdb768346e8f7c8355890f2b524859c526ece48e78397490a27873a1652"
+  },
+  "policies": {
+    "dlss_default": {
+      "enabled": true,
+      "product_id": "/Render/OmniverseKit/HydraTextures/ViewportTexture0",
+      "authored_opinion": null,
+      "config_value": null,
+      "raw_path": "_build/blender-ovrtx-ovstream/render-outputs/bd1/proof/dlss_default-0.npy",
+      "config_path": "_build/blender-ovrtx-ovstream/render-outputs/bd1/proof/dlss_default-worker-config.json"
+    },
+    "dlss_performance": {
+      "enabled": false,
+      "product_id": "/Render/OmniverseKit/HydraTextures/ViewportTexture0",
+      "authored_opinion": "0",
+      "config_value": 0,
+      "raw_path": "_build/blender-ovrtx-ovstream/render-outputs/bd1/proof/dlss_performance-0.npy",
+      "config_path": "_build/blender-ovrtx-ovstream/render-outputs/bd1/proof/dlss_performance-worker-config.json"
+    }
+  },
+  "scope": "Retained baseline same-policy321x241/34sample snapshots. bd1 and matched720 audits show unconditional >noise visual change is not supported by retained baseline. Original numericallimits preserved; no full44 qualification from this manifest."
+}

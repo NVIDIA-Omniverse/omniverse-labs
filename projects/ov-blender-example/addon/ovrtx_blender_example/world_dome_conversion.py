@@ -26,7 +26,13 @@ from .value_edit_conversion import (
 
 
 DOME_LIGHT_SCALE = 360.0 * math.pi
-DOME_POLICY_VERSION = "ovrtx_0_3_world_dome_parity_2026_06_11"
+# OVRTX's dome lights diffuse surfaces about 9% below Cycles at the scale that
+# matches camera-visible and specular dome radiance. The UsdLux diffuse
+# multiplier restores diffuse illumination without changing either. Measured
+# against Cycles on a default Principled grey card under a uniform HDRI
+# (scripts/repro_hdri_final_render.py in the root repository).
+DOME_DIFFUSE_SCALE = 1.094
+DOME_POLICY_VERSION = "ovrtx_0_5_world_dome_cycles_parity_2026_10_13"
 
 ENVIRONMENT_TEXTURE_CHANGED = "topology_world_environment_texture_changed"
 # Any node-based world beyond one bare Background node (sky texture, mixed
@@ -237,11 +243,10 @@ def _supported_spec(
 def environment_texture_dome(source: Any) -> dict[str, Any] | None:
     """The common HDRI world shape as a textured-dome description.
 
-    Matches exactly one Background node whose Color input is fed directly
-    by exactly one Environment Texture node with an on-disk image, and an
-    unlinked Strength. Returns the resolved texture path and dome
-    intensity for authored-scene conversion; anything else (packed or
-    missing image, several textures, mixed graphs) returns ``None``.
+    Follows the active World Output to one Background and a direct Environment
+    Texture, or exact endpoint selections through unclamped MixRGB MIX nodes.
+    Disk and packed images use the shared texture materializer. Interpolated,
+    procedural, cyclic and otherwise unsupported graphs return ``None``.
 
     This describes the *authored* dome only. The live value-edit lane
     keeps classifying environment-texture worlds as topology
@@ -254,25 +259,59 @@ def environment_texture_dome(source: Any) -> dict[str, Any] | None:
         return None
     node_tree = getattr(world, "node_tree", None)
     nodes = tuple(getattr(node_tree, "nodes", ()) or ())
-    env_nodes = _environment_texture_nodes(nodes)
-    background_nodes = _background_nodes(nodes)
-    if len(env_nodes) != 1 or len(background_nodes) != 1:
+    outputs = [node for node in nodes if _node_kind(node) in {"OUTPUT_WORLD", "ShaderNodeOutputWorld"}
+               and getattr(node, "is_active_output", False)]
+    if len(outputs) > 1:
         return None
-    background = background_nodes[0]
-    color_socket = node_input(background, "Color")
-    if not socket_is_linked(color_socket):
-        return None
-    links = tuple(getattr(color_socket, "links", ()) or ())
-    if len(links) != 1 or getattr(links[0], "from_node", None) is not env_nodes[0]:
-        return None
+    if len(outputs) == 1:
+        surface = node_input(outputs[0], "Surface")
+        surface_links = tuple(getattr(surface, "links", ()) or ())
+        if len(surface_links) != 1:
+            return None
+        background = surface_links[0].from_node
+        if _node_kind(background) not in {"BACKGROUND", "ShaderNodeBackground"}:
+            return None
+    else:
+        # Retain the simple graph fixture/API shape when no output is supplied.
+        backgrounds = _background_nodes(nodes)
+        if len(backgrounds) != 1:
+            return None
+        background = backgrounds[0]
+    socket = node_input(background, "Color")
+    visited = set()
+    while True:
+        links = tuple(getattr(socket, "links", ()) or ())
+        if len(links) != 1:
+            return None
+        node = links[0].from_node
+        if id(node) in visited:
+            return None
+        visited.add(id(node))
+        kind = _node_kind(node)
+        if kind in {"TEX_ENVIRONMENT", "ShaderNodeTexEnvironment"}:
+            environment = node
+            break
+        if kind not in {"MIX_RGB", "ShaderNodeMixRGB"} or getattr(node, "blend_type", "") != "MIX" or getattr(node, "use_clamp", False):
+            return None
+        factor = node_input(node, "Fac")
+        if socket_is_linked(factor):
+            return None
+        value = float_value(_socket_default(factor, -1.0), -1.0)
+        if value not in (0.0, 1.0):
+            return None
+        socket = node_input(node, "Color1" if value == 0.0 else "Color2")
     strength_socket = node_input(background, "Strength")
     if socket_is_linked(strength_socket):
         return None
-    texture_file = _image_disk_path(getattr(env_nodes[0], "image", None))
+    texture_file = _image_disk_path(getattr(environment, "image", None))
     if not texture_file:
         return None
     strength = max(0.0, float_value(_socket_default(strength_socket, 1.0), 1.0))
+    rotation = environment_mapping_rotation(environment)
+    if rotation is None:
+        return None
     return {
+        "rotation_z": rotation,
         "texture_file": texture_file,
         "intensity": strength * DOME_LIGHT_SCALE,
         "color": (1.0, 1.0, 1.0),
@@ -338,3 +377,36 @@ def _rgb_tuple(value: Any) -> tuple[float, float, float]:
     if len(values) < 3:
         return (0.0, 0.0, 0.0)
     return tuple(max(0.0, float_value(values[index], 0.0)) for index in range(3))
+
+
+def environment_mapping_rotation(environment):
+    """Supported initial/live Mapping Z rotation; texture sampling is inverse.
+
+    Native Dome Z convention still requires GPU A/B/A proof. Non-uniform scale,
+    translation, XYZ tilts or procedural vector graphs retain population.
+    """
+    vector = node_input(environment, 'Vector')
+    links = tuple(getattr(vector, 'links', ()) or ())
+    if not links: return 0.0
+    if len(links) != 1: return None
+    mapping = links[0].from_node
+    if _node_kind(mapping) not in {'MAPPING','ShaderNodeMapping'}: return None
+    if getattr(mapping,'vector_type','POINT') != 'POINT':return None
+    rotation=node_input(mapping,'Rotation');location=node_input(mapping,'Location');scale=node_input(mapping,'Scale')
+    if any(socket_is_linked(v) for v in (rotation,location,scale)):return None
+    r=tuple(_socket_default(rotation,(0,0,0)));t=tuple(_socket_default(location,(0,0,0)));s=tuple(_socket_default(scale,(1,1,1)))
+    if any(abs(float(v))>1e-12 for v in r[:2]+t) or any(abs(float(v)-1)>1e-12 for v in s):return None
+    return float(r[2])
+
+def environment_rotation_matrix(radians):
+    """Dome xform for a Blender Mapping Z rotation.
+
+    The native latlong dome in a Z-up stage faces 180 degrees away from
+    Cycles' equirectangular lookup, so the half turn aligns the unrotated
+    dome with Blender; the inverse Mapping rotation then follows as before.
+    Measured against Cycles with azimuth-coded HDRIs, see
+    ``scripts/repro_hdri_final_render.py`` in the root repository.
+    """
+    angle = math.pi - float(radians)
+    c=math.cos(angle);s=math.sin(angle)
+    return ((c,s,0.,0.),(-s,c,0.,0.),(0.,0.,1.,0.),(0.,0.,0.,1.))

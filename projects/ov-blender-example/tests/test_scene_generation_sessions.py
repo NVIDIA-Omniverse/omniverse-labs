@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
+from contextlib import contextmanager, nullcontext
 from dataclasses import replace
 from pathlib import Path
 import sys
@@ -60,6 +61,48 @@ class _Timers:
     def register(self, callback, *, first_interval: float = 0.0) -> None:
         assert first_interval == 0.0
         self.callbacks.append(callback)
+
+
+@pytest.mark.parametrize('queued', [False, True])
+@pytest.mark.parametrize('compiled', [False, True])
+def test_compiled_rigid_root_view_replay_does_not_double_visual_scale(tmp_path, queued, compiled):
+    from pxr import Usd, UsdGeom
+    path = tmp_path / 'scaled-body.usda'
+    path.write_text('''#usda 1.0
+def Xform "World" {
+ def Xform "Body" {
+  matrix4d xformOp:transform:ovPhysics = ((1,0,0,0),(0,1,0,0),(0,0,1,0),(1,2,3,1))
+  uniform token[] xformOpOrder = ["xformOp:transform:ovPhysics"]
+  def Mesh "Visual" {
+   double3 xformOp:scale = (.5,.5,.5)
+   uniform token[] xformOpOrder = ["xformOp:scale"]
+  }
+ }
+}'''.replace('ovPhysics', 'ovPhysics' if compiled else 'authored'))
+    mapping = {BlenderId('OBJECT', 9): BlenderPrimPath('Body','MESH','/World/Body','/World/Body/Visual')}
+    generation = SimpleNamespace(blender_prim_paths=mapping, materialize_usd=lambda: str(path))
+    applied = []
+    class Port:
+        def update_transforms(self, values):
+            applied.extend(values);return OvrtxValueUpdateResult(len(values), 1)
+        def update_attribute_values(self, values):return OvrtxValueUpdateResult(len(values), 1)
+    class Controller:
+        def apply_runtime_updates(self, operation):return operation(Port(), False)
+    owner = SimpleNamespace(retain_transform_values=lambda values: None,
+        retain_attribute_values=lambda values: None, retain_initial_conditions=lambda values: None)
+    runtime = scene_generation_sessions.AuthoringGenerationRuntime(object(), owner)
+    runtime.ovrtx = SimpleNamespace(controller=Controller(), activate=lambda g: True, composition=None, last_error='')
+    matrix = ((.5,0.,0.,0.),(0.,.5,0.,0.),(0.,0.,.5,0.),(1.,2.,3.,1.))
+    if queued:
+        edit = InteractiveEdit(shape=EditShape.VALUE,data_authority=DataAuthority.VIEW,
+            **edit_location(usd_prim_path='/World/Body',usd_attribute='xformOp:transform',
+                blender_property_path='matrix_world',provenance={'blender_session_uid':9,'blender_id_kind':'OBJECT'}),value=matrix)
+        runtime.scheduler.submit_edit(InteractiveEditPlanner().plan(edit).to_intent())
+    assert runtime._activate_ovrtx(generation, () if queued else (OvrtxTransformValue('/World/Body',matrix),), ())
+    expected = ((1.,0.,0.,0.),(0.,1.,0.,0.),(0.,0.,1.,0.),(1.,2.,3.,1.)) if compiled else matrix
+    assert [v for row in applied[0].matrix for v in row] == pytest.approx([v for row in expected for v in row])
+    stage=Usd.Stage.Open(str(path));visual=stage.GetPrimAtPath('/World/Body/Visual')
+    assert UsdGeom.XformCache().GetLocalToWorldTransform(visual)[0][0] == .5
 
 
 def _blender(scene: object) -> SimpleNamespace:
@@ -132,6 +175,7 @@ def test_viewport_generation_defers_dirty_reconciliation_to_one_timer(monkeypatc
         scene_generation_sessions,
         "bpy",
         SimpleNamespace(
+            data=SimpleNamespace(scenes=()),
             app=SimpleNamespace(
                 timers=SimpleNamespace(
                     register=lambda callback, **_kwargs: callbacks.append(callback)
@@ -481,11 +525,6 @@ def test_initial_generation_deduplicates_and_invalidates_stale_file_work(monkeyp
         {"status": "unavailable", "scene_uid": 0, "error": "", "last_error": ""},
     )
     monkeypatch.setattr(engine, "stop_viewport_render_threads_for_file_load", lambda: None)
-    monkeypatch.setattr(
-        sys.modules["ovrtx_blender_example"],
-        "start_runtime_services_async",
-        lambda: True,
-    )
     monkeypatch.setattr(scene_generation_sessions, "_load_pre_completed", False)
     monkeypatch.setattr(scene_generation_sessions, "_owners", {})
     monkeypatch.setattr(scene_generation_sessions, "_runtimes", {})
@@ -497,9 +536,15 @@ def test_initial_generation_deduplicates_and_invalidates_stale_file_work(monkeyp
     scene_generation_sessions.load_pre()
     blender.context.scene = second
     scene_generation_sessions.load_post()
+    assert not blender.app.timers.callbacks
+    assert calls == []
+    # Opening a file stays idle until an explicit render/rebuild request.
+    assert scene_generation_sessions.schedule_initial_generation(blender)
     current = blender.app.timers.callbacks.pop()
 
-    stale()
+    assert stale() is None
+    assert scene_generation_sessions._CLOSE_TASK["completion"].wait(2)
+    assert scene_generation_sessions.close_status()["status"] == "closed"
     current()
 
     assert calls == [42]
@@ -565,7 +610,8 @@ def test_load_pre_stops_viewport_threads_before_closing(monkeypatch) -> None:
         "stop_viewport_render_threads_for_file_load",
         lambda: events.append("stop"),
     )
-    monkeypatch.setattr(scene_generation_sessions, "close", lambda: events.append("close"))
+    monkeypatch.setattr(scene_generation_sessions, "close",
+                        lambda **kwargs: events.append("close") if kwargs == {"defer_native": True} else pytest.fail(str(kwargs)))
 
     scene_generation_sessions.load_pre()
 
@@ -596,7 +642,8 @@ def test_file_load_stop_failure_does_not_skip_other_engines_or_close(monkeypatch
         {id(failing): {"authored": True, "generation_runtime": failed_runtime}},
     )
     monkeypatch.setattr(scene_generation_sessions, "_load_pre_completed", False)
-    monkeypatch.setattr(scene_generation_sessions, "close", lambda: events.append("close"))
+    monkeypatch.setattr(scene_generation_sessions, "close",
+                        lambda **kwargs: events.append("close") if kwargs == {"defer_native": True} else pytest.fail(str(kwargs)))
 
     scene_generation_sessions.load_pre()
 
@@ -641,14 +688,15 @@ def test_file_load_dead_wrapper_tears_down_sidecar(monkeypatch) -> None:
 
     engine.stop_viewport_render_threads_for_file_load()
 
+    assert runtime["cleanup_completion"].wait(2)
+    engine._finish_pending_engine_teardowns()
     assert id(dead) not in engine._ENGINE_RUNTIMES
-    assert runtime == {
-        "render_loop": None,
-        "render_thread": None,
-        "teardown": None,
-        "teardown_state": None,
-        "stop_confirmed": True,
-    }
+    for key in ("render_loop", "render_thread", "teardown", "teardown_state"):
+        assert runtime[key] is None
+    assert runtime["stop_confirmed"] is True
+    assert runtime["stop_pending"] is False
+    assert runtime["stop_outcome"] == {"joined": True, "leaked_thread": False}
+    assert runtime["stop_caller_ident"] != threading.get_ident()
 
 
 def test_affected_blender_ids_include_light_data() -> None:
@@ -675,6 +723,17 @@ def test_affected_blender_ids_include_world_data() -> None:
     assert scene_generation_sessions.affected_blender_ids(
         SimpleNamespace(updates=(SimpleNamespace(id=world),))
     ) == {BlenderId("WORLD", 30)}
+
+
+@pytest.mark.parametrize('rna,kind', [('Curve','CURVE'), ('TextCurve','CURVE'),
+    ('SurfaceCurve','CURVE'), ('Curves','CURVES'), ('MetaBall','META'), ('Volume','VOLUME'), ('PointCloud','POINTCLOUD')])
+def test_geometry_datablock_edits_and_owners_are_not_dropped(rna, kind):
+    data = SimpleNamespace(session_uid=22, library=None, override_library=None,
+        bl_rna=SimpleNamespace(identifier=rna))
+    obj = SimpleNamespace(session_uid=23, type=kind, library=None, override_library=None,
+        bl_rna=SimpleNamespace(identifier='Object'))
+    assert scene_generation_sessions.affected_blender_ids(SimpleNamespace(
+        updates=(SimpleNamespace(id=data), SimpleNamespace(id=obj)))) == {BlenderId(kind,22), BlenderId('OBJECT',23)}
 
 
 def test_affected_blender_ids_use_concrete_light_type_and_skip_camera_object() -> None:
@@ -915,7 +974,14 @@ def test_reconciliation_authoring_preserves_concurrent_dirty_notification(
     assert not scene_generation_sessions.is_authoring(scene)
 
 
-def test_scene_owner_retains_typed_edit_without_viewport_runtime(monkeypatch) -> None:
+def _acknowledge_pending_view_edits(scheduler):
+    port = SimpleNamespace(update_transforms=lambda values: OvrtxValueUpdateResult(len(values), 0),
+                           update_attribute_values=lambda values: OvrtxValueUpdateResult(len(values), 0))
+    result = scheduler._view_updates.apply_pending(port)
+    assert not result.get('failed')
+
+
+def test_scene_owner_queues_typed_edit_without_viewport_until_ack(monkeypatch) -> None:
     retained = []
     generation = SimpleNamespace(number=0)
     owner = SimpleNamespace(
@@ -942,6 +1008,8 @@ def test_scene_owner_retains_typed_edit_without_viewport_runtime(monkeypatch) ->
         ),
     )
 
+    assert retained == []
+    _acknowledge_pending_view_edits(scene_generation_sessions._runtimes[12].scheduler)
     assert retained[0].prim_path == "/World/Cube"
 
 
@@ -981,6 +1049,8 @@ def test_edit_during_activation_queues_on_authoring_scheduler(monkeypatch) -> No
 
     assert result is not None and result.status is EditStatus.QUEUED
     assert scheduler.has_pending_view_updates is True
+    assert retained == []
+    _acknowledge_pending_view_edits(scheduler)
     assert [value.prim_path for value in retained] == ["/World/Hat"]
 
 
@@ -1163,6 +1233,8 @@ def test_scene_owner_retains_camera_edit_without_viewport_runtime(monkeypatch) -
         ),
     )
 
+    assert retained == []
+    _acknowledge_pending_view_edits(scene_generation_sessions._runtimes[12].scheduler)
     assert retained == [
         OvrtxTransformValue("/World/Camera", [list(row) for row in matrix])
     ]
@@ -1213,6 +1285,8 @@ def test_scene_owner_rebinds_retained_camera_across_generation_handoff(
         ),
     )
 
+    assert owner.retained_values_for(predecessor)[0] == ()
+    _acknowledge_pending_view_edits(scene_generation_sessions._runtimes[12].scheduler)
     transforms, _attributes, _initial_conditions = owner.retained_values_for(
         replacement
     )
@@ -1222,6 +1296,45 @@ def test_scene_owner_rebinds_retained_camera_across_generation_handoff(
             "/World/Generation_1/Camera", [list(row) for row in matrix]
         ),
     )
+
+
+
+def _install_final_runtime(monkeypatch, events: list | None = None):
+    """Fake scene runtime created by activate_for_final_render's first render.
+
+    Activation replays the owner's retained values like the real runtime, so
+    tests observe exactly what the retained worker would receive.
+    """
+
+    created = []
+
+    class Runtime:
+        def __init__(self, controller: object, owner: object) -> None:
+            self.owner = owner
+            self.scene_uid = 0
+            self.viewport_ids = ()
+            self.scheduler = SimpleNamespace(baked_playback_paused=False)
+            self.reuse_blocked = False
+            self._request = None
+            self.ovrtx = SimpleNamespace(
+                controller=SimpleNamespace(_serialized_transport=nullcontext),
+                last_ensure_result=SimpleNamespace(composition=None),
+            )
+            self.activations = []
+            created.append(self)
+
+        def activate_blocking(self, generation: object, request: object, *, predecessor: object = None) -> None:
+            transforms, attributes, _initial = self.owner.retained_values_for(generation)
+            self._request = request
+            values = {"transform_values": transforms, "attribute_values": attributes}
+            self.activations.append(values)
+            if events is not None:
+                events.append(("activate", generation, values))
+
+        activate = activate_blocking
+
+    monkeypatch.setattr(scene_generation_sessions, "AuthoringGenerationRuntime", Runtime)
+    return created
 
 
 def test_physics_rejected_transform_is_not_replayed_by_immediate_final_render(
@@ -1282,32 +1395,15 @@ def test_physics_rejected_transform_is_not_replayed_by_immediate_final_render(
         SimpleNamespace(updates=()),
         scene=scene,
     )
-    activations = []
-
-    class FinalAdapter:
-        last_error = ""
-
-        def __init__(self, _controller: object) -> None:
-            pass
-
-        def update_request(self, _request: object) -> None:
-            pass
-
-        def activate(self, _generation: object, **values: object) -> bool:
-            activations.append(values)
-            return True
-
-        def deactivate(self) -> str:
-            return "stopped"
-
     monkeypatch.setattr(scene_generation_sessions, "_owners", {12: owner})
     monkeypatch.setattr(scene_generation_sessions, "_runtimes", {})
-    monkeypatch.setattr(scene_generation_sessions, "OvrtxGenerationAdapter", FinalAdapter)
+    created = _install_final_runtime(monkeypatch)
     scene_generation_sessions.activate_for_final_render(
         scene,
         RenderRequest(input_usd_path=generation.usd_path),
         controller=object(),
     )
+    activations = created[0].activations
 
     assert result[0].reason == "physics_playback_locked"
     assert activations[0]["transform_values"][0].matrix == accepted_matrix
@@ -1375,9 +1471,17 @@ def test_current_generation_edit_context_scans_owned_generation(monkeypatch) -> 
     assert lights == ("light",)
     topology_resolver = resolver.kwargs.pop("mesh_topology_change_resolver")
     assert callable(topology_resolver)
+    graph_resolver = resolver.kwargs.pop("material_graph_change_resolver")
+    assert callable(graph_resolver)
+    unsupported_light_resolver = resolver.kwargs.pop("unsupported_light_change_resolver")
+    assert callable(unsupported_light_resolver)
+    assert callable(resolver.kwargs.pop("mesh_shading_unchanged_resolver"))
     assert resolver.kwargs == {
+        "world_dome_path": "",
         "object_paths_by_session_uid": {91: "/World/Cube"},
         "light_paths_by_object_session_uid": {},
+        "material_paths_by_session_uid": {},
+        "material_source_scene_path": "/tmp/current.usda",
     }
 
 
@@ -2028,6 +2132,9 @@ def test_hidden_value_wake_replays_latest_state_off_presentation(monkeypatch) ->
         def adopt_owning_thread(self) -> None:
             pass
 
+        def _serialized_transport(self):
+            return nullcontext()
+
     class Runtime:
         viewport_ids = set()
         ovrtx = SimpleNamespace(controller=Controller())
@@ -2057,6 +2164,115 @@ def test_hidden_value_wake_replays_latest_state_off_presentation(monkeypatch) ->
     scene_generation_sessions._stop_preparation_worker()
 
 
+def test_hidden_replay_and_viewport_activation_share_transport_lock_order(monkeypatch) -> None:
+    """F12 restart must not deadlock with retained-value preparation."""
+    generation = SimpleNamespace(number=4)
+    request = object()
+    worker_started = threading.Event()
+    preparation_entered = threading.Event()
+    replayed = threading.Event()
+    viewport_done = threading.Event()
+    errors: list[BaseException] = []
+    transport = threading.RLock()
+
+    class Controller:
+        def adopt_owning_thread(self) -> None:
+            worker_started.set()
+
+        @contextmanager
+        def _serialized_transport(self):
+            with transport:
+                yield
+
+    class PreparationLock:
+        def __init__(self) -> None:
+            self.lock = threading.RLock()
+
+        def __enter__(self):
+            if not self.lock.acquire(timeout=1.0):
+                raise TimeoutError("viewport and preparation acquired locks in opposite order")
+            if threading.current_thread().name == "ovrtx-authoring-preparation":
+                preparation_entered.set()
+            return self
+
+        def __exit__(self, *_args):
+            self.lock.release()
+
+    class Runtime:
+        viewport_ids = set()
+        lifecycle_status = "open"
+        reuse_blocked = False
+        ovphysx = SimpleNamespace(active_generation=None)
+        preparation_status = "unavailable"
+        preparation_error = ""
+        last_activation_update = RuntimeTickResult(
+            status=RuntimeTickStatus.NOOP, enabled=True
+        )
+        activate_blocking = scene_generation_sessions.AuthoringGenerationRuntime.activate_blocking
+        replay_retained_values = scene_generation_sessions.AuthoringGenerationRuntime.replay_retained_values
+
+        def __init__(self) -> None:
+            self._preparation_lock = PreparationLock()
+            self._request = request
+            self.ovrtx = SimpleNamespace(
+                controller=Controller(), update_request=lambda _request: None
+            )
+            self.owner = SimpleNamespace(
+                retained_values_for=lambda _generation: ((), (), ())
+            )
+            self.scheduler = SimpleNamespace(note_applied_content=lambda: None)
+
+        def activate(self, _generation, _request, *, predecessor=None) -> None:
+            pass
+
+        def _activate_ovrtx(self, *_args) -> bool:
+            return True
+
+        def _finish_activation(self, *_args) -> bool:
+            replayed.set()
+            return True
+
+        def close(self) -> bool:
+            return True
+
+    runtime = Runtime()
+    monkeypatch.setattr(
+        scene_generation_sessions,
+        "_owners",
+        {12: SimpleNamespace(current_generation=generation, pending_generation=None)},
+    )
+    monkeypatch.setattr(scene_generation_sessions, "_runtimes", {12: runtime})
+    monkeypatch.setattr(scene_generation_sessions, "_dirty", {})
+    monkeypatch.setattr(scene_generation_sessions, "_preparation_pending", {})
+    monkeypatch.setattr(scene_generation_sessions, "_preparation_revisions", {})
+    monkeypatch.setattr(scene_generation_sessions, "generation_requires_physics", lambda _: False)
+    scene_generation_sessions._stop_preparation_worker()
+
+    def viewport_restart() -> None:
+        try:
+            with runtime.ovrtx.controller._serialized_transport():
+                viewport_done.set()
+                assert worker_started.wait(timeout=2.0)
+                # On the old path, preparation acquired this lock before it
+                # queued for transport; activation then timed out acquiring it.
+                assert not preparation_entered.wait(timeout=0.2)
+                runtime.activate_blocking(generation, request)
+        except BaseException as exc:
+            errors.append(exc)
+
+    viewport = threading.Thread(target=viewport_restart, name="viewport-restart")
+    try:
+        viewport.start()
+        assert viewport_done.wait(timeout=2.0)
+        scene_generation_sessions._wake_preparation(12)
+        viewport.join(timeout=3.0)
+        assert not viewport.is_alive()
+        assert replayed.wait(timeout=3.0)
+        assert not errors, errors
+    finally:
+        scene_generation_sessions._stop_preparation_worker()
+
+
 def test_hidden_retryable_sim_busy_retries_without_another_wake(monkeypatch) -> None:
     replayed = threading.Event()
     generation = SimpleNamespace(number=4)
@@ -2064,6 +2280,9 @@ def test_hidden_retryable_sim_busy_retries_without_another_wake(monkeypatch) -> 
     class Controller:
         def adopt_owning_thread(self) -> None:
             pass
+
+        def _serialized_transport(self):
+            return nullcontext()
 
     class Scheduler:
         has_pending_sim_updates = True
@@ -2120,6 +2339,9 @@ def test_hidden_terminal_failure_with_pending_sim_does_not_retry(monkeypatch) ->
     class Controller:
         def adopt_owning_thread(self) -> None:
             pass
+
+        def _serialized_transport(self):
+            return nullcontext()
 
     class Runtime:
         viewport_ids = set()
@@ -2241,7 +2463,8 @@ def test_physics_playback_reconciles_barrier_before_waking_preparation(monkeypat
     monkeypatch.setattr(
         scene_generation_sessions,
         "generation_for_scene",
-        lambda received: events.append(("barrier", received)) or generation,
+        lambda received, *, explicit_physics_restart: events.append(("barrier", received)) or generation
+        if explicit_physics_restart else None,
     )
     monkeypatch.setattr(scene_generation_sessions, "_owners", {12: owner})
     monkeypatch.setattr(scene_generation_sessions, "_runtimes", {})
@@ -2542,22 +2765,6 @@ def test_final_runtime_accepts_candidate_only_after_retained_value_replay(monkey
         def reject(self, _generation: object) -> None:
             raise AssertionError("successful candidate was rejected")
 
-    class Adapter:
-        last_error = ""
-
-        def __init__(self, _controller: object) -> None:
-            pass
-
-        def update_request(self, _request: object) -> None:
-            pass
-
-        def activate(self, generation: object, **kwargs: object) -> bool:
-            events.append(("activate", generation, kwargs))
-            return True
-
-        def deactivate(self) -> str:
-            return "stopped"
-
     owner = Owner()
     monkeypatch.setattr(scene_generation_sessions, "_owners", {12: owner})
     monkeypatch.setattr(scene_generation_sessions, "_runtimes", {})
@@ -2571,15 +2778,16 @@ def test_final_runtime_accepts_candidate_only_after_retained_value_replay(monkey
         "_blocked_reconciliations",
         {12: ("RuntimeError: prior failure", {BlenderId("OBJECT", 91)})},
     )
-    monkeypatch.setattr(scene_generation_sessions, "OvrtxGenerationAdapter", Adapter)
+    created = _install_final_runtime(monkeypatch, events)
 
-    adapter = scene_generation_sessions.activate_for_final_render(
+    lease = scene_generation_sessions.activate_for_final_render(
         SimpleNamespace(session_uid=12),
         RenderRequest(input_usd_path=candidate.usd_path),
         controller=object(),
     )
 
-    assert isinstance(adapter, Adapter)
+    assert isinstance(lease, scene_generation_sessions.PreparedFinalRenderLease)
+    assert scene_generation_sessions._runtimes == {12: created[0]}
     assert events == [
         (
             "activate",
@@ -2612,7 +2820,7 @@ def test_final_render_borrows_prepared_session_and_restores_view_request(monkeyp
     class Runtime:
         _request = viewport_request
         ovrtx = SimpleNamespace(
-            controller=object(),
+            controller=SimpleNamespace(_serialized_transport=nullcontext),
             last_ensure_result=SimpleNamespace(composition=object()),
         )
 
@@ -2661,20 +2869,43 @@ def test_failed_final_render_restore_blocks_runtime_reuse() -> None:
     assert runtime.reuse_blocked is True
 
 
-@pytest.mark.parametrize("status", ("stopped", "not_found", "failed"))
-def test_final_render_without_prior_request_stops_or_blocks_runtime(status: str) -> None:
-    runtime = SimpleNamespace(
-        reuse_blocked=False,
-        ovrtx=SimpleNamespace(deactivate=lambda: status),
-    )
+def test_final_render_without_prior_request_keeps_worker_loaded() -> None:
+    def deactivate() -> str:
+        raise AssertionError("final render restore must not stop the retained worker")
+
+    runtime = SimpleNamespace(reuse_blocked=False, ovrtx=SimpleNamespace(deactivate=deactivate))
     lease = scene_generation_sessions.PreparedFinalRenderLease(
         runtime,
         SimpleNamespace(number=1),
         None,
     )
 
-    assert lease.deactivate() == ("failed" if status == "failed" else "stopped")
-    assert runtime.reuse_blocked is (status == "failed")
+    assert lease.deactivate() == "stopped"
+    assert runtime.reuse_blocked is False
+
+
+def test_consecutive_final_renders_share_one_scene_runtime(monkeypatch) -> None:
+    generation = SimpleNamespace(number=1, usd_path="/tmp/current.usda")
+    owner = SimpleNamespace(
+        current_generation=generation,
+        pending_generation=None,
+        retained_values_for=lambda _generation: ((), (), ()),
+    )
+    monkeypatch.setattr(scene_generation_sessions, "_owners", {12: owner})
+    monkeypatch.setattr(scene_generation_sessions, "_runtimes", {})
+    created = _install_final_runtime(monkeypatch)
+    request = RenderRequest(input_usd_path=generation.usd_path)
+
+    for _render in range(3):
+        lease = scene_generation_sessions.activate_for_final_render(
+            SimpleNamespace(session_uid=12), request, controller=object()
+        )
+        assert lease.controller is created[0].ovrtx.controller
+        assert lease.deactivate() == "stopped"
+
+    assert len(created) == 1
+    assert scene_generation_sessions._runtimes == {12: created[0]}
+    assert len(created[0].activations) == 5  # three renders plus two restores
 
 
 def test_final_runtime_replays_scene_owned_world_dome_value(
@@ -2703,33 +2934,16 @@ def test_final_runtime_replays_scene_owned_world_dome_value(
         "Float",
     )
     owner.retain_attribute_values((world_value,))
-    activations = []
-
-    class Adapter:
-        last_error = ""
-
-        def __init__(self, _controller: object) -> None:
-            pass
-
-        def update_request(self, _request: object) -> None:
-            pass
-
-        def activate(self, _generation: object, **kwargs: object) -> bool:
-            activations.append(kwargs)
-            return True
-
-        def deactivate(self) -> str:
-            return "stopped"
-
     monkeypatch.setattr(scene_generation_sessions, "_owners", {12: owner})
     monkeypatch.setattr(scene_generation_sessions, "_runtimes", {})
-    monkeypatch.setattr(scene_generation_sessions, "OvrtxGenerationAdapter", Adapter)
+    created = _install_final_runtime(monkeypatch)
 
     scene_generation_sessions.activate_for_final_render(
         SimpleNamespace(session_uid=12),
         RenderRequest(input_usd_path=generation.usd_path),
         controller=object(),
     )
+    activations = created[0].activations
 
     assert activations[0]["attribute_values"] == (world_value,)
 
@@ -2751,16 +2965,6 @@ def test_final_runtime_rejects_candidate_when_retained_value_rebinding_fails(
         def reject(self, generation: object) -> None:
             rejected.append(generation)
 
-    class Adapter:
-        def __init__(self, _controller: object) -> None:
-            pass
-
-        def update_request(self, _request: object) -> None:
-            pass
-
-        def deactivate(self) -> str:
-            return "stopped"
-
     owner = Owner()
     monkeypatch.setattr(scene_generation_sessions, "_owners", {12: owner})
     monkeypatch.setattr(scene_generation_sessions, "_runtimes", {})
@@ -2774,7 +2978,7 @@ def test_final_runtime_rejects_candidate_when_retained_value_rebinding_fails(
         "_blocked_reconciliations",
         {12: ("RuntimeError: prior failure", {BlenderId("OBJECT", 91)})},
     )
-    monkeypatch.setattr(scene_generation_sessions, "OvrtxGenerationAdapter", Adapter)
+    _install_final_runtime(monkeypatch)
 
     with pytest.raises(RuntimeError, match="retained material target is unavailable"):
         scene_generation_sessions.activate_for_final_render(
@@ -2956,3 +3160,388 @@ def test_deactivate_all_ovrtx_preserves_scheduler_and_ovphysx(monkeypatch) -> No
     assert runtime.scheduler is scheduler
     assert runtime.ovphysx is ovphysx
     assert runtime._generation_number == 3
+
+
+def _deferred_viewport_fixture(monkeypatch, reconcile):
+    updated = []
+    scene = SimpleNamespace(session_uid=77, update_tag=lambda: updated.append(True))
+    generation = SimpleNamespace(number=0)
+    owner = SimpleNamespace(current_generation=generation, pending_generation=None)
+    owner.reuse = lambda: owner.pending_generation or owner.current_generation
+    callbacks = []
+    monkeypatch.setattr(scene_generation_sessions, "_owners", {77: owner})
+    monkeypatch.setattr(scene_generation_sessions, "_dirty", {})
+    monkeypatch.setattr(scene_generation_sessions, "_blocked_reconciliations", {})
+    monkeypatch.setattr(scene_generation_sessions, "_reconciliation_timers", set())
+    monkeypatch.setattr(scene_generation_sessions, "bpy", SimpleNamespace(data=SimpleNamespace(scenes=()), app=SimpleNamespace(
+        timers=SimpleNamespace(register=lambda callback, **_kwargs: callbacks.append(callback)))))
+    monkeypatch.setattr(scene_generation_sessions, "generation_for_scene", reconcile)
+    return scene, generation, owner, callbacks, updated
+
+
+def test_viewport_defers_object_topology_reconcile_out_of_draw(monkeypatch) -> None:
+    object_id = BlenderId("OBJECT", 99)
+    candidate = SimpleNamespace(number=1)
+    reconciled = []
+
+    def reconcile(received):
+        if owner.pending_generation is not None:
+            return owner.pending_generation
+        reconciled.append(received)
+        scene_generation_sessions._dirty.pop(77)
+        owner.pending_generation = candidate
+        return candidate
+
+    scene, generation, owner, callbacks, updated = _deferred_viewport_fixture(monkeypatch, reconcile)
+    assert scene_generation_sessions.mark_scene_dirty(scene, {object_id})
+    assert scene_generation_sessions.generation_for_viewport(scene) is generation
+    assert scene_generation_sessions.generation_for_viewport(scene) is generation
+    assert reconciled == [], "view_draw path reconciled synchronously"
+    assert len(callbacks) == 1
+    assert callbacks[0]() is None
+    assert reconciled == [scene] and updated == [True]
+    assert scene_generation_sessions.generation_for_viewport(scene) is candidate
+
+
+def test_failed_deferred_reconcile_retries_only_after_an_edit(monkeypatch) -> None:
+    added = BlenderId("OBJECT", 99)
+    attempts = []
+
+    def reconcile(received):
+        attempts.append(set(scene_generation_sessions._dirty[77]))
+        scene_generation_sessions._blocked_reconciliations[77] = (
+            "RuntimeError: export failed", set(scene_generation_sessions._dirty[77]))
+        raise RuntimeError("export failed")
+
+    scene, generation, owner, callbacks, updated = _deferred_viewport_fixture(monkeypatch, reconcile)
+    generation.blender_prim_paths = {}
+    scene.objects = [SimpleNamespace(session_uid=99)]
+    monkeypatch.setattr(scene_generation_sessions, "_preparation_revisions", {})
+    monkeypatch.setattr(scene_generation_sessions, "_blocked_revisions", {})
+    scene_generation_sessions.mark_scene_dirty(scene, {added})
+    assert scene_generation_sessions.generation_for_viewport(scene) is generation
+    assert callbacks.pop()() is None, "a failing timer must not raise"
+    for _ in range(3):
+        assert scene_generation_sessions.generation_for_viewport(scene) is generation
+    assert callbacks == [], "blocked reconcile retried every redraw"
+    # Re-editing the same Object is a new edit and retries.
+    scene_generation_sessions.mark_scene_dirty(scene, {added})
+    assert scene_generation_sessions.generation_for_viewport(scene) is generation
+    assert len(callbacks) == 1
+    assert callbacks.pop()() is None and attempts == [{added}, {added}]
+    assert scene_generation_sessions.generation_for_viewport(scene) is generation
+    assert callbacks == []
+    # Deleting the failed addition retries so the stale entry can be cleared.
+    scene.objects = []
+    assert scene_generation_sessions.generation_for_viewport(scene) is generation
+    assert len(callbacks) == 1
+
+
+def test_close_deactivates_without_the_admission_lock() -> None:
+    """An activation holding the transport takes the admission lock; close must not hold it."""
+    import threading
+    from types import SimpleNamespace
+
+    admission = threading.Lock()
+    observed = []
+
+    def deactivate():
+        # Deactivation waits for the transport an activation may hold.
+        free = admission.acquire(blocking=False)
+        if free:
+            admission.release()
+        observed.append(free)
+        return "stopped"
+
+    runtime = SimpleNamespace(
+        _admission_lock=admission,
+        lifecycle_status="open",
+        reuse_blocked=False,
+        ovrtx=SimpleNamespace(controller=None, deactivate=deactivate),
+        ovphysx=SimpleNamespace(deactivate=deactivate),
+        scheduler=SimpleNamespace(set_edit_wake_hook=lambda hook: None, shutdown=lambda: None),
+        _presentation_lock=threading.Lock(),
+        _presentation_wakes={},
+    )
+    assert scene_generation_sessions.AuthoringGenerationRuntime.close(runtime) is True
+    assert observed == [True, True]
+    assert runtime.lifecycle_status == "closed"
+
+
+def test_live_edit_context_indexes_accepted_render_shaders_for_matching_generation(monkeypatch):
+    scans = []
+    class Resolver:
+        def __init__(self, **kwargs): self.kwargs = kwargs
+        def scan(self, request): scans.append(request.input_usd_path)
+    generation = SimpleNamespace(usd_path='/generation.usda', blender_prim_paths={})
+    scene = SimpleNamespace(session_uid=550, objects=())
+    composition = SimpleNamespace(source_scene_path='/generation.usda', composed_scene_path='/accepted-openpbr.usda')
+    runtime = SimpleNamespace(ovrtx=SimpleNamespace(controller=SimpleNamespace(_spec=SimpleNamespace(ovrtx_scene_composition=composition))))
+    monkeypatch.setattr(scene_generation_sessions, '_owners', {550: SimpleNamespace(current_generation=generation)})
+    monkeypatch.setattr(scene_generation_sessions, '_runtimes', {550: runtime})
+    monkeypatch.setattr(scene_generation_sessions, 'UsdPrimResolver', Resolver)
+    scene_generation_sessions.current_generation_edit_context(scene)
+    assert scans == ['/accepted-openpbr.usda']
+    composition.source_scene_path = '/older-generation.usda'
+    scene_generation_sessions.current_generation_edit_context(scene)
+    assert scans[-1] == '/generation.usda'
+
+
+def test_live_edit_context_caches_immutable_indexes_and_rechecks_blender_uv_data(monkeypatch):
+    scans=[];invalidations=[]
+    class Resolver:
+        def __init__(self,**kwargs): self._scan_diagnostics={'available':True}
+        def scan(self,request): scans.append(request.input_usd_path)
+        def begin_edit_callback(self): invalidations.append(self)
+    generation=SimpleNamespace(usd_path='/generation.usda',blender_prim_paths={})
+    scene=SimpleNamespace(session_uid=552,objects=())
+    composition=SimpleNamespace(source_scene_path=generation.usd_path,composed_scene_path='/accepted.usda')
+    runtime=SimpleNamespace(ovrtx=SimpleNamespace(controller=SimpleNamespace(_spec=SimpleNamespace(ovrtx_scene_composition=composition))))
+    owner=SimpleNamespace(current_generation=generation)
+    monkeypatch.setattr(scene_generation_sessions,'_owners',{552:owner})
+    monkeypatch.setattr(scene_generation_sessions,'_runtimes',{552:runtime})
+    monkeypatch.setattr(scene_generation_sessions,'UsdPrimResolver',Resolver)
+    first,_=scene_generation_sessions.current_generation_edit_context(scene)
+    second,_=scene_generation_sessions.current_generation_edit_context(scene)
+    assert first is second and scans==['/accepted.usda'] and invalidations==[first]
+    composition.composed_scene_path='/replacement.usda'
+    third,_=scene_generation_sessions.current_generation_edit_context(scene)
+    assert third is not first and scans[-1]=='/replacement.usda'
+    owner.current_generation=SimpleNamespace(usd_path=generation.usd_path,blender_prim_paths={})
+    fourth,_=scene_generation_sessions.current_generation_edit_context(scene)
+    assert fourth is not third
+
+
+def test_live_edit_context_does_not_cache_transient_scan_failure(monkeypatch):
+    instances=[]
+    class Resolver:
+        def __init__(self,**kwargs): self._scan_diagnostics={'available':False};instances.append(self)
+        def scan(self,request): pass
+    scene=SimpleNamespace(session_uid=553,objects=())
+    generation=SimpleNamespace(usd_path='/generation.usda',blender_prim_paths={})
+    monkeypatch.setattr(scene_generation_sessions,'_owners',{553:SimpleNamespace(current_generation=generation)})
+    monkeypatch.setattr(scene_generation_sessions,'_runtimes',{553:SimpleNamespace(ovrtx=None)})
+    monkeypatch.setattr(scene_generation_sessions,'UsdPrimResolver',Resolver)
+    scene_generation_sessions.current_generation_edit_context(scene)
+    scene_generation_sessions.current_generation_edit_context(scene)
+    assert len(instances)==2
+
+
+def test_verified_material_presentation_target_passes_owner_gate_but_stale_or_foreign_root_does_not(monkeypatch):
+    from dataclasses import replace
+    from ovrtx_blender_example.interactive_edit_planner import InteractiveEdit, EditShape, DataAuthority, edit_location
+    mapping = BlenderPrimPath('Paint', 'MATERIAL', '/World/_materials/Paint', '/World/_materials/Paint')
+    generation = SimpleNamespace(usd_path='/source.usda', blender_prim_paths={BlenderId('MATERIAL', 71): mapping})
+    scene = SimpleNamespace(session_uid=551)
+    composition = SimpleNamespace(source_scene_path='/source.usda', composed_scene_path='/accepted.usda')
+    runtime = SimpleNamespace(ovrtx=SimpleNamespace(controller=SimpleNamespace(_spec=SimpleNamespace(ovrtx_scene_composition=composition))),
+                              _material_presentation_targets=('/source.usda', '/accepted.usda', {71:'/Projected/Paint'}))
+    monkeypatch.setattr(scene_generation_sessions, '_owners', {551: SimpleNamespace(current_generation=generation)})
+    monkeypatch.setattr(scene_generation_sessions, '_runtimes', {551: runtime})
+    edit = InteractiveEdit(shape=EditShape.VALUE, data_authority=DataAuthority.VIEW,
+        **edit_location(usd_prim_path='/Projected/Paint/OpenPBR', usd_attribute='inputs:base_color',
+                        blender_property_path='principled:Base Color',
+                        provenance={'blender_id_kind':'MATERIAL', 'blender_session_uid':71}), value=(.1,.2,.3))
+    assert scene_generation_sessions.resolve_current_scene_edit_group(scene, [edit], {}) == (edit,)
+    foreign = replace(edit, usd_prim_path='/Projected/Another/OpenPBR')
+    assert scene_generation_sessions.resolve_current_scene_edit_group(scene, [foreign], {}) == ()
+    composition.composed_scene_path = '/new-accepted.usda'
+    assert scene_generation_sessions.resolve_current_scene_edit_group(scene, [edit], {}) == ()
+
+
+def test_shader_owner_cache_avoids_scene_walks_and_preserves_topology_fallback(monkeypatch):
+    sessions = scene_generation_sessions
+    material = SimpleNamespace(name_full='Paint', session_uid=3,
+        bl_rna=SimpleNamespace(identifier='Material'))
+    data = SimpleNamespace(name_full='Mesh', session_uid=2, materials=[material],
+        bl_rna=SimpleNamespace(identifier='Mesh'))
+    obj = SimpleNamespace(name_full='Object', type='MESH', session_uid=1, data=data,
+        parent=None, material_slots=[SimpleNamespace(material=material,link='DATA')],
+        bl_rna=SimpleNamespace(identifier='Object'), hide_render=False)
+    class Objects:
+        allow_walk = True
+        count = 1
+        def __len__(self): return self.count
+        def __iter__(self):
+            assert self.allow_walk, 'Warm shader notification rescanned the scene'
+            return iter([obj])
+    objects = Objects()
+    scene = SimpleNamespace(session_uid=77,objects=objects)
+    generation = SimpleNamespace(scene_object_count=1,
+        blender_prim_paths={BlenderId('MATERIAL',3):object()},
+        mesh_shading_inputs={BlenderId('OBJECT',1):sessions.scene_generation._mesh_shading_inputs(obj)})
+    owner = SimpleNamespace(current_generation=generation,pending_generation=None)
+    monkeypatch.setattr(sessions,'_owners',{77:owner})
+    monkeypatch.setattr(sessions,'_runtimes',{77:SimpleNamespace()})
+    monkeypatch.setattr(sessions,'_dirty',{})
+    context = sessions.current_generation_shader_context(scene)
+    assert context.materials == (material,)
+    objects.allow_walk = False
+    graph = SimpleNamespace(updates=[SimpleNamespace(id=source,
+        is_updated_geometry=False,is_updated_transform=False,is_updated_shading=True)
+        for source in (obj,data,material)])
+    assert sessions.shader_only_generation_update(scene,graph)
+    assert sessions.current_generation_shader_context(scene) is context
+    obj.hide_render=True
+    assert not sessions.shader_only_generation_update(scene,graph)
+    obj.hide_render=False
+    data.materials=[]
+    assert not sessions.shader_only_generation_update(scene,graph)
+    data.materials=[material]
+    graph.updates[0].is_updated_geometry=True
+    assert not sessions.shader_only_generation_update(scene,graph)
+    graph.updates[0].is_updated_geometry=False
+    objects.count=2
+    assert not sessions.shader_only_generation_update(scene,graph)
+    objects.count=1
+    sessions._dirty[77]={BlenderId('OBJECT',1)}
+    assert not sessions.shader_only_generation_update(scene,graph)
+    sessions._dirty.clear()
+    # A new immutable generation must rebuild its owner index.
+    owner.current_generation=SimpleNamespace(**generation.__dict__)
+    objects.allow_walk=True
+    assert sessions.current_generation_shader_context(scene) is not context
+
+
+def test_edit_callback_reuses_exact_prepared_native_index_without_stage_scan(monkeypatch):
+    sessions=scene_generation_sessions
+    generation=SimpleNamespace(usd_path='/source.usda',blender_prim_paths={})
+    native=object()
+    class Resolver:
+        def __init__(self,**kwargs):
+            self._scan_diagnostics={'available':True}
+            self._resolved_material_paths={}
+        def reuse_scan_from(self,source,request):
+            assert source is native and request.input_usd_path=='/accepted.usda'
+            return True
+        def scan(self,request): pytest.fail('Slider callback reopened a prepared USD stage')
+    composition=SimpleNamespace(source_scene_path='/source.usda',composed_scene_path='/accepted.usda')
+    runtime=SimpleNamespace(ovrtx=SimpleNamespace(controller=SimpleNamespace(
+        _spec=SimpleNamespace(ovrtx_scene_composition=composition))),
+        _native_material_context=(generation,'/accepted.usda',native))
+    monkeypatch.setattr(sessions,'UsdPrimResolver',Resolver)
+    monkeypatch.setattr(sessions,'_owners',{77:SimpleNamespace(current_generation=generation)})
+    monkeypatch.setattr(sessions,'_runtimes',{77:runtime})
+    resolver,_=sessions.current_generation_edit_context(SimpleNamespace(session_uid=77,objects=()))
+    assert runtime._current_edit_context==(generation,'/accepted.usda',resolver)
+
+
+def test_notification_provenance_uses_original_ids_and_unions_tristate_flags():
+    original = SimpleNamespace(session_uid=501,library=None,bl_rna=SimpleNamespace(identifier='Mesh'))
+    evaluated = SimpleNamespace(session_uid=999,original=original)
+    updates = [SimpleNamespace(id=evaluated,is_updated_geometry=False,is_updated_transform=False,is_updated_shading=True),
+               SimpleNamespace(id=evaluated,is_updated_geometry=True,is_updated_transform=False)]
+    records = scene_generation_sessions.affected_blender_update_provenance(SimpleNamespace(updates=updates,mode='RENDER'))
+    note = records[BlenderId('MESH',501)]
+    assert note.geometry is True and note.transform is False and note.shading is True
+    assert BlenderId('MESH',999) not in records
+    unknown = SimpleNamespace(id=evaluated,is_updated_transform=False,is_updated_shading=False)
+    records = scene_generation_sessions.affected_blender_update_provenance(SimpleNamespace(updates=[updates[0],unknown]))
+    assert records[BlenderId('MESH',501)].geometry is None
+
+
+@pytest.mark.parametrize('kind,obj_type,expected', [('World',None,'WORLD'),('Material',None,'MATERIAL'),
+    ('PointLight',None,'LIGHT'),('Object','LIGHT','OBJECT'),('Object','MESH','OBJECT'),('Object','CAMERA',None),('Camera',None,None)])
+def test_provenance_respects_existing_non_geometry_kind_routes(kind,obj_type,expected):
+    value = SimpleNamespace(session_uid=501,library=None,bl_rna=SimpleNamespace(identifier=kind),type=obj_type)
+    result = scene_generation_sessions.affected_blender_update_provenance(SimpleNamespace(updates=[SimpleNamespace(id=value)]))
+    assert set(result) == ({BlenderId(expected,501)} if expected else set())
+
+
+def test_dirty_provenance_coalesces_geometry_unknown_and_explicit_edits(monkeypatch):
+    monkeypatch.setattr(scene_generation_sessions,'_dirty',{})
+    monkeypatch.setattr(scene_generation_sessions,'_dirty_provenance',{})
+    scene = SimpleNamespace(session_uid=812)
+    identity = BlenderId('MESH',501)
+    record = scene_generation_sessions.SceneUpdateProvenance
+    def queue(note):
+        scene_generation_sessions.mark_scene_dirty(scene,{identity},update_provenance={identity:note})
+    queue(record(False,False,True,('RENDER',812,'Default')))
+    queue(record(True,False,False,('RENDER',812,'Default')))
+    assert scene_generation_sessions._dirty_provenance[812][identity].geometry is True
+    scene_generation_sessions.mark_scene_dirty(scene,{identity})
+    assert scene_generation_sessions._dirty_provenance[812][identity].geometry is None
+    queue(record(False,False,True,('RENDER',812,'Default')))
+    assert scene_generation_sessions._dirty_provenance[812][identity].geometry is None
+
+
+def test_provenance_context_change_keeps_conservative_unknown():
+    record = scene_generation_sessions.SceneUpdateProvenance
+    merged = record(False,False,True,('VIEWPORT',1,'Default')).merged(record(False,False,True,('RENDER',1,'Default')))
+    assert merged.geometry is None and merged.transform is None and merged.shading is None
+
+
+def test_visibility_observer_does_not_erase_depsgraph_provenance():
+    record = scene_generation_sessions.SceneUpdateProvenance
+    neutral = record(False, False, False)
+    for note in (record(False, False, True, ('VIEWPORT', 1, 'Default')),
+                 record(True, False, True, ('VIEWPORT', 1, 'Default')),
+                 record()):
+        assert neutral.merged(note) == note
+        assert note.merged(neutral) == note
+
+
+def test_failed_reconciliation_retains_flags_and_concurrent_stronger_edit(monkeypatch):
+    identity = BlenderId('OBJECT',501)
+    scene = SimpleNamespace(session_uid=913,objects=[])
+    record = scene_generation_sessions.SceneUpdateProvenance
+    context = ('RENDER',913,'Default')
+    class Owner:
+        current_generation = SimpleNamespace(number=0,blender_prim_paths={})
+        pending_generation = None
+        def reconcile(self,current_scene,affected,*,update_provenance):
+            assert update_provenance[identity].geometry is False
+            scene_generation_sessions.mark_scene_dirty(current_scene,{identity},
+                update_provenance={identity:record(True,False,False,context)})
+            raise RuntimeError('failed candidate')
+        def reuse(self):
+            return self.current_generation
+    monkeypatch.setattr(scene_generation_sessions,'_owners',{913:Owner()})
+    monkeypatch.setattr(scene_generation_sessions,'_dirty',{})
+    monkeypatch.setattr(scene_generation_sessions,'_dirty_provenance',{})
+    monkeypatch.setattr(scene_generation_sessions,'_blocked_reconciliations',{})
+    scene_generation_sessions.mark_scene_dirty(scene,{identity},update_provenance={identity:record(False,False,True,context)})
+    with pytest.raises(RuntimeError,match='failed candidate'):
+        scene_generation_sessions.generation_for_scene(scene)
+    assert scene_generation_sessions._dirty[913] == {identity}
+    retained = scene_generation_sessions._dirty_provenance[913][identity]
+    assert retained.geometry is True and retained.shading is True
+
+
+def test_final_render_during_bake_capture_keeps_private_worker(monkeypatch) -> None:
+    generation = SimpleNamespace(number=1, usd_path="/tmp/current.usda")
+    owner = SimpleNamespace(
+        current_generation=generation,
+        pending_generation=None,
+        retained_values_for=lambda _generation: ((), (), ()),
+    )
+    activations = []
+
+    class Adapter:
+        last_error = ""
+
+        def __init__(self, _controller: object) -> None:
+            pass
+
+        def update_request(self, _request: object) -> None:
+            pass
+
+        def activate(self, received: object, **values: object) -> bool:
+            activations.append(received)
+            return True
+
+    monkeypatch.setattr(scene_generation_sessions, "_owners", {12: owner})
+    monkeypatch.setattr(scene_generation_sessions, "_runtimes", {})
+    monkeypatch.setattr(scene_generation_sessions, "_bake_capture_owner", object())
+    monkeypatch.setattr(scene_generation_sessions, "OvrtxGenerationAdapter", Adapter)
+    created = _install_final_runtime(monkeypatch)
+
+    result = scene_generation_sessions.activate_for_final_render(
+        SimpleNamespace(session_uid=12),
+        RenderRequest(input_usd_path=generation.usd_path),
+        controller=object(),
+    )
+
+    assert isinstance(result, Adapter)
+    assert activations == [generation]
+    assert created == [] and scene_generation_sessions._runtimes == {}

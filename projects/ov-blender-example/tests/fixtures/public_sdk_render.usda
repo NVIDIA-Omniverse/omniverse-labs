@@ -1,0 +1,35 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    upAxis = "Y"
+    metersPerUnit = 1
+)
+def Xform "World" {
+    def Cube "Cube" {
+        double size = 2
+        color3f[] primvars:displayColor = [(0.8, 0.1, 0.03)]
+    }
+    def Camera "Camera" {
+        float focalLength = 35
+        float horizontalAperture = 36
+        float verticalAperture = 24
+        double3 xformOp:translate = (0, 0, 8)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+    def DomeLight "Light" {
+        float inputs:intensity = 2000
+    }
+}
+def "Render" {
+    def RenderProduct "Camera" {
+        int2 resolution = (320, 240)
+        rel camera = </World/Camera>
+        rel orderedVars = [<LdrColor>, <HdrColor>]
+        def RenderVar "LdrColor" {
+            string sourceName = "LdrColor"
+        }
+        def RenderVar "HdrColor" {
+            string sourceName = "HdrColor"
+        }
+    }
+}

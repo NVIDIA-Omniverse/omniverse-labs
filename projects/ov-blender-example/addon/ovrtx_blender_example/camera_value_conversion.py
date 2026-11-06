@@ -18,11 +18,12 @@ Probe classes (probed independently, cached per session):
 - ``projection``: ``focalLength`` + ``horizontalAperture`` /
   ``verticalAperture`` on perspective cameras.
 - ``clip``: ``clippingRange``.
+- ``dof``: ``fStop`` and ``focusDistance``.
 - ``ortho``: the orthographic scale mapping — the aperture trio under an
   orthographic projection (Blender ``ortho_scale`` maps to apertures).
 
-Everything else on the composed camera (projection kind, aperture offsets,
-DOF) stays composition identity: changes take the replacement route as
+Everything else on the composed camera (projection kind, aperture offsets)
+stays composition identity: changes take the replacement route as
 before this task.
 """
 
@@ -46,8 +47,10 @@ from .value_edit_conversion import (
 PROBE_CLASS_PROJECTION = "projection"
 PROBE_CLASS_CLIP = "clip"
 PROBE_CLASS_ORTHO = "ortho"
+PROBE_CLASS_DOF = "dof"
 CAMERA_VALUE_PROBE_CLASSES = (
     PROBE_CLASS_CLIP,
+    PROBE_CLASS_DOF,
     PROBE_CLASS_ORTHO,
     PROBE_CLASS_PROJECTION,
 )
@@ -88,10 +91,6 @@ _TOPOLOGY_FIELD_REASONS = {
     "type": CAMERA_PROJECTION_KIND_CHANGED,
     "shift_x": CAMERA_APERTURE_OFFSETS_COMPOSED,
     "shift_y": CAMERA_APERTURE_OFFSETS_COMPOSED,
-    "dof.use_dof": CAMERA_DOF_COMPOSED,
-    "dof.aperture_fstop": CAMERA_DOF_COMPOSED,
-    "dof.focus_distance": CAMERA_DOF_COMPOSED,
-    "dof.focus_object": CAMERA_DOF_COMPOSED,
 }
 
 _NON_RENDER_FIELD_REASONS = {
@@ -122,6 +121,8 @@ def probe_class_for_attribute(
     name = str(attribute or "")
     if name == "clippingRange":
         return PROBE_CLASS_CLIP
+    if name in {"fStop", "focusDistance"}:
+        return PROBE_CLASS_DOF
     if name in _PROBED_APERTURE_ATTRIBUTES:
         return (
             PROBE_CLASS_ORTHO
@@ -148,6 +149,10 @@ def classify_field(camera: Any, property_name: str) -> FieldClassification:
     if field == "lens":
         return FieldClassification(
             STATUS_SUPPORTED, "supported_camera_projection_value", ("focalLength",)
+        )
+    if field in {"dof.use_dof", "dof.aperture_fstop", "dof.focus_distance", "dof.focus_object"}:
+        return FieldClassification(
+            STATUS_SUPPORTED, "supported_camera_dof_value", ("fStop", "focusDistance")
         )
     if field in {"sensor_width", "sensor_height", "sensor_fit"}:
         if orthographic:
@@ -191,7 +196,7 @@ def usd_attribute_values(camera_projection: Any) -> tuple[UsdAttributeValue, ...
     projection_token = str(attributes.get("projection", "perspective") or "perspective")
     orthographic = projection_token == "orthographic"
     values: list[UsdAttributeValue] = []
-    for name in (*_PROBED_APERTURE_ATTRIBUTES, "clippingRange"):
+    for name in (*_PROBED_APERTURE_ATTRIBUTES, "clippingRange", "fStop", "focusDistance"):
         if name not in attributes:
             continue
         probe_class = probe_class_for_attribute(name, projection_token)
@@ -217,6 +222,10 @@ def usd_attribute_values(camera_projection: Any) -> tuple[UsdAttributeValue, ...
 
 
 def _blender_property_path(attribute: str, *, orthographic: bool) -> str:
+    if attribute == "fStop":
+        return "data.dof.use_dof,data.dof.aperture_fstop"
+    if attribute == "focusDistance":
+        return "data.dof.focus_distance,data.dof.focus_object"
     if attribute == "clippingRange":
         return "data.clip_start,data.clip_end"
     if attribute == "focalLength":

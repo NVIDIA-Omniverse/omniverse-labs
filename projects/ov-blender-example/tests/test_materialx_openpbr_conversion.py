@@ -14,6 +14,7 @@ sys.path.insert(0, str(ROOT / "addon"))
 
 from ovrtx_blender_example import materialx_openpbr_conversion  # noqa: E402
 from ovrtx_blender_example import usd_preview_emission_layer  # noqa: E402
+from ovrtx_blender_example.sky_texture_radiance import sky_texture_radiance  # noqa: E402
 from ovrtx_blender_example.materialx_openpbr_conversion import (  # noqa: E402
     MaterialSceneConversionResult,
     MaterialSceneConversionStatus,
@@ -163,11 +164,12 @@ class _Material:
         self.name_full = name
         self.node_tree = SimpleNamespace(nodes=nodes)
         self._source_usd_path = source_usd_path
+        self.custom_properties = {}
 
     def get(self, key: str, default=None):
         if key == "ovrtx:sourceUsdPath":
             return self._source_usd_path
-        return default
+        return self.custom_properties.get(key, default)
 
 
 def _principled_material(
@@ -625,6 +627,31 @@ def test_materialx_openpbr_conversion_generates_bump_height_normal(
     assert normal_texture["scale"] == -0.25
 
 
+def test_materialx_openpbr_conversion_scales_bump_height_by_distance(
+    tmp_path: Path,
+) -> None:
+    height_texture = _texture_node("Height Texture", tmp_path / "height.png", colorspace="Non-Color")
+    bump = _Node(
+        "BUMP",
+        "Bump",
+        [
+            _Socket("Strength", 0.2),
+            _Socket("Distance", 0.1),
+            _link(_Socket("Height", 0.0), height_texture),
+        ],
+    )
+    material = _principled_material(
+        name="Distance Bump",
+        extra_principled_inputs=[_link(_Socket("Normal", None), bump)],
+        extra_nodes=[bump, height_texture],
+    )
+
+    result = _convert_bindings([_Binding(material, ("/World/Geom/Bumpy",))])
+
+    normal_texture = result.diagnostics["materials"][0]["openpbr_values"]["textures"]["geometry_normal"]
+    assert abs(normal_texture["scale"] - 0.02) < 1.0e-9
+
+
 def test_materialx_openpbr_conversion_uses_image_raw_colorspace_over_color_slot_default(
     tmp_path: Path,
 ) -> None:
@@ -1025,7 +1052,8 @@ def test_materialx_openpbr_conversion_resolves_sky_texture_emission_color() -> N
     )
 
     assert result.status is MaterialSceneConversionStatus.OK
-    assert result.diagnostics["materials"][0]["openpbr_values"]["emission_color"] == (0.8, 0.9, 1.0)
+    assert result.diagnostics["materials"][0]["openpbr_values"]["emission_color"] == pytest.approx(sky_texture_radiance(sky)[0])
+    # Same Sky Texture value on the MaterialX route and the light-proxy route.
     assert result.diagnostics["materials"][0]["openpbr_values"]["textures"].get("emission_color") is None
 
 
@@ -1284,8 +1312,11 @@ def test_materialx_openpbr_conversion_uses_mix_color_input_texture(
     text = result.value.layer_body
     base_asset_path = materialx_openpbr_conversion._usda_asset_path(base_texture.image.filepath)
     mask_asset_path = materialx_openpbr_conversion._usda_asset_path(mask_texture.image.filepath)
+    # The Mix is translated as a node network, so the mask image drives the blend
+    # instead of being dropped (it used to be omitted, with only the first image kept).
     assert f"asset inputs:file = @{base_asset_path}@" in text
-    assert f"asset inputs:file = @{mask_asset_path}@" not in text
+    assert f"asset inputs:file = @{mask_asset_path}@" in text
+    assert 'info:id = "ND_mix_color3"' in text
 
 
 def test_materialx_openpbr_conversion_accepts_zero_linked_subsurface_scale(
@@ -1511,7 +1542,7 @@ def test_material_scene_conversion_skips_local_material_without_usd_identity() -
     assert result.diagnostics["skipped_materials"][0]["reason"] == "missing_source_usd_path"
 
 
-def test_materialx_openpbr_conversion_accepts_uv_vector_routing(tmp_path: Path) -> None:
+def test_materialx_openpbr_conversion_rejects_untranslated_uv_vector_routing(tmp_path: Path) -> None:
     uv_map = _Node("UVMAP", "UV Map", [])
     vector_math = _Node(
         "VECT_MATH",
@@ -1528,7 +1559,9 @@ def test_materialx_openpbr_conversion_accepts_uv_vector_routing(tmp_path: Path) 
 
     result = _convert_bindings([_Binding(material, ("/World/Geom/Can",))])
 
-    assert result.status is MaterialSceneConversionStatus.OK
+    assert result.status is MaterialSceneConversionStatus.ERROR
+    assert result.value is None
+    assert "image coordinate graph is not translated: Image Texture" in str(result.diagnostics)
 
 
 def test_materialx_openpbr_conversion_fails_loud_for_linked_supported_input() -> None:
@@ -1644,6 +1677,64 @@ def test_materialx_openpbr_conversion_accepts_passive_principled_defaults() -> N
     assert supported["IOR"]["classification"] == "supported"
 
 
+def _principled_input_records(result, names):
+    inputs = result.diagnostics["materials"][0]["node_inventory"][0]["inputs"]
+    return {record["name"]: record for record in inputs if record["name"] in names}
+
+
+def test_materialx_openpbr_conversion_accepts_dispersion_sockets_at_their_defaults() -> None:
+    # Blender 5.3 adds these two Principled sockets; a 5.2 file never has them.
+    material = _principled_material(
+        extra_principled_inputs=[
+            _Socket("Transmission Dispersion Scale", 0.0),
+            _Socket("Transmission Dispersion Abbe Number", 20.0),
+        ]
+    )
+
+    result = _convert_bindings([_Binding(material, ("/World/Geom/Can",))])
+
+    assert result.status is MaterialSceneConversionStatus.OK
+    record = result.diagnostics["materials"][0]
+    assert record["blocking_reasons"] == []
+    assert "transmission_dispersion_scale" not in record["openpbr_values"]
+    assert "transmission_dispersion_abbe_number" not in record["openpbr_values"]
+
+
+def test_materialx_openpbr_conversion_translates_non_default_dispersion() -> None:
+    material = _principled_material(
+        extra_principled_inputs=[
+            _Socket("Transmission Weight", 1.0),
+            _Socket("Transmission Dispersion Scale", 1.0),
+            _Socket("Transmission Dispersion Abbe Number", 35.0),
+        ]
+    )
+
+    result = _convert_bindings([_Binding(material, ("/World/Geom/Can",))])
+
+    assert result.status is MaterialSceneConversionStatus.OK
+    record = result.diagnostics["materials"][0]
+    assert record["blocking_reasons"] == []
+    assert record["openpbr_values"]["transmission_dispersion_scale"] == 1.0
+    assert record["openpbr_values"]["transmission_dispersion_abbe_number"] == 35.0
+    classified = _principled_input_records(
+        result, {"Transmission Dispersion Scale", "Transmission Dispersion Abbe Number"})
+    assert {item["classification"] for item in classified.values()} == {"supported"}
+
+
+def test_materialx_openpbr_conversion_rejects_linked_dispersion() -> None:
+    noise = _Node("TEX_NOISE", "Noise Texture", [_Socket("Vector")], outputs=[_Socket("Fac", 0.5)])
+    scale = _link(_Socket("Transmission Dispersion Scale", 0.0), noise, from_socket_name="Fac")
+    material = _principled_material(extra_principled_inputs=[scale], extra_nodes=[noise])
+
+    result = _convert_bindings([_Binding(material, ("/World/Geom/Can",))])
+
+    assert result.status is MaterialSceneConversionStatus.ERROR
+    assert (
+        "linked_supported_input:Transmission Dispersion Scale"
+        in result.diagnostics["materials"][0]["blocking_reasons"]
+    )
+
+
 def test_materialx_openpbr_conversion_resolves_explicit_usd_binding_targets() -> None:
     material = _principled_material(name="Paint", extra_principled_inputs=[])
     identity = {
@@ -1679,3 +1770,347 @@ def test_materialx_openpbr_conversion_resolves_usd_binding_targets_by_material_n
     assert result.diagnostics["binding_targets"] == ["/World/Geom/Stoplight"]
     assert result.diagnostics["materials"][0]["identity"]["match_source"] == "material_name"
     assert result.diagnostics["materials"][0]["identity"]["material_path"] == "/World/Materials/Stoplight"
+
+
+def test_thin_walled_glass_is_opt_in_and_changes_overlay_digest() -> None:
+    material = _principled_material(
+        name="ShowerGlass",
+        metallic=0.0,
+        alpha=1.0,
+        extra_principled_inputs=[_Socket("Transmission Weight", 1.0), _Socket("IOR", 1.5)],
+    )
+    bulk = _convert_bindings([_Binding(material, ("/World/ShowerGlass",))])
+    assert bulk.status is MaterialSceneConversionStatus.OK
+    assert "geometry_thin_walled" not in bulk.value.layer_body
+
+    material.custom_properties["ovrtx_thin_walled"] = True
+    thin = _convert_bindings([_Binding(material, ("/World/ShowerGlass",))])
+    assert thin.status is MaterialSceneConversionStatus.OK
+    assert "bool inputs:geometry_thin_walled = true" in thin.value.layer_body
+    assert thin.value.digest_content["digest"] != bulk.value.digest_content["digest"]
+    assert thin.diagnostics["materials"][0]["openpbr_values"]["geometry_thin_walled"] is True
+
+    material.custom_properties["ovrtx_thin_walled"] = False
+    reset = _convert_bindings([_Binding(material, ("/World/ShowerGlass",))])
+    assert reset.value.digest_content["digest"] == bulk.value.digest_content["digest"]
+
+
+@pytest.mark.parametrize("flag,reason", [
+    ("true", "ovrtx_thin_walled_must_be_boolean"),
+    (1, "ovrtx_thin_walled_must_be_boolean"),
+])
+def test_thin_walled_flag_rejects_invalid_values(flag, reason) -> None:
+    material = _principled_material(
+        name="Glass", extra_principled_inputs=[_Socket("Transmission Weight", 1.0)]
+    )
+    material.custom_properties["ovrtx_thin_walled"] = flag
+    result = _convert_bindings([_Binding(material, ("/World/Glass",))])
+    assert result.status is MaterialSceneConversionStatus.ERROR
+    assert reason in result.diagnostics["materials"][0]["blocking_reasons"]
+
+
+def test_thin_walled_flag_rejects_opaque_material() -> None:
+    material = _principled_material(name="Wood")
+    material.custom_properties["ovrtx_thin_walled"] = True
+    result = _convert_bindings([_Binding(material, ("/World/Wood",))])
+    assert result.status is MaterialSceneConversionStatus.ERROR
+    assert "ovrtx_thin_walled_requires_principled_transmission" in (
+        result.diagnostics["materials"][0]["blocking_reasons"]
+    )
+
+
+
+def test_thin_walled_rejects_connected_volume_and_allows_disconnected_node():
+    material = _principled_material(extra_principled_inputs=[_Socket("Transmission Weight", 1.0)])
+    material.custom_properties['ovrtx_thin_walled'] = True
+    output = next(node for node in material.node_tree.nodes if node.type == 'OUTPUT_MATERIAL')
+    volume = _Node('VOLUME_ABSORPTION', 'Absorption', [])
+    output.inputs['Volume'] = _Socket('Volume', 0.0)
+    material.node_tree.nodes.append(volume)
+    valid = _convert_bindings([_Binding(material, ('/World/Glass',))])
+    assert valid.status is MaterialSceneConversionStatus.OK
+    _link(output.inputs['Volume'], volume)
+    invalid = _convert_bindings([_Binding(material, ('/World/Glass',))])
+    assert invalid.status is MaterialSceneConversionStatus.ERROR
+    assert 'ovrtx_thin_walled_unsupported_volume_absorption' in invalid.diagnostics['materials'][0]['blocking_reasons']
+
+
+def _uv_textured_material(tmp_path: Path, coordinate_chain):
+    """Base Color image whose Vector input is fed by ``coordinate_chain(image)``."""
+    texture = _texture_node("Image Texture", tmp_path / "base.png")
+    extra = coordinate_chain(texture)
+    material = _principled_material(extra_nodes=[texture, *extra])
+    material.node_tree.nodes[0].inputs["Base Color"] = _link(
+        _Socket("Base Color", (0.8, 0.8, 0.8, 1.0)), texture, from_socket_name="Color")
+    return material
+
+
+def _mapping(vector_type="TEXTURE", *, location=(0.0, 0.0, 0.0), rotation=(0.0, 0.0, 0.0), scale=(1.0, 1.0, 1.0)):
+    node = _Node("MAPPING", "Mapping", [_Socket("Vector", (0.0, 0.0, 0.0)), _Socket("Location", location),
+                                        _Socket("Rotation", rotation), _Socket("Scale", scale)])
+    node.vector_type = vector_type
+    return node
+
+
+def _tex_coord_into(target_socket, output="UV"):
+    coordinate = _Node("TEX_COORD", "Texture Coordinate", [])
+    _link(target_socket, coordinate, from_socket_name=output)
+    return coordinate
+
+
+@pytest.mark.parametrize("vector_type", ["TEXTURE", "POINT"])
+def test_identity_mapping_from_uv_is_the_default_coordinate(tmp_path: Path, vector_type: str) -> None:
+    def chain(texture):
+        mapping = _mapping(vector_type)
+        _link(texture.inputs["Vector"], mapping, from_socket_name="Vector")
+        return [mapping, _tex_coord_into(mapping.inputs["Vector"])]
+
+    result = _convert_bindings([_Binding(_uv_textured_material(tmp_path, chain), ("/World/Geom/Can",))])
+
+    assert result.status is MaterialSceneConversionStatus.OK
+    assert result.diagnostics["materials"][0]["status"] == "generated"
+    assert "ND_image_color3_base_color" in result.value.layer_body
+
+
+def test_direct_uv_and_unnamed_uv_map_are_the_default_coordinate(tmp_path: Path) -> None:
+    def direct(texture):
+        return [_tex_coord_into(texture.inputs["Vector"])]
+
+    def uv_map(texture):
+        node = _Node("UVMAP", "UV Map", [])
+        node.uv_map = ""
+        _link(texture.inputs["Vector"], node, from_socket_name="UV")
+        return [node]
+
+    for chain in (direct, uv_map):
+        result = _convert_bindings([_Binding(_uv_textured_material(tmp_path, chain), ("/World/Geom/Can",))])
+        assert result.status is MaterialSceneConversionStatus.OK, chain.__name__
+
+
+@pytest.mark.parametrize("case", ["named_uv_map", "tilted_mapping", "linked_mapping_value",
+                                  "generated_coordinates", "unfed_mapping"])
+def test_other_image_coordinates_stay_untranslated(tmp_path: Path, case: str) -> None:
+    def chain(texture):
+        if case == "named_uv_map":
+            node = _Node("UVMAP", "UV Map", [])
+            node.uv_map = "Decals"
+            _link(texture.inputs["Vector"], node, from_socket_name="UV")
+            return [node]
+        if case == "generated_coordinates":
+            return [_tex_coord_into(texture.inputs["Vector"], output="Generated")]
+        # Tilting about both X and Y shears the UV plane (a lone tilt or a Z rotation is translated).
+        mapping = _mapping(rotation=(0.5, 0.3, 0.0)) if case == "tilted_mapping" else _mapping()
+        _link(texture.inputs["Vector"], mapping, from_socket_name="Vector")
+        extra = [mapping]
+        if case == "linked_mapping_value":
+            _link(mapping.inputs["Scale"], _Node("VALUE", "Value", []), from_socket_name="Value")
+        if case != "unfed_mapping":
+            extra.append(_tex_coord_into(mapping.inputs["Vector"]))
+        return extra
+
+    result = _convert_bindings([_Binding(_uv_textured_material(tmp_path, chain), ("/World/Geom/Can",))])
+
+    assert result.status is MaterialSceneConversionStatus.ERROR
+    assert "image coordinate graph is not translated: Image Texture" in str(result.diagnostics)
+
+
+def _library_identity(*names):
+    """Stock-export shape: prims named by the base material name, one binding each."""
+    paths = tuple(f"/World/_materials/{name}" for name in names)
+    return {
+        "available": True,
+        "reason": "",
+        "material_paths": paths,
+        "bindings": tuple({"material_path": path, "binding_target": f"/World/Geom/{path.rsplit('/', 1)[-1]}"}
+                          for path in paths),
+    }
+
+
+def _linked_material(name, library_tag, uid):
+    material = _principled_material(name=name)
+    material._source_usd_path = ""  # stock export: no ovrtx:sourceUsdPath
+    material.name_full = f"{name} [{library_tag}]" if library_tag else name
+    material.session_uid = uid
+    return material
+
+
+def test_library_linked_material_resolves_by_scene_generation_identity() -> None:
+    lamp = _linked_material("Lamp", "lib", 7)
+    identity = _library_identity("Lamp")
+
+    unresolved = materialx_openpbr_conversion._resolve_binding(lamp, identity)
+    resolved = materialx_openpbr_conversion._resolve_binding(lamp, identity, {7: "/World/_materials/Lamp"})
+
+    assert unresolved["status"] == "missing_source_usd_path"
+    assert resolved["status"] == "resolved"
+    assert resolved["match_source"] == "scene_generation_identity"
+    assert resolved["binding_targets"] == ["/World/Geom/Lamp"]
+
+
+def test_local_and_linked_materials_with_one_base_name_bind_to_their_own_prims() -> None:
+    local = _linked_material("Lamp", "", 1)
+    linked = _linked_material("Lamp", "lib", 2)
+    identity = _library_identity("Lamp", "Lamp_001")
+    known = {1: "/World/_materials/Lamp", 2: "/World/_materials/Lamp_001"}
+
+    assert materialx_openpbr_conversion._resolve_binding(local, identity, known)["material_path"] == "/World/_materials/Lamp"
+    assert materialx_openpbr_conversion._resolve_binding(linked, identity, known)["material_path"] == "/World/_materials/Lamp_001"
+    # Without the generation identity the linked material must not borrow the local prim.
+    assert materialx_openpbr_conversion._resolve_binding(linked, identity)["material_path"] == ""
+
+
+def test_known_material_path_missing_from_the_stage_is_ignored() -> None:
+    lamp = _linked_material("Lamp", "lib", 7)
+    resolved = materialx_openpbr_conversion._resolve_binding(
+        lamp, _library_identity("Other"), {7: "/World/_materials/Lamp"})
+    assert resolved["status"] == "missing_source_usd_path"
+
+
+def test_scene_layer_converts_library_linked_material_with_known_paths() -> None:
+    lamp = _linked_material("Lamp", "lib", 7)
+    materialx_openpbr_conversion._MATERIALX_BINDING_IDENTITY_CACHE.clear()
+    materialx_openpbr_conversion._MATERIALX_BINDING_IDENTITY_CACHE["test.usda"] = _library_identity("Lamp")
+
+    result = scene_layer_from_materials([lamp], "test.usda", known_material_paths={7: "/World/_materials/Lamp"})
+
+    assert result.status is MaterialSceneConversionStatus.OK
+    assert result.diagnostics["materials"][0]["status"] == "generated"
+    assert "rel material:binding = </OVRTX_Materials/" in result.value.layer_body
+
+
+def _diffuse_material(name, color_source=None, normal_source=None, extra=()):
+    diffuse = _Node("BSDF_DIFFUSE", "Diffuse BSDF", [_Socket("Color", (0.8, 0.8, 0.8, 1.0)),
+                                                     _Socket("Roughness", 0.0), _Socket("Normal", (0.0, 0.0, 0.0))])
+    if color_source is not None:
+        _link(diffuse.inputs["Color"], color_source, from_socket_name="Color")
+    if normal_source is not None:
+        _link(diffuse.inputs["Normal"], normal_source, from_socket_name="Normal")
+    output = _Node("OUTPUT_MATERIAL", "Material Output", [_Socket("Surface")])
+    _link(output.inputs["Surface"], diffuse)
+    nodes = [diffuse, output, *[n for n in (color_source, normal_source) if n is not None], *extra]
+    return _Material(name, nodes, source_usd_path="/World/Looks/" + name)
+
+
+def test_textured_diffuse_bsdf_converts_its_texture(tmp_path: Path) -> None:
+    material = _diffuse_material("Map", _texture_node("Image Texture", tmp_path / "map.png"))
+
+    result = _convert_bindings([_Binding(material, ("/World/Geom/Map",))])
+
+    assert result.status is MaterialSceneConversionStatus.OK
+    record = result.diagnostics["materials"][0]
+    assert record["status"] == "generated"
+    assert "base_color" in record["openpbr_values"]["textures"]
+    assert "color3f inputs:base_color.connect = </OVRTX_Materials/Map/ND_image_color3_base_color.outputs:out>" in result.value.layer_body
+
+
+def test_diffuse_bsdf_static_linked_color_is_used(tmp_path: Path) -> None:
+    rgb = _Node("RGB", "RGB", [], outputs=[_Socket("Color", (0.1, 0.2, 0.3, 1.0))])
+    material = _diffuse_material("Tint", rgb)
+
+    result = _convert_bindings([_Binding(material, ("/World/Geom/Tint",))])
+
+    values = result.diagnostics["materials"][0]["openpbr_values"]
+    assert tuple(round(c, 6) for c in values["base_color"]) == (0.1, 0.2, 0.3)
+
+
+@pytest.mark.parametrize("case", ["color", "normal"])
+def test_diffuse_bsdf_untranslatable_links_reject_instead_of_flattening(tmp_path: Path, case: str) -> None:
+    noise = _Node("TEX_NOISE", "Noise Texture", [])
+    material = (_diffuse_material("Noisy", color_source=noise) if case == "color"
+                else _diffuse_material("Bumpy", normal_source=_Node("VECT_MATH", "Vector Math", [])))
+
+    result = _convert_bindings([_Binding(material, ("/World/Geom/X",))])
+
+    assert result.status is MaterialSceneConversionStatus.ERROR
+    assert f"linked_supported_input:{'Color' if case == 'color' else 'Normal'}" in str(result.diagnostics)
+
+
+@pytest.mark.parametrize("vector_type,location,scale,expected", [
+    ("POINT", (0.25, -0.5, 9.0), (2.0, 3.0, 7.0), ((2.0, 3.0), (0.25, -0.5))),
+    ("TEXTURE", (0.25, -0.5, 9.0), (2.0, 4.0, 7.0), ((0.5, 0.25), (-0.125, 0.125))),
+    ("VECTOR", (0.25, -0.5, 9.0), (2.0, 3.0, 7.0), ((2.0, 3.0), (0.0, 0.0))),
+])
+def test_mapping_becomes_a_uv_scale_and_offset(vector_type, location, scale, expected) -> None:
+    mapping = _mapping(vector_type, location=location, scale=scale)
+    _tex_coord_into(mapping.inputs["Vector"])
+    link = SimpleNamespace(from_node=mapping, from_socket=SimpleNamespace(name="Vector"))
+
+    transform = materialx_openpbr_conversion._uv_coordinate_transform(link)
+
+    assert transform == (pytest.approx(expected[0]), pytest.approx(expected[1]))
+
+
+def test_chained_mappings_compose() -> None:
+    outer = _mapping("POINT", location=(1.0, 0.0, 0.0), scale=(2.0, 2.0, 1.0))
+    inner = _mapping("POINT", location=(0.5, 0.5, 0.0), scale=(3.0, 1.0, 1.0))
+    _link(outer.inputs["Vector"], inner, from_socket_name="Vector")
+    _tex_coord_into(inner.inputs["Vector"])
+    link = SimpleNamespace(from_node=outer, from_socket=SimpleNamespace(name="Vector"))
+
+    # outer(inner(uv)) = 2 * (s_i * uv + l_i) + l_o
+    assert materialx_openpbr_conversion._uv_coordinate_transform(link) == (
+        pytest.approx((6.0, 2.0)), pytest.approx((2.0, 1.0)))
+
+
+def test_scaled_mapping_authors_texcoord_scale_and_offset(tmp_path: Path) -> None:
+    def chain(texture):
+        mapping = _mapping("TEXTURE", scale=(0.1, 2.0, 1.0))
+        _link(texture.inputs["Vector"], mapping, from_socket_name="Vector")
+        return [mapping, _tex_coord_into(mapping.inputs["Vector"])]
+
+    result = _convert_bindings([_Binding(_uv_textured_material(tmp_path, chain), ("/World/Geom/Frame",))])
+
+    assert result.status is MaterialSceneConversionStatus.OK
+    body = result.value.layer_body
+    assert 'info:id = "ND_texcoord_vector2"' in body
+    assert "float2 inputs:in2 = (10, 0.5)" in body
+    assert "float2 inputs:texcoord.connect = </OVRTX_Materials/Paint/ND_image_color3_base_color_uv_offset.outputs:out>" in body
+
+
+def test_identity_mapping_authors_no_texcoord_nodes(tmp_path: Path) -> None:
+    def chain(texture):
+        mapping = _mapping()
+        _link(texture.inputs["Vector"], mapping, from_socket_name="Vector")
+        return [mapping, _tex_coord_into(mapping.inputs["Vector"])]
+
+    result = _convert_bindings([_Binding(_uv_textured_material(tmp_path, chain), ("/World/Geom/Can",))])
+
+    assert "ND_texcoord_vector2" not in result.value.layer_body
+
+
+@pytest.mark.parametrize("op,reported", [("CURVE_RGB", ["base_color:CURVE_RGB"]), ("HUE_SAT", ["base_color:HUE_SAT"])])
+def test_diffuse_texture_chain_reports_what_it_approximates(tmp_path: Path, op: str, reported) -> None:
+    """An untranslatable chain falls back to its first image; omitted operations are reported, never silent.
+
+    These fake nodes lack the sockets the translator needs (curve mapping, hue/saturation
+    inputs), so they exercise the fallback; real nodes are translated as networks.
+    """
+    texture = _texture_node("Image Texture", tmp_path / "wood.png")
+    node_type = op
+    inputs = []
+    middle = _Node(node_type, node_type.title(), [_Socket("Color", (1.0, 1.0, 1.0, 1.0), socket_type="RGBA"), *inputs])
+    _link(middle.inputs["Color"], texture, from_socket_name="Color")
+    material = _diffuse_material("Wood", middle, extra=(texture,))
+
+    result = _convert_bindings([_Binding(material, ("/World/Geom/Wood",))])
+
+    record = result.diagnostics["materials"][0]
+    assert record["status"] == "generated"
+    assert record["approximations"] == reported
+
+
+def test_direct_and_applied_texture_ops_are_not_reported(tmp_path: Path) -> None:
+    texture = _texture_node("Image Texture", tmp_path / "wood.png")
+    gamma = _Node("GAMMA", "Gamma", [_Socket("Color", (1.0, 1.0, 1.0, 1.0)), _Socket("Gamma", 2.2)])
+    _link(gamma.inputs["Color"], texture, from_socket_name="Color")
+    direct = _diffuse_material("Direct", _texture_node("Image Texture", tmp_path / "map.png"))
+    with_gamma = _diffuse_material("Gamma", gamma, extra=(texture,))
+    identity_texture = _texture_node("Image Texture", tmp_path / "ident.png")
+    identity_gamma = _Node("GAMMA", "Gamma", [_Socket("Color", (1.0, 1.0, 1.0, 1.0)), _Socket("Gamma", 1.0)])
+    _link(identity_gamma.inputs["Color"], identity_texture, from_socket_name="Color")
+    with_identity = _diffuse_material("Identity", identity_gamma, extra=(identity_texture,))
+
+    for material in (direct, with_gamma, with_identity):
+        record = _convert_bindings([_Binding(material, ("/World/Geom/X",))]).diagnostics["materials"][0]
+        assert record["status"] == "generated"
+        assert "approximations" not in record, material.name

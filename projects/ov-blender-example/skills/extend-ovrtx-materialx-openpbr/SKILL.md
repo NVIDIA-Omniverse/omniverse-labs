@@ -42,6 +42,31 @@ material.
     `_normal_texture_record`, `_linked_texture_node`: texture graph extraction.
   - `_material_block_lines`, `_texture_shader_lines`, `_input_connect_line`,
     `_binding_tree_lines`: deterministic USDA emission and binding.
+  - `_flattened_node_tree`: inlines node groups before classification; an
+    unresolvable group stays a rejected `GROUP` node.
+  - `_texture_record_from_socket`: compact one-image record when the chain is only
+    an image plus ops it applies; otherwise a node-network record
+    (`record["network"]`, authored by `_network_shader_lines`) with
+    `approximated_ops` / `error_bounds` reported per material.
+  - `_glossy_openpbr_values`, `_glass_openpbr_values`, `_layer_glossy`: Glossy,
+    Glass and Diffuse+Glossy Mix Shader surfaces; `_image_address_mode`,
+    `_uv_chain`, `_named_uv_primvar`: image extension modes and named UV maps.
+- `addon/ovrtx_blender_example/materialx_node_network.py`: translates colour and
+  scalar node graphs (Mix, Hue/Saturation, RGB Curves, Color Ramp, Math, Noise,
+  Wave, Attribute, Object Info, ...) into standard MaterialX nodes. Unsupported
+  nodes raise `Untranslatable`; every approximation is recorded. Check each new
+  standard node against the installed renderer: `ND_luminance_color3` evaluates to a
+  constant there, so luminance is a dot product instead, and `ND_heighttonormal_vector3`
+  only differentiates an image node, never a network.
+- Renderer parameter-name constraint: the installed renderer registers compiled
+  parameters per stage by node definition, index and input name
+  (`ND_add_vector2__1_in2`). Two materials with the same set of unconnected parameter
+  names but different wiring cannot both compile (one logs `Unable to find original
+  SdfPath for key` in `tmp/ov-public-renderer-*/epoch-1/ovrtx.log` and renders with the
+  default material). `_deconflicted_values` pads such a material with neutral `+ 0`
+  nodes, or rejects it so it keeps stock shading. When validating a new shape, render
+  it next to a differently wired material with the same nodes and grep `ovrtx.log` for
+  `[Error]`.
 - `addon/ovrtx_blender_example/texture_materialization.py`:
   `materialized_image_path` and `texture_cache_directory` own disk/packed image
   resolution and content-addressed cache stability.
@@ -50,8 +75,11 @@ material.
 - `addon/ovrtx_blender_example/blender_signal_translation.py::_material_scene_layer_from_scene`:
   selects MaterialX conversion, caches by source path/material identity, and
   preserves the exact-stage boundary.
-- `addon/ovrtx_blender_example/usd_preview_emission_layer.py`: legacy final-render
-  preview path; do not broaden it when the feature belongs to MaterialX/OpenPBR.
+- `addon/ovrtx_blender_example/blender_signal_translation.py::material_route_uses_materialx`:
+  every render intent (viewport and F12 final render) uses the MaterialX/OpenPBR route.
+- `addon/ovrtx_blender_example/usd_preview_emission_layer.py`: fallback only: stock USD
+  export plus Preview repairs for materials MaterialX rejects; do not broaden it when
+  the feature belongs to MaterialX/OpenPBR.
 
 ## Instructions
 

@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from typing import Any, Iterable, Mapping
 
 from . import usd_paths as usd_paths
+from . import usd_value_edit_support
 from .usd_prim_resolution import UsdPrimResolution, UsdPrimResolutionStatus
 
 
@@ -22,6 +23,10 @@ ERROR_AUTHORING_PATH_NOT_IN_SCENE = "authoring_prim_path_not_in_scene"
 MATCH_SOURCE_USD_PATH = "sourceUsdPath"
 MATCH_HIERARCHY_PATH = "material_path"
 MATCH_AUTHORING_PRIM_PATH = "authoring_prim_path"
+MATCH_SCENE_GENERATION_IDENTITY = "scene_generation_material_identity"
+_OPENPBR_VALUE_INPUTS = frozenset(usd_value_edit_support.MATERIAL_USD_VALUE_TYPES) - {
+    "inputs:" + name for name, _ in usd_value_edit_support.PRINCIPLED_PREVIEW_SURFACE_VALUE_SPECS.values()
+}
 
 
 @dataclass(frozen=True)
@@ -46,8 +51,10 @@ def _material_prim_index_from_prims(
     *,
     usd_attribute: str = DEFAULT_USD_MATERIAL_ATTRIBUTE,
     material_type: Any | None = None,
+    schema_default_material_paths: Iterable[str] = (),
 ) -> dict[str, Any]:
-    prim_facts = [_prim_facts(prim, usd_attribute, material_type) for prim in prims]
+    verified_roots = tuple(schema_default_material_paths)
+    prim_facts = [_prim_facts(prim, usd_attribute, material_type, verified_roots) for prim in prims]
     prim_facts = [facts for facts in prim_facts if facts["path"]]
     material_paths = tuple(facts["path"] for facts in prim_facts if facts["is_material"])
     value_facts = tuple(facts for facts in prim_facts if facts["has_attribute"])
@@ -79,6 +86,7 @@ def resolve_material_usd_prim(
     *,
     usd_attribute: str = DEFAULT_USD_MATERIAL_ATTRIBUTE,
     property_name: str = DEFAULT_BLENDER_MATERIAL_PROPERTY,
+    known_prim_path: str = "",
 ) -> UsdPrimResolution[MaterialUsdPrim]:
     material_name = str(getattr(material, "name_full", getattr(material, "name", "")))
     authoring_path = usd_paths.authoring_prim_path(material)
@@ -97,6 +105,12 @@ def resolve_material_usd_prim(
             ERROR_USD_STAGE_UNAVAILABLE,
             {**diagnostics, "stage_reason": str(index.get("reason", ""))},
         )
+
+    # Current scene generations carry the exact stock-export identity. Names
+    # such as "Cube Orange" are sanitized by USD and cannot identify a prim.
+    if known_prim_path:
+        return _resolve_path(diagnostics, index, known_prim_path,
+                             match_source=MATCH_SCENE_GENERATION_IDENTITY)
 
     # Authored scene composition (blender-live-render task04-02): the
     # topology orchestrator assigns each visual material's root prim path to
@@ -272,9 +286,16 @@ def _error(
     )
 
 
-def _prim_facts(prim: Any, usd_attribute: str, material_type: Any | None) -> dict[str, Any]:
+def _prim_facts(prim: Any, usd_attribute: str, material_type: Any | None,
+                verified_roots: tuple[str, ...] = ()) -> dict[str, Any]:
     path = usd_paths.usd_prim_path_from_prim(prim)
-    has_attribute = _prim_is_material_value_shader(prim) and _prim_has_attribute(prim, usd_attribute)
+    # The converter omits default-valued OpenPBR inputs. Only a verified
+    # generation material and its exact supported shader schema can create one.
+    schema_input = (usd_attribute in _OPENPBR_VALUE_INPUTS
+                    and _prim_info_id(prim) == "ND_open_pbr_surface_surfaceshader"
+                    and any(path.startswith(root + "/") for root in verified_roots))
+    has_attribute = _prim_is_material_value_shader(prim) and (
+        _prim_has_attribute(prim, usd_attribute) or schema_input)
     return {
         "path": path,
         "is_material": _prim_is_material(prim, material_type),

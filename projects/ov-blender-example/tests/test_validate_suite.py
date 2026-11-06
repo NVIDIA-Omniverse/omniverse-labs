@@ -105,6 +105,27 @@ def test_golden_evidence_still_rejects_a_digest_mismatch(tmp_path: Path) -> None
     }
 
 
+def test_approved_fixture_identity_uses_platform_specific_workload(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    linux_workload = {"fixture_usd_sha256": "linux"}
+    windows_workload = {"fixture_usd_sha256": "windows"}
+    evidence = {
+        "metadata": {
+            "capture_workload": linux_workload,
+            "platform_capture_workloads": {"win32": windows_workload},
+        }
+    }
+
+    monkeypatch.setattr(validate_suite.sys, "platform", "linux")
+
+    assert validate_suite._approved_fixture_identity(evidence) == linux_workload
+
+    monkeypatch.setattr(validate_suite.sys, "platform", "win32")
+
+    assert validate_suite._approved_fixture_identity(evidence) == windows_workload
+
+
 def test_inventory_classifies_every_validation_entry_point() -> None:
     scripts = Path(validate_suite.ROOT / "scripts")
     entry_points = {path.name for path in scripts.glob("run_*.py")}

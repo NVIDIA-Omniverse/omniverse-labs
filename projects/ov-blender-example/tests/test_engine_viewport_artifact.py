@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
+from contextlib import nullcontext
 from pathlib import Path
 from dataclasses import replace
 import importlib
@@ -42,7 +43,6 @@ from ovrtx_blender_example.engine import (
 from ovrtx_blender_example import interactive_operator_state as operator_state  # noqa: E402
 from ovrtx_blender_example.ovrtx_runtime_client import (  # noqa: E402
     RenderResult,
-    _render_worker_startup_diagnostics,
 )
 from ovrtx_blender_example.render_requests import (  # noqa: E402
     MaterialPresentationLayer,
@@ -101,6 +101,8 @@ def _current_scene_generation(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -
         "generation_for_scene",
         generation_for_scene,
     )
+    monkeypatch.setattr(engine_module.scene_generation_sessions,
+                        "generation_for_final_render", generation_for_scene)
     monkeypatch.setattr(engine_module, "_EXACT_STAGE_CONFIGURATION", None)
     engine_module._RENDER_CALLBACK_ADAPTERS.clear()
 
@@ -194,19 +196,23 @@ class _ArtifactRuntimeClient:
         self.startup_diagnostics = {"render_worker": {"status": "ready"}}
         self.last_render_timings: dict[str, object] = {}
         self.shutdown_called = False
+        # Samples the session has accumulated, as the worker reports them.
+        self.samples = 0
 
     def start_session(self, _spec: object, simulation_id: str | None = None) -> str:
         if self.fail_start:
             self.startup_diagnostics = {"render_worker": {"status": "failed"}}
             raise engine_module.RenderClientError("start failed")
+        self.samples = 0
         return simulation_id or self.simulation_id
 
     def render_result(self, _simulation_id: str, **kwargs: object) -> RenderResult:
+        self.samples += int(kwargs["additional_samples"])
         return RenderResult(
             width=1,
             height=1,
             rgba8=b"\x00\x00\x00\xff",
-            completed_samples=int(kwargs["additional_samples"]),
+            completed_samples=self.samples,
             session_completed_samples=1,
             simulation_time_ns=1,
         )
@@ -585,7 +591,7 @@ def _camera_projection(
 
 def _reload_engine_module_with_fake_bpy() -> tuple[object, bool, object | None]:
     fake_bpy = ModuleType("bpy")
-    fake_bpy.types = SimpleNamespace(RenderEngine=object)
+    fake_bpy.types = SimpleNamespace(RenderEngine=type("FakeRenderEngine", (), {"test_break": lambda self: False}))
     def persistent(function: object) -> object:
         setattr(function, "_bpy_persistent", None)
         return function
@@ -772,31 +778,12 @@ class _UnhealthyNativeClient:
         return {"serving": False, "endpoint": "127.0.0.1:50051"}
 
 
-def test_render_worker_startup_diagnostics_records_health() -> None:
-    diagnostics = _render_worker_startup_diagnostics(
-        _HealthyNativeClient(),
-        simulation_id="sim",
-        worker_command="worker",
-    )
-
-    assert diagnostics["status"] == "running"
-    assert diagnostics["simulation_id"] == "sim"
-    assert diagnostics["health"] == {"serving": True, "endpoint": "127.0.0.1:50051"}
 
 
 def test_final_render_policy_disables_blender_postprocess() -> None:
     assert engine_module.FINAL_RENDER_USE_POSTPROCESS is False
 
 
-def test_render_worker_startup_diagnostics_marks_unhealthy_worker_failed() -> None:
-    diagnostics = _render_worker_startup_diagnostics(
-        _UnhealthyNativeClient(),
-        simulation_id="sim",
-        worker_command="worker",
-    )
-
-    assert diagnostics["status"] == "failed"
-    assert diagnostics["error"] == "render worker health reported serving=false"
 
 
 def _viewport_request_scene(
@@ -1371,8 +1358,9 @@ def test_reconnect_viewport_sessions_reports_unconfirmed_teardown() -> None:
 
 def test_final_render_init_reconnects_live_viewport(monkeypatch) -> None:
     scene = SimpleNamespace(render=SimpleNamespace(engine=engine_module.ENGINE_ID))
-    request = RenderRequest()
+    request = RenderRequest(current_scene_generation=True)
     reconnected: list[bool] = []
+    monkeypatch.setattr(engine_module, "_FINAL_RENDER_ACTIVE", False)
     monkeypatch.setattr(engine_module, "_FINAL_RENDER_RESTORE_VIEWPORT", False)
     monkeypatch.setattr(engine_module, "_FINAL_RENDER_REQUEST", None)
     monkeypatch.setattr(
@@ -1395,110 +1383,10 @@ def test_final_render_init_reconnects_live_viewport(monkeypatch) -> None:
     assert engine_module._FINAL_RENDER_REQUEST is request
 
 
-def test_restart_ovrtx_workers_terminates_and_respawns_worker(monkeypatch) -> None:
-    import ovrtx_blender_example as _pkg
-    from ovrtx_blender_example import runtime_services
-
-    restarted: list[Path] = []
-    monkeypatch.setattr(
-        _pkg,
-        "runtime_bundle_status",
-        lambda: {"state": "ready", "current_root": "/runtime"},
-    )
-    monkeypatch.setattr(
-        runtime_services.owner,
-        "restart_ovrtx",
-        lambda root: restarted.append(root),
-    )
-    monkeypatch.setattr(engine_module.scene_generation_sessions, "pause_preparation", lambda: True)
-    monkeypatch.setattr(engine_module.scene_generation_sessions, "resume_preparation", lambda: None)
-
-    diagnostics = engine_module.restart_ovrtx_workers()
-
-    assert restarted == [Path("/runtime")]
-    assert diagnostics["status"] == "restarted"
-    assert diagnostics["end_reason"] == engine_module.ViewportSessionEndReason.WORKER_RESTART_REQUESTED
 
 
-def test_restart_stops_all_panes_before_replacing_shared_worker(monkeypatch) -> None:
-    import ovrtx_blender_example as _pkg
-    from ovrtx_blender_example import runtime_services
-
-    events: list[str] = []
-    scene = SimpleNamespace(session_uid=42)
-
-    class Engine:
-        _viewport_scene = scene
-
-        def __init__(self, name: str) -> None:
-            self.name = name
-
-        def _request_viewport_worker_restart(self) -> tuple[bool, bool]:
-            events.append(f"stop:{self.name}")
-            return True, True
-
-    first, second = Engine("first"), Engine("second")
-    monkeypatch.setattr(
-        engine_module.scene_generation_sessions,
-        "deactivate_all_ovrtx",
-        lambda: events.append("deactivate") or True,
-    )
-    monkeypatch.setattr(
-        engine_module.scene_generation_sessions,
-        "pause_preparation",
-        lambda: events.append("pause") or True,
-    )
-    monkeypatch.setattr(
-        engine_module.scene_generation_sessions,
-        "resume_preparation",
-        lambda: events.append("resume"),
-    )
-    monkeypatch.setattr(
-        _pkg,
-        "runtime_bundle_status",
-        lambda: {"state": "ready", "current_root": "/runtime"},
-    )
-    monkeypatch.setattr(
-        runtime_services.owner,
-        "restart_ovrtx",
-        lambda _root: events.append("restart"),
-    )
-    try:
-        _track_viewport_engine(first)
-        _track_viewport_engine(second)
-        diagnostics = engine_module.restart_ovrtx_workers()
-    finally:
-        _untrack_viewport_engine(first)
-        _untrack_viewport_engine(second)
-
-    assert diagnostics["status"] == "restarted"
-    assert set(events[:2]) == {"stop:first", "stop:second"}
-    assert events[2:] == ["pause", "deactivate", "restart", "resume"]
 
 
-def test_restart_does_not_replace_worker_after_unconfirmed_pane_stop(monkeypatch) -> None:
-    from ovrtx_blender_example import runtime_services
-
-    class Engine:
-        _viewport_scene = None
-
-        def _request_viewport_worker_restart(self) -> tuple[bool, bool]:
-            return True, False
-
-    engine = Engine()
-    monkeypatch.setattr(
-        runtime_services.owner,
-        "restart_ovrtx",
-        lambda _root: pytest.fail("worker must remain alive"),
-    )
-    try:
-        _track_viewport_engine(engine)
-        diagnostics = engine_module.restart_ovrtx_workers()
-    finally:
-        _untrack_viewport_engine(engine)
-
-    assert diagnostics["status"] == "teardown_unconfirmed"
-    assert diagnostics["teardown_confirmed"] is False
 
 
 def test_viewport_session_statuses_reads_engine_owned_status() -> None:
@@ -1828,26 +1716,33 @@ def test_live_depsgraph_bridge_uses_callback_scene_selection_across_windows(
     final_activations = []
     monkeypatch.setattr(engine_module.scene_generation_sessions, "_runtimes", {})
 
-    class _FinalAdapter:
-        last_error = ""
+    class _FinalRuntime:
+        """Scene runtime retained by the first final render; replays owner values."""
 
-        def __init__(self, _controller):
-            pass
+        def __init__(self, _controller, retained_owner):
+            self.owner = retained_owner
+            self.scene_uid = 0
+            self.viewport_ids = ()
+            self._request = None
+            self.reuse_blocked = False
+            self.scheduler = SimpleNamespace(baked_playback_paused=False)
+            self.ovrtx = SimpleNamespace(
+                controller=SimpleNamespace(_serialized_transport=nullcontext),
+                last_ensure_result=SimpleNamespace(composition=None),
+            )
 
-        def update_request(self, _request):
-            pass
+        def activate_blocking(self, received_generation, request, *, predecessor=None):
+            transforms, attributes, _initial = self.owner.retained_values_for(received_generation)
+            self._request = request
+            final_activations.append((received_generation, {"transform_values": transforms,
+                                                            "attribute_values": attributes}))
 
-        def activate(self, received_generation, **values):
-            final_activations.append((received_generation, values))
-            return True
-
-        def deactivate(self):
-            return "stopped"
+        activate = activate_blocking
 
     monkeypatch.setattr(
         engine_module.scene_generation_sessions,
-        "OvrtxGenerationAdapter",
-        _FinalAdapter,
+        "AuthoringGenerationRuntime",
+        _FinalRuntime,
     )
     monkeypatch.setattr(
         engine_module.scene_generation_sessions,
@@ -2505,6 +2400,18 @@ def test_request_records_default_hdr_color_presentation() -> None:
     assert request.color_presentation["render_var"] == color_presentation.RENDER_VAR_HDR_COLOR
 
 
+def test_rgba8_float_conversion_preserves_all_channel_values_and_owns_storage() -> None:
+    np = pytest.importorskip("numpy")
+    payload = bytes(range(256))
+    result = engine_module._rgba8_to_float_array(memoryview(payload))
+    reference = np.frombuffer(payload, dtype=np.uint8).astype(np.float32) * np.float32(1.0 / 255.0)
+    assert result.dtype == np.float32
+    assert result.flags.c_contiguous and result.flags.writeable and result.flags.owndata
+    assert np.array_equal(result, reference)
+    result[255] = 0.0
+    assert payload[255] == 255
+
+
 def test_rgba16f_to_float_array_forces_opaque_alpha() -> None:
     rgba = list(_rgba16f_to_float_array(bytes([0, 60, 0, 56, 0, 52, 0, 0])))
 
@@ -2726,118 +2633,6 @@ def test_unsynced_perspective_viewport_does_not_create_projection_override() -> 
     assert (request.width, request.height) == (1280, 720)
 
 
-@pytest.mark.parametrize(
-    ("field", "value"),
-    [
-        ("worker_command", "worker-b"),
-        ("native_client_module", "module-b"),
-    ],
-)
-def test_viewport_runtime_binding_change_reconstructs_client(
-    tmp_path: Path,
-    field: str,
-    value: str,
-) -> None:
-    module, had_bpy, original_bpy = _reload_engine_module_with_fake_bpy()
-    original_client_factory = controller_module._runtime_client_from_request
-    original_write_crash_marker = module.session_lifecycle.write_crash_marker
-    original_clear_crash_marker = module.session_lifecycle.clear_crash_marker
-    try:
-        source = tmp_path / "scene.usda"
-        source.write_text("#usda 1.0\n", encoding="utf-8")
-        clients: list[object] = []
-
-        class _Client:
-            def __init__(self, *, worker_command: str, native_client_module: str) -> None:
-                self.worker_command = worker_command
-                self.native_client_module = native_client_module
-                self.started_specs: list[object] = []
-                self.startup_diagnostics = {"render_worker": {"status": "running"}}
-                self.shutdown_called = False
-                clients.append(self)
-
-            def start_session(self, spec: object, simulation_id: str | None = None) -> str:
-                self.started_specs.append(spec)
-                return f"sim-{len(clients)}"
-
-            def delete_simulation(self, _simulation_id: str) -> str:
-                return "stopped"
-
-            def shutdown(self) -> None:
-                self.shutdown_called = True
-
-        controller_module._runtime_client_from_request = lambda request: _Client(
-            worker_command=request.worker_command,
-            native_client_module=request.native_client_module,
-        )
-        written_markers: list[dict[str, object]] = []
-        cleared_markers = 0
-
-        def _write_crash_marker(**kwargs: object) -> dict[str, object]:
-            written_markers.append(dict(kwargs))
-            return {"marker_active": True}
-
-        def _clear_crash_marker() -> dict[str, object]:
-            nonlocal cleared_markers
-            cleared_markers += 1
-            return {"marker_active": False}
-
-        module.session_lifecycle.write_crash_marker = _write_crash_marker
-        module.session_lifecycle.clear_crash_marker = _clear_crash_marker
-        request = RenderRequest(
-            input_usd_path=str(source),
-            sensor_paths=("/Render/A", "/Render/B"),
-            selected_sensor_paths=("/Render/A",),
-            worker_command="worker-a",
-            native_client_module="module-a",
-        )
-        render_engine = module.OvrtxExampleRenderEngine()
-        render_engine._write_viewport_session_outputs = lambda **_kwargs: None
-
-        render_engine._ensure_viewport_session(request)
-        first_client = clients[0]
-        first_composition = render_engine._ovrtx_scene_composition
-        render_engine._ensure_viewport_session(
-            replace(request, selected_sensor_paths=("/Render/B",))
-        )
-
-        assert len(clients) == 1
-        diagnostics = render_engine._ovrtx_session_controller.diagnostics()
-        assert render_engine._ovrtx_scene_composition == first_composition
-        assert diagnostics["session_reuse"] == {
-            "reuse": True,
-            "reason": "same_session",
-        }
-        assert len(first_client.started_specs) == 1
-        assert cleared_markers == 1
-        assert render_engine._viewport_lifecycle_phase == ""
-
-        changed_request = replace(request, **{field: value})
-        render_engine._ensure_viewport_session(changed_request)
-
-        assert len(clients) == 2
-        assert first_client.shutdown_called is True
-        diagnostics = render_engine._ovrtx_session_controller.diagnostics()
-        assert len(clients[1].started_specs) == 1
-        assert diagnostics["session_reuse"] == {
-            "reuse": False,
-            "reason": "runtime_binding_changed",
-        }
-        assert [event["event"] for event in diagnostics["lifecycle_events"]] == [
-            "created",
-            "stopped",
-            "replaced",
-        ]
-        assert render_engine._viewport_artifact()["ovrtx_lifecycle_events"] == list(
-            diagnostics["lifecycle_events"]
-        )
-        assert len(written_markers) == 3
-        assert cleared_markers == 1
-    finally:
-        controller_module._runtime_client_from_request = original_client_factory
-        module.session_lifecycle.write_crash_marker = original_write_crash_marker
-        module.session_lifecycle.clear_crash_marker = original_clear_crash_marker
-        _restore_engine_module_bpy(had_bpy, original_bpy)
 
 
 def test_shallow_ovrtx_close_preserves_viewport_runtime_and_diagnostics() -> None:
@@ -2891,9 +2686,11 @@ def test_full_viewport_end_shuts_down_scheduler_and_ovrtx() -> None:
 
 def test_native_fallback_ends_scheduler_after_ovrtx_child_loss() -> None:
     module, had_bpy, original_bpy = _reload_engine_module_with_fake_bpy()
+    engine = None
     try:
         shutdown_calls: list[str] = []
         writes: list[dict[str, object]] = []
+        output_batches: list[list] = []
         presentations: list[dict[str, object]] = []
         engine = module.OvrtxExampleRenderEngine()
         engine._runtime_scheduler = SimpleNamespace(
@@ -2907,6 +2704,7 @@ def test_native_fallback_ends_scheduler_after_ovrtx_child_loss() -> None:
             return 0.0
 
         engine._write_viewport_artifact = record_artifact
+        engine._queue_viewport_session_outputs = output_batches.append
         engine.update_stats = lambda *_args: None
 
         engine._enter_native_viewport_fallback({
@@ -2924,39 +2722,66 @@ def test_native_fallback_ends_scheduler_after_ovrtx_child_loss() -> None:
             "changed": False,
         })
 
+        assert module._ENGINE_RUNTIMES[id(engine)]["cleanup_completion"].wait(2)
         assert shutdown_calls == ["scheduler"]
         assert engine._runtime_scheduler is None
         assert writes == [{
             "running": False,
             "end_reason": module.ViewportSessionEndReason.NATIVE_FALLBACK,
+            "outputs": [],
         }]
+        assert output_batches == [[]]
+        assert writes[0]["outputs"] is output_batches[0]
         assert presentations[0]["presentation_mode"] == (
             module.viewport_presentation.NATIVE_VIEWPORT_FALLBACK
         )
     finally:
-        _restore_engine_module_bpy(had_bpy, original_bpy)
+        try:
+            if engine is not None:
+                sidecar = module._ENGINE_RUNTIMES.get(id(engine), {})
+                completion = sidecar.get("cleanup_completion")
+                if completion is not None:
+                    assert completion.wait(2), "artifact cleanup must finish before restoring bpy"
+                assert not sidecar.get("stop_pending", False)
+        finally:
+            _restore_engine_module_bpy(had_bpy, original_bpy)
 
 
 def test_full_viewport_end_writes_artifact_after_ovrtx_child_loss() -> None:
     module, had_bpy, original_bpy = _reload_engine_module_with_fake_bpy()
+    engine = None
     try:
         writes: list[dict[str, object]] = []
+        output_batches: list[list] = []
         engine = module.OvrtxExampleRenderEngine()
         engine._runtime_scheduler = SimpleNamespace(shutdown=lambda: None)
         engine._viewport_session_started_ns = 123
         engine._ovrtx_lifecycle_events = [{"event": "replaced"}]
         engine._write_viewport_artifact = lambda **kwargs: writes.append(kwargs) or 0.0
+        engine._queue_viewport_session_outputs = output_batches.append
 
         engine._end_viewport_session(module.ViewportSessionEndReason.NATIVE_FALLBACK)
+        assert module._ENGINE_RUNTIMES[id(engine)]["cleanup_completion"].wait(2)
 
         assert writes == [{
             "running": False,
             "end_reason": module.ViewportSessionEndReason.NATIVE_FALLBACK,
+            "outputs": [],
         }]
+        assert output_batches == [[]]
+        assert writes[0]["outputs"] is output_batches[0]
         assert engine._runtime_scheduler is None
         assert engine._viewport_session_started_ns == 0
     finally:
-        _restore_engine_module_bpy(had_bpy, original_bpy)
+        try:
+            if engine is not None:
+                sidecar = module._ENGINE_RUNTIMES.get(id(engine), {})
+                completion = sidecar.get("cleanup_completion")
+                if completion is not None:
+                    assert completion.wait(2), "artifact cleanup must finish before restoring bpy"
+                assert not sidecar.get("stop_pending", False)
+        finally:
+            _restore_engine_module_bpy(had_bpy, original_bpy)
 
 
 def test_camera_override_layer_text_preserves_nested_usda_blocks(tmp_path: Path) -> None:
@@ -3294,31 +3119,6 @@ def test_engine_signal_id_uses_stable_blender_pointer() -> None:
     )
 
 
-def test_build_request_from_scene_uses_bundled_runtime_defaults(
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
-) -> None:
-    addon_root = tmp_path / "addon"
-    worker = addon_root / "bin" / "ovrtx-bridge-server"
-    package_root = addon_root / "runtime" / "ovrtx-bridge-server"
-    native = addon_root / "native"
-    worker.parent.mkdir(parents=True)
-    worker.write_text("#!/bin/sh\n", encoding="utf-8")
-    package_root.mkdir(parents=True)
-    native.mkdir()
-    monkeypatch.delenv("OV_BLENDER_EXAMPLE_WORKER_COMMAND", raising=False)
-    monkeypatch.delenv("OV_BLENDER_EXAMPLE_NATIVE_CLIENT_PATH", raising=False)
-    monkeypatch.setattr(bundled_runtime, "addon_root", lambda: addon_root)
-    monkeypatch.setattr(bundled_runtime, "current_platform_id", lambda: "linux-x64")
-
-    request = build_request_from_scene(
-        _viewport_request_scene(),
-        source=BlenderRenderSignalSource.FINAL_RENDER,
-        intent=BlenderRenderIntent.FINAL_RENDER,
-    )
-
-    assert request.worker_command
-    assert str(native) in sys.path
 
 
 def test_image_artifact_writes_current_result(tmp_path: Path) -> None:
@@ -4011,3 +3811,76 @@ def test_viewport_profile_cadence_uses_monotonic_timestamps() -> None:
     assert interval_stats["count"] == 2
     assert interval_stats["p50_ms"] == 150.0
     assert interval_stats["p95_ms"] == 200.0
+
+
+@pytest.mark.parametrize("sampling", [False, True])
+def test_key_edit_invalidates_kinematic_samples_even_during_sampling(
+    sampling: bool, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from ovrtx_blender_example import physics_live_kinematics
+
+    action = SimpleNamespace(bl_rna=SimpleNamespace(identifier="Action"))
+    epoch = physics_live_kinematics._animation_epoch[0]
+    monkeypatch.setattr(physics_live_kinematics, "evaluating", lambda: sampling)
+    monkeypatch.setattr(engine_module, "_interactive_edit_bridge_suppressed", lambda: True)
+    monkeypatch.setattr(
+        engine_module.scene_generation_sessions,
+        "observe_physics_edits",
+        lambda scene: SimpleNamespace(restart=True, redraw=False, pending_anchor=False, body_input=False),
+    )
+    engine_module._live_interactive_edit_depsgraph_handler(
+        SimpleNamespace(), SimpleNamespace(updates=[SimpleNamespace(id=action)])
+    )
+    assert physics_live_kinematics._animation_epoch[0] == epoch + 1
+
+
+def test_final_render_reports_render_init_failure_instead_of_waiting_on_main(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import threading as _threading
+
+    module, had_bpy, original_bpy = _reload_engine_module_with_fake_bpy()
+    try:
+        render_engine = module.OvrtxExampleRenderEngine()
+        reports: list[tuple[set[str], str]] = []
+        render_engine.report = lambda levels, message: reports.append((set(levels), message))
+        render_engine.update_stats = lambda *args: None
+        monkeypatch.setattr(module, "_render_callback_adapter", lambda engine_id="": object())
+
+        def _never(*_args, **_kwargs):
+            raise AssertionError("render() must not marshal to the main thread")
+
+        monkeypatch.setattr(module, "_run_on_main_thread", _never)
+        module._FINAL_RENDER_REQUEST = None
+        module._FINAL_RENDER_INIT_ERROR = RuntimeError("snapshot failed")
+        # render() runs on Blender's render job thread during F12.
+        worker = _threading.Thread(target=render_engine.render, args=(SimpleNamespace(scene=object()),))
+        worker.start()
+        worker.join(10)
+        assert not worker.is_alive()
+        assert reports == [({"ERROR"}, "final_render: could not be prepared: snapshot failed")]
+        assert module._FINAL_RENDER_INIT_ERROR is None
+    finally:
+        _restore_engine_module_bpy(had_bpy, original_bpy)
+
+
+@pytest.mark.parametrize('method', ('_view_update_profiled', '_view_draw_profiled'))
+def test_final_lane_blocks_view_callbacks_before_scene_or_native_work(monkeypatch, method):
+    module, had_bpy, original_bpy = _reload_engine_module_with_fake_bpy()
+    try:
+        render_engine = module.OvrtxExampleRenderEngine()
+        monkeypatch.setattr(module, '_FINAL_RENDER_ACTIVE', True)
+        # Deliberately lack scene/context fields: an admitted view callback
+        # would read these and may recreate a renderer during final sampling.
+        getattr(render_engine, method)(object(), object())
+        monkeypatch.setattr(module, '_FINAL_RENDER_ACTIVE', False)
+        with pytest.raises(AttributeError):
+            getattr(render_engine, method)(object(), object())
+    finally:
+        _restore_engine_module_bpy(had_bpy, original_bpy)
+
+@pytest.fixture(autouse=True)
+def _selected_external_runtime_for_fake_client_tests(monkeypatch):
+    # These tests supply fake clients. Their explicit external interpreter
+    # satisfies current setup readiness; no worker/native SDK is started.
+    monkeypatch.setenv("OV_BLENDER_PUBLIC_SDK_PYTHON", sys.executable)

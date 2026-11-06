@@ -43,30 +43,11 @@ def _pytest(items: Sequence[str], deselect: Sequence[str] = ()) -> int:
 
 
 def _runtime(path: Path | None, addon_root: Path) -> dict[str, str]:
-    if path is None:
-        raise validation.ValidationError("--runtime-root is required for this suite")
-    addon = str(addon_root)
-    if addon not in sys.path:
-        sys.path.insert(0, addon)
-    from ovrtx_blender_example import bundled_runtime
-
-    defaults = bundled_runtime.defaults(root=path.resolve())
-    runtime = {
-        "runtime_root": str(defaults.root),
-        "ovrtx_worker_command": defaults.worker_command,
-        "ovrtx_blender_client": defaults.native_client_path,
-        "ovphysx_server": defaults.ovphysx_server,
-        "ovphysx_blender_client": defaults.ovphysx_native_client_path,
-        "ovphysx_bridge_root": defaults.ovphysx_bridge_runtime_root,
-        "ovphysx_root": defaults.ovphysx_root,
-        "ovruntime_root": defaults.ovruntime_root,
-    }
-    missing = [key for key, value in runtime.items() if key != "runtime_root" and not value]
-    if missing:
-        raise validation.ValidationError(
-            "materialized runtime is incomplete: " + ", ".join(missing)
-        )
-    return runtime
+    raise validation.ValidationError(
+        "Legacy native suite orchestration is retired. Use the root paired package "
+        "and scripts/verify_ovstream_installed.py for installed native qualification; "
+        "historical golden/performance drivers remain comparison records."
+    )
 
 
 def _probe(
@@ -149,6 +130,7 @@ def _golden_case(
         manifest = load_manifest(FIXTURES)
         selected = fixture_input(manifest, fixture_id)
         exact = render_fixture(manifest, fixture_id) if selected["kind"] == "usd" else None
+        result["fixture_identity"] = _fixture_identity(selected, exact)
         resolution = selected["resolution"]
         width, height = int(resolution["width"]), int(resolution["height"])
         if (width, height) != validation.VISUAL_DIMENSIONS[golden]:
@@ -161,6 +143,12 @@ def _golden_case(
         if result["golden_evidence"].get("status") != "pass":
             raise validation.ValidationError(
                 str(result["golden_evidence"].get("reason", "golden is unavailable"))
+            )
+        approved_identity = _approved_fixture_identity(result["golden_evidence"])
+        result["approved_fixture_identity"] = approved_identity
+        if result["fixture_identity"] != approved_identity:
+            raise validation.ValidationError(
+                "fixture identity does not match the approved golden workload"
             )
         expression = _golden_setup_expression(
             selected,
@@ -262,6 +250,41 @@ def _golden_case(
         result["error"] = str(error)
     validation._write_json(result_path, result)
     return result
+
+
+def _fixture_identity(
+    selected: Mapping[str, Any], exact: Mapping[str, Any] | None
+) -> dict[str, Any]:
+    if selected["kind"] == "blend":
+        return {
+            "blend_file": f"tests/{selected['manifest_path']}",
+            "blend_file_sha256": selected["sha256"],
+        }
+    if exact is None:
+        raise validation.ValidationError("USD fixture has no resolved identity")
+    return {
+        "id": selected["id"],
+        "fixture_usd_sha256": selected["sha256"],
+        "fixture_content_sha256": exact["fixture_content_sha256"],
+        "camera_prim_path": exact["camera_prim_path"],
+        "render_product_path": exact["render_product_path"],
+    }
+
+
+def _approved_fixture_identity(golden_evidence: Mapping[str, Any]) -> dict[str, Any]:
+    metadata = golden_evidence.get("metadata")
+    if not isinstance(metadata, Mapping):
+        raise validation.ValidationError("golden has no approved fixture workload")
+    workloads = metadata.get("platform_capture_workloads")
+    if workloads is not None:
+        if not isinstance(workloads, Mapping):
+            raise validation.ValidationError("golden platform workloads are invalid")
+        workload = workloads.get(sys.platform, metadata.get("capture_workload"))
+    else:
+        workload = metadata.get("capture_workload")
+    if not isinstance(workload, Mapping):
+        raise validation.ValidationError("golden has no approved fixture workload")
+    return dict(workload)
 
 
 def _golden_blender_command(
@@ -486,7 +509,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             raise validation.ValidationError(
                 "--addon-root must be prepared as the add-on beside this test tree"
             )
-        runtime = _runtime(args.runtime_root, addon_root)
+        runtime = ({} if args.suite in ("unit", "ov-integration")
+                   else _runtime(args.runtime_root, addon_root))
     except (OSError, RuntimeError, ImportError, validation.ValidationError) as error:
         print(json.dumps({"suite": args.suite, "error": str(error)}))
         return 2

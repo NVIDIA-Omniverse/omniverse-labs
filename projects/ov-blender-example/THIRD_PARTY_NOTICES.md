@@ -3,13 +3,19 @@
 ## Scope
 
 This file records the direct third-party dependencies imported by the
-project-authored Blender add-on source. It does not list Python's standard
+project-authored Blender add-on source, which is licensed under the Apache
+License, Version 2.0 (see `LICENSE`). It does not list Python's standard
 library or the transitive dependencies of Blender, OpenUSD, NumPy, gRPC, or an
 externally supplied runtime bundle.
 
+The packaged runtime (the `ovrtx-runtime-<platform>.zip` sidecar) carries its
+own `licenses/` folder. That folder is generated from the files the runtime
+actually ships and lists every component with its exact version, its license,
+and the license texts (`licenses/README.md`, `licenses/components.json`).
+
 ## Blender
 
-- **Component:** Blender 5.1 or later, including the `bpy`, `bpy_extras`,
+- **Component:** Blender 5.2 or later, including the `bpy`, `bpy_extras`,
   `gpu`, `gpu_extras`, and `mathutils` Python APIs.
 - **Use in this project:** Host application and Python API for the add-on.
 - **Copyright:** Blender Foundation and contributors.
@@ -55,7 +61,7 @@ externally supplied runtime bundle.
 
 ## Maintenance
 
-Update this file whenever an add-on import changes, a dependency becomes
-vendored, or the runtime deployment supplies new third-party components. For a
-distributed runtime bundle, merge its complete, version-specific notice set
-with this file and resolve every evidence gap above before release.
+Update this file whenever an add-on import changes or a dependency becomes
+vendored. The runtime's `licenses/` folder is rebuilt with every runtime package
+by `scripts/runtime_licenses.py`; the build fails when a shipped component has
+no version or no license text.

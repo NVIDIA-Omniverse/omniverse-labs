@@ -50,7 +50,7 @@ pytestmark = pytest.mark.skipif(
     blender_executable() is None,
     reason=(
         "Blender executable not available for headless panel poll "
-        "verification (install Blender 5.1 or set BLENDER_COMMAND)"
+        "verification (install Blender 5.2 or newer or set BLENDER_COMMAND)"
     ),
 )
 

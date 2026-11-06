@@ -33,11 +33,11 @@ BLENDER_TESTS = (
 )
 
 OV_INTEGRATION_TESTS = (
+    "tests/test_physics_viewport_sync.py",
     "tests/test_ovphysx_runtime_client.py",
     "tests/test_ovrtx_runtime_client.py",
     "tests/test_ovrtx_session.py",
-    "tests/test_runtime_materializer.py",
-    "tests/test_runtime_services.py",
+    "tests/test_direct_runtime_session.py",
     "tests/test_shared_stage_composition.py",
 )
 
@@ -52,9 +52,7 @@ GOLDENS = {
     ),
 }
 
-INTEGRATION_PROBES = (
-    "run_ovrtx_live_transform_probe.py",
-)
+INTEGRATION_PROBES = ()  # Installed native qualification uses the root paired-package verifier.
 
 PERFORMANCE = {
     "performance-small": {
@@ -80,17 +78,34 @@ PERFORMANCE = {
 
 # Standalone diagnostics deliberately excluded from product validation.
 EXCLUDED_PROBES = {
+    "run_ovrtx_live_transform_probe.py": "historical SIL native comparison; disconnected from supported OVStream qualification",
+    "run_physics_stock_workflows.py": "separately invoked required Windows stock Blender physics authoring/Action/restore gate; no vendor SDK imports, requires --repo and --output",
+    "run_physics_workflows.py": "separately invoked required Windows production physics workflow gate: fixed-step bake, presentation, kinematic sampling, offline Actions and viewport rewind; requires --repo and --output",
+    "run_physics_continuity_recovery.py": "separately invoked required Windows renderer-recovery and physics-continuity native gate: admitted scene-owned physics identity, timestamp and body-state preservation; requires --repo and --output",
+    "run_bounded_recovery.py": "separately invoked required Windows Blender recovery gate: owned producer faults, real deadlines, raw viewport pixels, cancellation and asynchronous lifecycle cleanup; requires --repo and --output",
+    "run_scene_transaction_probe.py": "separately invoked required Windows scene transaction gate: locked native readback, immutable source and asset rollback, pixel equivalence and failed-rollback quarantine; requires --output and --usd-site-packages",
+    "run_public_sdk_first_frame_smoke.py": "separately invoked Windows public SDK admission gate: authenticated worker, owned first-frame copy and ACK; requires --python and --output",
+    "run_owned_frame_failure_smoke.py": "separately invoked Windows public SDK frame-failure gate: real renderer and owned SHM cleanup; requires --python and --output",
+    "run_ovstream_shm_smoke.py": "opt-in public SDK GPU transport diagnostic",
+    "run_ovstream_raw_frame_smoke.py": "opt-in public SDK bit-exact raw HDR SHM diagnostic",
+    "run_public_sdk_recovery_smoke.py": "opt-in public SDK renderer crash/replay diagnostic",
+    "run_public_sdk_async_smoke.py": "opt-in public SDK async render and cancellation diagnostic",
+    "run_public_sdk_semantic_smoke.py": "opt-in public SDK lossless semantic SHM and label-map diagnostic",
+    "run_ovstream_receiver_recovery_smoke.py": "opt-in public SDK receiver reconnect/backpressure diagnostic",
+    "run_ovstage_scene_updates_smoke.py": "opt-in public SDK same-stage source replacement diagnostic",
+    "run_physics_viewport_sync_probe.py": "driver used by the native physics viewport pytest test",
+    "run_blender_renderer_switch.py": "standalone installed-package acceptance; requires the normal enabled Blender profile",
     "run_scene_generation_contract.py": "driver used by the Blender pytest test",
-    "run_shared_stage_composition_probe.py": "manual direct-native composition diagnostic",
+    "run_shared_stage_composition_probe.py": "historical SIL composition diagnostic; retired orchestration",
     "run_blender_orthographic_view_parity_probe.py": "manual viewport parity diagnostic",
-    "run_ovphysx_drop_probe.py": "manual native physics diagnostic",
-    "run_ovrtx_color_presentation_probe.py": "manual rendering diagnostic",
-    "run_ovrtx_light_value_probe.py": "manual rendering diagnostic",
-    "run_ovrtx_material_value_probe.py": "manual rendering diagnostic",
-    "run_ovrtx_operator_seam_probe.py": "manual GUI interaction diagnostic",
-    "run_ovrtx_orthographic_camera_probe.py": "manual rendering diagnostic",
-    "run_ovrtx_primvars_st_probe.py": "manual rendering diagnostic",
-    "run_ovrtx_world_dome_probe.py": "manual rendering diagnostic",
+    "run_ovphysx_drop_probe.py": "historical SIL physics diagnostic; retired orchestration",
+    "run_ovrtx_color_presentation_probe.py": "historical SIL rendering diagnostic; retired orchestration",
+    "run_ovrtx_light_value_probe.py": "historical SIL rendering diagnostic; retired orchestration",
+    "run_ovrtx_material_value_probe.py": "historical SIL rendering diagnostic; retired orchestration",
+    "run_ovrtx_operator_seam_probe.py": "historical SIL GUI diagnostic; retired orchestration",
+    "run_ovrtx_orthographic_camera_probe.py": "historical SIL rendering diagnostic; retired orchestration",
+    "run_ovrtx_primvars_st_probe.py": "historical SIL rendering diagnostic; retired orchestration",
+    "run_ovrtx_world_dome_probe.py": "historical SIL rendering diagnostic; retired orchestration",
 }
 
 EXCLUDED_TESTS = {

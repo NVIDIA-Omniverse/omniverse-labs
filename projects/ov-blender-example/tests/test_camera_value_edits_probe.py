@@ -163,8 +163,6 @@ def test_probe_class_partition_perspective_and_ortho() -> None:
         "projection",
         "horizontalApertureOffset",
         "verticalApertureOffset",
-        "fStop",
-        "focusDistance",
     ):
         assert camera_value_conversion.probe_class_for_attribute(name) == ""
 
@@ -182,6 +180,8 @@ def test_usd_attribute_values_are_composed_camera_parity() -> None:
         "horizontalAperture",
         "verticalAperture",
         "clippingRange",
+        "fStop",
+        "focusDistance",
     }
     for name, attribute in values.items():
         assert attribute.value == (
@@ -194,6 +194,8 @@ def test_usd_attribute_values_are_composed_camera_parity() -> None:
         assert attribute.metadata["probe_class"] == (
             camera_value_conversion.PROBE_CLASS_CLIP
             if name == "clippingRange"
+            else camera_value_conversion.PROBE_CLASS_DOF
+            if name in {"fStop", "focusDistance"}
             else camera_value_conversion.PROBE_CLASS_PROJECTION
         )
     assert camera_value_conversion.usd_attribute_values(None) == ()
@@ -205,7 +207,7 @@ def test_ortho_projection_values_class_as_ortho() -> None:
     aperture_classes = {
         attribute.name: attribute.metadata["probe_class"]
         for attribute in values
-        if attribute.name != "clippingRange"
+        if attribute.name in {"focalLength", "horizontalAperture", "verticalAperture"}
     }
     assert set(aperture_classes.values()) == {
         camera_value_conversion.PROBE_CLASS_ORTHO
@@ -237,7 +239,7 @@ def test_classify_field_statuses() -> None:
     assert kind.status == STATUS_TOPOLOGY
     assert kind.reason == camera_value_conversion.CAMERA_PROJECTION_KIND_CHANGED
     assert classify(perspective, "shift_x").status == STATUS_TOPOLOGY
-    assert classify(perspective, "dof.aperture_fstop").status == STATUS_TOPOLOGY
+    assert classify(perspective, "dof.aperture_fstop").status == STATUS_SUPPORTED
     assert classify(perspective, "use_fake_user").status == STATUS_NON_RENDER
     assert classify(perspective, "mystery_field").status == STATUS_UNSUPPORTED
 
@@ -268,7 +270,7 @@ def test_probe_state_machine_and_findings_hook() -> None:
     probe.record_result("clip", honored=True, evidence={})
     assert probe.status("projection") == camera_value_conversion.PROBE_STATUS_UNHONORED
     assert probe.status("clip") == camera_value_conversion.PROBE_STATUS_HONORED
-    assert probe.value_route_classes() == ("clip", "ortho")
+    assert probe.value_route_classes() == ("clip", "dof", "ortho")
 
     findings = probe.unhonored_findings()
     assert len(findings) == 1
@@ -332,9 +334,9 @@ def test_value_route_classes_exclude_probed_values_from_digest(
     assert base.digest == clip.digest
     # ...while non-probed projection fields remain composition identity.
     dof = _compose(tmp_path, _projection(f_stop=200.0, focus_distance=10.0), route)
-    assert base.digest != dof.digest
+    assert base.digest == dof.digest
     # Folding a class back (unhonored) changes identity with the values.
-    folded_route = ("clip", "ortho")
+    folded_route = ("clip", "dof", "ortho")
     folded = _compose(tmp_path, _projection(focal_length=85.0), folded_route)
     refolded = _compose(tmp_path, _projection(focal_length=35.0), folded_route)
     assert folded.digest != base.digest
@@ -362,7 +364,7 @@ def test_build_spec_reads_route_classes_from_request(
         _request(
             tmp_path,
             camera_projection=_projection(focal_length=85.0),
-            camera_value_route_classes=("clip", "ortho"),
+            camera_value_route_classes=("clip", "dof", "ortho"),
         )
     )
     assert ovrtx_session.reuse_decision(base, folded).reason == (
@@ -439,7 +441,7 @@ def test_stream_rejects_unsupported_camera_attribute() -> None:
     stream = ViewUpdateStream()
     port = _RecordingPort()
     plan = InteractiveEditPlanner().plan(
-        _camera_value_edit("fStop", 2.8, "projection")
+        _camera_value_edit("horizontalApertureOffset", 2.8, "projection")
     )
     stream.queue(plan.to_intent())
     result = stream.apply_pending(port)
@@ -754,7 +756,7 @@ def test_unhonored_class_folds_into_digest_and_resyncs(
     # The replacement ensure folded the class out of the value route.
     folded_request = harness.ensure_calls[1]
     assert "projection" not in folded_request.camera_value_route_classes
-    assert set(folded_request.camera_value_route_classes) == {"clip", "ortho"}
+    assert set(folded_request.camera_value_route_classes) == {"clip", "dof", "ortho"}
     # The unhonored ensure carries the probe's replacement reason.
     diagnostics = harness.loop.diagnostics()
     assert diagnostics["session_replacements"] >= 2
@@ -868,9 +870,8 @@ def test_non_probed_camera_fields_take_replacement_route(
         harness.mailbox.write(_snapshot(2.0))
         harness.wait_refined(3)
 
-        # DOF is composition identity (not a probe class): the change
-        # replaces the session as before this task.
-        harness.set_projection(f_stop=200.0, focus_distance=10.0)
+        # Aperture offsets remain composition identity.
+        harness.set_projection(horizontal_aperture_offset=2.0)
         harness.mailbox.write(_snapshot(2.0))
         assert _wait_until(lambda: harness.client.starts >= 2)
         assert _wait_until(

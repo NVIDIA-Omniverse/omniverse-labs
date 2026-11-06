@@ -15,9 +15,9 @@ export to emit a ``BasisCurves`` prim that meets the OVRTX contract:
 - per-strand resolution derived from ``render_step`` (``2**render_step + 1``),
 - physical root->tip tapered widths from the shared ``curve_widths`` module.
 
-Rendered-hair confirmation on a real OVRTX runtime is not possible on this
-machine (no GPU/worker bundle); the exported-geometry assertions here are the
-recorded evidence, with on-GPU render validation tracked as Phase 1 task01-05.
+This CPU-only regression also exercises scene reconciliation and custom render
+opinion invalidation. Native rendered qualification runs separately; exported
+geometry and authored opinions alone do not establish native visual effects.
 
 Runs headless Blender when an executable is available (``BLENDER_COMMAND`` env
 var or a known install location); skips otherwise.
@@ -93,6 +93,92 @@ try:
             break
 
     result["steps"].append("inspected")
+    owner = sg.SceneGenerationOwner(pathlib.Path(out_path).parent / 'generations')
+    scene = bpy.context.scene
+    emitter_id = sg.blender_id(emitter, 'OBJECT')
+    mesh_id = sg.blender_id(emitter.data, 'MESH')
+    accepted = owner.replace(scene)
+    result['transactions'] = []
+    def inspect_generation(label, generation, expected):
+        stage = Usd.Stage.Open(generation.usd_path)
+        curves = [UsdGeom.BasisCurves(p) for p in stage.Traverse() if p.GetTypeName() == 'BasisCurves']
+        assert len(curves) == (0 if expected is None else 1), (label, [str(c.GetPath()) for c in curves])
+        widths = [] if not curves else list(curves[0].GetWidthsAttr().Get() or [])
+        if expected is not None:
+            assert widths and abs(widths[0] - expected) < 1e-6, (label, widths[:1])
+            assert UsdGeom.Imageable(curves[0]).ComputeVisibility() == (
+                'invisible' if emitter.hide_render else 'inherited'), label
+            parent = curves[0].GetPrim().GetParent()
+            assert parent.GetAttribute(sg.PARTICLE_EMITTER_NAME_ATTRIBUTE).Get() == emitter.name_full
+        result['transactions'].append(dict(label=label, curves=len(curves), root_width=widths[:1],
+                                           mode=generation.diagnostics['mode']))
+    inspect_generation('initial', accepted, .02)
+    def reconcile(label, identities, expected):
+        bpy.context.view_layer.update()
+        candidate = owner.reconcile(scene, identities)
+        assert candidate is not None, label
+        inspect_generation(label, candidate, expected)
+        owner.accept(candidate)
+    st.radius_scale = .1
+    reconcile('width_changed', [emitter_id], .1)
+    emitter.hide_render = True
+    reconcile('hair_hidden', [emitter_id], .1)
+    emitter.name = 'Renamed Hair Emitter'
+    reconcile('hidden_emitter_renamed', [emitter_id], .1)
+    emitter.hide_render = False
+    reconcile('hair_restored', [emitter_id], .1)
+    # An unrelated sparse replacement must retain accepted particle ownership.
+    bpy.ops.mesh.primitive_cube_add(location=(4, 0, 0))
+    reconcile('unrelated_added', [sg.blender_id(bpy.context.object, 'OBJECT')], .1)
+    st.radius_scale = .07
+    reconcile('shared_mesh_notification', [mesh_id], .07)
+    emitter.modifiers.remove(next(m for m in emitter.modifiers if m.type == 'PARTICLE_SYSTEM'))
+    reconcile('particle_modifier_removed', [emitter_id], None)
+    emitter.modifiers.new('HairAgain', type='PARTICLE_SYSTEM')
+    st = emitter.particle_systems[0].settings
+    st.type = 'HAIR'; st.count = 8; st.hair_length = .5
+    st.root_radius = 1.; st.tip_radius = .1; st.radius_scale = .03
+    reconcile('particle_modifier_added', [emitter_id], .03)
+    bpy.data.objects.remove(emitter, do_unlink=True)
+    reconcile('emitter_deleted', [emitter_id], None)
+    # Ordinary geometry no-op admission must still author custom render controls.
+    from ovrtx_blender_example import authoring_properties
+    authoring_properties.register()
+    cube = bpy.context.object
+    cube_id = sg.blender_id(cube, 'OBJECT')
+    result['matte_transactions'] = []
+    result['candidate_admission_cache'] = []
+    for field, attr in [('matte', 'primvars:isMatteObject'), ('holdout', 'primvars:holdoutObject')]:
+        for value in ('ON', 'OFF', 'INHERIT'):
+            setattr(cube.ov.rendering, field, value)
+            bpy.context.view_layer.update()
+            candidate = owner.reconcile(scene, [cube_id])
+            assert candidate is not None, (field, value, 'dropped opinion edit')
+            stage = Usd.Stage.Open(candidate.usd_path)
+            prim = stage.GetPrimAtPath(candidate.blender_prim_paths[cube_id].schema_path)
+            authored = prim.GetAttribute(attr)
+            expected = None if value == 'INHERIT' else value == 'ON'
+            actual = authored.Get() if authored else None
+            assert actual == expected, (field, value, actual)
+            assert bool(candidate.unadmitted_rendering_overrides) == (value != 'INHERIT')
+            owner.accept(candidate)
+            result['matte_transactions'].append(dict(field=field, value=value, actual=actual))
+            if value != 'INHERIT':
+                bpy.ops.mesh.primitive_cube_add(location=(5, 0, 0))
+                unrelated = bpy.context.object
+                unrelated_id = sg.blender_id(unrelated, 'OBJECT')
+                for edit in ('add', 'visibility', 'delete'):
+                    if edit == 'visibility':
+                        unrelated.hide_render = True
+                    if edit == 'delete':
+                        bpy.data.objects.remove(unrelated, do_unlink=True)
+                    bpy.context.view_layer.update()
+                    candidate = owner.reconcile(scene, [unrelated_id])
+                    assert candidate is not None
+                    assert candidate.unadmitted_rendering_overrides == (cube.name,)
+                    owner.accept(candidate)
+                    result['candidate_admission_cache'].append(dict(field=field, value=value, unrelated_edit=edit))
+    owner.close()
 except Exception as exc:
     result["errors"].append("%s: %s" % (type(exc).__name__, exc))
     result["traceback"] = traceback.format_exc()
@@ -125,6 +211,7 @@ def _run_headless(tmp_path: Path) -> dict:
         text=True,
         timeout=300,
     )
+    assert proc.returncode == 0, f"Blender exited {proc.returncode}\n{proc.stdout}\n{proc.stderr}"
     if not out.is_file():
         raise AssertionError(
             f"driver produced no result.json\nstdout:\n{proc.stdout}\nstderr:\n{proc.stderr}"
@@ -136,6 +223,12 @@ def test_particle_hair_exports_ovrtx_correct_basis_curves(tmp_path: Path) -> Non
     result = _run_headless(tmp_path)
     assert not result["errors"], result.get("traceback", result["errors"])
     assert result["export_created"] is True
+    assert [case['label'] for case in result['transactions']] == [
+        'initial', 'width_changed', 'hair_hidden', 'hidden_emitter_renamed', 'hair_restored',
+        'unrelated_added', 'shared_mesh_notification',
+        'particle_modifier_removed', 'particle_modifier_added', 'emitter_deleted']
+    assert len(result['matte_transactions']) == 6
+    assert len(result['candidate_admission_cache']) == 12
     # OVRTX renders hair only as cubic catmullRom nonperiodic with per-point
     # vertex widths (the known-good Junk Shop fixture config; pinned wrap and
     # linear type render invisible).

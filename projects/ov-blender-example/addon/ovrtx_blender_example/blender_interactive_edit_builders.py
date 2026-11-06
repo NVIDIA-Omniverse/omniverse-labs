@@ -22,6 +22,7 @@ from .usd_prim_resolver import UsdPrimResolver
 from .value_edit_conversion import (
     CLASSIFICATION_TOPOLOGY,
     CLASSIFICATION_UNSUPPORTED,
+    STATUS_SUPPORTED,
     STATUS_TOPOLOGY,
     ValueEditConversionPolicies,
     default_value_edit_conversion_policies,
@@ -252,6 +253,10 @@ def _texture_connected_classification_edits(
         if not blender_linked:
             continue
         socket_name = _TEXTURE_INPUT_SOCKETS.get(usd_attribute, "")
+        if not socket_name:
+            from .materialx_openpbr_conversion import _TEXTURE_INPUTS
+            socket_name = next((name for name, spec in _TEXTURE_INPUTS.items()
+                                if "inputs:" + spec[0] == usd_attribute), "")
         field_name = f"principled:{socket_name}" if socket_name else usd_attribute
         classification = classify(material, field_name)
         status = _string_value(getattr(classification, "status", ""))
@@ -355,6 +360,22 @@ def _material_graph_topology_edit(
     contract); direct-USD stages keep the value-edit behavior.
     """
 
+    graph_change = getattr(resolver, "material_graph_change", lambda _material: None)(material)
+    if graph_change is not None:
+        return InteractiveEdit(
+            shape=EditShape.TOPOLOGY,
+            data_authority=DataAuthority.VIEW,
+            **edit_location(
+                usd_prim_path=_string_value(graph_change["usd_prim_path"]),
+                usd_layer_id=_usd_layer_id(material, override=usd_layer_id),
+                blender_property_path="node_tree",
+                provenance=_provenance_from_blender_id(material),
+            ),
+            value=graph_change["current_fingerprint"],
+            previous_value=graph_change["previous_fingerprint"],
+            metadata={"topology_change_kinds": ("material_graph",),
+                      "material_graph_input_changed": True},
+        )
     link_states_fn = getattr(policies.material, "texture_wired_input_links", None)
     if not callable(link_states_fn):
         return None
@@ -363,6 +384,7 @@ def _material_graph_topology_edit(
         return None
     diverged: dict[str, dict[str, bool]] = {}
     resolved_prim: material_usd_prim.MaterialUsdPrim | None = None
+    match_source = ""
     for usd_attribute, blender_linked in link_states.items():
         resolution = resolver.resolve_material(
             material,
@@ -372,9 +394,12 @@ def _material_graph_topology_edit(
         prim = resolution.value
         if prim is None:
             continue
-        if str(resolution.diagnostics.get("match_source", "")) != material_usd_prim.MATCH_AUTHORING_PRIM_PATH:
+        if str(resolution.diagnostics.get("match_source", "")) not in {
+            material_usd_prim.MATCH_AUTHORING_PRIM_PATH, material_usd_prim.MATCH_SCENE_GENERATION_IDENTITY
+        }:
             return None
         resolved_prim = resolved_prim or prim
+        match_source = str(resolution.diagnostics.get("match_source", ""))
         if bool(prim.connected) != bool(blender_linked):
             diverged[usd_attribute] = {
                 "blender_linked": bool(blender_linked),
@@ -390,7 +415,7 @@ def _material_graph_topology_edit(
         provenance={
             **_provenance_from_blender_id(material),
             "material_path": resolved_prim.material_prim_path,
-            "match_source": material_usd_prim.MATCH_AUTHORING_PRIM_PATH,
+            "match_source": match_source,
         },
     )
     diverged_attributes = tuple(sorted(diverged))
@@ -882,9 +907,11 @@ def build_interactive_edits_from_depsgraph(
     usd_prim_resolver: UsdPrimResolver | None = None,
     light_objects: Any = (),
     worlds: Any = (),
+    materials: Any = (),
     selection_resolution: Mapping[str, Any] | None = None,
     write_target_input_usd_path: str | None = None,
     write_target_ignored_layer_identifiers: Iterable[str] = (),
+    updates: Iterable[Any] | None = None,
 ) -> list[InteractiveEdit]:
     ignored_layer_identifiers = tuple(
         str(identifier)
@@ -892,7 +919,19 @@ def build_interactive_edits_from_depsgraph(
         if str(identifier)
     )
     policies = _value_edit_conversion_policies(value_edit_conversion_policies)
-    light_lookup = _light_object_lookup(light_objects)
+    # Object light updates resolve themselves. Only Light datablock updates
+    # need inverse owner lookup; ordinary transforms must not walk all objects.
+    # ``updates`` is the handler's snapshot of depsgraph.updates (None: read it).
+    updates = list(getattr(depsgraph, "updates", ()) if updates is None else updates)
+    needs_light_owners = any(
+        _string_value(getattr(
+            getattr(getattr(update, "id", update), "original", getattr(update, "id", update)),
+            "type", "",
+        )).upper() in _LIGHT_DATA_TYPES
+        for update in updates
+    )
+    light_lookup = (_light_object_lookup(light_objects) if needs_light_owners
+                    else {"by_identity": {}, "by_data_name": {}})
     edits: list[InteractiveEdit] = []
     # One depsgraph event can report several updated IDs for one light edit
     # (the evaluated Object and its Light data): emit each resolved light's
@@ -906,15 +945,46 @@ def build_interactive_edits_from_depsgraph(
     # during the loop and handled in a post-pass, so an event that also
     # reports the World keeps the world lane's behavior byte-identical.
     node_tree_world_updates: list[tuple[Any, Any]] = []
-    for update in getattr(depsgraph, "updates", ()):
+    # Blender can tag only the embedded ShaderNodeTree for a socket edit.
+    # Resolve its material owners while still on the Blender callback thread;
+    # the existing material classifier then chooses values versus topology.
+    for update in tuple(updates):
+        changed = getattr(update, "id", update)
+        changed = getattr(changed, "original", changed)
+        if _is_node_tree_id(changed):
+            updates.extend(_materials_for_node_tree_update(changed, materials))
+        elif _is_image_id(changed):
+            updates.extend(_owners_using_image(changed, (*tuple(materials or ()), *tuple(worlds or ()))))
+    seen_material_ids: set[int] = set()
+    for update in updates:
         id_data = getattr(update, "id", update)
         id_data = getattr(id_data, "original", id_data)
+        evaluated_object = id_data
+        evaluate = getattr(id_data, "evaluated_get", None)
+        evaluation_graph = getattr(depsgraph, "evaluated_depsgraph", None)
+        if evaluation_graph is None and str(getattr(getattr(depsgraph, "bl_rna", None), "identifier", "")) == "Depsgraph":
+            evaluation_graph = depsgraph
+        if hasattr(id_data, "matrix_world") and callable(evaluate) and evaluation_graph is not None:
+            # Identity and authoring properties belong to the original ID, but
+            # constraints, drivers and animation produce the evaluated pose.
+            evaluated_object = evaluate(evaluation_graph)
+        joint = getattr(getattr(getattr(id_data, "ov", None), "physics", None), "joint", None)
+        if joint is not None and getattr(joint, "persistent_id", ""):
+            # A joint handle is authoring UI, including when disabled. Its
+            # transform is staged until Apply Anchor, never a live USD xform.
+            continue
+        if _is_material_id(id_data):
+            if id(id_data) in seen_material_ids:
+                continue
+            seen_material_ids.add(id(id_data))
         update_edits: list[InteractiveEdit] = []
         try:
             edit = _interactive_edit_from_blender_id(id_data)
         except ValueError:
             continue
         if edit is not None:
+            if edit.usd_attribute == "xformOp:transform" and hasattr(evaluated_object, "matrix_world"):
+                edit = replace(edit, value=_matrix_rows(_runtime_body_matrix_world(evaluated_object)))
             update_edits.append(edit)
         else:
             if usd_prim_resolver is not None and hasattr(id_data, "matrix_world"):
@@ -922,7 +992,7 @@ def build_interactive_edits_from_depsgraph(
                 if object_resolution.value is not None:
                     update_edits.append(
                         object_transform_edit(
-                            id_data,
+                            evaluated_object,
                             data_authority=DataAuthority.VIEW,
                             location=edit_location(
                                 usd_prim_path=object_resolution.value,
@@ -962,13 +1032,24 @@ def build_interactive_edits_from_depsgraph(
                             value_edit_conversion_policies=policies,
                         )
                     )
-            if usd_prim_resolver is not None:
+            if usd_prim_resolver is not None and not _is_transform_only_light_update(update, id_data):
                 for light_object in _light_objects_for_update(id_data, light_lookup):
                     resolution = usd_prim_resolver.resolve_light(light_object)
                     if resolution.value is not None:
                         if resolution.value.prim_path in seen_light_prim_paths:
                             continue
                         seen_light_prim_paths.add(resolution.value.prim_path)
+                        unsupported = getattr(usd_prim_resolver, "unsupported_light_changes", lambda _light: ())(light_object)
+                        if unsupported:
+                            update_edits.extend(light_value_edit(light_object, property_name=change["field"],
+                                value=change["value"], usd_attribute="",
+                                location=edit_location(usd_prim_path=resolution.value.prim_path,
+                                    blender_property_path=change["field"],
+                                    provenance=_provenance_from_blender_id(light_object)),
+                                metadata={"unsupported_reason": change["reason"],
+                                          "source_property": change["field"],
+                                          "previous_value": change["previous_value"]}) for change in unsupported)
+                            continue
                         update_edits.extend(
                             light_value_edits_from_prim(
                                 light_object,
@@ -992,8 +1073,14 @@ def build_interactive_edits_from_depsgraph(
                         update_edits.extend(world_edits)
             if (
                 usd_prim_resolver is not None
-                and _is_mesh_id(id_data)
-                and _mesh_geometry_updated(update, id_data)
+                and (_is_mesh_id(id_data) or (
+                    str(getattr(id_data, "type", "")) == "MESH"
+                    and getattr(id_data, "data", None) is not None))
+                and (_mesh_geometry_updated(update, id_data) or (
+                    getattr(id_data, "data", None) is not None
+                    and getattr(update, "is_updated_transform", None) is False
+                    and not (getattr(update, "is_updated_shading", None) is True
+                        and getattr(usd_prim_resolver, "mesh_shading_unchanged", lambda _mesh: False)(id_data))))
             ):
                 update_edits.extend(
                     uv_value_edits_from_resolver(
@@ -1015,6 +1102,22 @@ def build_interactive_edits_from_depsgraph(
         ]
         edits.extend(_with_selection_resolution(edit, id_data, selection_resolution) for edit in update_edits)
     for id_data, owner_world in node_tree_world_updates:
+        spec_fn = getattr(policies.world, 'world_dome_spec', None)
+        spec = spec_fn(owner_world) if callable(spec_fn) else None
+        if _string_value(getattr(spec, 'status', '')) == STATUS_SUPPORTED:
+            # Blender 5.2 can report only ShaderNodeTree for Background socket
+            # edits. Preserve the World identity and use its existing typed lane.
+            world_edits = _world_edits_for_update(owner_world, usd_prim_resolver, policies)
+            if world_edits and world_edits[0].usd_prim_path not in seen_world_dome_paths:
+                seen_world_dome_paths.add(world_edits[0].usd_prim_path)
+                for edit in world_edits:
+                    edit = _with_write_target_resolution(
+                        _with_changed_blender_id(edit, owner_world),
+                        input_usd_path=write_target_input_usd_path,
+                        ignored_layer_identifiers=ignored_layer_identifiers,
+                    )
+                    edits.append(_with_selection_resolution(edit, owner_world, selection_resolution))
+            continue
         classification_edit = _world_node_tree_classification_edit(
             owner_world,
             usd_prim_resolver,
@@ -1036,6 +1139,45 @@ def build_interactive_edits_from_depsgraph(
             _with_selection_resolution(classification_edit, id_data, selection_resolution)
         )
     return edits
+
+
+def _materials_for_node_tree_update(id_data: Any, materials: Any) -> tuple[Any, ...]:
+    """Find all material owners, including shared nested node groups."""
+    target = getattr(id_data, "original", id_data)
+    def uses(tree, visited):
+        tree = getattr(tree, "original", tree)
+        if tree is None or id(tree) in visited:
+            return False
+        if tree is target or (callable(getattr(tree, "as_pointer", None))
+                              and callable(getattr(target, "as_pointer", None))
+                              and tree.as_pointer() == target.as_pointer()):
+            return True
+        visited.add(id(tree))
+        return any(uses(getattr(node, "node_tree", None), visited)
+                   for node in getattr(tree, "nodes", ()))
+    return tuple(material for material in tuple(materials or ())
+                 if uses(getattr(material, "node_tree", None), set()))
+
+
+def _is_image_id(value: Any) -> bool:
+    return str(getattr(getattr(value, "bl_rna", None), "identifier", "")).upper() == "IMAGE"
+
+
+def _owners_using_image(image: Any, owners: Any) -> tuple[Any, ...]:
+    """Route rare image-ID-only notifications to actual nested graph owners."""
+    image = getattr(image, "original", image)
+    def uses(tree, visited):
+        if tree is None or id(tree) in visited:
+            return False
+        visited.add(id(tree))
+        for node in getattr(tree, "nodes", ()):
+            candidate = getattr(node, "image", None)
+            if candidate is not None and getattr(candidate, "original", candidate) is image:
+                return True
+            if uses(getattr(node, "node_tree", None), visited):
+                return True
+        return False
+    return tuple(owner for owner in owners if uses(getattr(owner, "node_tree", None), set()))
 
 
 def _world_for_node_tree_update(id_data: Any, worlds: Any) -> Any | None:
@@ -1490,6 +1632,25 @@ def _is_scene_id(id_data: Any) -> bool:
 
 
 _LIGHT_DATA_TYPES = frozenset({"POINT", "SPOT", "SUN", "AREA"})
+
+
+def _is_transform_only_light_update(update: Any, id_data: Any) -> bool:
+    # Object movement does not change its Light datablock. Resending all
+    # unchanged UsdLux inputs turns an otherwise native pose delta into a
+    # mixed edit that resets every sensor's history. Keep unknown signals
+    # conservative, and leave any separate datablock update unconsumed.
+    return (
+        _string_value(getattr(id_data, "type", "")) == "LIGHT"
+        and hasattr(id_data, "matrix_world")
+        # Normalized AREA intensity depends on object scale. Rebuild typed
+        # values; the acknowledged ledger suppresses unchanged translation/
+        # rotation inputs without losing a scaled emitter intensity update.
+        and not (str(getattr(getattr(id_data, "data", None), "type", "")) == "AREA"
+                 and bool(getattr(getattr(id_data, "data", None), "normalize", True)))
+        and getattr(update, "is_updated_transform", None) is True
+        and getattr(update, "is_updated_geometry", None) is False
+        and not bool(getattr(update, "is_updated_shading", False))
+    )
 
 
 def _light_object_lookup(light_objects: Any) -> dict[str, dict[Any, list[Any]]]:

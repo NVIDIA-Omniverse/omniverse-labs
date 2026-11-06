@@ -19,16 +19,6 @@ def _pxr_modules() -> tuple[Any, Any, Any, Any, Any]:
     return Gf, Sdf, Usd, UsdPhysics, UsdShade
 
 
-def object_has_physics_opinion(obj: Any) -> bool:
-    return any(
-        value != authoring_properties.INHERIT
-        for value in (
-            obj.ov.physics.rigid_body.schema_opinion,
-            obj.ov.physics.collision.schema_opinion,
-        )
-    )
-
-
 def convert_generation_physics_scene(scene: Any) -> AddOnUsdOpinionRecord | None:
     settings = scene.ov.physics_scene
     if settings.schema_opinion == authoring_properties.INHERIT:
@@ -46,6 +36,11 @@ def convert_generation_physics_scene(scene: Any) -> AddOnUsdOpinionRecord | None
     stage = Usd.Stage.Open(layer)
     _override_ancestors(stage, Sdf.Path(root).GetParentPath())
     physics_scene = UsdPhysics.Scene.Define(stage, root)
+    from .physics_body_controls import positive
+    import math
+    positive(settings.gravity_magnitude, "Gravity magnitude", zero=True)
+    if not all(math.isfinite(v) for v in settings.gravity_direction) or not any(settings.gravity_direction):
+        raise ValueError("Gravity direction must be finite and nonzero")
     physics_scene.CreateGravityDirectionAttr().Set(Gf.Vec3f(*settings.gravity_direction))
     physics_scene.CreateGravityMagnitudeAttr().Set(float(settings.gravity_magnitude))
     return AddOnUsdOpinionRecord(
@@ -55,93 +50,18 @@ def convert_generation_physics_scene(scene: Any) -> AddOnUsdOpinionRecord | None
     )
 
 
-def convert_mapped_object_physics(
-    obj: Any,
-    mapping: Any,
-    physics_material_path: str = "",
-) -> AddOnUsdOpinionRecord:
-    """Compile sparse physics opinions for one stock-exported Blender object."""
-
-    Gf, Sdf, Usd, UsdPhysics, UsdShade = _pxr_modules()
-    from pxr import UsdGeom  # type: ignore
-
-    layer = Sdf.Layer.CreateAnonymous(".usda")
-    stage = Usd.Stage.Open(layer)
-    _override_ancestors(stage, Sdf.Path(mapping.object_path).GetParentPath())
-    root_prim = stage.OverridePrim(mapping.object_path)
-    mesh_prim = stage.OverridePrim(mapping.schema_path)
-    rigid_opinion = obj.ov.physics.rigid_body.schema_opinion
-    rigid_settings = obj.ov.physics.rigid_body
-    collision_settings = obj.ov.physics.collision
-    collision_opinion = collision_settings.schema_opinion
-    _apply_api_opinion(root_prim, UsdPhysics.RigidBodyAPI, rigid_opinion)
-    if rigid_opinion == authoring_properties.APPLY and _is_set(rigid_settings, "mass_kg"):
-        mass = float(rigid_settings.mass_kg)
-        if mass <= 0.0:
-            raise _conversion_error(
-                obj,
-                mapping.object_path,
-                "ov.physics.rigid_body.mass_kg",
-                "rigid_body_mass_must_be_positive",
-            )
-        UsdPhysics.MassAPI.Apply(root_prim).CreateMassAttr().Set(mass)
-
-    collider_prim = mesh_prim
-    if (
-        collision_opinion == authoring_properties.APPLY
-        and collision_settings.shape == "ANALYTIC_SPHERE"
-    ):
-        radius = float(collision_settings.radius_m)
-        if radius <= 0.0:
-            raise _conversion_error(
-                obj,
-                mapping.object_path,
-                "ov.physics.collision.radius_m",
-                "analytic_sphere_radius_must_be_positive",
-            )
-        collider = UsdGeom.Sphere.Define(stage, mapping.object_path + "/Collider")
-        collider.CreateRadiusAttr().Set(radius)
-        collider.CreateExtentAttr().Set(
-            [Gf.Vec3f(-radius), Gf.Vec3f(radius)]
-        )
-        collider_prim = collider.GetPrim()
-        UsdPhysics.CollisionAPI.Apply(collider_prim)
-        UsdGeom.Imageable(collider_prim).CreateVisibilityAttr().Set(
-            UsdGeom.Tokens.invisible
-        )
-    else:
-        _apply_api_opinion(mesh_prim, UsdPhysics.CollisionAPI, collision_opinion)
-        if collision_opinion == authoring_properties.APPLY:
-            UsdPhysics.MeshCollisionAPI.Apply(mesh_prim).CreateApproximationAttr().Set(
-                "convexHull"
-            )
-        elif collision_opinion == authoring_properties.REMOVE:
-            mesh_prim.RemoveAPI(UsdPhysics.MeshCollisionAPI)
-        if collision_settings.hide_from_render:
-            UsdGeom.Imageable(mesh_prim).CreateVisibilityAttr().Set(
-                UsdGeom.Tokens.invisible
-            )
-    if physics_material_path and collision_opinion == authoring_properties.APPLY:
-        UsdShade.MaterialBindingAPI.Apply(collider_prim)
-        collider_prim.CreateRelationship("material:binding:physics").SetTargets(
-            (Sdf.Path(physics_material_path),)
-        )
-    return AddOnUsdOpinionRecord(
-        mapping.object_path,
-        layer,
-        _diagnostics(obj, mapping.object_path, "ov.physics"),
-    )
-
-
 def convert_generation_physics_material(
     material: Any,
     usd_prim_path: str,
     *,
     mapped: bool,
+    units=None,
 ) -> AddOnUsdOpinionRecord:
     """Compile one mapped override or complete add-on-only physics material."""
 
     settings = material.ov.physics
+    from .physics_frames import PhysicsUnits
+    units = units or PhysicsUnits()
     _Gf, Sdf, Usd, UsdPhysics, UsdShade = _pxr_modules()
     layer = Sdf.Layer.CreateAnonymous(".usda")
     stage = Usd.Stage.Open(layer)
@@ -169,7 +89,14 @@ def convert_generation_physics_material(
         ("restitution", schema.CreateRestitutionAttr),
     ):
         if not mapped or _is_set(settings, property_name):
-            creator().Set(float(getattr(settings, property_name)))
+            from .physics_body_controls import positive
+            value = positive(getattr(settings, property_name), property_name, zero=True)
+            if property_name == "restitution" and value > 1:
+                raise ValueError("Restitution must be between zero and one")
+            creator().Set(value)
+    if _is_set(settings, "density"):
+        from .physics_body_controls import positive
+        schema.CreateDensityAttr().Set(units.density(positive(settings.density, "Material density", zero=True)))
     return AddOnUsdOpinionRecord(
         usd_prim_path,
         layer,
@@ -177,11 +104,27 @@ def convert_generation_physics_material(
     )
 
 
-def _apply_api_opinion(prim: Any, schema: Any, opinion: str) -> None:
-    if opinion == authoring_properties.APPLY:
-        schema.Apply(prim)
-    elif opinion == authoring_properties.REMOVE:
-        prim.RemoveAPI(schema)
+def author_mass_distribution(prim, settings, units, *, body_scale=1.0):
+    """Shared typed kg/BU/wxyz source; USD output is kg/m/wxyz."""
+    Gf, _Sdf, _Usd, UsdPhysics, _Shade = _pxr_modules()
+    for field, creator in (("center_of_mass", "CreateCenterOfMassAttr"), ("diagonal_inertia", "CreateDiagonalInertiaAttr"), ("principal_axes", "CreatePrincipalAxesAttr")):
+        if _is_set(settings, field):
+            value = tuple(getattr(settings, field))
+            import math
+            from .physics_frames import normalize_quaternion
+            from .physics_colliders import ColliderError
+            if not all(math.isfinite(v) for v in value):
+                raise ColliderError("Mass distribution must be finite")
+            if field == "diagonal_inertia" and (any(v < 0 for v in value) or any(value) and not all(v > 0 for v in value)):
+                raise ColliderError("Diagonal inertia must be all positive or all zero for automatic inertia")
+            if field == "principal_axes":
+                value = normalize_quaternion(value)
+            if field == "center_of_mass":
+                value = tuple(units.length(v) / body_scale for v in value)
+            elif field == "diagonal_inertia":
+                value = tuple(units.inertia(v) for v in value)
+            value = Gf.Quatf(value[0], Gf.Vec3f(*value[1:])) if field == "principal_axes" else Gf.Vec3f(*value)
+            getattr(UsdPhysics.MassAPI.Apply(prim), creator)().Set(value)
 
 
 def _override_ancestors(stage: Any, parent_path: Any) -> None:
@@ -227,6 +170,4 @@ def _conversion_error(
 __all__ = [
     "convert_generation_physics_material",
     "convert_generation_physics_scene",
-    "convert_mapped_object_physics",
-    "object_has_physics_opinion",
 ]

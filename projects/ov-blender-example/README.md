@@ -1,211 +1,122 @@
-# ovrtx Blender Example
+# OVRTX Blender addon
 
-Bring NVIDIA RTX rendering into Blender. Keep creating in the Blender workflows
-you already know, review your scene through NVIDIA ovrtx, and render a final
-image without moving your work into a separate application.
+Use NVIDIA RTX rendering in stock Blender 5.2 LTS through the locked external
+OVRTX, OVStage, OVStream, Warp and OVPhysX runtime. Blender loads the Python addon
+and transport reader; native SDKs run in separate owned workers.
 
-![The Junk Shop rendered with NVIDIA ovrtx](docs/images/perf_junk_shop_1280x720.png)
-
-*Scene: [The Junk Shop](https://download.blender.org/archive/gallery/blender-splash-screens/blender-2-81/)
-by [Alex Treviño](http://www.aendom.com/), original concept by
-[Anaïs Maamar](https://www.artstation.com/chatonlaser), licensed
-[CC BY](https://creativecommons.org/licenses/by/4.0/). This image was rendered
-with NVIDIA ovrtx.*
-
-> **Sample release:** This is a public example for Blender 5.1, packaged for
-> supported NVIDIA RTX workstations. It demonstrates focused creative rendering
-> and SimReady prop review workflows. It is not a supported production renderer
-> and does not reproduce every Cycles, EEVEE, or Blender feature.
-
-## What you can do
-
-- View the current Blender scene through NVIDIA ovrtx in the rendered viewport.
-- Orbit, pan, and frame your work while the ovrtx image updates.
-- Render a final image using the active Blender camera.
-- Adjust supported materials, lights, cameras, and object transforms and review
-  the result without leaving Blender.
-- Play supported SimReady rigid-body motion with NVIDIA OVPhysX in the Blender
-  Timeline before taking an asset into a larger Isaac or Omniverse workflow.
-
-The add-on works with the scene already open in Blender, whether you created it
-in Blender, opened a `.blend` file, or imported USD through Blender's normal
-import workflow.
-
-## Before you install
-
-You need:
-
-- Blender 5.1.
-- A supported 64-bit release platform listed in
-  [Support Platforms](docs/support-platforms.md).
-- A compatible NVIDIA RTX GPU and NVIDIA driver.
-- Internet access if installing the runtime from GitHub.
-
-From the
-[ov-blender-example project](https://github.com/NVIDIA-Omniverse/omniverse-labs/tree/main/projects/ov-blender-example),
-download `ov-blender-example-<platform>.zip` and copy the paired Release page
-URL listed there for an online runtime install, or download all assets for your
-platform into one directory for a local install.
-You do not need to unzip `ov-blender-example-<platform>.zip` before installing
-it in Blender.
+The Windows MVP supports the current Blender scene, interactive navigation and
+edits, final still/animation output, and production-admitted rigid-body physics
+and bake workflows. One selected render product with LDR or HDR is admitted.
+Multiple render products and additional AOVs are future work and are rejected
+explicitly. Linux x64 also has local package/install, external rendering and
+recovery, CPU/GPU physics, and numeric physics-to-render synchronization
+qualification. See [support platforms](docs/support-platforms.md) for the measured
+scope; human visual acceptance remains separate.
 
 ## Install
 
-1. Open Blender.
-2. Choose **Edit → Preferences → Add-ons**.
-3. Open the add-on menu and choose
-   [**Install from Disk**](https://docs.blender.org/manual/en/latest/editors/preferences/extensions.html#bpy-ops-extensions-package-install-files).
-4. Select the downloaded `ov-blender-example-<platform>.zip`.
-5. Enable **ovrtx Blender Example** if Blender does not enable it automatically.
-6. For an online install, enable
-   **System → [Allow Online Access](https://docs.blender.org/manual/en/latest/editors/preferences/system.html#bpy-types-preferencessystem-use-online-access)**
-   in Blender preferences.
-7. Open the add-on's **View Details** panel. **Install Runtime From** starts
-   empty. Paste the exact Release page URL paired with the add-on ZIP, or select
-   the absolute directory containing all downloaded release assets. The add-on
-   never guesses or remembers this location.
-8. Choose **Install Runtime** and leave Blender open while the progress bar
-   verifies and installs every component, downloading them if needed.
-9. Wait until the panel shows **Runtime: ready** and **Preflight: pass** before
-   selecting the render engine.
+You need Blender 5.2 or newer (stock, unmodified), a Windows x64 or Linux x64
+machine, and a supported NVIDIA RTX GPU and driver. Blender itself is not
+included.
 
-The runtime is installed separately from the Blender add-on. This keeps NVIDIA
-rendering and physics components outside the Blender process while the add-on
-provides the Blender experience.
+1. Download the release package ZIP for your platform (`windows-x64` or
+   `linux-x64`) from the 0.2.0 release, tag `ovrtx-blender-example-0.2`, and
+   extract it. It contains the add-on (`ovrtx_blender_example.zip`), the matching
+   runtime (`ovrtx-runtime-<platform>.zip`), their distribution manifest, the
+   installer, `INSTALL.txt`, `LICENSE` and a `licenses/` folder. Keep these
+   files together.
+2. Close Blender, then run the installer from the extracted folder with your
+   Blender executable:
 
-OVRTX uses GPU `0` by default. Set `OVRTX_ACTIVE_CUDA_GPUS` before launching
-Blender to select another physical GPU index or a comma-separated set; use
-`OVRTX_ACTIVE_CUDA_GPUS=all` (or an explicit empty value) to allow all GPUs.
+   ```text
+   Windows:  install.bat "C:\Program Files\Blender Foundation\Blender 5.2\blender.exe"
+   Linux:    sh install.sh /path/to/blender-5.2/blender
+   ```
 
-## Render your first scene
+   The add-on and its runtime go into that Blender's own settings folder
+   (`%APPDATA%\Blender Foundation\Blender\<major.minor>` on Windows,
+   `~/.config/blender/<major.minor>` on Linux). The installer uses Blender's own
+   Python; no other Python, checkout or download is needed.
+3. The installer then warms up the renderer once so its shader caches are built
+   before your first render. On an empty cache this takes several minutes (about
+   4-5 minutes on an RTX A6000). If the warm-up fails, the add-on is still
+   installed, the installer exits with code 3, and the first render builds the
+   caches instead.
+4. Start Blender normally. The add-on is enabled and its runtime lives in the
+   settings folder's `ovrtx-sdk` subfolder.
 
-1. Open a `.blend` file or create a scene in Blender.
-2. In **Render Properties**, set **Render Engine** to **ovrtx Example**.
-3. In the 3D Viewport, select **Rendered** shading.
-4. Use Blender's normal orbit, pan, zoom, camera, selection, and transform
-   controls.
-5. Press **F12** to render the active camera.
+To keep a separate, self-contained Blender configuration, pass a new empty
+settings folder to both the installer and the launcher:
+`install.bat BLENDER_EXE SETTINGS_DIR` then `launch.bat BLENDER_EXE SETTINGS_DIR`
+(`install.sh`/`launch.sh` on Linux).
 
-The first image can take longer while the runtime starts and prepares rendering
-resources. Later viewport updates reuse the active rendering session.
+**Upgrading:** run the new release's installer the same way. It removes the
+previous copy of the add-on and its runtime first, so re-running the installer is
+the upgrade path. **Removing:** use **Remove Runtime** in the add-on preferences,
+then remove the add-on in Blender.
 
-## How it works
+Settings folder paths may contain spaces and non-ASCII characters. On Windows a
+settings folder whose path is not ASCII keeps the native runtime in
+`%ProgramData%\ovrtx-blender\<hash>`, named in its `ovrtx-sdk\native-root.json`
+and removed with the runtime.
 
-![ovrtx Blender Example architecture](docs/images/ov-blender-example-flow.png)
+Building the add-on and runtime packages from source uses the upstream build
+repository's packaging and lock tooling, which is not part of this project. This
+folder contains the add-on, runtime and installer source those packages are built
+from.
 
-Blender remains the place where you create, edit, and view your scene. The
-add-on translates the current Blender scene to USD and sends it to the
-separately installed NVIDIA Library Worker. NVIDIA ovrtx renders the scene and
-returns pixels to the Blender viewport. When supported physics properties are
-present, NVIDIA OVPhysX supplies updated poses for ovrtx to render.
+## Render and color
 
-## Workflows
+Enable **ovrtx Blender Example**, select the `OVRTX_EXAMPLE` render engine, and
+use Rendered viewport shading. Open a scene with visible geometry, lighting and
+a camera, then start with a small sample budget. Use Blender's normal final
+render or animation commands for camera output.
 
-### Review a creative scene with ovrtx
+LDR pixels from OVStream are already color-corrected and pass through Blender
+without another color transform. HDR pixels are scene-linear and receive
+Blender's configured view/display transform. Renderer workers isolate Blender's
+inherited `OCIO` variable while Blender keeps its own display configuration.
+HDR float32 presentation staging defaults off. `OVRTX_HDR_GPU_FLOAT32=1` opts in
+on Windows and adds a presentation plane while retaining exact binary16 pixels.
 
-Use this workflow when preparing a product, industrial, or keynote-quality hero
-image.
+See [Public SDK frame transport](docs/public_sdk_frame_transport.md) for exact
+payloads, owned copies, ACK/cancel ownership and bounded carrier/message limits.
+See [Support platforms](docs/support-platforms.md) for the observed Windows
+environment and deferred platforms.
 
-1. Compose the scene in Blender and choose the camera framing you want.
-2. Switch the Render Engine to **ovrtx Example** and use **Rendered** viewport
-   shading.
-3. Adjust supported Principled material values and textures.
-4. Place and tune supported lights.
-5. Select objects and use Blender's move, rotate, and scale controls.
-6. Review the result in the ovrtx viewport, then press **F12** for the final
-   image.
+## Verify and troubleshoot
 
-ovrtx and Cycles are different renderers. Use the ovrtx viewport to review the
-actual ovrtx result rather than expecting an exact Cycles match. See
-[Known limitations](#known-limitations) for the currently supported subset.
+To check an installation:
 
-### Check a SimReady prop with OVPhysX
+1. Start Blender and open a scene with visible geometry, lighting and a camera
+   (the default startup cube scene is enough).
+2. Select the `OVRTX_EXAMPLE` render engine and switch the viewport to Rendered
+   shading. The viewport shows the OVRTX image after the renderer starts.
+3. Render a still with **Render > Render Image**. The result appears in Blender's
+   image editor.
 
-Use this workflow when preparing a prop for a production-line, robot-handled,
-Isaac, or Omniverse workflow.
+For a fixed reference render with expected results and performance numbers, use
+the [Junk Shop verification workload](docs/verification-workload.md).
 
-1. Prepare a supported SimReady uni-body asset in the current Blender scene,
-   including its collider, mass, physics material, and other required metadata.
-2. Switch the Render Engine to **ovrtx Example** and use **Rendered** viewport
-   shading.
-3. Move the Blender Timeline to its start frame and press **Play**.
-4. Watch the OVPhysX motion and contacts in the ovrtx viewport.
-5. Stop playback and return the Timeline to its start frame to reset the
-   simulation.
-6. If the behavior is not what you intended, adjust the SimReady asset at the
-   start frame and play the Timeline again.
+If the engine is unavailable, confirm the add-on is enabled in the Blender you
+installed into. If the runtime is unavailable, keep its exact
+integrity/path/version error and re-run the installer from the complete,
+unmodified release folder rather than substituting another SDK or native client.
+If the viewport is blank, check camera, geometry, lights and Rendered shading
+before changing materials or color settings. Keep the first error and the logs
+described in the verification workload when diagnosing a failed scene update or
+restart.
 
-This example complements the SimReady Blender add-on. It does not replace
-SimReady authoring, preflight, or export, and it is not a general-purpose
-physics sandbox.
-
-## What currently updates
-
-The ovrtx viewport supports a focused set of Blender edits:
-
-- Camera placement and supported viewport navigation.
-- Object translation, rotation, and scale for supported selections.
-- Supported light placement and values.
-- Supported material values and texture changes.
-- Complete scene refresh when an edit cannot be applied incrementally.
-
-Save your `.blend` file normally. Selecting ovrtx changes the render engine; it
-does not replace Blender's scene or authoring workflow.
-
-## Known limitations
-
-- Blender 5.1 is the supported Blender version for this sample release.
-- Only the platforms listed as supported in
-  [Support Platforms](docs/support-platforms.md) are included.
-- Material support covers a documented subset; complete Blender shader-node
-  graph translation is not included.
-- ovrtx output can differ from Cycles and EEVEE in materials, lighting, color,
-  and effects.
-- Hair, volumes, every Blender light or world configuration, and every material
-  feature are not guaranteed to render equivalently.
-- Geometry topology editing, deletion, reparenting, collection restructuring,
-  and live material graph topology editing are not complete workflows.
-- The OVPhysX experience is a focused SimReady prop check, not robot authoring,
-  a complete Blender physics replacement, or a full Isaac Sim workflow.
-- SimReady physics conversion currently supports the documented uni-body
-  subset; separate collider meshes and joint constraints are not supported.
-- NVIDIA runtime components run separately from Blender and require their own
-  disk space and compatible drivers.
-
-## Troubleshooting
-
-### Install Runtime is unavailable
-
-Enter the exact paired Release page URL or complete local artifact directory in
-**Install Runtime From**. For a Release URL, also confirm that **Allow Online
-Access** is enabled and Blender can reach the internet.
-
-### Runtime does not become ready
-
-Open the add-on's **View Details** panel and read the runtime and preflight
-message. Confirm that you installed the ZIP for your platform and that your GPU
-driver meets [Support Platforms](docs/support-platforms.md).
-
-### The viewport is blank
-
-Confirm that:
-
-- **ovrtx Example** is the selected Render Engine.
-- The viewport is using **Rendered** shading.
-- The runtime reports **ready** and preflight reports **pass**.
-- The scene has a supported camera, visible geometry, and lighting or a
-  supported world setup.
-
-### A Blender edit does not appear
-
-Some edits require a complete scene refresh, and some Blender features are not
-supported by this sample. Save the scene, switch away from and back to ovrtx if
-needed, and check [Known limitations](#known-limitations).
+Release qualification used representative checks rather than exhaustive
+performance, staging, memory or stress testing; see
+[support platforms](docs/support-platforms.md) for the measured scope. The
+automated installed-package verifier and qualification harnesses belong to the
+upstream build repository and are not part of this project.
 
 ## License
 
 Project-authored source and documentation are licensed under Apache-2.0.
-NVIDIA ovrtx, NVIDIA OVPhysX, their separately installed runtime components,
+NVIDIA OVRTX, NVIDIA OVPhysX, their separately installed runtime components,
 and third-party assets retain their own license terms. See [LICENSE](LICENSE),
 [Licensing and Distribution](docs/licensing.md), and
 [Third-Party Notices](THIRD_PARTY_NOTICES.md).

@@ -640,6 +640,10 @@ def _load_engine_with_fake_bpy(monkeypatch: pytest.MonkeyPatch):
     module = importlib.util.module_from_spec(spec)
     monkeypatch.setitem(sys.modules, module_name, module)
     spec.loader.exec_module(module)
+    # The fake RPC client models an explicitly selected external SDK sidecar.
+    # Actual sidecar admission/rejection is covered by the runtime install tests.
+    from ovrtx_blender_example import bundled_runtime
+    monkeypatch.setattr(bundled_runtime, "public_sdk_python", lambda: sys.executable)
     return module
 
 
@@ -649,6 +653,20 @@ def _viewport_context() -> SimpleNamespace:
         scene=SimpleNamespace(),
         space_data=None,
     )
+
+
+def test_disabled_profiling_skips_controller_timing_snapshot(monkeypatch):
+    module = _load_engine_with_fake_bpy(monkeypatch)
+    monkeypatch.delenv("OV_BLENDER_EXAMPLE_VIEWPORT_PROFILE", raising=False)
+    engine = module.OvrtxExampleRenderEngine()
+    def forbidden():
+        raise AssertionError('disabled profiling queried the controller')
+    engine._ovrtx_session_controller = SimpleNamespace(_value_update_timings_snapshot=forbidden)
+    engine._record_profile(_result(), {'camera_changed': 1.}, True,
+        started_at_ns=0, ended_at_ns=0, started_monotonic_ns=0,
+        rgba_available_monotonic_ns=0, ended_monotonic_ns=0, span_boundaries={})
+    assert engine._viewport_draw_count == 1
+    assert engine._viewport_artifact_recorder._profile['draw_count'] == 0
 
 
 def _request(module, **overrides):
@@ -800,7 +818,6 @@ def test_artifact_embeds_live_thread_model_and_cleanup_keys(
             }
         ],
     )
-    engine._redraw_signaler.start()
     engine._redraw_signaler.signal()  # counts one signal (registration ok)
     engine._viewport_cleanup_diagnostics = {
         "status": "teardown_deadline_exceeded",
@@ -893,14 +910,23 @@ def test_tick_absorb_counters_witness_the_handoff(
     engine._render_loop = None
 
 
+@pytest.mark.parametrize("close_error", [False, True])
 def test_session_end_artifact_preserves_final_thread_model(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, close_error: bool
 ) -> None:
     """End to end: real thread + loop; the session-end artifact carries the
     stopped thread's identity, the loop's records, and latest-view evidence."""
 
     module = _load_engine_with_fake_bpy(monkeypatch)
     client = _Client()
+    closing, release = threading.Event(), threading.Event()
+    def blocked_delete(_simulation_id):
+        closing.set()
+        assert release.wait(WAIT_S)
+        if close_error:
+            raise RenderClientError("owned close failed")
+        return "stopped"
+    client.delete_simulation = blocked_delete
     monkeypatch.setattr(
         controller_module,
         "_runtime_client_from_request",
@@ -930,14 +956,31 @@ def test_session_end_artifact_preserves_final_thread_model(
             if candidate is not None:
                 newest = candidate
         assert newest.completed_samples == request.max_samples
+        original_thread = engine._render_thread.diagnostics()
     finally:
+        started = time.monotonic()
         engine._end_viewport_session(module.ViewportSessionEndReason.ENGINE_DESTROYED)
+        elapsed = time.monotonic() - started
+        runtime = module._ENGINE_RUNTIMES[id(engine)]
+        try:
+            assert elapsed < 0.5
+            assert closing.wait(WAIT_S)
+            assert not runtime["cleanup_completion"].is_set()
+            pending = json.loads(artifact_path.read_text(encoding="utf-8"))
+            assert pending["thread_model"]["render_thread"]["status"] != "stopped"
+        finally:
+            release.set()
+        assert runtime["cleanup_completion"].wait(WAIT_S)
+        assert runtime["output_completion"].wait(WAIT_S)
+        assert not runtime.get("output_failure")
 
     artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
     assert artifact["schema_version"] == 3
     thread_model = artifact["thread_model"]
     assert thread_model["render_thread"]["name"].startswith("ovrtx-render-")
     assert thread_model["render_thread"]["status"] == "stopped"
+    assert thread_model["render_thread"]["name"] == original_thread["name"]
+    assert thread_model["render_thread"]["thread_ident"] == original_thread["thread_ident"]
     assert thread_model["render_loop"]["running"] is False
     assert thread_model["render_loop"]["publications"] >= 1
     render_profile = artifact["render_thread_profile"]
@@ -951,3 +994,67 @@ def test_session_end_artifact_preserves_final_thread_model(
     profile = json.loads(profile_path.read_text(encoding="utf-8"))
     assert profile["schema_version"] == 3
     assert profile["viewport_artifact"]["schema_version"] == 3
+    assert profile["viewport_artifact"]["thread_model"] == thread_model
+    assert profile["viewport_artifact"]["session_output_id"] == artifact["session_output_id"]
+    cleanup = artifact["session_lifecycle"]["cleanup"]
+    assert cleanup["status"] == ("teardown_stop_failed" if close_error else "stopped")
+    assert runtime["stop_confirmed"] is (not close_error)
+    if close_error:
+        assert "controller_shutdown: failed" in cleanup["teardown_errors"]
+    else:
+        # Reusing the engine must not inherit its predecessor's completed
+        # output callback and finalize the second session before teardown.
+        closing.clear()
+        release.clear()
+        engine._begin_async_viewport_session(request)
+        engine._camera_mailbox.write(module.viewport_handoff.snapshot_from_render_request(request))
+        assert engine._frame_slot.wait_for_newer(0, timeout=WAIT_S) is not None
+        assert not runtime.get("cleanup_finished")
+        engine._end_viewport_session(module.ViewportSessionEndReason.ENGINE_DESTROYED)
+        try:
+            assert closing.wait(WAIT_S)
+            assert not runtime["output_completion"].is_set()
+        finally:
+            release.set()
+        assert runtime["cleanup_completion"].wait(WAIT_S)
+        assert runtime["output_completion"].wait(WAIT_S)
+        successor = json.loads(artifact_path.read_text())
+        assert successor["session_output_id"] != artifact["session_output_id"]
+        assert successor["thread_model"]["render_thread"]["status"] == "stopped"
+
+
+def test_late_cleanup_cannot_overwrite_a_new_session_output(tmp_path):
+    path = str(tmp_path / "artifact.json")
+    old = {"session_output_id": "old", "simulation_id": "old-native-session",
+           "thread_model": {}, "session_lifecycle": {}}
+    newer = {"session_output_id": "new", "simulation_id": "new-native-session"}
+    viewport_artifact_recorder.write_output(path, old)
+    viewport_artifact_recorder.write_output(path, newer)
+    viewport_artifact_recorder.finalize_outputs([(path, old)],
+        {"render_thread": {"status": "stopped"}}, {"status": "stopped"},
+        viewport_profile.render_thread_summary)
+    assert json.loads(Path(path).read_text()) == newer
+
+
+def test_deferred_output_owns_frozen_payload_after_runtime_replacement(tmp_path, monkeypatch):
+    module = _load_engine_with_fake_bpy(monkeypatch)
+    path = str(tmp_path / "artifact.json")
+    old = {"session_output_id": "old", "simulation_id": "old-native-session",
+           "thread_model": {}, "session_lifecycle": {}}
+    viewport_artifact_recorder.write_output(path, old)
+    runtime = {"thread_model_final": {"render_thread": {"status": "stopped", "thread_ident": 42}},
+               "stop_confirmed": True, "stop_outcome": {"joined": True}}
+    module._ENGINE_RUNTIMES[123] = runtime
+    module._queue_viewport_outputs(runtime, [(path, old)])
+    assert not runtime["output_completion"].is_set()
+    # The engine/RNA is no longer available and a successor owns its slot.
+    replacement = {"render_thread": object()}
+    module._ENGINE_RUNTIMES[123] = replacement
+    old["simulation_id"] = "mutated-after-handoff"
+    module._finish_viewport_outputs(runtime)
+    assert runtime["output_completion"].is_set() and not runtime.get("output_failure")
+    assert module._ENGINE_RUNTIMES[123] is replacement
+    written = json.loads(Path(path).read_text())
+    assert written["simulation_id"] == "old-native-session"
+    assert written["thread_model"]["render_thread"]["thread_ident"] == 42
+    module._ENGINE_RUNTIMES.pop(123)

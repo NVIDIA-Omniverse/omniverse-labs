@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib
 import json
 import math
 import os
@@ -60,6 +61,7 @@ def _parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser.add_argument("--native-client-path", type=Path)
     parser.add_argument("--native-client-module", default="ovrtx_bridge_client")
     parser.add_argument("--worker-command")
+    parser.add_argument("--installed-addon", help="Use the enabled installed extension in the normal profile")
     parser.add_argument("--source-root", type=Path, default=ROOT)
     parser.add_argument("--inside-blender", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--config", type=Path, help=argparse.SUPPRESS)
@@ -347,7 +349,7 @@ class _Measurement:
         self.failure = ""
 
     def post_pixel(self) -> None:
-        from ovrtx_blender_example import engine
+        engine = _addon_module(self.config, 'engine')
 
         engines = list(engine._ACTIVE_VIEWPORT_ENGINES)
         if len(engines) != 1:
@@ -438,7 +440,8 @@ class _Measurement:
             self.last_edit_index = index
 
     def complete(self) -> dict[str, Any]:
-        from ovrtx_blender_example import engine, scene_generation_sessions
+        engine = _addon_module(self.config, 'engine')
+        scene_generation_sessions = _addon_module(self.config, 'scene_generation_sessions')
 
         if self.failure:
             raise RuntimeError(self.failure)
@@ -546,7 +549,7 @@ class _Measurement:
         }
 
     def _runtime(self) -> Any:
-        from ovrtx_blender_example import engine
+        engine = _addon_module(self.config, 'engine')
 
         engines = list(engine._ACTIVE_VIEWPORT_ENGINES)
         if len(engines) != 1 or engines[0]._viewport_generation_runtime is None:
@@ -567,6 +570,12 @@ class _Measurement:
         }
 
 
+def _addon_module(config: Mapping[str, Any], name: str = '') -> Any:
+    installed = config.get('installed_addon')
+    package = f'{installed}.ovrtx_blender_example' if installed else 'ovrtx_blender_example'
+    return importlib.import_module(package + ('.' + name if name else ''))
+
+
 def _inside_blender(args: argparse.Namespace) -> int:
     import bpy
 
@@ -580,12 +589,17 @@ def _inside_blender(args: argparse.Namespace) -> int:
     os.environ["OV_BLENDER_EXAMPLE_NATIVE_CLIENT_MODULE"] = config["native_client_module"]
     os.environ[color_presentation.ENV_COLOR_PRESENTATION_MODE] = COLOR_PRESENTATION
 
-    import ovrtx_blender_example
-    from ovrtx_blender_example import engine, scene_generation_sessions
-    from ovrtx_blender_example.blender_callback_adapters import BlenderRenderCallbackAdapter
-    from ovrtx_blender_example.interactive_setup import configure_scene, configure_viewports
-
-    ovrtx_blender_example.register()
+    installed = config.get('installed_addon')
+    if installed and installed not in bpy.context.preferences.addons:
+        raise RuntimeError(f'Installed extension is not enabled: {installed}')
+    ovrtx_blender_example = _addon_module(config)
+    engine = _addon_module(config, 'engine')
+    scene_generation_sessions = _addon_module(config, 'scene_generation_sessions')
+    BlenderRenderCallbackAdapter = _addon_module(config, 'blender_callback_adapters').BlenderRenderCallbackAdapter
+    setup = _addon_module(config, 'interactive_setup')
+    configure_scene, configure_viewports = setup.configure_scene, setup.configure_viewports
+    if not installed:
+        ovrtx_blender_example.register()
     state = SimpleNamespace(
         measurement=None,
         handler=None,
@@ -594,7 +608,10 @@ def _inside_blender(args: argparse.Namespace) -> int:
     )
 
     def quit_blender() -> None:
-        ovrtx_blender_example.unregister()
+        if not installed:
+            ovrtx_blender_example.unregister()
+        else:
+            _addon_module(config, 'runtime_services').owner.close()
         bpy.ops.wm.quit_blender()
 
     def fail(exc: BaseException) -> None:
@@ -738,6 +755,7 @@ def _subrun(args: argparse.Namespace, fixture: Mapping[str, Any]) -> dict[str, A
     for path in (raw_result, error_result, baseline_image_candidate, image_candidate):
         path.unlink(missing_ok=True)
     config = {
+        "installed_addon": args.installed_addon,
         "addon_path": str(ADDON),
         "source_root": str(args.source_root),
         "fixture_id": fixture["id"],
@@ -792,11 +810,12 @@ def _subrun(args: argparse.Namespace, fixture: Mapping[str, Any]) -> dict[str, A
             render_requests.ENV_FIXED_VIEWPORT_RESOLUTION: "1",
             "OV_BLENDER_EXAMPLE_VIEWPORT_WORK_DIR": str(work_dir / "viewport-work"),
             "OV_BLENDER_EXAMPLE_WORKER_LOG": str(work_dir / "worker.log"),
+            "OVRTX_EXAMPLE_WORKER_LOG": str(work_dir / "worker.log"),
         }
     )
     command = [
         args.blender_command,
-        "--factory-startup",
+        *([] if args.installed_addon else ["--factory-startup"]),
         "--window-geometry",
         "20",
         "20",

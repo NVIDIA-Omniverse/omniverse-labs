@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Generic, Protocol, TypeVar
 
@@ -54,3 +54,7 @@ class BlenderEditSignal:
     context: Any | None = None
     input_usd_path: str | None = None
     ignored_layer_identifiers: tuple[str, ...] = ()
+    # Transient main-thread extraction context; never carried to the runtime.
+    depsgraph: Any | None = field(default=None, compare=False, repr=False)
+    # The handler's single snapshot of ``depsgraph.updates`` (None: read it).
+    updates: tuple[Any, ...] | None = field(default=None, compare=False, repr=False)

@@ -27,7 +27,9 @@ Two structures, one ``threading.Condition`` each:
 
 Locking discipline: each condition's lock is held only for slot swaps and
 reads — never across RPCs or texture uploads. No payload copies are made:
-``RenderResult.rgba8`` bytes are immutable and pass by reference.
+``RenderResult.rgba8`` bytes or authenticated native-owned read-only views are
+immutable and pass by reference. The result retains its native response owner;
+publication never recycles that storage while a reader still holds the result.
 
 Timing marks (``written_monotonic_ns``, ``published_monotonic_ns``,
 ``timing_marks``) use ``time.perf_counter_ns()``, matching the engine's
@@ -297,6 +299,11 @@ class FrameState:
     generation: int = 0
     presentation_revision: int = 0
     applied_revision: int = 0
+    #: Exact solver sample composed into this image; never a later loop tick.
+    runtime_tick_result: Any = None
+    runtime_tick_timeline: tuple[bool, int, int] | None = None
+    #: Playback state at submission; main-thread timeline may already differ.
+    runtime_tick_playing: bool = False
     #: Human-readable context for non-frame statuses (failure text, resync
     #: reason). Empty for ordinary frame publications.
     detail: str = ""

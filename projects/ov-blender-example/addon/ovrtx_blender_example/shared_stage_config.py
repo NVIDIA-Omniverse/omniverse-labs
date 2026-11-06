@@ -11,16 +11,16 @@ import os
 from pathlib import Path
 
 from .physics_body_prims import DEFAULT_DYNAMIC_BODY_ROOT, discover_dynamic_body_prims
-from .ovphysx_runtime_client import (
-    DEFAULT_OVPHYSX_NATIVE_CLIENT_MODULE,
-    DEFAULT_OVPHYSX_NATIVE_CLIENT_PATH,
-)
+from .ovphysx_to_ovrtx import BodyShapeTransform
+DEFAULT_OVPHYSX_NATIVE_CLIENT_MODULE = ""
+DEFAULT_OVPHYSX_NATIVE_CLIENT_PATH = ""
 from . import bundled_runtime
 from .shared_stage_errors import SharedStageCompositionError
 
 
-DEFAULT_OVPHYSX_ADDRESS = "127.0.0.1:50094"
-DEFAULT_OVPHYSX_SERVER = Path("ovphysx_grpc_server")
+# Request metadata slots remain inert; external SDK sessions own endpoints.
+DEFAULT_OVPHYSX_ADDRESS = ""
+DEFAULT_OVPHYSX_SERVER = Path("")
 DEFAULT_DEVICE = "cpu"
 
 
@@ -42,6 +42,7 @@ class InteractiveSharedStageConfig:
     trace_log_path: str = ""
     ovphysx_native_client_module: str = DEFAULT_OVPHYSX_NATIVE_CLIENT_MODULE
     ovphysx_native_client_path: str = str(DEFAULT_OVPHYSX_NATIVE_CLIENT_PATH)
+    body_shape_transforms: tuple[BodyShapeTransform, ...] = ()
 
     @classmethod
     def from_env(
@@ -63,13 +64,10 @@ class InteractiveSharedStageConfig:
             "OV_BLENDER_EXAMPLE_OVPHYSX_INPUT_USD_PATH",
             input_usd_path,
         )
-        server_default = Path(bundle.ovphysx_server) if bundle.ovphysx_server else DEFAULT_OVPHYSX_SERVER
-        server = _env_path("OV_BLENDER_EXAMPLE_OVPHYSX_SERVER", server_default)
-        address = os.environ.get("OV_BLENDER_EXAMPLE_OVPHYSX_ADDRESS", DEFAULT_OVPHYSX_ADDRESS)
+        server = ""
+        address = ""
         device = os.environ.get("OV_BLENDER_EXAMPLE_OVPHYSX_DEVICE", DEFAULT_DEVICE)
-        command = os.environ.get("OV_BLENDER_EXAMPLE_OVPHYSX_WORKER_COMMAND", "").strip()
-        if not command:
-            command = bundle.ovphysx_worker_command or _default_ovphysx_worker_command(server, address, device)
+        command = bundle.ovphysx_worker_command
         body_root = os.environ.get("OV_BLENDER_EXAMPLE_SHARED_STAGE_BODY_ROOT", DEFAULT_DYNAMIC_BODY_ROOT).strip()
         if not body_root:
             body_root = DEFAULT_DYNAMIC_BODY_ROOT
@@ -94,15 +92,7 @@ class InteractiveSharedStageConfig:
             body_scale=_env_float("OV_BLENDER_EXAMPLE_SHARED_STAGE_BODY_SCALE", 1.0),
             worker_log_path=os.environ.get("OV_BLENDER_EXAMPLE_OVPHYSX_WORKER_LOG", ""),
             trace_log_path=os.environ.get("OV_BLENDER_EXAMPLE_SHARED_STAGE_TRACE_LOG", ""),
-            ovphysx_native_client_module=os.environ.get(
-                "OV_BLENDER_EXAMPLE_OVPHYSX_NATIVE_CLIENT_MODULE",
-                DEFAULT_OVPHYSX_NATIVE_CLIENT_MODULE,
-            ).strip()
-            or DEFAULT_OVPHYSX_NATIVE_CLIENT_MODULE,
-            ovphysx_native_client_path=os.environ.get(
-                "OV_BLENDER_EXAMPLE_OVPHYSX_NATIVE_CLIENT_PATH",
-                bundle.ovphysx_native_client_path or str(DEFAULT_OVPHYSX_NATIVE_CLIENT_PATH),
-            ),
+
         )
 
     @property
@@ -162,18 +152,3 @@ def _env_body_prims(input_usd_path: str, root: str) -> tuple[str, ...]:
         )
     return body_prims
 
-
-def _default_ovphysx_worker_command(server: Path, address: str, device: str) -> str:
-    return bundled_runtime.serialize_command(
-        [str(server), "--listen", address, "--device", device]
-    )
-
-
-__all__ = [
-    "DEFAULT_DEVICE",
-    "DEFAULT_DYNAMIC_BODY_ROOT",
-    "DEFAULT_OVPHYSX_ADDRESS",
-    "DEFAULT_OVPHYSX_SERVER",
-    "InteractiveSharedStageConfig",
-    "_default_ovphysx_worker_command",
-]

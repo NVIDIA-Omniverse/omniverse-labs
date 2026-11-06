@@ -60,7 +60,7 @@ def materialized_image_path(image: Any) -> str:
     except Exception:
         return ""
     digest = sha256(payload).hexdigest()[:16]
-    suffix = Path(str(getattr(image, "filepath", "") or "")).suffix or ".png"
+    suffix = packed_image_suffix(payload, Path(str(getattr(image, "filepath", "") or "")).suffix or ".png")
     name = _SAFE_NAME.sub("_", str(getattr(image, "name", "") or "image"))[:64]
     directory = texture_cache_directory()
     target = directory / f"{name}-{digest}{suffix}"
@@ -73,6 +73,17 @@ def materialized_image_path(image: Any) -> str:
         except OSError:
             return ""
     return str(target)
+
+
+def packed_image_suffix(payload: bytes, fallback: str) -> str:
+    """Preserve encoded formats even when Blender's image label is misleading."""
+    for magic, suffix in ((b"\x76\x2f\x31\x01", ".exr"),
+                          (b"\x89PNG\r\n\x1a\n", ".png"),
+                          (b"\xff\xd8\xff", ".jpg"),
+                          (b"#?RADIANCE", ".hdr"), (b"#?RGBE", ".hdr")):
+        if payload.startswith(magic):
+            return suffix
+    return fallback
 
 
 def _resolved_disk_path(image: Any) -> str:

@@ -18,6 +18,10 @@ class SceneGenerationError(RuntimeError):
         self.diagnostics = tuple(MappingProxyType(dict(item)) for item in diagnostics)
 
 
+class SceneGenerationPending(SceneGenerationError):
+    """Raised while the first generation is still being built; not a failure."""
+
+
 class AddOnUsdOpinionRecord:
     """One immutable complete add-on contribution rooted at a USD prim."""
 

@@ -56,6 +56,12 @@ def read_scene_unibodies(scene: Any) -> tuple[SimReadyUniBody, ...]:
     geometry = _child_collection(export, "Geometry")
     references = _child_collection(export, "ReferencePrims")
     colliders = _child_collection(export, "Colliders")
+    geometry_meshes = _mesh_objects(geometry)
+    if geometry_meshes and all(
+        getattr(getattr(getattr(obj, "ov", None), "physics", None), "simready_version", 0) == 1
+        for obj in geometry_meshes
+    ):
+        return ()
     if geometry is None and references is None and colliders is None:
         return ()
     if geometry is None or references is None or colliders is None:
@@ -70,6 +76,10 @@ def read_scene_unibodies(scene: Any) -> tuple[SimReadyUniBody, ...]:
     if len(reference_objects) != 1:
         raise _error(bodies[0], "simready_unibody_requires_one_reference_prim")
     body = bodies[0]
+    # Explicitly converted content is owned solely by the OV records. Retained
+    # SimReady metadata and native reference constraints are no longer inputs.
+    if getattr(getattr(getattr(body, "ov", None), "physics", None), "simready_version", 0) == 1:
+        return ()
     reference = reference_objects[0]
     constraints = [
         constraint

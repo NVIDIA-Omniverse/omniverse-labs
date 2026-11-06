@@ -25,7 +25,6 @@ if str(FIXTURES_ROOT) not in sys.path:
 DEFAULT_OVRTX_NATIVE_DIR = Path(
     os.environ.get("OVRTX_CLIENT_ROOT", ROOT / "out" / "missing-ovrtx-client")
 )
-DEFAULT_OVPHYSX_ADDRESS = "127.0.0.1:50094"
 DEFAULT_FIXTURE_MANIFEST = FIXTURES_ROOT
 DEFAULT_FIXTURE_ID = "demo_stair_drop_1280x720"
 DEFAULT_RENDER_PRODUCT_PATH = "/Render/OmniverseKit/HydraTextures/ViewportTexture0"
@@ -37,6 +36,12 @@ sys.path.insert(0, str(ROOT / "addon"))
 
 from ovrtx_blender_example.ovphysx_stage import (  # noqa: E402
     OvphysxStageController,
+)
+
+# One default, shared with the add-on. Duplicating it here is how this probe ended
+# up on the OS-reserved 50094 after the add-on had moved off it.
+from ovrtx_blender_example.shared_stage_config import (  # noqa: E402
+    DEFAULT_OVPHYSX_ADDRESS,
 )
 from ovrtx_blender_example.physics_body_prims import discover_dynamic_body_prims  # noqa: E402
 from ovrtx_blender_example.ovphysx_runtime_client import (  # noqa: E402

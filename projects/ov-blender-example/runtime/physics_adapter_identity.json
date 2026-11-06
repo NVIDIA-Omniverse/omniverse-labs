@@ -1,0 +1,13 @@
+{
+  "adapter_components": {
+    "incremental_physics_backend.py": "5074ced41082cf507b12542c2c3bd5a3c83a3138887c7ab3397331e91235423b",
+    "inline_physics_geometry.py": "0d5ccf0ba06c06778046d98a6635be5b68c2827e5b039cc1155b22e0e425acf2",
+    "physics_adapter_identity.py": "0ac71032e3bb3595b26b823dcbd2027c51a0f4dd980ffe64ffa6d43852390ee2",
+    "public_sdk_backend.py": "1836a2ebae02a9857037735290909b05d75a08b7318b0e2f3986a74f1cedebe9",
+    "public_sdk_worker.py": "4470380c70d45ee30c98e89b6ff5a365d7069616f28c042f9d6c7d45597fe2e8",
+    "renderer_values.py": "1098a4daf6c9b358a1a1690301667b086026a83607c5a213f0f88c93b28cfbf1",
+    "runtime_identity.py": "f360e4486075245e3c4a67eaca5ba1ee9f98c5d407f21c950cfa3a1eb2133a0a"
+  },
+  "adapter_sha256": "a1b21fe1b26ff9816b8a12d34a335c53e5c6e43de010d275bf4fc54272e90d48",
+  "schema": 1
+}

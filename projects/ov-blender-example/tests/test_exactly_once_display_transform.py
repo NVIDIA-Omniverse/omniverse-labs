@@ -386,21 +386,25 @@ def test_scene_linear_draw_binds_display_space_shader_once() -> None:
         assert operator_view["display_transform_applied_by_blender"] is True
 
 
-def test_ldr_draw_does_not_bind_display_space_shader() -> None:
+def test_ldr_draw_does_not_bind_display_space_shader(monkeypatch) -> None:
     with _fake_bpy_engine() as module:
         engine = module.OvrtxExampleRenderEngine()
         bind_calls: list[object] = []
         unbind_calls: list[int] = []
         engine.bind_display_space_shader = lambda scene: bind_calls.append(scene)
         engine.unbind_display_space_shader = lambda: unbind_calls.append(1)
+        queued=[]
+        monkeypatch.setattr(module._DISPLAY_OVERLAY,"register",lambda *args:None)
+        monkeypatch.setattr(module._DISPLAY_OVERLAY,"queue",lambda *args:queued.append(args) or "deferred")
 
         with _fake_draw_modules() as (gpu_mod, draw_calls):
-            engine._draw_viewport_texture(_draw_context(), object(), _ldr_result())
+            result=engine._draw_viewport_texture(_draw_context(), object(), _ldr_result())
 
         assert bind_calls == []
         assert unbind_calls == []
-        assert len(draw_calls) == 1
-        assert gpu_mod.blend_calls == ["NONE"]
+        assert result is None and engine._queued_display_work=="deferred" and len(queued)==1
+        assert len(draw_calls) == 0
+        assert gpu_mod.blend_calls == []
         assert (
             engine._viewport_last_operator_view["display_transform_applied_by_blender"]
             is False

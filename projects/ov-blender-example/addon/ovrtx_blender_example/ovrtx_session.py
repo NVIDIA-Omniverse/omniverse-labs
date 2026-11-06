@@ -16,12 +16,9 @@ COMPOSED_SCENE = "composed_scene"
 RUNTIME_UPDATE = "runtime_update"
 CameraPoseSource = Literal["composed_scene", "runtime_update"]
 
-# OVRTX 0.3 requires session replacement for output resize. OVRTX 0.4 is
-# expected to make resize reusable only with a verified live render-product
-# resize plus camera projection path and composition identity that separates
-# those changes from session-breaking scene changes. Changing this flag alone
-# is invalid.
-SAME_SESSION_OUTPUT_RESIZE_SUPPORTED = False
+# The matched bridge supports typed RenderProduct resolution writes. Requests
+# opt into that route explicitly; direct/F12 compositions keep size identity.
+SAME_SESSION_OUTPUT_RESIZE_SUPPORTED = True
 
 
 def _dimension(value: int) -> int:
@@ -63,6 +60,7 @@ class OvrtxSessionSpec:
     #: ordinary ``reuse_decision`` path (no ad-hoc teardown). The default keeps
     #: pre-task specs (LDR passthrough) unchanged.
     render_var: str = color_presentation.RENDER_VAR_LDR_COLOR
+    output_size_value_route: bool = False
 
     def __post_init__(self) -> None:
         if not isinstance(self.ovrtx_scene_composition, ovrtx_scene_composition.OvrtxSceneComposition):
@@ -97,7 +95,6 @@ def build_spec(request: RenderRequest) -> OvrtxSessionSpec:
     sensor_paths = ovrtx_scene_composition.normalize_sensor_paths(request.sensor_paths)
     width = _dimension(request.width)
     height = _dimension(request.height)
-    render_var = _render_var_from_request(request)
     composition = ovrtx_scene_composition.compose(
         source_scene_path=request.input_usd_path,
         camera_prim_path=request.camera_prim_path,
@@ -112,10 +109,13 @@ def build_spec(request: RenderRequest) -> OvrtxSessionSpec:
         camera_value_route_classes=tuple(
             getattr(request, "camera_value_route_classes", ()) or ()
         ),
+        output_size_value_route=request.output_size_value_route,
         rtpt_quality=getattr(request, "rtpt_quality", None),
         rtpt_value_route=bool(getattr(request, "rtpt_value_route", False)),
         dlss_enabled=bool(getattr(request, "dlss_enabled", True)),
-        render_vars=(render_var,),
+        dlss_quality=str(getattr(request, "dlss_quality", "INHERIT")),
+        render_vars=ovrtx_scene_composition.render_vars_from_request(request),
+        native_exposure=request.native_exposure,
     )
     return OvrtxSessionSpec(
         ovrtx_scene_composition=composition,
@@ -126,7 +126,8 @@ def build_spec(request: RenderRequest) -> OvrtxSessionSpec:
         camera_pose_source=(
             RUNTIME_UPDATE if request.camera_matrix is not None else COMPOSED_SCENE
         ),
-        render_var=render_var,
+        render_var=_render_var_from_request(request),
+        output_size_value_route=request.output_size_value_route,
     )
 
 
@@ -134,19 +135,20 @@ def reuse_decision(
     current: OvrtxSessionSpec,
     desired: OvrtxSessionSpec,
 ) -> OvrtxSessionReuseDecision:
-    """Evaluate the concrete OVRTX 0.3 session reuse policy in priority order."""
+    """Evaluate session reuse with explicit live presentation routes."""
 
     if (
-        not SAME_SESSION_OUTPUT_RESIZE_SUPPORTED
+        not (current.output_size_value_route and desired.output_size_value_route)
         and (current.width, current.height) != (desired.width, desired.height)
     ):
         return OvrtxSessionReuseDecision(False, "output_shape_changed")
     if current.camera_prim_path != desired.camera_prim_path:
         return OvrtxSessionReuseDecision(False, "camera_prim_changed")
     if current.render_var != desired.render_var:
-        # The selected output is authored into the render product, so check it
-        # before the resulting composition digest and preserve the useful
-        # presentation-specific replacement reason.
+        # A resolved presentation-mode change (LdrColor <-> HdrColor) re-keys
+        # the session so the replacement reads back the new render var and
+        # frame format (task02-02). The render loop's would_replace probe
+        # surfaces this as the ordinary background resync — no new lifecycle.
         return OvrtxSessionReuseDecision(False, "render_var_changed")
     if (
         current.ovrtx_scene_composition.composed_scene_path != desired.ovrtx_scene_composition.composed_scene_path

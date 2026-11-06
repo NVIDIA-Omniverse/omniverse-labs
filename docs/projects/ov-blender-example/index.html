@@ -61,7 +61,7 @@
 
       <div class="prose">
         <p>
-          This public example for <strong>Blender 5.1</strong> packages a Blender add-on that connects your
+          This public example for <strong>Blender 5.2 or newer</strong> packages a Blender add-on that connects your
           open scene to <strong>NVIDIA ovrtx</strong> for real-time rendered viewport review and final-frame
           rendering. When supported SimReady physics properties are present,
           <strong>NVIDIA OVPhysX</strong> drives rigid-body motion in the Timeline before you take an asset
@@ -90,7 +90,7 @@
 
         <h2>Prerequisites</h2>
         <ul>
-          <li>Blender 5.1</li>
+          <li>Blender 5.2 or newer (Windows x64 or Linux x64)</li>
           <li>A supported 64-bit release platform (see the project
             <a
               href="https://github.com/nvidia-omniverse/omniverse-labs/blob/main/projects/ov-blender-example/docs/support-platforms.md"
@@ -98,36 +98,42 @@
               rel="noopener noreferrer"
             >Support Platforms</a> doc)</li>
           <li>A compatible NVIDIA RTX GPU and driver</li>
-          <li>Internet access if installing the runtime from GitHub</li>
         </ul>
 
         <h2>Install</h2>
         <ol>
           <li>
-            From the
+            Download the 0.2.0 release package for your platform (<code>windows-x64</code> or
+            <code>linux-x64</code>) from the
             <a
-              href="https://github.com/nvidia-omniverse/omniverse-labs/tree/main/projects/ov-blender-example"
+              href="https://github.com/nvidia-omniverse/omniverse-labs/releases/tag/ovrtx-blender-example-0.2"
               target="_blank"
               rel="noopener noreferrer"
-            >ov-blender-example project</a>,
-            download <code>ov-blender-example-&lt;platform&gt;.zip</code> and copy the paired Release page URL
-            for an online runtime install, or download all assets for your platform into one directory for a local install.
+            ><code>ovrtx-blender-example-0.2</code> release</a>
+            and extract it. Keep the extracted files together.
           </li>
-          <li>In Blender, choose <strong>Edit → Preferences → Add-ons</strong> and install the ZIP with
-            <strong>Install from Disk</strong>.</li>
-          <li>Enable <strong>ovrtx Blender Example</strong> if Blender does not enable it automatically.</li>
-          <li>For an online install, enable <strong>System → Allow Online Access</strong> in Blender preferences.</li>
+          <li>Close Blender.</li>
           <li>
-            Open the add-on's <strong>View Details</strong> panel. Paste the paired Release page URL or select
-            the absolute directory containing all downloaded release assets, then choose <strong>Install Runtime</strong>.
+            From the extracted folder, run the installer with your Blender executable:
+            <code>install.bat "C:\Program Files\Blender Foundation\Blender 5.2\blender.exe"</code> on Windows, or
+            <code>sh install.sh /path/to/blender</code> on Linux.
           </li>
-          <li>Wait until the panel shows <strong>Runtime: ready</strong> and <strong>Preflight: pass</strong>
-            before selecting the render engine.</li>
+          <li>
+            Wait for the installer to finish. It installs the add-on and its runtime into that Blender's settings
+            folder, then warms up the renderer's shader caches, which can take several minutes the first time.
+          </li>
+          <li>Start Blender normally. The add-on is already enabled.</li>
         </ol>
 
         <p>
-          The runtime installs separately from the Blender add-on. NVIDIA rendering and physics components run
-          outside the Blender process while the add-on provides the Blender experience.
+          <strong>Upgrading:</strong> run the installer from a newer release package the same way. It replaces the
+          previous add-on and runtime. See <code>INSTALL.txt</code> in the package for a self-contained Blender
+          configuration and other options.
+        </p>
+
+        <p>
+          The runtime installs beside the add-on in Blender's settings folder. NVIDIA rendering and physics
+          components run outside the Blender process while the add-on provides the Blender experience.
         </p>
 
         <h2>Render your first scene</h2>
@@ -165,6 +171,11 @@
               target="_blank"
               rel="noopener noreferrer"
             ><code>projects/ov-blender-example/</code></a>
+          </p>
+          <p>
+            <strong>Version 0.2.0</strong> (release tag <code>ovrtx-blender-example-0.2</code>). Add-on source is licensed Apache-2.0;
+            the OVRTX and OVPhysX runtimes are separate components that retain their own licenses
+            (see the project <code>THIRD_PARTY_NOTICES.md</code> and <code>docs/licensing.md</code>).
           </p>
           <p>
             Scene credit: <em>The Junk Shop</em> by Alex Treviño, original concept by Anaïs Maamar,

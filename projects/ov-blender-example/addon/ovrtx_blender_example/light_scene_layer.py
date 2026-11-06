@@ -29,10 +29,12 @@ class _LightRecord:
 def scene_layer_from_lights(
     light_objects: Iterable[Any],
     input_usd_path: str,
+    *,
+    light_index: Mapping[str, Mapping[str, str]] | None = None,
 ) -> MaterialPresentationLayer | None:
     """Author initial light values with the same policy used for live edits."""
 
-    index = _stock_light_index(input_usd_path)
+    index = _stock_light_index(input_usd_path) if light_index is None else light_index
     if not index:
         return None
     records: list[_LightRecord] = []
@@ -85,16 +87,21 @@ def _stock_light_index(input_usd_path: str) -> dict[str, dict[str, str]]:
         return {}
     index: dict[str, dict[str, str]] = {}
     for prim in stage.Traverse():
-        usd_family = str(prim.GetTypeName())
-        if usd_family not in _USD_LIGHT_TYPES:
-            continue
-        name = _prim_attribute_value(
-            prim.GetParent(), "userProperties:blender:object_name"
-        )
-        if not name or name in index:
-            continue
-        index[name] = {"path": str(prim.GetPath()), "usd_family": usd_family}
+        record = _stock_light_record(prim)
+        if record is not None:
+            name, value = record
+            index.setdefault(name, value)
     return index
+
+
+def _stock_light_record(prim: Any) -> tuple[str, dict[str, str]] | None:
+    usd_family = str(prim.GetTypeName())
+    if usd_family not in _USD_LIGHT_TYPES:
+        return None
+    name = _prim_attribute_value(prim.GetParent(), "userProperties:blender:object_name")
+    if not name:
+        return None
+    return name, {"path": str(prim.GetPath()), "usd_family": usd_family}
 
 
 def _layer_from_records(

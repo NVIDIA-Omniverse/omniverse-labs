@@ -12,12 +12,12 @@
   "camera_prim_path": "/OvrtxCamera",
   "render_product_prim_path": "/Render/OmniverseKit/HydraTextures/ViewportTexture0",
   "fixture_usd_path": "fixtures/data/perf_blender_classroom_1280x720/fixture/classroom_ovrtx.usda",
-  "fixture_usd_sha256": "c58a71efd85b1f5430ac1a2c7dd2731b8c18e0c2eb1d754f37bcdd2a6695abc9",
-  "fixture_content_sha256": "f1c62e8ad98481b5ff0e44a1deb1cb381577e95a4c5c5a0d5b6e57ce2501ec89",
+  "fixture_usd_sha256": "77e25334f3baed02b7b49bf99839fd68542c464702f8fd59435724248e029880",
+  "fixture_content_sha256": "28391f40849ca1d98bed9b0401fb777b8256ec299c07662222adc7f0bbfafe43",
   "platform_identities": {
     "win32": {
-      "fixture_usd_sha256": "fca2d3c25e913d6b69abe2e279c70c4c00bcf6beded4ba8e151e9cae8d6b25fe",
-      "fixture_content_sha256": "f5ae0ebc2fb6427bfb952b6f98306170c3e067d6fc9949d340d1091a982d35ba"
+      "fixture_usd_sha256": "185f6e207a5dfd3b21336e43a7bf43b0616d1b43b469b4a92a260d999c20cbed",
+      "fixture_content_sha256": "3c130441a1d70146a3a43598a7ae314c58f8b0d3b25dd190eeb5539afd8812a3"
     }
   },
   "runtime_files": [
@@ -71,15 +71,15 @@
     },
     {
       "path": "fixtures/data/perf_blender_classroom_1280x720/fixture/classroom_ovrtx.usda",
-      "sha256": "c58a71efd85b1f5430ac1a2c7dd2731b8c18e0c2eb1d754f37bcdd2a6695abc9"
+      "sha256": "77e25334f3baed02b7b49bf99839fd68542c464702f8fd59435724248e029880"
     }
   ],
   "provenance": {
     "schema_version": 1,
     "fixture_id": "perf_blender_classroom_1280x720",
     "runtime_entrypoint": "fixtures/data/perf_blender_classroom_1280x720/fixture/classroom_ovrtx.usda",
-    "fixture_usd_sha256": "c58a71efd85b1f5430ac1a2c7dd2731b8c18e0c2eb1d754f37bcdd2a6695abc9",
-    "fixture_content_sha256": "f1c62e8ad98481b5ff0e44a1deb1cb381577e95a4c5c5a0d5b6e57ce2501ec89",
+    "fixture_usd_sha256": "77e25334f3baed02b7b49bf99839fd68542c464702f8fd59435724248e029880",
+    "fixture_content_sha256": "28391f40849ca1d98bed9b0401fb777b8256ec299c07662222adc7f0bbfafe43",
     "sources": [
       {
         "name": "Official Blender Classroom demo",

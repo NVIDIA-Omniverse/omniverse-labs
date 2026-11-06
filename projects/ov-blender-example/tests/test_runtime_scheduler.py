@@ -429,6 +429,42 @@ def _tick(
     )
 
 
+def test_borrowed_physics_rewind_projects_reset_pose_into_existing_renderer():
+    controllers = []
+
+    def reset():
+        if controllers:
+            controllers[-1].shutdown()
+        controller = OvphysxStageController(_config(), physics_client=_FakePhysicsClient())
+        controller.tick()  # Generation activation eagerly creates and reads the simulation.
+        controllers.append(controller)
+        return True
+
+    reset()
+    scheduler = RuntimeScheduler(controller_provider=lambda: controllers[-1], controller_reset=reset)
+    render = _FakeRenderClient()
+    port = OvrtxSessionUpdatePort(render, "same-render-session")
+    try:
+        scheduler.tick_viewport(_request(), ovrtx_updates=port, project_complete_pose=True)
+        advanced = scheduler.tick_viewport(_request(timeline_frame=2), ovrtx_updates=port)
+        assert advanced.physics_pose_set[0].translate[1] == 4.5
+        writes = len(render.transform_updates)
+        rewind = scheduler.tick_viewport(_request(timeline_frame=1), ovrtx_updates=port)
+        assert rewind.timeline_reset
+        assert rewind.simulation_time_ns == 0
+        assert rewind.physics_pose_set[0].translate[1] == 5.0
+        assert rewind.values_written, "Reset must reach the already-running renderer"
+        assert len(render.transform_updates) == writes + 1
+        assert rewind.should_reset_refinement
+        same_frame = scheduler.tick_viewport(_request(timeline_frame=1), ovrtx_updates=port)
+        assert not same_frame.timeline_reset
+        assert len(controllers) == 2
+        assert same_frame.simulation_time_ns == 0
+    finally:
+        scheduler.shutdown()
+        controllers[-1].shutdown()
+
+
 def test_timeline_frame_range_maps_to_physics_step_limit() -> None:
     request = RuntimeTickRequest(
         input_usd_path="/fixture.usda",
@@ -438,6 +474,53 @@ def test_timeline_frame_range_maps_to_physics_step_limit() -> None:
     )
 
     assert _timeline_max_steps(request, steps_per_update=5, configured_max_steps=240) == 120
+
+
+@pytest.mark.parametrize('failure', ['uncertain', 'partial'])
+def test_view_replay_sink_commits_only_complete_acknowledgment(failure):
+    from ovrtx_blender_example.view_update_stream import ViewUpdateStream
+    from ovrtx_blender_example.ovrtx_runtime_client import ValueUpdateRecoveryRequired
+    retained = []
+    stream = ViewUpdateStream(transform_sink=lambda values: retained.extend(values))
+    intent = InteractiveEditPlanner().plan(InteractiveEdit(
+        shape=EditShape.VALUE, data_authority=DataAuthority.VIEW,
+        **_camera_edit_target(), value=((1., 0., 0., 0.),) * 4,
+    )).to_intent()
+    stream.queue(intent)
+    assert not retained
+
+    class FailedPort:
+        def update_transforms(self, values):
+            if failure == 'uncertain':
+                raise ValueUpdateRecoveryRequired('controlled unknown acceptance')
+            return OvrtxValueUpdateResult(updated_count=0)
+
+    outcome = stream.apply_pending(FailedPort())
+    assert outcome['failed'] and not retained and not stream.has_pending
+    # A fresh explicit edit after recovery can be acknowledged and retained.
+    stream.queue(intent)
+    stream.apply_pending(OvrtxSessionUpdatePort(_FakeRenderClient(), object()))
+    assert len(retained) == 1 and not stream.has_pending
+
+
+def test_uncertain_transform_group_does_not_issue_following_attribute_group():
+    from ovrtx_blender_example.view_update_stream import ViewUpdateStream
+    from ovrtx_blender_example.ovrtx_runtime_client import ValueUpdateRecoveryRequired
+    stream = ViewUpdateStream()
+    planner = InteractiveEditPlanner()
+    for target, value in [(_camera_edit_target(), ((1., 0., 0., 0.),) * 4),
+                          (_material_edit_target(), (0.2, 0.3, 0.4))]:
+        stream.queue(planner.plan(InteractiveEdit(
+            shape=EditShape.VALUE, data_authority=DataAuthority.VIEW,
+            **target, value=value)).to_intent())
+    class Port:
+        def update_transforms(self, values):
+            raise ValueUpdateRecoveryRequired('unknown transform ACK')
+        def update_attribute_values(self, values):
+            pytest.fail('No later mutation may follow an uncertain group')
+    result = stream.apply_pending(Port())
+    assert result['failed'] and result['recovery_required']
+    assert not stream.has_pending
 
 
 def test_scheduler_borrows_scene_owned_physics_and_routes_adapter_values() -> None:
@@ -1131,6 +1214,50 @@ def test_scheduler_submits_a_group_atomically_with_one_revision() -> None:
     ]
 
 
+def test_slider_submission_does_not_wait_for_native_application() -> None:
+    scheduler = RuntimeScheduler()
+    first = InteractiveEditPlanner().plan(InteractiveEdit(
+        shape=EditShape.VALUE, data_authority=DataAuthority.VIEW,
+        **_edit_target(), value=((1., 0., 0., 0.), (0., 1., 0., 0.),
+            (0., 0., 1., 0.), (1., 0., 0., 1.)))).to_intent()
+    entered, release, submitted = threading.Event(), threading.Event(), threading.Event()
+    render = _FakeRenderClient()
+    original = render.update_transforms
+    calls = []
+    def slow_update(*args, **kwargs):
+        calls.append(threading.get_ident())
+        entered.set()
+        assert release.wait(5)
+        return original(*args, **kwargs)
+    render.update_transforms = slow_update
+    port = OvrtxSessionUpdatePort(render, object())
+    scheduler.submit_edit(first)
+    worker = threading.Thread(target=scheduler.apply_pending_view_values, args=(port,))
+    worker.start()
+    assert entered.wait(2)
+    results = []
+    def drag():
+        for value in range(2, 102):
+            matrix = (*first.value[:3], (float(value), 0., 0., 1.))
+            results.append(scheduler.submit_edit(replace(first, value=matrix)))
+        submitted.set()
+    producer = threading.Thread(target=drag)
+    producer.start()
+    try:
+        assert submitted.wait(1), 'UI edit submission waited on the native tick'
+        assert all(result.accepted for result in results)
+        assert scheduler.has_pending_view_updates
+    finally:
+        release.set()
+        worker.join(5)
+        producer.join(5)
+    assert not worker.is_alive() and not producer.is_alive()
+    scheduler.apply_pending_view_values(port)
+    assert len(render.transform_updates) == 2
+    assert render.transform_updates[-1][0].matrix[3][0] == 101.
+    assert not scheduler.has_pending_view_updates
+
+
 def test_retryable_sim_application_remains_pending() -> None:
     scheduler = RuntimeScheduler()
     intent = InteractiveEditPlanner().plan(
@@ -1422,6 +1549,17 @@ def test_scheduler_reports_runtime_transform_apply_failure() -> None:
     assert update_result["values_written"] is False
     assert update_result["failed"] is True
     assert "ValueError" in update_result["result"]["error"]
+    assert scheduler.has_pending_view_updates
+    assert scheduler.edit_submission_revision == 1
+
+    corrected = replace(plan.to_intent(), value=((1., 0., 0., 0.), (0., 1., 0., 0.),
+                                                (0., 0., 1., 0.), (2., 3., 4., 1.)))
+    scheduler.submit_edit(corrected)
+    assert scheduler.edit_submission_revision == 2
+    recovered = _tick(scheduler, render, object(), timeline_controls_enabled=False)
+    assert recovered.status != RuntimeTickStatus.FAILED
+    assert not scheduler.has_pending_view_updates
+    assert render.transform_updates[-1][0].matrix[-1] == [2., 3., 4., 1.]
 
 
 def test_scheduler_applies_pending_sim_value_update_before_playback_step() -> None:
@@ -1463,7 +1601,7 @@ def test_scheduler_applies_pending_sim_value_update_before_playback_step() -> No
         assert submission_result.accepted is True
         assert result.status in {RuntimeTickStatus.PLAYBACK_ADVANCED, RuntimeTickStatus.REUSED_LATEST}
         assert physics.pose_writes
-        assert physics.pose_writes[0]["simulation_time_ns"] == 1
+        assert physics.pose_writes[0]["simulation_time_ns"] == 2
         assert physics.pose_writes[0]["reset"] is False
         written_pose = physics.pose_writes[0]["poses"][0]
         assert written_pose.translate == (2.0, 7.0, 4.0)

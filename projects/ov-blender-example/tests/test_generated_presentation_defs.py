@@ -22,6 +22,28 @@ from ovrtx_blender_example import ovrtx_scene_composition  # noqa: E402
 SENSOR = "/Render/OmniverseKit/HydraTextures/ViewportTexture0"
 
 
+def test_generated_world_camera_pose_resets_inherited_stock_rig(tmp_path, monkeypatch):
+    from pxr import Gf, Usd, UsdGeom
+    source = tmp_path / 'rig.usda'
+    stage = Usd.Stage.CreateNew(str(source))
+    rig = UsdGeom.Xform.Define(stage, '/World/Rig')
+    rig.AddTranslateOp().Set(Gf.Vec3d(7, 8, 9))
+    camera = UsdGeom.Camera.Define(stage, '/World/Rig/Camera')
+    camera.AddTranslateOp().Set(Gf.Vec3d(1, 2, 3))
+    stage.GetRootLayer().Save()
+    world = Gf.Matrix4d(1)
+    world.SetTranslate(Gf.Vec3d(8, 10, 12))
+    monkeypatch.setenv('OV_BLENDER_EXAMPLE_VIEWPORT_WORK_DIR', str(tmp_path / 'work'))
+    composition = ovrtx_scene_composition.compose(source_scene_path=str(source),
+        camera_prim_path='/World/Rig/Camera', sensor_paths=(SENSOR,), width=64, height=64,
+        camera_projection=None, material_scene_layer=None,
+        generate_scene_presentation=True, scene_camera_matrix=tuple(tuple(row) for row in world))
+    composed = Usd.Stage.Open(composition.composed_scene_path)
+    actual = UsdGeom.Xformable(composed.GetPrimAtPath('/World/Rig/Camera'))
+    assert actual.GetResetXformStack()
+    assert actual.ComputeLocalToWorldTransform(Usd.TimeCode.Default()) == world
+
+
 def _compose(tmp_path: Path, *, generated: bool) -> ovrtx_scene_composition.OvrtxSceneComposition:
     source = tmp_path / "scene.usda"
     source.write_text('#usda 1.0\n\ndef Xform "World"\n{\n}\n', encoding="utf-8")

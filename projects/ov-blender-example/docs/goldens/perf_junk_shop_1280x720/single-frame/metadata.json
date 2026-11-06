@@ -16,7 +16,7 @@
   "case": "perf_junk_shop_1280x720",
   "frame": {
     "path": "frame.png",
-    "sha256": "5ff6633c82fc789c0ae0adb21ad68fe4c168a059e7a15ef3e4d97607f9f30511"
+    "sha256": "4aa834a41a0991e9f3eee939ad666166be27bbfaba21088e6283f09c4df182b3"
   },
   "kind": "ov-blender-example-golden-image",
   "presentation": "scene_linear_hdr",

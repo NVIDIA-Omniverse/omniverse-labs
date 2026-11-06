@@ -874,6 +874,7 @@ transparent_materials = set()
 legacy_texture_materials = set()
 classroom_complex_texture_files = {{
     "LeatherBook_cover": "base_leather.jpg",
+    "leatherChair_leather": "base_leather.jpg",
     "beigePaint": "base_paintedPlasterWall.jpg",
     "beigePaintedPlastic": "base_paintedPlasterWall.jpg",
     "beigePaintedwood": "base_paintedPlasterWall.jpg",

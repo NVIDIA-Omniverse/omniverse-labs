@@ -54,3 +54,15 @@ def Xform "World"
 
 def test_discover_dynamic_body_prims_returns_empty_for_missing_file(tmp_path: Path) -> None:
     assert discover_dynamic_body_prims(str(tmp_path / "missing.usda")) == ()
+
+
+def test_disabled_bodies_are_not_required_dynamic_outputs(tmp_path: Path) -> None:
+    fixture = tmp_path / "disabled.usda"
+    fixture.write_text('''#usda 1.0
+def Xform "World" {
+    def Cube "Disabled" (prepend apiSchemas = ["PhysicsRigidBodyAPI"]) {
+        bool physics:rigidBodyEnabled = false
+    }
+}
+''')
+    assert discover_dynamic_body_prims(str(fixture), root="") == ()

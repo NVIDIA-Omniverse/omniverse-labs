@@ -1,4 +1,4 @@
----
+﻿---
 name: blender-addon-extension-development
 description: Route and implement source changes in the OVRTX Blender add-on. Use when adding Blender properties or UI, render settings, scene or USD conversion, interactive edits, render sequences, sensor products, viewport presentation, diagnostics, or tests.
 license: "Apache-2.0"
@@ -41,7 +41,7 @@ Choose the narrowest route before editing:
 | Scene object/topology | `scene_generation.py::SceneGenerationOwner` | `_stock_export`, `_compile_add_on_opinions`, topology reconciliation, `topology_edit_fallback.py` | `test_scene_generation.py`, `test_scene_generation_contract.py`, `test_topology_edit_fallback.py` |
 | Interactive value edit | `blender_signals.py` and `blender_signal_translation.py` | `blender_interactive_edit_builders.py`, `interactive_edit_planner.py`, `value_edit_conversion.py`, `interactive_edit_workflow.py`, `runtime_scheduler.py` | corresponding `test_blender_*`, `test_interactive_*`, `test_value_edit_conversion.py` |
 | Session or sequence | `render_requests.py::RenderRequest` | `ovrtx_session.py`, `ovrtx_session_controller.py`, `runtime_scheduler.py`, `engine.py` | `test_ovrtx_session.py`, `test_ovrtx_session_controller.py`, `test_runtime_scheduler.py`, `test_final_render_on_rpc_thread.py` |
-| Sensor/AOV result | `render_requests.py` and `ovrtx_runtime_client.py` | typed result model, scheduler publication, `engine.py` presentation | `test_render_requests.py`, `test_ovrtx_runtime_client.py`, scheduler and presentation tests |
+| Product/pixel result | `render_requests.py` and `direct_sdk_client.py::PublicSdkRenderClient` | pure typed result/error models in `ovrtx_runtime_client.py`, consumed by the direct SDK client; scheduler publication and `engine.py` presentation; additional AOVs require explicit future admission | `test_render_requests.py`, `test_direct_sdk_client.py`, scheduler and presentation tests |
 | Viewport upload/display | `viewport_handoff.py` and `viewport_presentation.py` | `viewport_render_thread.py`, `engine.py` | `test_viewport_handoff.py`, `test_viewport_presentation.py`, `test_viewport_render_thread.py` |
 | Preflight/diagnostics | `preflight.py` or the owning module's diagnostics model | `user_messages.py`, `ui.py` | `test_addon_preflight.py`, `test_user_messages.py`, focused diagnostics test |
 
@@ -98,7 +98,10 @@ Write down these decisions in the implementation plan:
 
 ## Validation
 
-Run the focused pure-Python tests first, then the complete `tests` suite.
+Run focused affected-code checks first. Run the relevant complete suite once at
+an integration/phase boundary, reusing unchanged-artifact evidence. Current graph
+qualification uses representative checks with each invocation/batch below ten
+minutes; exhaustive benchmarking is separately deferred.
 For Blender-dependent behavior, run the documented included Blender fixture.
 For runtime-dependent behavior, use the documented runtime interface and record
 versions, request, response, diagnostics, and a caller-selected artifact path.
@@ -120,3 +123,4 @@ conversion, caching, or diagnostics remains add-on work.
 Return changed paths and symbols, focused and full-suite results, fixture
 or visual evidence, compatibility notes, and exactly one boundary decision:
 `addon-only` or `runtime-capability-missing` with the minimal probe.
+

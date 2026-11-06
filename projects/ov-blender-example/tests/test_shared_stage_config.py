@@ -78,21 +78,27 @@ def test_shared_stage_config_ignores_removed_path_environment(monkeypatch) -> No
     assert config.input_usd_path == "/tmp/input.usda"
 
 
-def test_shared_stage_config_uses_bundled_ovphysx_defaults(monkeypatch, tmp_path: Path) -> None:
+def test_shared_stage_config_never_discovers_legacy_bridge_defaults(monkeypatch, tmp_path: Path) -> None:
     _clear_env(monkeypatch)
     addon_root = tmp_path / "addon"
-    server = addon_root / "bin" / "ovphysx-bridge-server"
-    native = addon_root / "native"
+    server = (
+        addon_root
+        / "runtime"
+        / "ovphysx-bridge-server"
+        / "bin"
+        / "ovphysx_grpc_server"
+    )
+    native = addon_root / "native" / "client"
     server.parent.mkdir(parents=True)
     server.write_text("#!/bin/sh\n", encoding="utf-8")
-    native.mkdir()
+    native.mkdir(parents=True)
     monkeypatch.setattr(bundled_runtime, "addon_root", lambda: addon_root)
     monkeypatch.setattr(bundled_runtime, "current_platform_id", lambda: "linux-x64")
 
     config = InteractiveSharedStageConfig.from_env("/tmp/source.usda")
 
-    assert config.server == str(server)
-    assert config.ovphysx_native_client_path == str(native)
+    assert config.server == ""
+    assert config.ovphysx_native_client_path == ""
 
 
 def test_shared_stage_config_from_env_parses_explicit_runtime_values(monkeypatch, tmp_path: Path) -> None:
@@ -123,8 +129,8 @@ def test_shared_stage_config_from_env_parses_explicit_runtime_values(monkeypatch
 
     assert config.enabled is True
     assert config.input_usd_path == str(input_usd_path)
-    assert config.server == str(server_path)
-    assert config.ovphysx_address == "127.0.0.1:50123"
+    assert config.server == ""
+    assert config.ovphysx_address == ""
     assert config.device == "gpu"
     assert config.body_root == "/World/Bodies"
     assert config.body_prims == ("/World/Bodies/A", "/World/Bodies/B")
@@ -137,8 +143,8 @@ def test_shared_stage_config_from_env_parses_explicit_runtime_values(monkeypatch
     assert config.body_scale == 2.5
     assert config.worker_log_path == str(worker_log_path)
     assert config.trace_log_path == str(trace_log_path)
-    assert config.ovphysx_native_client_module == "custom_ovphysx_client"
-    assert config.ovphysx_native_client_path == str(native_path)
+    assert config.ovphysx_native_client_module == ""
+    assert config.ovphysx_native_client_path == ""
 
 
 def test_shared_stage_config_accepts_comma_separated_body_prims(monkeypatch) -> None:

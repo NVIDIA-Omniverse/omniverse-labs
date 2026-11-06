@@ -13,7 +13,7 @@ import sys
 _NATIVE_BLENDER_COMMANDS = {
     "darwin": ("/Applications/Blender.app/Contents/MacOS/Blender",),
     "linux": ("/snap/blender/current/blender",),
-    "win32": (r"C:\Program Files\Blender Foundation\Blender 5.1\blender.exe",),
+    "win32": (r"C:\Program Files\Blender Foundation\Blender 5.2\blender.exe",),
 }
 
 

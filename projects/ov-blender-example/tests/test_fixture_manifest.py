@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from pathlib import Path
 import hashlib
+import json
 import sys
 
 import pytest
@@ -372,6 +373,30 @@ def test_render_fixture_selects_exact_platform_identity(
 
     assert record["fixture_usd_sha256"] == runtime_files[0]["sha256"]
     assert record["fixture_content_sha256"] == fixture_runtime_content_sha256(runtime_files)
+
+
+def test_classroom_windows_runtime_identity_matches_generated_fixture() -> None:
+    spec_path = (
+        ROOT
+        / "tests"
+        / "fixtures"
+        / "perf_blender_classroom_1280x720"
+        / "spec.json"
+    )
+    fixture = json.loads(spec_path.read_text(encoding="utf-8"))
+    identity = fixture["platform_identities"]["win32"]
+    runtime_files = [dict(item) for item in fixture["runtime_files"]]
+    direct = next(
+        item
+        for item in runtime_files
+        if item["path"] == fixture["fixture_usd_path"]
+    )
+
+    assert identity["fixture_usd_sha256"] == (
+        "185f6e207a5dfd3b21336e43a7bf43b0616d1b43b469b4a92a260d999c20cbed"
+    )
+    direct["sha256"] = identity["fixture_usd_sha256"]
+    assert identity["fixture_content_sha256"] == fixture_runtime_content_sha256(runtime_files)
 
 
 def test_runtime_content_identity_is_stable_across_manifest_order() -> None:

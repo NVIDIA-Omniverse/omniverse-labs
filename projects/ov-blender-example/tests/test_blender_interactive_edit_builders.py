@@ -394,7 +394,11 @@ def test_uninspectable_write_targets_fail_closed(monkeypatch) -> None:
         assert InteractiveEditPlanner().plan(failed).persistence is EditPersistence.NONE
 
 
-def test_unresolved_topology_target_requests_scene_generation_replacement() -> None:
+def test_unresolved_topology_target_requests_scene_generation_replacement(monkeypatch) -> None:
+    # Exercise unavailable USD explicitly, including when run with Blender's
+    # bundled interpreter, where pxr is installed and can load successfully.
+    monkeypatch.setattr(builders.write_target_resolution, "_load_usd_module",
+                        lambda _module: (None, "ImportError"))
     edit = builders.InteractiveEdit(
         shape=EditShape.TOPOLOGY,
         data_authority=DataAuthority.VIEW,
@@ -413,7 +417,7 @@ def test_unresolved_topology_target_requests_scene_generation_replacement() -> N
     plan = InteractiveEditPlanner().plan(resolved)
 
     assert resolved.usd_layer_id == ""
-    assert resolved.provenance["write_target_error_reason"] == "pxr_unavailable"
+    assert resolved.provenance["write_target_error_reason"] == "missing_write_target"
     assert plan.impact.scene_generation_replacement_requested is True
 
 
@@ -844,8 +848,11 @@ def test_light_value_edits_from_prim_emit_topology_for_point_to_spot_form_crossi
         attribute["name"]: attribute
         for attribute in edits[0].metadata["topology_attribute_values"]
     }
-    assert math.isclose(topology_attributes["inputs:shaping:cone:angle"]["value"], 30.0)
-    assert topology_attributes["inputs:shaping:cone:softness"]["value"] == 0.25
+    # Blend 0.25 on a 60 degree spot: hard cone at the midpoint of Cycles' smoothstep edge, zero softness.
+    cos_half = math.cos(math.radians(30.0))
+    expected = math.degrees(math.acos(cos_half + 0.5 * (1.0 - cos_half) * 0.25))
+    assert math.isclose(topology_attributes["inputs:shaping:cone:angle"]["value"], expected)
+    assert topology_attributes["inputs:shaping:cone:softness"]["value"] == 0.0
     assert plan.persistence == EditPersistence.WRITE
     assert plan.mechanism == EditMechanism.COMPOSE
 
@@ -950,8 +957,10 @@ def test_depsgraph_extraction_resolves_untagged_existing_light_values() -> None:
 
     assert "inputs:intensity" in by_attribute
     assert by_attribute["inputs:color"].value == (1.0, 0.8, 0.6)
-    assert math.isclose(by_attribute["inputs:shaping:cone:angle"].value, 30.0)
-    assert by_attribute["inputs:shaping:cone:softness"].value == 0.25
+    cos_half = math.cos(math.radians(30.0))
+    midpoint = math.degrees(math.acos(cos_half + 0.5 * (1.0 - cos_half) * 0.25))
+    assert math.isclose(by_attribute["inputs:shaping:cone:angle"].value, midpoint)
+    assert by_attribute["inputs:shaping:cone:softness"].value == 0.0
     assert all(edit.usd_prim_path == "/World/Spot/SpotData" for edit in edits)
     assert all(
         edit.provenance["blender_id_kind"] == "LIGHT"
@@ -998,6 +1007,164 @@ def test_depsgraph_extraction_matches_evaluated_light_data_by_session_identity()
     )
 
     assert any(edit.usd_attribute == "inputs:intensity" for edit in edits)
+
+
+def test_light_exposure_edit_uses_exact_existing_light_target_and_native_stops():
+    data = _FakeBlenderId(name="PointData", blender_type="POINT", session_uid=22,
+                         energy=2.0, exposure=3.0, shadow_soft_size=0.25)
+    obj = _FakeBlenderId(name="Point", blender_type="LIGHT", data=data)
+    index = light_usd_prim._light_prim_index_from_prims((
+        _FakeBlenderId(path="/World/Point/PointData", type_name="SphereLight", attributes=()),))
+    edits = build_interactive_edits_from_depsgraph(
+        _FakeDepsgraph([_FakeDepsgraphUpdate(data)]),
+        usd_prim_resolver=_FakeResolver(light_index=index), light_objects=(obj,))
+    exposure = next(edit for edit in edits if edit.usd_attribute == "inputs:exposure")
+    assert exposure.usd_prim_path == "/World/Point/PointData"
+    assert exposure.blender_property_path == "exposure"
+    assert exposure.value == 3.0
+    assert exposure.shape == EditShape.VALUE
+    assert InteractiveEditPlanner().plan(exposure).mechanism == EditMechanism.UPDATE
+
+
+def _light_pose_delta_fixture():
+    data = _FakeBlenderId(name="PointData", blender_type="POINT", energy=2.0,
+                         exposure=3.0, shadow_soft_size=0.25)
+    obj = _FakeBlenderId(name="Point", blender_type="LIGHT", data=data,
+        matrix_world=((1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1)))
+    index = light_usd_prim._light_prim_index_from_prims((
+        _FakeBlenderId(path="/World/Point/PointData", type_name="SphereLight", attributes=()),))
+    resolver = _FakeResolver(object_path="/World/Point", light_index=index)
+    update = _FakeDepsgraphUpdate(obj, is_updated_geometry=False)
+    update.is_updated_transform = True
+    return obj, data, resolver, update
+
+
+def test_light_object_pose_delta_does_not_resend_unchanged_light_inputs():
+    obj, data, resolver, update = _light_pose_delta_fixture()
+    edits = build_interactive_edits_from_depsgraph(_FakeDepsgraph([update]),
+        usd_prim_resolver=resolver, light_objects=(obj,))
+    assert len(edits) == 1
+    assert edits[0].usd_prim_path == "/World/Point"
+    assert edits[0].usd_attribute == "xformOp:transform"
+
+
+def test_light_pose_delta_does_not_hide_simultaneous_light_datablock_exposure():
+    obj, data, resolver, update = _light_pose_delta_fixture()
+    data.exposure = 4.0
+    edits = build_interactive_edits_from_depsgraph(
+        _FakeDepsgraph([update, _FakeDepsgraphUpdate(data)]),
+        usd_prim_resolver=resolver, light_objects=(obj,))
+    assert any(edit.usd_attribute == "xformOp:transform" for edit in edits)
+    exposure = next(edit for edit in edits if edit.usd_attribute == "inputs:exposure")
+    assert exposure.usd_prim_path == "/World/Point/PointData"
+    assert exposure.value == 4.0
+
+
+@pytest.mark.parametrize("marker,value", [("is_updated_geometry", True),
+    ("is_updated_transform", None), ("is_updated_shading", True)])
+def test_light_object_unknown_or_data_changes_keep_light_value_extraction(marker, value):
+    obj, data, resolver, update = _light_pose_delta_fixture()
+    setattr(update, marker, value)
+    edits = build_interactive_edits_from_depsgraph(_FakeDepsgraph([update]),
+        usd_prim_resolver=resolver, light_objects=(obj,))
+    assert any(edit.usd_attribute == "inputs:exposure" for edit in edits)
+
+
+def test_evaluated_transform_value_keeps_original_authored_identity():
+    obj = _FakeBlenderId(name="Animated", matrix_world=((1, 0, 0, 0), (0, 1, 0, 0),
+                                                      (0, 0, 1, 0), (0, 0, 0, 1)))
+    evaluated = SimpleNamespace(matrix_world=_BLENDER_ROTZ90_T123)
+    obj.evaluated_get = lambda graph: evaluated
+    graph = _FakeDepsgraph([_FakeDepsgraphUpdate(obj)])
+    graph.evaluated_depsgraph = graph
+    edits = build_interactive_edits_from_depsgraph(graph,
+        usd_prim_resolver=_FakeResolver(object_path="/World/Animated"))
+    edit = next(edit for edit in edits if edit.usd_attribute == "xformOp:transform")
+    assert edit.usd_prim_path == "/World/Animated"
+    assert edit.value == _USD_ROWS_ROTZ90_T123
+    assert edit.provenance["name"] == "Animated"
+
+
+def test_object_only_geometry_property_updates_enter_verified_topology_lane():
+    obj = _FakeBlenderId(name="Modified", blender_type="MESH", data=SimpleNamespace(),
+        matrix_world=((1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1)))
+    update = _FakeDepsgraphUpdate(obj, is_updated_geometry=False)
+    update.is_updated_transform = False
+    resolver = _FakeResolver(object_path="/World/Modified", mesh_topology_change={
+        "usd_prim_path": "/World/Modified/Mesh", "previous_fingerprint": "before", "current_fingerprint": "after"})
+    edits = build_interactive_edits_from_depsgraph(_FakeDepsgraph([update]), usd_prim_resolver=resolver)
+    topology = next(edit for edit in edits if edit.shape == EditShape.TOPOLOGY)
+    assert topology.usd_prim_path == "/World/Modified/Mesh"
+    assert InteractiveEditPlanner().plan(topology).impact.scene_generation_replacement_requested
+    # Ordinary transforms do not inspect per-element mesh fingerprints.
+    update.is_updated_transform = True
+    assert all(edit.shape == EditShape.VALUE for edit in build_interactive_edits_from_depsgraph(
+        _FakeDepsgraph([update]), usd_prim_resolver=resolver))
+
+
+@pytest.mark.parametrize("geometry,shading,unchanged,expect_scan", [
+    (False, True, True, False), (False, True, False, True),
+    (True, True, True, True), (False, False, True, True),
+    (False, None, True, True),
+])
+def test_mesh_shading_propagation_skips_elements_only_with_verified_controls(
+    geometry, shading, unchanged, expect_scan,
+):
+    obj = _FakeBlenderId(name="Modified", blender_type="MESH", data=SimpleNamespace(),
+        matrix_world=((1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1)))
+    update = _FakeDepsgraphUpdate(obj, is_updated_geometry=geometry)
+    update.is_updated_transform = False
+    update.is_updated_shading = shading
+    resolver = _FakeResolver(object_path="/World/Modified")
+    scans = []
+    resolver.mesh_topology_change = lambda mesh: scans.append(mesh) or None
+    resolver.mesh_shading_unchanged = lambda mesh: unchanged
+    build_interactive_edits_from_depsgraph(_FakeDepsgraph([update]), usd_prim_resolver=resolver)
+    assert bool(scans) is expect_scan
+
+
+def test_material_graph_parameter_change_requests_generation_before_native_values():
+    material = _FakeBlenderId(name="Textured", bl_rna=SimpleNamespace(identifier="Material"),
+                              node_tree=_FakeNodeTree())
+    resolver = _FakeResolver()
+    resolver.material_graph_change = lambda mat: {"usd_prim_path": "/World/Looks/Textured",
+        "previous_fingerprint": "image-a", "current_fingerprint": "image-b"}
+    edits = builders.material_value_edits_from_resolver(material, resolver)
+    assert len(edits) == 1
+    edit = edits[0]
+    assert edit.shape == EditShape.TOPOLOGY
+    assert edit.usd_prim_path == "/World/Looks/Textured"
+    assert edit.metadata["material_graph_input_changed"]
+    assert InteractiveEditPlanner().plan(edit).impact.scene_generation_replacement_requested
+
+
+def test_unsupported_light_property_change_is_reported_with_exact_field():
+    data = _FakeBlenderId(name="PointData", blender_type="POINT", session_uid=22,
+                         energy=2.0, exposure=0.0, shadow_soft_size=0.25, use_shadow=False)
+    obj = _FakeBlenderId(name="Point", blender_type="LIGHT", data=data)
+    index = light_usd_prim._light_prim_index_from_prims((
+        _FakeBlenderId(path="/World/Point/PointData", type_name="SphereLight", attributes=()),))
+    resolver = _FakeResolver(light_index=index)
+    resolver.unsupported_light_changes = lambda light: ({"field": "use_shadow", "value": False,
+        "previous_value": True, "reason": "unsupported_light_shadow_toggle"},)
+    edits = build_interactive_edits_from_depsgraph(_FakeDepsgraph([_FakeDepsgraphUpdate(data)]),
+        usd_prim_resolver=resolver, light_objects=(obj,))
+    assert len(edits) == 1
+    assert edits[0].blender_property_path == "use_shadow"
+    assert edits[0].usd_attribute == ""
+    plan = InteractiveEditPlanner().plan(edits[0])
+    assert plan.unsupported_reason == "unsupported_light_shadow_toggle"
+    assert plan.mechanism == EditMechanism.NONE
+
+
+def test_image_only_update_finds_nested_material_and_world_graph_owners():
+    image = SimpleNamespace(bl_rna=SimpleNamespace(identifier="Image"))
+    nested = SimpleNamespace(nodes=(SimpleNamespace(image=image),))
+    tree = SimpleNamespace(nodes=(SimpleNamespace(node_tree=nested),))
+    material = SimpleNamespace(node_tree=tree)
+    world = SimpleNamespace(node_tree=tree)
+    other = SimpleNamespace(node_tree=SimpleNamespace(nodes=()))
+    assert builders._owners_using_image(image, (material, world, other)) == (material, world)
 
 
 def test_world_value_edits_from_prim_map_flat_world_to_studio_dome() -> None:
@@ -2555,3 +2722,80 @@ def test_depsgraph_light_with_unscanned_authoring_identity_builds_no_edits(monke
     assert edits == []
     resolution = resolver.resolve_light(light)
     assert resolution.error_reason == light_usd_prim.ERROR_AUTHORING_PATH_NOT_IN_SCENE
+
+
+def test_node_tree_socket_edit_routes_material_once_even_with_material_id(monkeypatch):
+    tree = SimpleNamespace(nodes=[], links=[])
+    material = SimpleNamespace(node_tree=tree, name='Socket Material')
+    seen = []
+    monkeypatch.setattr(builders, '_is_material_id', lambda value: value is material)
+    monkeypatch.setattr(builders, '_interactive_edit_from_blender_id', lambda value: None)
+    monkeypatch.setattr(builders, 'material_value_edits_from_resolver', lambda owner, *args, **kwargs: seen.append(owner) or [])
+    depsgraph = SimpleNamespace(updates=[SimpleNamespace(id=tree), SimpleNamespace(id=material)])
+    builders.build_interactive_edits_from_depsgraph(depsgraph, usd_prim_resolver=object(), materials=[material])
+    assert seen == [material]
+
+
+def test_shared_nested_node_group_routes_all_material_owners_without_cycles():
+    shared = SimpleNamespace(nodes=[], links=[])
+    first = SimpleNamespace(nodes=[SimpleNamespace(node_tree=shared)], links=[])
+    second = SimpleNamespace(nodes=[SimpleNamespace(node_tree=first)], links=[])
+    first.nodes.append(SimpleNamespace(node_tree=second))
+    materials = [SimpleNamespace(node_tree=first), SimpleNamespace(node_tree=second),
+                 SimpleNamespace(node_tree=SimpleNamespace(nodes=[], links=[]))]
+    owners = builders._materials_for_node_tree_update(shared, materials)
+    assert [id(owner) for owner in owners] == [id(materials[0]), id(materials[1])]
+
+
+@pytest.mark.parametrize('connected,linked', [(False, True), (True, False), (True, True)])
+def test_generation_openpbr_texture_wiring_uses_effective_shader_names(monkeypatch, connected, linked):
+    root = '/OVRTX_Materials/Edit_Paint'
+    material = _authored_material(node_tree=_linked_base_color_tree() if linked else None)
+    material.session_uid = 901
+    prims = (_AuthoredScenePrim(root, 'Material'), _AuthoredScenePrim(root + '/OpenPBR', 'Shader',
+        attributes=('inputs:base_color',), info_id='ND_open_pbr_surface_surfaceshader',
+        connected_attributes=('inputs:base_color',) if connected else ()))
+    monkeypatch.setattr(usd_prim_resolver, '_open_stage_prims', lambda path: (object(), prims, None))
+    resolver = builders.UsdPrimResolver(material_paths_by_session_uid={901:root})
+    resolver.scan(SimpleNamespace(input_usd_path='/accepted.usda'))
+    edits = build_interactive_edits_from_depsgraph(_FakeDepsgraph([_FakeDepsgraphUpdate(material)]),
+                                                  usd_prim_resolver=resolver)
+    topology = [e for e in edits if e.shape == EditShape.TOPOLOGY]
+    if connected != linked:
+        assert len(edits) == len(topology) == 1
+        assert topology[0].usd_prim_path == root
+        assert topology[0].metadata['diverged_texture_inputs'] == ('inputs:base_color',)
+        assert topology[0].provenance['match_source'] == 'scene_generation_material_identity'
+    else:
+        assert topology == []
+        assert not any(e.usd_attribute == 'inputs:base_color' and not e.metadata.get('unsupported_reason') for e in edits)
+        reports = [e for e in edits if e.usd_attribute == 'inputs:base_color']
+        assert len(reports) == 1 and reports[0].blender_property_path == 'principled:Base Color'
+
+
+def test_normalized_area_transform_scale_updates_intensity_and_static_values_deduplicate():
+    from ovrtx_blender_example.value_change_tracking import AcknowledgedValueLedger
+    light_data = _FakeBlenderId(name='AreaData', blender_type='AREA', shape='RECTANGLE',
+        normalize=True, energy=90., size=2., size_y=3., color=(1., 1., 1.))
+    light = _FakeBlenderId(name='Area', blender_type='LIGHT', data=light_data,
+        scale=(1., 1., 1.), matrix_world=((1, 0, 0, 0), (0, 1, 0, 0),
+                                       (0, 0, 1, 0), (0, 0, 0, 1)))
+    index = light_usd_prim._light_prim_index_from_prims((
+        _FakeBlenderId(path='/World/Area/AreaData', type_name='RectLight'),))
+    resolver = _FakeResolver(light_index=index)
+    update = _FakeDepsgraphUpdate(light, is_updated_geometry=False)
+    update.is_updated_transform = True
+    def rows():
+        return [dict(prim_path=edit.usd_prim_path, attribute_name=edit.usd_attribute,
+                     value=edit.value) for edit in build_interactive_edits_from_depsgraph(
+            _FakeDepsgraph([update]), usd_prim_resolver=resolver, light_objects=(light,))]
+    accepted = rows()
+    intensity = next(row['value'] for row in accepted if row['attribute_name'] == 'inputs:intensity')
+    ledger = AcknowledgedValueLedger()
+    ledger.acknowledge(accepted, epoch='generation')
+    assert ledger.changed(rows(), epoch='generation') == []
+    light.scale = (2., 2., 1.)
+    changed = ledger.changed(rows(), epoch='generation')
+    assert len(changed) == 1
+    assert changed[0]['attribute_name'] == 'inputs:intensity'
+    assert changed[0]['value'] == pytest.approx(intensity / 4)

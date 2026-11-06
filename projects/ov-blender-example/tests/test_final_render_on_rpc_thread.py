@@ -152,6 +152,8 @@ class _Client:
         self.started: list[tuple[object, str | None]] = []
         self.deleted: list[str] = []
         self.render_calls: list[tuple[str, int]] = []
+        # Final-lane samples accumulated per simulation, as the worker reports them.
+        self.accumulated: dict[str, int] = {}
         self.render_camera_translations: list[float | None] = []
         self.camera_translation: float | None = None
         self.render_hook = None
@@ -167,6 +169,7 @@ class _Client:
     def start_session(self, spec: object, simulation_id: str | None = None) -> str:
         self._record("start_session")
         self.started.append((spec, simulation_id))
+        self.accumulated.pop(str(simulation_id), None)
         if self.markers is not None:
             self.markers.append("start_session")
         hook = self.start_hook
@@ -185,11 +188,15 @@ class _Client:
         if hook is not None:
             hook(str(simulation_id), additional)
         width = 2 if simulation_id == "sim-viewport" else 4
+        completed = additional
+        if simulation_id != "sim-viewport":
+            completed = self.accumulated.get(str(simulation_id), 0) + additional
+            self.accumulated[str(simulation_id)] = completed
         return RenderResult(
             width=width,
             height=width,
             rgba8=b"\x00" * (width * width * 4),
-            completed_samples=additional,
+            completed_samples=completed,
             session_completed_samples=len(self.render_calls),
             simulation_time_ns=0,
         )
@@ -641,6 +648,10 @@ def _load_engine_module(monkeypatch: pytest.MonkeyPatch):
     module = importlib.util.module_from_spec(spec)
     monkeypatch.setitem(sys.modules, module_name, module)
     spec.loader.exec_module(module)
+    # The fake RPC client models an explicitly selected external SDK sidecar.
+    # Actual sidecar admission/rejection is covered by the runtime install tests.
+    from ovrtx_blender_example import bundled_runtime
+    monkeypatch.setattr(bundled_runtime, "public_sdk_python", lambda: sys.executable)
     return module
 
 
@@ -674,6 +685,9 @@ def test_final_render_job_creates_its_own_session_and_deletes_it(
     ] == [1, 1, 2]
     # The final-render simulation is always deleted before returning.
     assert client.deleted == [FINAL_SIMULATION_ID]
+    assert outcome['timings']['sample_chunks'] == 3
+    assert len(outcome['timings']['sample_chunk_ms']) == 3
+    assert outcome['timings']['accumulation_ms'] >= sum(outcome['timings']['sample_chunk_ms'])
 
 
 @pytest.mark.parametrize("cancelled", (False, True))
@@ -700,7 +714,7 @@ def test_final_render_job_owns_progress_when_borrowing_a_nonzero_session_cursor(
                 width=1,
                 height=1,
                 rgba8=b"\x00\x00\x00\xff",
-                completed_samples=additional_samples,
+                completed_samples=sum(self.render_calls),
                 session_completed_samples=50 + len(self.render_calls),
                 simulation_time_ns=0,
             )
@@ -870,7 +884,11 @@ def _viewport_session(module, monkeypatch: pytest.MonkeyPatch, client, request):
         yield engine
     finally:
         engine._viewport_scene = None
+        runtime = module._ENGINE_RUNTIMES[id(engine)]
         engine._end_viewport_session(module.ViewportSessionEndReason.ENGINE_DESTROYED)
+        # Keep the fixture's mocks alive until owner-thread teardown completes.
+        assert runtime["cleanup_completion"].wait(WAIT_S)
+        assert runtime["stop_confirmed"] is True
 
 
 def _f12_engine(module, monkeypatch: pytest.MonkeyPatch, request: RenderRequest):
@@ -892,7 +910,7 @@ def _f12_engine(module, monkeypatch: pytest.MonkeyPatch, request: RenderRequest)
     "job_status, restore_status, expected_writes, expected_report",
     (
         ("completed", "stopped", 1, None),
-        ("cancelled", "stopped", 0, None),
+        ("cancelled", "stopped", 0, "OVRTX render cancelled"),
         ("error", "stopped", 0, "render failed"),
         ("completed", "failed", 0, "Could not restore prepared viewport state"),
         ("error", "failed", 0, "after render failure: render failed"),
@@ -964,6 +982,13 @@ def test_current_scene_final_render_restores_once_before_publishing(
     artifacts: list[object] = []
     engine._write_blender_result = writes.append
     engine._write_result_artifact = lambda *args, **kwargs: artifacts.append((args, kwargs))
+    original_report = engine.report
+
+    def report_after_cleanup(level, message):
+        assert lifecycle["restored"] == lifecycle["shutdown"] == 1
+        original_report(level, message)
+
+    engine.report = report_after_cleanup
 
     engine.render(SimpleNamespace(scene=scene))
 
@@ -973,6 +998,22 @@ def test_current_scene_final_render_restores_once_before_publishing(
         assert engine.reports == []
     else:
         assert expected_report in engine.reports[-1][1]
+
+
+def test_cancelled_final_preparation_notifies_blender_without_writing(monkeypatch, tmp_path):
+    from ovrtx_blender_example import main_thread_waits
+
+    module = _load_engine_module(monkeypatch)
+    request = _final_request(tmp_path)
+    engine, written = _f12_engine(module, monkeypatch, request)
+
+    def cancelled(*args, **kwargs):
+        raise main_thread_waits.MainThreadWaitCancelled()
+
+    monkeypatch.setattr(module, '_run_on_main_thread', cancelled)
+    engine.render(SimpleNamespace(scene=SimpleNamespace(session_uid=SCENE_UID)))
+    assert not written
+    assert engine.reports == [({'ERROR'}, 'OVRTX render cancelled')]
 
 
 def test_f12_rides_the_viewport_rpc_thread_and_the_viewport_resumes(
@@ -1133,10 +1174,11 @@ def test_f12_cancel_via_test_break_deletes_the_final_simulation(
 
         f12.render(depsgraph)
 
-        # Cancelled: nothing written, no error, the final-render
+        # Cancelled: nothing written, Blender receives a cancellation report,
+        # and the final-render
         # simulation deleted, at most the in-flight batch rendered.
         assert written == []
-        assert f12.reports == []
+        assert f12.reports == [({"ERROR"}, "OVRTX render cancelled")]
         assert _wait_until(lambda: FINAL_SIMULATION_ID in client.deleted)
         final_batches = [
             additional
@@ -1288,9 +1330,10 @@ def test_standalone_f12_cancel_via_test_break_still_tears_down(
 
     f12.render(depsgraph)
 
-    # Cancelled: nothing written, no error (Blender's cancel semantics).
+    # The public report marks Blender's still pipeline cancelled, preventing
+    # a default Render Result from being saved as successful output.
     assert written == []
-    assert f12.reports == []
+    assert f12.reports == [({"ERROR"}, "OVRTX render cancelled")]
     # The bounded stop/join drained the job's render-end teardown before
     # render() returned: at most the in-flight batch rendered, the
     # simulation was deleted, the worker shut down, the thread retired.

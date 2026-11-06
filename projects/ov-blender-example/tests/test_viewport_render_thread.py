@@ -29,6 +29,36 @@ from ovrtx_blender_example.viewport_render_thread import (
 WAIT_S = 5.0
 
 
+def test_capacity_rejects_without_blocking_and_reserves_cleanup_and_one_stop():
+    from ovrtx_blender_example.viewport_render_thread import MAX_PENDING_RENDER_COMMANDS
+    thread = ViewportRenderThread("bounded")
+    entered, release = threading.Event(), threading.Event()
+    cleanup_threads = []
+    thread.start()
+    active = thread.call(lambda: (entered.set(), release.wait(WAIT_S)))
+    assert entered.wait(WAIT_S)
+    pending = [thread.call(lambda i=i: i) for i in range(MAX_PENDING_RENDER_COMMANDS)]
+    started = time.monotonic()
+    for _ in range(2048):
+        with pytest.raises(RenderThreadRejectedError, match="capacity"):
+            thread.call(lambda: None)
+    assert time.monotonic() - started < 1
+    thread.submit(lambda: cleanup_threads.append(threading.get_ident()), label="session-teardown")
+    try:
+        for _ in range(100):
+            thread.stop(timeout=0)
+        assert thread._queue.qsize() == MAX_PENDING_RENDER_COMMANDS + 2
+        diagnostic = thread.diagnostics()
+        assert diagnostic['pending_high_water'] == MAX_PENDING_RENDER_COMMANDS + 1
+        assert diagnostic['capacity_rejections'] == 2048
+    finally:
+        release.set()
+        assert thread.stop(WAIT_S)['joined']
+    assert active.done() and all(item.done() for item in pending)
+    assert [item.result(0) for item in pending] == list(range(MAX_PENDING_RENDER_COMMANDS))
+    assert len(cleanup_threads) == 1 and cleanup_threads[0] != threading.get_ident()
+
+
 def _stopped(thread: ViewportRenderThread) -> None:
     outcome = thread.stop(timeout=WAIT_S)
     assert outcome["joined"] is True

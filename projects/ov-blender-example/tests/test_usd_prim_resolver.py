@@ -74,6 +74,16 @@ def _request(path="/tmp/scene.usda"):
     return SimpleNamespace(input_usd_path=path)
 
 
+def test_explicit_owned_world_path_does_not_infer_other_stage_domes(monkeypatch):
+    prims=tuple(_FakePrim('/World/env_light' if prim.path=='/World/StudioDome' else prim.path,
+        prim.type_name,prim.attrs,prim.info_id) for prim in _prims())
+    monkeypatch.setattr(usd_prim_resolver,'_open_stage_prims',lambda path:(object(),prims,None))
+    default=usd_prim_resolver.UsdPrimResolver();default.scan(_request())
+    assert default.resolve_world_dome().value is None
+    owned=usd_prim_resolver.UsdPrimResolver(world_dome_path='/World/env_light');owned.scan(_request())
+    assert owned.resolve_world_dome().value.prim_path=='/World/env_light'
+
+
 def test_resolver_scans_once_per_scene_and_resolves_all_domains(monkeypatch) -> None:
     calls = []
 
@@ -154,6 +164,51 @@ def test_missing_scene_path_fails_closed_without_scan(monkeypatch) -> None:
     assert resolver.diagnostics()["scan"]["reason"] == "missing_input_usd_path"
 
 
+def test_material_indexes_do_not_repeat_geometry_prim_reads(monkeypatch):
+    calls = []
+    class Mesh(_FakePrim):
+        def GetAttribute(self, name):
+            calls.append(name)
+            return None
+    mesh = Mesh("/World/LargeMesh", "Mesh")
+    monkeypatch.setattr(usd_prim_resolver, "_open_stage_prims", lambda path: (object(), (*_prims(), mesh), None))
+    resolver = usd_prim_resolver.UsdPrimResolver()
+    resolver.scan(_request())
+    assert resolver.diagnostics()["scan"]["available"]
+    assert "info:id" not in calls
+    assert not any(name.startswith("inputs:") for name in calls)
+    assert resolver.resolve_material(SimpleNamespace(name="Paint"),
+        usd_attribute="inputs:diffuseColor", property_name="diffuse_color").value is not None
+
+
+def test_owner_thread_scan_reuse_keeps_identity_and_validation_independent(monkeypatch):
+    calls=[]
+    monkeypatch.setattr(usd_prim_resolver, "_open_stage_prims", lambda path: (object(),calls.append(path) or _prims(),None))
+    source=usd_prim_resolver.UsdPrimResolver()
+    source.scan(_request())
+    source._uv_loop_order_validations['/World/Quad']={'status':'source-only'}
+    target=usd_prim_resolver.UsdPrimResolver(object_paths_by_session_uid={91:'/World/Owned'})
+    assert target.reuse_scan_from(source,_request())
+    target.scan(_request())
+    assert len(calls)==1
+    assert target.resolve_blender_object(SimpleNamespace(name='Different',session_uid=91)).value=='/World/Owned'
+    assert target.uv_loop_order_validation('/World/Quad') is None
+    assert source._blender_object_index['by_session_uid'].get(91) is None
+    source.reset()
+    assert target.resolve_material(SimpleNamespace(name='Paint'),
+        usd_attribute='inputs:diffuseColor',property_name='diffuse_color').value is not None
+
+
+def test_scan_reuse_rejects_stale_failed_or_different_material_identity(monkeypatch):
+    monkeypatch.setattr(usd_prim_resolver, "_open_stage_prims", lambda path: (object(),_prims(),None))
+    source=usd_prim_resolver.UsdPrimResolver()
+    source.scan(_request())
+    assert not usd_prim_resolver.UsdPrimResolver().reuse_scan_from(source,_request('/other.usda'))
+    assert not usd_prim_resolver.UsdPrimResolver(material_paths_by_session_uid={91:'/Other'}).reuse_scan_from(source,_request())
+    source.reset()
+    assert not usd_prim_resolver.UsdPrimResolver().reuse_scan_from(source,_request())
+
+
 def test_scan_time_index_failure_fails_closed(monkeypatch) -> None:
     monkeypatch.setattr(
         usd_prim_resolver,
@@ -173,6 +228,26 @@ def test_scan_time_index_failure_fails_closed(monkeypatch) -> None:
     assert result.value is None
     assert result.error_reason == "usd_stage_unavailable"
     assert resolver.diagnostics()["scan"]["reason"] == "RuntimeError: bad prim"
+
+
+def test_transient_failed_scan_retries_same_path_then_reuses_success(monkeypatch):
+    calls = []
+
+    def open_stage(path):
+        calls.append(path)
+        if len(calls) == 1:
+            raise RuntimeError('export pending')
+        return object(), _prims(), None
+
+    monkeypatch.setattr(usd_prim_resolver, '_open_stage_prims', open_stage)
+    resolver = usd_prim_resolver.UsdPrimResolver()
+    request = _request()
+    resolver.scan(request)
+    assert not resolver.diagnostics()['scan']['available']
+    resolver.scan(request)
+    assert resolver.diagnostics()['scan']['available']
+    resolver.scan(request)
+    assert len(calls) == 2
 
 
 def test_resolver_maps_exact_blender_object_name_to_exported_xform(monkeypatch) -> None:
@@ -373,3 +448,39 @@ def test_resolver_rejects_missing_or_ambiguous_blender_object_name(monkeypatch) 
     assert ambiguous.value is None
     assert ambiguous.error_reason == "ambiguous_blender_object_name"
     assert ambiguous.diagnostics["candidate_paths"] == ("/A", "/B")
+
+
+def test_generation_material_identity_survives_sanitized_or_renamed_blender_name(monkeypatch):
+    monkeypatch.setattr(usd_prim_resolver, '_open_stage_prims', lambda path: (object(), _prims(), None))
+    resolver = usd_prim_resolver.UsdPrimResolver(material_paths_by_session_uid={71: '/World/Looks/Paint'})
+    resolver.scan(_request())
+    material = SimpleNamespace(session_uid=71, name='Cube Orange renamed', name_full='Cube Orange renamed')
+    result = resolver.resolve_material(material, usd_attribute='inputs:diffuseColor', property_name='node_tree')
+    assert result.value.prim_path == '/World/Looks/Paint/Shader'
+    assert result.diagnostics['match_source'] == 'scene_generation_material_identity'
+    material.session_uid = 72
+    assert resolver.resolve_material(material, usd_attribute='inputs:diffuseColor', property_name='node_tree').value is None
+
+
+def test_material_values_follow_exact_accepted_presentation_binding(monkeypatch):
+    from ovrtx_blender_example import materialx_openpbr_conversion as conversion
+    prims = (*_prims(), _FakePrim('/OVRTX_Materials/GeneratedPaint', 'Material'),
+             _FakePrim('/OVRTX_Materials/GeneratedPaint/OpenPBR', 'Shader',
+                       {'inputs:base_color': _FakeAttr((.8,.1,0))}, 'ND_open_pbr_surface_surfaceshader'))
+    monkeypatch.setattr(usd_prim_resolver, '_open_stage_prims', lambda path: (object(), prims, None))
+    monkeypatch.setattr(usd_prim_resolver, '_source_material_binding_rows', lambda path: (('/World/Quad', '/World/Looks/Paint'),))
+    monkeypatch.setattr(conversion, '_materialx_binding_identity_from_prims', lambda *a, **kw: {
+        'available': True, 'bindings': [{'binding_target':'/World/Quad', 'material_path':'/OVRTX_Materials/GeneratedPaint'}]})
+    resolver = usd_prim_resolver.UsdPrimResolver(material_paths_by_session_uid={71:'/World/Looks/Paint'},
+                                               material_source_scene_path='/source.usda')
+    resolver.scan(_request('/accepted.usda'))
+    material = SimpleNamespace(session_uid=71, name='Different Blender Name')
+    color = resolver.resolve_material(material, usd_attribute='inputs:base_color', property_name='Base Color')
+    preview = resolver.resolve_material(material, usd_attribute='inputs:diffuseColor', property_name='Base Color')
+    assert color.value.prim_path == '/OVRTX_Materials/GeneratedPaint/OpenPBR'
+    assert preview.value is None
+
+    # Missing converter defaults remain editable only on this verified effective root.
+    for attr in ('inputs:specular_ior', 'inputs:coat_weight', 'inputs:emission_luminance'):
+        result = resolver.resolve_material(material, usd_attribute=attr, property_name='node_tree')
+        assert result.value.prim_path == '/OVRTX_Materials/GeneratedPaint/OpenPBR'

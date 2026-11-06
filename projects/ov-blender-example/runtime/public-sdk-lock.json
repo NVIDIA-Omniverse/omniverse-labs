@@ -1,0 +1,180 @@
+{
+  "platforms": {
+    "linux-x64": {
+      "artifacts": {
+        "numpy": {
+          "filename": "numpy-2.5.3-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+          "files_sha256": "23b2cd421e2563eabacb93ab5d9c983fa2bbc2a1e02af0028ddf1a6e2d367799",
+          "provenance": "https://pypi.org/pypi/numpy/2.5.3/json",
+          "sha256": "a5fa86b80fd24bcd1aff83ad23be44ea323de3f787be8f8b15d4a65621e25321",
+          "size": 16708577,
+          "url": "https://files.pythonhosted.org/packages/3a/1b/3b16a9bc514a440a7a0883684111dcb1ef1aee960af2ca95da8fc775f124/numpy-2.5.3-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+          "version": "2.5.3"
+        },
+        "ovphysx": {
+          "filename": "ovphysx-0.7.0.74035321-py3-none-manylinux_2_35_x86_64.whl",
+          "files_sha256": "938f50665bddef8d0adb195ef6b2c72497f5a4136202fed8ceab71a34b0f8b0e",
+          "provenance": "https://pypi.org/pypi/ovphysx/0.7.0.74035321/json",
+          "sha256": "763e29e158c841822b041ca83d2747d949c7453eb261fc77ed9ac0e7a1eca64c",
+          "size": 135831310,
+          "url": "https://files.pythonhosted.org/packages/c9/41/b5baeec7acfcdfaa152ecbaf2be0ed848f926dcb79bb35f97e7ee99363e4/ovphysx-0.7.0.74035321-py3-none-manylinux_2_35_x86_64.whl",
+          "version": "0.7.0.74035321"
+        },
+        "ovrtx": {
+          "filename": "ovrtx-0.6.0.1791947691-py3-none-manylinux_2_35_x86_64.whl",
+          "files_sha256": "45ff58426aead546b8d4f319cb8f9bc17cdc3b3e95bb88ee4e150344707f57b6",
+          "provenance": "https://pypi.nvidia.com/ovrtx/",
+          "sha256": "b56ee8687f7e9c2934bc2da5ce7aecbd3ef6e8123a43e0573f1f33b8db5fc3c7",
+          "size": 1348231444,
+          "url": "https://pypi.nvidia.com/ovrtx/ovrtx-0.6.0.1791947691-py3-none-manylinux_2_35_x86_64.whl",
+          "version": "0.6.0.1791947691"
+        },
+        "ovstage": {
+          "filename": "ovstage-0.3.0.1791986420-py3-none-manylinux_2_35_x86_64.whl",
+          "files_sha256": "1ab49cad6d4b4a0753a864695ed695e961add84b313c576d55d10a83182d2136",
+          "provenance": "https://pypi.org/pypi/ovstage/0.3.0.1791986420/json",
+          "sha256": "35aa0c10c47549c495e65896356ce3b910041d2eaa602888f092f7e300586cf8",
+          "size": 66832291,
+          "url": "https://files.pythonhosted.org/packages/c8/d1/bebef33ec7c2fd2f7e776109092517b9ab2a4374fccca29b6c3351be77aa/ovstage-0.3.0.1791986420-py3-none-manylinux_2_35_x86_64.whl",
+          "version": "0.3.0.1791986420"
+        },
+        "ovstream": {
+          "filename": "ovstream-0.5.7-py3-none-manylinux_2_35_x86_64.whl",
+          "files_sha256": "fc79a2082db7e98b005b82b61824e4439e90a18fa68f162ab59a849b41df31eb",
+          "provenance": "https://pypi.org/pypi/ovstream/0.5.7/json",
+          "sha256": "0ceb08c772e03099d5a5a80c1354b6127af01f9706e045e83c6c04a397ff966d",
+          "size": 32929955,
+          "url": "https://files.pythonhosted.org/packages/9f/b6/69c4dd783030585e6e86d921a99340ff1d6ee817114b5126305073499167/ovstream-0.5.7-py3-none-manylinux_2_35_x86_64.whl",
+          "version": "0.5.7"
+        },
+        "packaging": {
+          "filename": "packaging-23.2-py3-none-any.whl",
+          "files_sha256": "00e44c61cc2177777a279c881399b97e4447866e3895736883b91fd1bc3d7776",
+          "provenance": "https://pypi.org/pypi/packaging/23.2/json",
+          "sha256": "8c491190033a9af7e1d931d0b5dacc2ef47509b34dd0de67ed209b5203fc88c7",
+          "size": 53011,
+          "url": "https://files.pythonhosted.org/packages/ec/1a/610693ac4ee14fcdf2d9bf3c493370e4f2ef7ae2e19217d7a237ff42367d/packaging-23.2-py3-none-any.whl",
+          "version": "23.2"
+        },
+        "physx-usd-schemas": {
+          "filename": "physx_usd_schemas-25.11.2.72696984-py3-none-any.whl",
+          "files_sha256": "852936bdefb4d2beaa6b56345034384e1643f79a47066d575394fbc78739a3e0",
+          "provenance": "https://pypi.org/pypi/physx-usd-schemas/25.11.2.72696984/json",
+          "sha256": "44a8671f8d4f0fbdf07c9436b3827f96156e4b094b646d0903937f275eb84f0e",
+          "size": 79370,
+          "url": "https://files.pythonhosted.org/packages/09/8d/50f22a01334b86111201e535c6498fbb9400fa1f96d6c2bf657066fb29c0/physx_usd_schemas-25.11.2.72696984-py3-none-any.whl",
+          "version": "25.11.2.72696984"
+        },
+        "warp-lang": {
+          "filename": "warp_lang-1.18.0-py3-none-manylinux_2_28_x86_64.whl",
+          "files_sha256": "f0632af0c4cabae066c03cbc17bb67734a7b7be1783ea56281fdc1cc4f82b073",
+          "provenance": "https://pypi.org/pypi/warp-lang/1.18.0/json",
+          "sha256": "090962bfae7dd22ade0d8e0258f41635e0e58980f15bcc9e7a7d312819dfe440",
+          "size": 148811186,
+          "url": "https://files.pythonhosted.org/packages/13/69/5fc4388c6af4c78cd247776bb6928cabe83d893896444dd2127ccbe8b2ca/warp_lang-1.18.0-py3-none-manylinux_2_28_x86_64.whl",
+          "version": "1.18.0"
+        }
+      },
+      "qualification": "deferred"
+    },
+    "windows-x64": {
+      "artifacts": {
+        "numpy": {
+          "filename": "numpy-2.5.3-cp313-cp313-win_amd64.whl",
+          "files_sha256": "f9f19b6d02440cf6e9c72005e53862e2036e788975a1b46604c500a2b8d39f78",
+          "provenance": "https://pypi.org/pypi/numpy/2.5.3/json",
+          "sha256": "71cad2b2a7451ab79d8f5e71b453485b6775963d5cf794179144a7463fe6e8ec",
+          "size": 12560965,
+          "url": "https://files.pythonhosted.org/packages/f3/ec/100f2b1794ede74a9b3d7ec6b9736927f56713414c1dfe19ab6c383494bf/numpy-2.5.3-cp313-cp313-win_amd64.whl",
+          "version": "2.5.3"
+        },
+        "ovphysx": {
+          "filename": "ovphysx-0.7.0.74035321-py3-none-win_amd64.whl",
+          "files_sha256": "1fc208c7c7bf9072d71734fd521d3d21cfd9356de1b9cefdfd443b330b174eb8",
+          "provenance": "https://pypi.org/pypi/ovphysx/0.7.0.74035321/json",
+          "sha256": "b6f4a447abdab5effd78faf1ee9d3b8679281de19e4bd2e40528f0a608f8c57c",
+          "size": 131429159,
+          "url": "https://files.pythonhosted.org/packages/b1/65/ec34e845b19b375866d9710110726e9f88ef023e523f4069e63c60dd8b81/ovphysx-0.7.0.74035321-py3-none-win_amd64.whl",
+          "version": "0.7.0.74035321"
+        },
+        "ovrtx": {
+          "filename": "ovrtx-0.6.0.1791947691-py3-none-win_amd64.whl",
+          "files_sha256": "26033bf2fb1676b9cb51674a1b71b39482d5431cc4cd41c0ec9624676fbd0838",
+          "provenance": "https://pypi.nvidia.com/ovrtx/",
+          "sha256": "90188e5a762b01f4d84d66b84858d28f21eaf3a7ef3ad4dfb9a7bf860ff3e67e",
+          "size": 1398692380,
+          "url": "https://pypi.nvidia.com/ovrtx/ovrtx-0.6.0.1791947691-py3-none-win_amd64.whl",
+          "version": "0.6.0.1791947691"
+        },
+        "ovstage": {
+          "filename": "ovstage-0.3.0.1791986420-py3-none-win_amd64.whl",
+          "files_sha256": "4eeb3c442b6c10a354bc94943df6252d7aef4a2c250afbd9fbcba36c7c9bdd90",
+          "provenance": "https://pypi.org/pypi/ovstage/0.3.0.1791986420/json",
+          "sha256": "400df4b7dc916edefa6f832aa11b674deb8a4d6831bba9ad3849169236b80c46",
+          "size": 38037230,
+          "url": "https://files.pythonhosted.org/packages/65/73/445749e2534e8fbd78a9f2ad2cc44d83cfd121a9bbdf459737c06c27adcd/ovstage-0.3.0.1791986420-py3-none-win_amd64.whl",
+          "version": "0.3.0.1791986420"
+        },
+        "ovstream": {
+          "filename": "ovstream-0.5.7-py3-none-win_amd64.whl",
+          "files_sha256": "22f86d2cf46646df5a0d1e5a60f3233ee5abe4a41b0cd1d78df8df976d9d9aee",
+          "provenance": "https://pypi.org/pypi/ovstream/0.5.7/json",
+          "sha256": "adf0642e1e9e8964e19ffb7bfa8fb4434c4256339fc265c02e5eab9bfbfd8c14",
+          "size": 28474164,
+          "url": "https://files.pythonhosted.org/packages/b5/8c/ad32181a48e0c6c4cc93c31186a7309fe80662c31869c05504dff4c5a111/ovstream-0.5.7-py3-none-win_amd64.whl",
+          "version": "0.5.7"
+        },
+        "packaging": {
+          "filename": "packaging-23.2-py3-none-any.whl",
+          "files_sha256": "00e44c61cc2177777a279c881399b97e4447866e3895736883b91fd1bc3d7776",
+          "provenance": "https://pypi.org/pypi/packaging/23.2/json",
+          "sha256": "8c491190033a9af7e1d931d0b5dacc2ef47509b34dd0de67ed209b5203fc88c7",
+          "size": 53011,
+          "url": "https://files.pythonhosted.org/packages/ec/1a/610693ac4ee14fcdf2d9bf3c493370e4f2ef7ae2e19217d7a237ff42367d/packaging-23.2-py3-none-any.whl",
+          "version": "23.2"
+        },
+        "physx-usd-schemas": {
+          "filename": "physx_usd_schemas-25.11.2.72696984-py3-none-any.whl",
+          "files_sha256": "852936bdefb4d2beaa6b56345034384e1643f79a47066d575394fbc78739a3e0",
+          "provenance": "https://pypi.org/pypi/physx-usd-schemas/25.11.2.72696984/json",
+          "sha256": "44a8671f8d4f0fbdf07c9436b3827f96156e4b094b646d0903937f275eb84f0e",
+          "size": 79370,
+          "url": "https://files.pythonhosted.org/packages/09/8d/50f22a01334b86111201e535c6498fbb9400fa1f96d6c2bf657066fb29c0/physx_usd_schemas-25.11.2.72696984-py3-none-any.whl",
+          "version": "25.11.2.72696984"
+        },
+        "warp-lang": {
+          "filename": "warp_lang-1.18.0-py3-none-win_amd64.whl",
+          "files_sha256": "c3f90defaafe83ecbf33d06d888980336cdcd5c6cb792ede0784312f0502ddda",
+          "provenance": "https://pypi.org/pypi/warp-lang/1.18.0/json",
+          "sha256": "1769e55746739f2e244a2b412123003c462ec3d977dfb5f420f924a8553d30aa",
+          "size": 134607061,
+          "url": "https://files.pythonhosted.org/packages/3e/75/888dfe20326fea1a3b46b68a239ccd5db717bb039d511ab6fca7c77e6fea/warp_lang-1.18.0-py3-none-win_amd64.whl",
+          "version": "1.18.0"
+        }
+      },
+      "qualification": "pending"
+    }
+  },
+  "provenance": {
+    "source": "PyPI release JSON and NVIDIA public wheel index",
+    "tuple": "docs/graphs/final-library-changes"
+  },
+  "python": {
+    "abi": "cp313",
+    "bits": 64,
+    "implementation": "cpython",
+    "major": 3,
+    "minor": 13
+  },
+  "schema": 1,
+  "versions": {
+    "numpy": "2.5.3",
+    "ovphysx": "0.7.0.74035321",
+    "ovrtx": "0.6.0.1791947691",
+    "ovstage": "0.3.0.1791986420",
+    "ovstream": "0.5.7",
+    "packaging": "23.2",
+    "physx-usd-schemas": "25.11.2.72696984",
+    "warp-lang": "1.18.0"
+  }
+}

@@ -96,6 +96,18 @@ def test_render_callback_adapter_translates_scene_generation_errors() -> None:
         adapter.view_draw_from_scene(object(), object())
 
 
+def test_render_callback_adapter_translates_physics_authoring_errors() -> None:
+    from ovrtx_blender_example.physics_endpoints import EndpointError
+
+    def generation_for_scene(_scene: object) -> object:
+        raise EndpointError("Endpoint has no enabled authored OV body")
+
+    adapter = BlenderRenderCallbackAdapter(generation_for_scene=generation_for_scene)
+
+    with pytest.raises(BlenderSignalTranslationError, match="no enabled authored OV body"):
+        adapter.view_draw_from_scene(object(), object())
+
+
 def test_render_callback_adapter_defers_only_viewport_generation() -> None:
     scene = SimpleNamespace(camera=SimpleNamespace(session_uid=41))
     generation = SimpleNamespace(
@@ -542,3 +554,21 @@ def test_edit_callback_adapter_records_selection_only_changes_without_submitting
         "submitted_edit_count": 0,
         "result_count": 0,
     }
+
+
+@pytest.mark.parametrize('group_route', [True, False])
+def test_scene_owner_callback_supplies_bound_material_node_tree_owners(group_route):
+    material = SimpleNamespace(node_tree=SimpleNamespace(nodes=[], links=[]))
+    obj = SimpleNamespace(material_slots=[SimpleNamespace(material=material)])
+    scene = SimpleNamespace(objects=[obj, obj], world=None)
+    calls = []
+    kwargs = dict(active_engines=lambda: (), selection_resolver=lambda context: {},
+                  edit_observer_context=lambda scene: (object(), tuple(scene.objects)),
+                  edit_builder=lambda graph, **kw: calls.append(kw) or [])
+    if group_route:
+        kwargs['edit_group_observer'] = lambda *args: []
+    else:
+        kwargs['edit_observer'] = lambda *args: None
+    adapter = BlenderEditCallbackAdapter(**kwargs)
+    adapter.submit_depsgraph_interactive_edits(SimpleNamespace(updates=[SimpleNamespace(id=material.node_tree)]), scene=scene)
+    assert calls and calls[0]['materials'] == (material,)

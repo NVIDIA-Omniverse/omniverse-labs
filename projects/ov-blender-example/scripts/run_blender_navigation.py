@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib
 import json
 import math
 import os
@@ -55,6 +56,7 @@ def _parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser.add_argument("--native-client-path", type=Path)
     parser.add_argument("--native-client-module", default="ovrtx_bridge_client")
     parser.add_argument("--worker-command")
+    parser.add_argument("--installed-addon", help="Use an already enabled extension module in the normal Blender profile")
     parser.add_argument(
         "--repetitions", type=int, default=shared_navigation.DEFAULT_REPETITIONS
     )
@@ -102,6 +104,12 @@ def _frame_latency_event(frame: Any, post_pixel_ns: int) -> tuple[int, int, int]
     return int(frame.publication_index), int(started_ns), post_pixel_ns
 
 
+def _addon_module(config: Mapping[str, Any], name: str) -> Any:
+    installed = config.get('installed_addon')
+    package = f'{installed}.ovrtx_blender_example' if installed else 'ovrtx_blender_example'
+    return importlib.import_module(f'{package}.{name}')
+
+
 class _ThroughputMeasurement:
     def __init__(
         self, config: Mapping[str, Any], materialization: Mapping[str, Any]
@@ -138,7 +146,7 @@ class _ThroughputMeasurement:
         self.phase = "drive"
 
     def advance_render_throughput(self, region_data: Any) -> bool:
-        from ovrtx_blender_example import render_requests
+        render_requests = _addon_module(self.config, 'render_requests')
 
         if self.phase == "drive":
             if time.perf_counter_ns() >= self.window["end"]:
@@ -188,7 +196,7 @@ class _ThroughputMeasurement:
             self.stopped_view_complete = True
 
     def post_pixel(self) -> None:
-        from ovrtx_blender_example import engine
+        engine = _addon_module(self.config, 'engine')
 
         engines = list(engine._ACTIVE_VIEWPORT_ENGINES)
         if not engines:
@@ -216,7 +224,7 @@ class _ThroughputMeasurement:
         )
 
     def complete(self) -> dict[str, Any]:
-        from ovrtx_blender_example import engine
+        engine = _addon_module(self.config, 'engine')
 
         instance = list(engine._ACTIVE_VIEWPORT_ENGINES)[0]
         if getattr(instance, "_ovrtx_session_controller", None) is None:
@@ -261,24 +269,30 @@ def _inside_blender_throughput(args: argparse.Namespace) -> int:
         "color_presentation"
     ]
 
-    import ovrtx_blender_example
-    from ovrtx_blender_example import engine, scene_generation_sessions
-    from ovrtx_blender_example.blender_callback_adapters import (
-        BlenderRenderCallbackAdapter,
-    )
-    from ovrtx_blender_example.interactive_setup import (
-        configure_scene,
-        configure_viewports,
-    )
-
-    ovrtx_blender_example.register()
+    installed = config.get("installed_addon")
+    if installed and installed not in bpy.context.preferences.addons:
+        raise RuntimeError(f"Installed extension is not enabled: {installed}")
+    package = f"{installed}.ovrtx_blender_example" if installed else "ovrtx_blender_example"
+    ovrtx_blender_example = importlib.import_module(package)
+    engine = importlib.import_module(f"{package}.engine")
+    scene_generation_sessions = importlib.import_module(f"{package}.scene_generation_sessions")
+    BlenderRenderCallbackAdapter = importlib.import_module(
+        f"{package}.blender_callback_adapters").BlenderRenderCallbackAdapter
+    setup = importlib.import_module(f"{package}.interactive_setup")
+    configure_scene, configure_viewports = setup.configure_scene, setup.configure_viewports
+    if not installed:
+        ovrtx_blender_example.register()
     print("[navigation] Blender ready", flush=True)
     state = SimpleNamespace(
-        measurement=None, workload=None, completed_samples=-1, full_area=False
+        measurement=None, workload=None, completed_samples=-1, full_area=False,
+        deadline=time.monotonic() + 900.0,
     )
 
     def quit_blender() -> None:
-        ovrtx_blender_example.unregister()
+        if not installed:
+            ovrtx_blender_example.unregister()
+        else:
+            importlib.import_module(f"{package}.runtime_services").owner.close()
         bpy.ops.wm.quit_blender()
 
     def fail(exc: Exception) -> None:
@@ -296,6 +310,8 @@ def _inside_blender_throughput(args: argparse.Namespace) -> int:
 
     def pump() -> float | None:
         try:
+            if time.monotonic() >= state.deadline:
+                raise RuntimeError('Navigation did not reach a settled visible frame before its deadline')
             view3d_context = _view3d_context(bpy)
             if view3d_context is None:
                 return 0.0
@@ -326,6 +342,8 @@ def _inside_blender_throughput(args: argparse.Namespace) -> int:
 
     def tick() -> float | None:
         try:
+            if time.monotonic() >= state.deadline:
+                raise RuntimeError('Navigation did not initialize and converge before its deadline')
             view3d_context = _view3d_context(bpy)
             if view3d_context is None:
                 return 0.1
@@ -410,6 +428,7 @@ def _inside_blender_throughput(args: argparse.Namespace) -> int:
                 if result is not None and result.completed_samples >= 128:
                     print("[navigation] measurement started", flush=True)
                     state.measurement.start(space.region_3d)
+                    state.deadline = time.monotonic() + 300.0
                     bpy.app.timers.register(pump, first_interval=0.0)
                     return None
             return 0.01
@@ -479,6 +498,7 @@ def _run_blender_throughput_subrun(
     for path in (raw_result, error_result):
         path.unlink(missing_ok=True)
     config = {
+        "installed_addon": args.installed_addon,
         "addon_path": str(ADDON_DIR),
         "source_root": str(args.source_root),
         "fixture_id": fixture["id"],
@@ -525,11 +545,12 @@ def _run_blender_throughput_subrun(
             render_requests.ENV_FIXED_VIEWPORT_RESOLUTION: "1",
             "OV_BLENDER_EXAMPLE_VIEWPORT_WORK_DIR": str(work_dir / "viewport-work"),
             "OV_BLENDER_EXAMPLE_WORKER_LOG": str(work_dir / "worker.log"),
+            "OVRTX_EXAMPLE_WORKER_LOG": str(work_dir / "worker.log"),
         }
     )
     command = [
         args.blender_command,
-        "--factory-startup",
+        *([] if args.installed_addon else ["--factory-startup"]),
         "--window-geometry",
         "20",
         "20",

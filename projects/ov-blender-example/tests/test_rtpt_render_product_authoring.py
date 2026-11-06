@@ -389,3 +389,11 @@ def test_artifact_diagnostics_roundtrip_authored_quality(
 
     assert evidence["enabled"] is True
     assert evidence["conflict_count"] == 0
+
+
+def test_generated_viewport_and_final_products_disable_frame_generation(tmp_path, monkeypatch):
+    monkeypatch.setenv("OV_BLENDER_EXAMPLE_VIEWPORT_WORK_DIR", str(tmp_path / "layers"))
+    composition=ovrtx_session.build_spec(_live_request(tmp_path)).ovrtx_scene_composition
+    text=_presentation_text(composition)
+    assert "bool omni:rtx:dlss:frameGeneration = false" in text
+    assert "bool omni:rtx:dlss:frameGeneration = true" not in text

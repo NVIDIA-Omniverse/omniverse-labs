@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 from typing import Any, Callable, Mapping
+from functools import lru_cache
 
 from . import light_usd_prim
 from . import material_usd_prim
@@ -15,6 +16,17 @@ from . import usd_paths
 from .usd_prim_resolution import UsdPrimResolution, UsdPrimResolutionStatus
 
 
+@lru_cache(maxsize=8)
+def _source_material_binding_rows(scene_path: str) -> tuple[tuple[str, str], ...]:
+    # Generations are immutable. Keep only eight compact source-binding
+    # snapshots, never stage handles or an unbounded process-global history.
+    from . import materialx_openpbr_conversion as material_conversion
+    identity = material_conversion._load_materialx_binding_identity(scene_path)
+    if not identity.get("available"):
+        raise ValueError("Source material binding identity is unavailable")
+    return tuple((row["binding_target"], row["material_path"]) for row in identity["bindings"])
+
+
 class UsdPrimResolver:
     """Own one scene scan, domain indexes, and UV validation lifetime."""
 
@@ -22,20 +34,34 @@ class UsdPrimResolver:
         self,
         *,
         object_paths_by_session_uid: Mapping[int, str] | None = None,
+        material_paths_by_session_uid: Mapping[int, str] | None = None,
+        material_source_scene_path: str = "",
+        world_dome_path: str = "",
         light_paths_by_object_session_uid: Mapping[int, str] | None = None,
         mesh_topology_change_resolver: Callable[[Any], Mapping[str, Any] | None]
         | None = None,
+        material_graph_change_resolver: Callable[[Any], Mapping[str, Any] | None]
+        | None = None,
+        unsupported_light_change_resolver: Callable[[Any], tuple[Mapping[str, Any], ...]] | None = None,
+        mesh_shading_unchanged_resolver: Callable[[Any], bool] | None = None,
     ) -> None:
         self._object_paths_by_session_uid = dict(object_paths_by_session_uid or {})
+        self._material_paths_by_session_uid = dict(material_paths_by_session_uid or {})
+        self._material_source_scene_path = str(material_source_scene_path)
+        self._world_dome_path = str(world_dome_path)
         self._light_paths_by_object_session_uid = dict(
             light_paths_by_object_session_uid or {}
         )
         self._mesh_topology_change_resolver = mesh_topology_change_resolver
+        self._material_graph_change_resolver = material_graph_change_resolver
+        self._unsupported_light_change_resolver = unsupported_light_change_resolver
+        self._mesh_shading_unchanged_resolver = mesh_shading_unchanged_resolver
         self.reset()
 
     def reset(self) -> None:
         self._scene_path: str | None = None
         self._material_indexes: dict[str, Mapping[str, Any]] = {}
+        self._resolved_material_paths = dict(self._material_paths_by_session_uid)
         self._light_index: Mapping[str, Any] = _unavailable_index("not_loaded")
         self._world_dome_index: Mapping[str, Any] = _unavailable_index("not_loaded")
         self._uv_index: Mapping[str, Any] = _unavailable_index("not_loaded")
@@ -45,7 +71,7 @@ class UsdPrimResolver:
 
     def scan(self, request: Any | None) -> None:
         scene_path = str(getattr(request, "input_usd_path", "") or "")
-        if scene_path == self._scene_path:
+        if scene_path == self._scene_path and self._scan_diagnostics.get('available', False):
             return
         self._scene_path = scene_path
         self._uv_loop_order_validations = {}
@@ -54,16 +80,35 @@ class UsdPrimResolver:
             return
         try:
             stage, prims, material_type = _open_stage_prims(scene_path)
+            resolved_material_paths = dict(self._material_paths_by_session_uid)
+            if self._material_source_scene_path and self._material_source_scene_path != scene_path:
+                from . import materialx_openpbr_conversion as material_conversion
+                source_bindings = _source_material_binding_rows(self._material_source_scene_path)
+                current_bindings = material_conversion._materialx_binding_identity_from_prims(prims, material_type=material_type)
+                projected = {row["binding_target"]: row["material_path"] for row in current_bindings["bindings"]}
+                for uid, source_path in self._material_paths_by_session_uid.items():
+                    targets = {target for target, material_path in source_bindings if material_path == source_path}
+                    paths = {projected[target] for target in targets if target in projected}
+                    if len(paths) > 1:
+                        raise ValueError(f"Material {source_path} has ambiguous presentation bindings")
+                    if paths:
+                        resolved_material_paths[uid] = paths.pop()
+            # Classify once instead of reading all geometry for every shader input.
+            material_prims = tuple(prim for prim in prims
+                if material_usd_prim._prim_is_material(prim, material_type)
+                or material_usd_prim._prim_is_material_value_shader(prim))
             material_indexes = {
                 usd_attribute: material_usd_prim._material_prim_index_from_prims(
-                    prims,
+                    material_prims,
                     usd_attribute=usd_attribute,
                     material_type=material_type,
+                    schema_default_material_paths=resolved_material_paths.values(),
                 )
                 for usd_attribute in material_value_conversion.SUPPORTED_USD_ATTRIBUTES
             }
             light_index = light_usd_prim._light_prim_index_from_prims(prims)
-            world_dome_index = world_dome_usd_prim._world_dome_prim_index_from_prims(prims)
+            world_dome_index = world_dome_usd_prim._world_dome_prim_index_from_prims(
+                prims, dome_prim_path=self._world_dome_path or world_dome_usd_prim.DEFAULT_DOME_OWNER_PATH)
             uv_index = uv_usd_prim._uv_prim_index_from_prims(prims)
             blender_object_index = _blender_object_index_from_prims(prims)
             indexed_paths = dict(blender_object_index["by_session_uid"])
@@ -78,6 +123,7 @@ class UsdPrimResolver:
             self._set_unavailable(f"{type(exc).__name__}: {exc}")
             return
         self._material_indexes = material_indexes
+        self._resolved_material_paths = resolved_material_paths
         self._light_index = light_index
         self._world_dome_index = world_dome_index
         self._uv_index = uv_index
@@ -89,6 +135,38 @@ class UsdPrimResolver:
             "prim_count": len(prims),
         }
         del stage
+
+    def begin_edit_callback(self) -> None:
+        """Retain immutable USD indexes, invalidate Blender-dependent UV checks."""
+        self._uv_loop_order_validations = {}
+
+    def reuse_scan_from(self, source: UsdPrimResolver, request: Any) -> bool:
+        """Reuse a completed immutable owner-thread index without opening USD.
+
+        Never share a live USD stage or Blender-dependent UV validation. Exact
+        composition and source identities gate reuse; failed scans still retry.
+        """
+        path = str(getattr(request, "input_usd_path", "") or "")
+        if (not path or source._scene_path != path
+                or not source._scan_diagnostics.get("available", False)
+                or self._material_source_scene_path != source._material_source_scene_path
+                or self._material_paths_by_session_uid != source._material_paths_by_session_uid
+                or self._world_dome_path != source._world_dome_path):
+            return False
+        self._scene_path = path
+        self._material_indexes = dict(source._material_indexes)
+        self._resolved_material_paths = dict(source._resolved_material_paths)
+        self._light_index = source._light_index
+        self._world_dome_index = source._world_dome_index
+        self._uv_index = source._uv_index
+        self._blender_object_index = dict(source._blender_object_index)
+        indexed_paths = dict(self._blender_object_index["by_session_uid"])
+        indexed_paths.update({int(uid): (str(value),)
+                             for uid, value in self._object_paths_by_session_uid.items()})
+        self._blender_object_index["by_session_uid"] = indexed_paths
+        self._scan_diagnostics = dict(source._scan_diagnostics)
+        self._uv_loop_order_validations = {}
+        return True
 
     def resolve_material(
         self,
@@ -103,6 +181,7 @@ class UsdPrimResolver:
             index,
             usd_attribute=usd_attribute,
             property_name=property_name,
+            known_prim_path=self._resolved_material_paths.get(int(getattr(material, "session_uid", 0) or 0), ""),
         )
 
     def resolve_light(self, light_object: Any) -> UsdPrimResolution[light_usd_prim.LightUsdPrim]:
@@ -126,6 +205,21 @@ class UsdPrimResolver:
             return None
         change = self._mesh_topology_change_resolver(mesh)
         return None if change is None else dict(change)
+
+    def material_graph_change(self, material: Any) -> Mapping[str, Any] | None:
+        if self._material_graph_change_resolver is None:
+            return None
+        change = self._material_graph_change_resolver(material)
+        return None if change is None else dict(change)
+
+    def mesh_shading_unchanged(self, mesh: Any) -> bool:
+        return bool(self._mesh_shading_unchanged_resolver is not None
+                    and self._mesh_shading_unchanged_resolver(mesh))
+
+    def unsupported_light_changes(self, light: Any) -> tuple[Mapping[str, Any], ...]:
+        if self._unsupported_light_change_resolver is None:
+            return ()
+        return self._unsupported_light_change_resolver(light)
 
     def resolve_blender_object(self, obj: Any) -> UsdPrimResolution[str]:
         name = str(getattr(obj, "name", "") or "")

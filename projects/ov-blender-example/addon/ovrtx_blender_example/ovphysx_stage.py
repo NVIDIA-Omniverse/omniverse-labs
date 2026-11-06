@@ -7,7 +7,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import Enum
 from pathlib import Path
 import threading
@@ -16,7 +16,6 @@ from typing import Any, Callable, Mapping, Sequence
 
 from .ovphysx_runtime_client import (
     UNKNOWN,
-    OvphysxRuntimeClient as _OvphysxRuntimeClient,
     coerce_mapping_int as _mapping_int,
 )
 from .physics_pose_set import apply_initial_condition_values, complete_physics_pose_set
@@ -28,8 +27,9 @@ from .shared_stage_composition import BodyPose as _BodyPose, BodyVelocity as _Bo
 COMPOSITION_SYNC_LOCK = threading.Lock()
 
 
-def _physics_client_from_config(config: _InteractiveSharedStageConfig, simulation_id: str) -> _OvphysxRuntimeClient:
-    return _OvphysxRuntimeClient(config, simulation_id)
+def _physics_client_from_config(config: _InteractiveSharedStageConfig, simulation_id: str):
+    from .direct_sdk_client import PublicSdkPhysicsClient
+    return PublicSdkPhysicsClient(config, simulation_id)
 
 
 class OvphysxStageStatus(str, Enum):
@@ -50,13 +50,67 @@ class OvphysxStageResult:
     generation: int
 
 
+def parent_local_poses(controller: Any, poses: Sequence[Any]) -> tuple[Any, ...]:
+    """Express world body poses in their composed USD parent's space.
+
+    The worker composes a written pose with the body's (static) parent
+    transform, while readback is in world space. A pose cannot carry the
+    compensating scale, so a scaled parent is rejected explicitly.
+    """
+    if getattr(getattr(controller, "_physics_client", None), "pose_write_space", "parent") == "world":
+        return tuple(poses)
+    from .physics_frames import FrameError, RigidFrame, matrix_to_transform
+    usd_path = getattr(getattr(controller, "config", None), "input_usd_path", "")
+    if not usd_path or not os.path.isfile(str(usd_path)):
+        return tuple(poses)  # No composed stage to consult (transport-only controllers).
+    cache = getattr(controller, "_parent_frames", None)
+    if cache is None or cache[0] != usd_path:
+        cache = (usd_path, {})
+        controller._parent_frames = cache
+    frames = cache[1]
+    result = []
+    for pose in poses:
+        if pose.prim_path not in frames:
+            from pxr import Gf, Sdf, Usd, UsdGeom
+            stage = Usd.Stage.Open(controller.config.input_usd_path)
+            parent = stage.GetPrimAtPath(Sdf.Path(pose.prim_path).GetParentPath())
+            matrix = UsdGeom.XformCache().GetLocalToWorldTransform(parent) if parent else None
+            frame = None
+            if matrix is not None and not Gf.IsClose(matrix, Gf.Matrix4d(1), 1e-9):
+                try:
+                    transform = matrix_to_transform(tuple(tuple(matrix[c][r] for c in range(4)) for r in range(4)))
+                except FrameError as exc:
+                    raise ValueError(f"{pose.prim_path}: posed body parent transform is unsupported ({exc})") from exc
+                if abs(transform.uniform_scale - 1) > 1e-6:
+                    raise ValueError(f"{pose.prim_path}: a posed body under a scaled parent is unsupported")
+                frame = transform.frame
+            frames[pose.prim_path] = frame
+        parent_frame = frames[pose.prim_path]
+        if parent_frame is None:
+            result.append(pose)
+            continue
+        x, y, z, w = pose.orient
+        local = parent_frame.inverse().compose(RigidFrame(tuple(pose.translate), (w, x, y, z)))
+        lw, lx, ly, lz = local.rotation_wxyz
+        result.append(type(pose)(pose.prim_path, tuple(local.position), (lx, ly, lz, lw)))
+    return tuple(result)
+
+
 class OvphysxStageController:
+    def validate_joint_admission(self) -> None:
+        from .physics_capabilities import validate_joint_runtime
+        validate_joint_runtime(self.config.input_usd_path, self.config,
+                               self._physics_client._import_native_client,
+                               getattr(self._physics_client, "public_sdk_identity", None))
+
     def __init__(
         self,
         config: _InteractiveSharedStageConfig,
-        physics_client: _OvphysxRuntimeClient | None = None,
+        physics_client: Any | None = None,
         simulation_id: str | None = None,
     ) -> None:
+        from .physics_capabilities import physics_device_stage
+        config = replace(config, input_usd_path=physics_device_stage(config.input_usd_path, config.device))
         self.config = config
         self.physics_simulation_id = simulation_id or f"ovphysx-blender-{os.getpid()}"
         self.composition_mode = "async_latest_pose"
@@ -135,6 +189,38 @@ class OvphysxStageController:
             return self._stage_host.body_poses_for(self.config.body_prims)
         except KeyError:
             return ()
+
+    def reset_simulation(self, *, config, initial_condition_values=()) -> OvphysxStageResult:
+        """Reload authored physics in the already admitted worker, not by teleporting."""
+        with self._runtime_transition_lock:
+            if self.closed or self.failed or not self.started:
+                raise RuntimeError("Reset requires a healthy running physics controller")
+            if not getattr(self._physics_client, "supports_verified_simulation_reload", False):
+                raise RuntimeError("Physics client does not support verified simulation reload")
+            self._stop_async_playback(wait=True, invalidate=True)
+            if self.failed:
+                raise RuntimeError("Physics producer failed while draining for reset")
+            # Invalidate even a paused producer: queued presentation belongs to
+            # the previous solver history despite identical controller identity.
+            self.composition_generation += 1
+            self.playback_intent_generation += 1
+            self.config = config
+            self._physics_client.config = config
+            self.composition_config_fingerprint = _composition_config_fingerprint(config)
+            self._pose_producer.config_fingerprint = self.composition_config_fingerprint
+            self.started = False
+            self.completed = False
+            self.step_count = 0
+            self.current_simulation_time_ns = 0
+            self.changed_body_paths.clear()
+            self.last_step_diagnostics = None
+            # tick() adopts the drained producer cursor before loading. Replace
+            # it first, or an old completed history overwrites the reset zero.
+            self.sync_async_producer_position()
+            result = self.tick(max_steps=config.max_steps,
+                               initial_condition_values=initial_condition_values)
+            self.sync_async_producer_position()
+            return result
 
     def tick(
         self,
@@ -545,7 +631,8 @@ class OvphysxStageController:
         self.stop_async_playback(wait=True, invalidate=True)
         if self.failed:
             return self._failed_initial_condition_edit_update()
-        simulation_time_ns = max(1, int(self.current_simulation_time_ns) + 1)
+        # Population seals ordinal 1 while physical time is still zero.
+        simulation_time_ns = max(2, int(self.current_simulation_time_ns) + 1)
         self._trace(
             "write_body_poses.begin",
             simulation_time_ns=simulation_time_ns,
@@ -554,7 +641,7 @@ class OvphysxStageController:
         )
         try:
             write_diagnostics = self._physics_client.write_body_poses(
-                poses,
+                parent_local_poses(self, poses),
                 simulation_time_ns=simulation_time_ns,
                 reset=reset,
             )
@@ -646,6 +733,51 @@ class OvphysxStageController:
             self.stage_update_count += 1
         return update
 
+    def apply_body_mass_edits(self, values: Sequence[Mapping[str, Any]]) -> Mapping[str, Any]:
+        """Pause/drain the producer for a measured public native mass update."""
+        with self._runtime_transition_lock:
+            if self.closed or self.failed or not self.started:
+                raise RuntimeError("Physics mass edit requires a healthy running simulation")
+            if not self.stop_async_playback(wait=True, invalidate=True):
+                self.failed = True
+                self.last_error = "Physics producer did not stop before mass edit"
+                raise RuntimeError(self.last_error)
+            self.adopt_async_producer_position()
+            try:
+                result = self._physics_client.write_body_masses(values)
+                if error := _physics_write_error(result, len(values)):
+                    raise RuntimeError(error)
+            except Exception as exc:
+                self.failed = self.completed = True
+                self.last_error = f"Physics mass edit failed: {exc}"
+                raise
+            self.sync_async_producer_position()
+            self.last_body_mass_write = dict(result)
+            return result
+
+    def apply_static_geometry_edits(self, values: Sequence[Mapping[str, Any]]) -> Mapping[str, Any]:
+        """Drain the producer; retain its clock/motion during collider recooking."""
+        with self._runtime_transition_lock:
+            if self.closed or self.failed or not self.started:
+                raise RuntimeError("Collider geometry edit requires a healthy running simulation")
+            if not self.stop_async_playback(wait=True, invalidate=True):
+                self.failed = True
+                raise RuntimeError("Physics producer did not stop before collider edit")
+            self.adopt_async_producer_position()
+            try:
+                result = self._physics_client.write_physics_geometry(values)
+                if result.get('status') != 'ok' or result.get('updated_count') not in (0, len(values)):
+                    raise RuntimeError("Incomplete collider geometry update")
+                if int(result['simulation_time_ns']) != self.step_count * self.config.timestep_ns:
+                    raise RuntimeError("Collider update changed physics clock")
+            except Exception as exc:
+                self.failed = self.completed = True
+                self.last_error = f"Collider geometry edit failed: {exc}"
+                raise
+            self.sync_async_producer_position()
+            self.last_geometry_write = dict(result)
+            return result
+
     def apply_body_velocity_edits(
         self,
         velocities: Sequence[_BodyVelocity],
@@ -718,7 +850,7 @@ class OvphysxStageController:
             }
             self.last_update = update
             return update
-        simulation_time_ns = max(1, int(self.current_simulation_time_ns) + 1)
+        simulation_time_ns = max(2, int(self.current_simulation_time_ns) + 1)
         self._trace(
             "write_body_velocities.begin",
             simulation_time_ns=simulation_time_ns,
@@ -972,7 +1104,7 @@ class OvphysxStageController:
         self.last_read_diagnostics = read_diagnostics
         value_write_diagnostics: Mapping[str, Any] | None = None
         if starting_values:
-            simulation_time_ns = max(1, int(self.current_simulation_time_ns) + 1)
+            simulation_time_ns = max(2, int(self.current_simulation_time_ns) + 1)
             self._trace(
                 "initial_condition_values.write.begin",
                 simulation_time_ns=simulation_time_ns,
@@ -980,7 +1112,7 @@ class OvphysxStageController:
             )
             try:
                 value_write_diagnostics = self._physics_client.write_body_poses(
-                    starting_values,
+                    parent_local_poses(self, starting_values),
                     simulation_time_ns=simulation_time_ns,
                     reset=False,
                 )
@@ -1109,6 +1241,7 @@ class OvphysxStageController:
                 "pose_handoff_wait_ms": pose_handoff_wait_ms,
                 "latest_pose_lag_steps": self.last_latest_pose_lag_steps,
                 "latest_pose_publication_sequence": publication.sequence if publication is not None else 0,
+                "pose_produced_monotonic_ns": publication.produced_monotonic_ns if publication is not None else 0,
                 **dict(extra or {}),
             },
         )
@@ -1245,6 +1378,12 @@ def _physics_diagnostics_summary(diagnostics: Mapping[str, Any] | None) -> dict[
         "body_count",
         "step_ms",
         "read_ms",
+        "state_read_ms",
+        "publication_state_reads",
+        "publication_substeps",
+        "state_read_calls",
+        "native_state_read_sessions",
+        "publication_native_state_reads",
         "total_ms",
         "python_call_ms",
         "step_timings_ms",

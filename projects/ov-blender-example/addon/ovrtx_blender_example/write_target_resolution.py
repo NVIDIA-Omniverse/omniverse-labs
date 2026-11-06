@@ -96,6 +96,11 @@ def resolve_write_target(
     }
     if normalized_target_kind not in _SUPPORTED_TARGET_KINDS:
         return _error(diagnostics, REASON_UNSUPPORTED_TARGET_KIND)
+    if not str(input_usd_path or "").strip():
+        # Current-scene preview edits intentionally have no durable USD source.
+        # Do not import USD or repeatedly open an empty path on each drag/socket
+        # callback. Explicit layer metadata cannot prove stack ownership alone.
+        return _error(diagnostics, REASON_MISSING_WRITE_TARGET, detail="missing_input_usd_path")
 
     usd, reason = _load_usd_module(usd_module)
     if usd is None:

@@ -1,7 +1,7 @@
 # OVRTX Blender scene API
 
 Probe the running add-on before mutation; property availability is versioned.
-The tested public Blender 5.1 add-on registers engine ID `OVRTX_EXAMPLE` and a
+The tested public Blender 5.2 add-on registers engine ID `OVRTX_EXAMPLE` and a
 `Scene.ovrtx_example` property group containing `min_samples`, `max_samples`,
 `color_presentation_mode`, `sync_viewport_camera`, and renderer-specific fields.
 

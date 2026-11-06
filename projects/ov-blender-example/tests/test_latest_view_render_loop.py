@@ -36,6 +36,7 @@ from ovrtx_blender_example.interactive_edit_planner import (
     edit_location,
 )
 from ovrtx_blender_example.ovrtx_runtime_client import (
+    DEFAULT_RENDER_SIMULATION_STEP_NS,
     RenderClientError,
     RenderResult,
     RuntimeServicesPreparingError,
@@ -59,16 +60,175 @@ from ovrtx_blender_example.viewport_handoff import (
     ViewSnapshot,
 )
 from ovrtx_blender_example.viewport_render_thread import (
-    ASYNC_RENDER_READ_ENV,
     LatestViewRenderLoop,
     RenderThreadError,
+    RenderThreadRejectedError,
     SessionLifecycleHooks,
     ViewportRenderThread,
-    _async_render_read_enabled,
 )
 
 
 WAIT_S = 5.0
+
+
+def test_native_completion_wait_skips_resolved_frames_and_bounds_wait():
+    calls = []
+    pending = SimpleNamespace(
+        tickets={"done": SimpleNamespace(wait=lambda ms: pytest.fail("resolved ticket waited")),
+                 "pending": SimpleNamespace(wait=calls.append)},
+        resolved_frames={"done": object()},
+    )
+    LatestViewRenderLoop._wait_pending_native(pending, 2000.0)
+    assert calls == [1000.0]
+    LatestViewRenderLoop._wait_pending_native(SimpleNamespace(tickets={"old": object()}), 8.0)
+
+
+def _warm_public_pipeline(tmp_path, monkeypatch, *, timeline_controls_enabled=False):
+    monkeypatch.setenv("OVRTX_RENDER_PIPELINE_DEPTH", "2")
+    monkeypatch.setenv("OVRTX_RENDER_PIPELINE_POLL_BUDGET_MS", "0")
+    client = _Client()
+    client.worker_owned = True
+    client.camera_successor_deferral = True
+    client.async_supported = True
+    client.poll_resolve_after = 100
+    harness = _Harness(monkeypatch, tmp_path, client)
+    harness.loop._adopt_snapshot(_snapshot(tx=2.0, max_samples=4,
+        timeline_controls_enabled=timeline_controls_enabled))
+    harness.loop._iterate()  # Session cold start remains synchronous.
+    harness.loop._iterate()  # Retain a genuinely pending exact-view ticket.
+    assert len(harness.loop._pending_samples) == 1
+    return harness
+
+
+@pytest.mark.parametrize("timeline_controls_enabled", [False, True])
+def test_public_camera_successor_coalesces_and_keeps_predecessor_attribution(tmp_path, monkeypatch, timeline_controls_enabled):
+    harness = _warm_public_pipeline(tmp_path, monkeypatch,
+        timeline_controls_enabled=timeline_controls_enabled)
+    loop, client = harness.loop, harness.client
+    original = loop._snapshot
+    pending = loop._pending_samples[0]
+    try:
+        loop._adopt_snapshot(_snapshot(tx=3.0, max_samples=4,
+            timeline_controls_enabled=timeline_controls_enabled))
+        latest = _snapshot(tx=4.0, max_samples=4,
+            timeline_controls_enabled=timeline_controls_enabled)
+        loop._adopt_snapshot(latest)
+        assert loop._snapshot is original
+        assert loop._deferred_camera_snapshot is latest
+        assert not any(t.cancelled for t in pending.tickets.values())
+        pending.remaining = 0
+        loop._iterate()
+        assert harness.slot.frames()[-1].snapshot_key == original.key
+        assert loop._deferred_camera_due()
+        loop._adopt_snapshot(loop._deferred_camera_snapshot)
+        loop._iterate()  # Warm successor begins asynchronously, even at sample 0.
+        assert loop._snapshot is latest
+        assert client.render_additional_samples == [1]
+        assert client.begin_render_calls == 2
+        loop._pending_samples[0].remaining = 0
+        loop._iterate()
+        assert harness.slot.frames()[-1].snapshot_key == latest.key
+    finally:
+        loop._cancel_pending_samples()
+        loop._pipeline_loop.close()
+
+
+@pytest.mark.parametrize("override", [
+    {"width": 2}, {"render_var": "HdrColor"}, {"max_samples": 3},
+    {"camera_projection": CameraProjectionState(source="blender_view", focal_length=35.0,
+        horizontal_aperture=36.0, vertical_aperture=24.0)},
+    {"timeline_playing": True}, {"camera_prim_path": "/World/OtherCamera"},
+    {"timeline_frame": 2}, {"timeline_start": 2}, {"timeline_end": 20},
+    {"simulation_reset_token": 1},
+])
+@pytest.mark.parametrize("timeline_controls_enabled", [False, True])
+def test_public_camera_deferral_rejects_non_pose_changes(tmp_path, monkeypatch, override, timeline_controls_enabled):
+    harness = _warm_public_pipeline(tmp_path, monkeypatch,
+        timeline_controls_enabled=timeline_controls_enabled)
+    loop = harness.loop
+    pending = loop._pending_samples[0]
+    try:
+        changes = {"max_samples": 4, "timeline_controls_enabled": timeline_controls_enabled, **override}
+        loop._adopt_snapshot(_snapshot(tx=3.0, **changes))
+        assert loop._deferred_camera_snapshot is None
+        assert all(t.cancelled for t in pending.tickets.values())
+    finally:
+        loop._cancel_pending_samples()
+        loop._pipeline_loop.close()
+
+
+def test_public_camera_deferral_bound_and_edit_revision_interrupt(tmp_path, monkeypatch):
+    harness = _warm_public_pipeline(tmp_path, monkeypatch)
+    loop = harness.loop
+    try:
+        loop._adopt_snapshot(_snapshot(tx=3.0, max_samples=4))
+        assert not loop._deferred_camera_due()
+        loop._camera_deferred_at_ns -= 250_000_000
+        assert loop._deferred_camera_due()
+        loop._camera_deferred_at_ns = time.perf_counter_ns()
+        harness.scheduler.note_applied_content()
+        assert loop._deferred_camera_due()
+        loop._adopt_snapshot(loop._deferred_camera_snapshot)
+        assert not loop._pending_samples
+    finally:
+        loop._cancel_pending_samples()
+        loop._pipeline_loop.close()
+
+
+def test_public_session_revision_change_requires_fresh_cold_render(tmp_path, monkeypatch):
+    harness = _warm_public_pipeline(tmp_path, monkeypatch)
+    loop, client = harness.loop, harness.client
+    pending = loop._pending_samples[0]
+    try:
+        harness.controller._session_revision += 1
+        loop._adopt_snapshot(_snapshot(tx=3.0, max_samples=4))
+        assert loop._deferred_camera_snapshot is None
+        assert all(t.cancelled for t in pending.tickets.values())
+        loop._iterate()
+        assert client.render_additional_samples == [1, 1]
+    finally:
+        loop._cancel_pending_samples()
+        loop._pipeline_loop.close()
+
+
+@pytest.mark.parametrize("timeline_controls_enabled", [False, True])
+def test_public_refinement_prearm_respects_capacity_and_sample_limit(tmp_path, monkeypatch, timeline_controls_enabled):
+    harness = _warm_public_pipeline(tmp_path, monkeypatch,
+        timeline_controls_enabled=timeline_controls_enabled)
+    loop = harness.loop
+    try:
+        loop._pending_samples[0].remaining = 0
+        loop._iterate()
+        assert loop._readback_prearm_count == 1
+        assert len(loop._pending_samples) <= loop._pipeline_depth
+        loop._prearm_refinement_before_copy()
+        assert loop._readback_prearm_count == 1  # At capacity/sample limit.
+        for pending in loop._pending_samples:
+            pending.remaining = 0
+        loop._iterate()
+        loop._iterate()
+        assert loop._completed_samples == 4
+        assert harness.client.begin_render_calls == 3
+        assert not loop._pending_samples
+    finally:
+        loop._cancel_pending_samples()
+        loop._pipeline_loop.close()
+
+
+def test_public_refinement_prearm_rejects_running_timeline(tmp_path, monkeypatch):
+    harness = _warm_public_pipeline(tmp_path, monkeypatch, timeline_controls_enabled=True)
+    loop = harness.loop
+    try:
+        # A paused authored viewport can prearm; starting playback cannot
+        # silently add another native sample for the old timeline state.
+        loop._snapshot = replace(loop._snapshot, timeline_playing=True)
+        begin_calls = harness.client.begin_render_calls
+        loop._prearm_refinement_before_copy()
+        assert harness.client.begin_render_calls == begin_calls
+        assert loop._readback_prearm_count == 0
+    finally:
+        loop._cancel_pending_samples()
+        loop._pipeline_loop.close()
 
 
 def _wait_until(predicate, timeout: float = WAIT_S) -> bool:
@@ -151,6 +311,26 @@ def _honored_camera_probe() -> camera_value_conversion.CameraValueProbe:
     return probe
 
 
+class _FakeReadTicket:
+    """Mirrors ``ReadWorldStateTicket``'s ``cancel()`` for teardown tests."""
+
+    def __init__(self) -> None:
+        self.cancelled = False
+
+    def cancel(self) -> bool:
+        self.cancelled = True
+        return True
+
+
+class _PendingSample:
+    """Fake ``PendingRenderSample`` returned by ``_Client.begin_render_sample``."""
+
+    def __init__(self, remaining: int) -> None:
+        self.remaining = remaining
+        self.tickets = {"/Render/Product/LdrColor": _FakeReadTicket()}
+        self.native_started_ns = time.perf_counter_ns()
+
+
 class _Client:
     """Fake srtx client compatible with OvrtxSessionController."""
 
@@ -159,7 +339,6 @@ class _Client:
         self.fail_render = False
         self.starts = 0
         self.deletes = 0
-        self.delete_failures_remaining = 0
         self.closed = 0
         self.render_calls = 0
         self.render_additional_samples: list[int] = []
@@ -175,6 +354,48 @@ class _Client:
         self.startup_diagnostics = {"render_worker": {"status": "ready"}}
         self.last_render_timings: dict = {}
         self.last_value_update_timings: dict = {}
+        # Async read pipelining (performance-improvements Phase 03).
+        self.async_supported = False
+        self.begin_render_calls = 0
+        self.poll_render_calls = 0
+        self.poll_resolve_after = 0
+        self._outstanding = 0
+        self.max_outstanding = 0
+        self.pending_samples: list[_PendingSample] = []
+
+    def supports_async_render_sample(self) -> bool:
+        return self.async_supported
+
+    def resize_output(self, simulation_id, width, height):
+        self.output_shape = (width, height)
+
+    def begin_render_sample(self, simulation_id: str, **kwargs: object) -> "_PendingSample":
+        self.render_thread_idents.append(threading.get_ident())
+        self.begin_render_calls += 1
+        self._outstanding += 1
+        self.max_outstanding = max(self.max_outstanding, self._outstanding)
+        pending = _PendingSample(self.poll_resolve_after)
+        self.pending_samples.append(pending)
+        return pending
+
+    def poll_render_sample(self, pending: "_PendingSample", *, before_copy=None) -> RenderResult | None:
+        self.render_thread_idents.append(threading.get_ident())
+        self.poll_render_calls += 1
+        if pending.remaining > 0:
+            pending.remaining -= 1
+            return None
+        if before_copy is not None:
+            before_copy()
+        self._outstanding -= 1
+        self.render_calls += 1
+        return RenderResult(
+            width=1,
+            height=1,
+            rgba8=b"\x00\x00\x00\xff",
+            completed_samples=1,
+            session_completed_samples=self.render_calls,
+            simulation_time_ns=0,
+        )
 
     def start_session(self, spec: object, simulation_id: str | None = None) -> str:
         self.starts += 1
@@ -222,118 +443,10 @@ class _Client:
 
     def delete_simulation(self, simulation_id: str) -> str:
         self.deletes += 1
-        if self.delete_failures_remaining:
-            self.delete_failures_remaining -= 1
-            return "failed"
         return "stopped"
 
     def shutdown(self) -> None:
         self.closed += 1
-
-
-class _AsyncClient(_Client):
-    """Nonblocking exact-time read fake with observable ticket ordering."""
-
-    def __init__(self, simulation_id: str = "sim") -> None:
-        super().__init__(simulation_id)
-        self.async_events: list[tuple[str, int, float | None]] = []
-        self.pending_tickets: dict[int, float | None] = {}
-        self.peak_pending_tickets = 0
-        self.active_read_tickets: set[int] = set()
-        self.peak_active_read_tickets = 0
-        self.release_read: threading.Event | None = None
-        self.read_started = threading.Event()
-        self.blocked_tickets: set[int] = set()
-        self.pending_polls = 1
-        self.poll_counts: dict[int, int] = {}
-        self.submit_failures_remaining = 0
-        self.begin_failures_remaining = 0
-        self.terminal_poll_failures_remaining = 0
-        self.cancel_failures_remaining = 0
-
-    def supports_async_render_read(self) -> bool:
-        return True
-
-    def submit_render_sample(self, simulation_id: str, **kwargs: object) -> int:
-        if self.submit_failures_remaining:
-            self.submit_failures_remaining -= 1
-            raise RenderClientError("successor submit rejected_for_test")
-        ticket = self.render_calls + 1
-        self.render_calls += 1
-        self.render_thread_idents.append(threading.get_ident())
-        camera_translation = self.camera_translation
-        self.render_camera_translations.append(camera_translation)
-        self.pending_tickets[ticket] = camera_translation
-        self.peak_pending_tickets = max(
-            self.peak_pending_tickets, len(self.pending_tickets)
-        )
-        self.async_events.append(("submit", ticket, camera_translation))
-        return ticket
-
-    def begin_render_sample_read(self, ticket: int) -> int:
-        camera_translation = self.pending_tickets[ticket]
-        if self.begin_failures_remaining:
-            self.begin_failures_remaining -= 1
-            self.async_events.append(("begin_failed", ticket, camera_translation))
-            raise RenderClientError("read begin rejected_for_test")
-        if self.active_read_tickets:
-            raise AssertionError("more than one native read began concurrently")
-        self.active_read_tickets.add(ticket)
-        self.peak_active_read_tickets = max(
-            self.peak_active_read_tickets,
-            len(self.active_read_tickets),
-        )
-        self.async_events.append(("begin", ticket, camera_translation))
-        return ticket
-
-    def poll_render_sample_read(self, ticket: int) -> RenderResult | None:
-        self.read_started.set()
-        self.poll_counts[ticket] = self.poll_counts.get(ticket, 0) + 1
-        if self.terminal_poll_failures_remaining:
-            self.terminal_poll_failures_remaining -= 1
-            camera_translation = self.pending_tickets.pop(ticket)
-            self.active_read_tickets.remove(ticket)
-            self.async_events.append(("poll_failed", ticket, camera_translation))
-            raise RenderClientError("read poll terminalized_for_test")
-        if ticket in self.blocked_tickets:
-            return None
-        if self.release_read is not None and not self.release_read.is_set():
-            return None
-        if self.poll_counts[ticket] <= self.pending_polls:
-            return None
-        camera_translation = self.pending_tickets.pop(ticket)
-        self.active_read_tickets.remove(ticket)
-        self.async_events.append(("complete", ticket, camera_translation))
-        self.last_render_timings = {"native_render_ms": 1.0, "ticket": ticket}
-        return RenderResult(
-            width=1,
-            height=1,
-            rgba8=b"\x00\x00\x00\xff",
-            completed_samples=ticket,
-            session_completed_samples=ticket,
-            simulation_time_ns=ticket * 10,
-        )
-
-    def cancel_render_sample_read(self, ticket: int) -> None:
-        if self.cancel_failures_remaining:
-            self.cancel_failures_remaining -= 1
-            camera_translation = self.pending_tickets[ticket]
-            self.async_events.append(("cancel_failed", ticket, camera_translation))
-            raise RenderClientError("read cancel rejected_for_test")
-        camera_translation = self.pending_tickets.pop(ticket)
-        self.active_read_tickets.remove(ticket)
-        self.async_events.append(("cancel", ticket, camera_translation))
-
-    def discard_render_sample(self, ticket: int) -> None:
-        camera_translation = self.pending_tickets.pop(ticket)
-        self.async_events.append(("discard", ticket, camera_translation))
-
-    def delete_simulation(self, simulation_id: str) -> str:
-        self.async_events.append(("delete", 0, self.camera_translation))
-        status = super().delete_simulation(simulation_id)
-        self.pending_tickets.clear()
-        self.active_read_tickets.clear()
-        return status
 
 
 class _RecordingMailbox(CameraRequestMailbox):
@@ -411,22 +524,6 @@ class _Harness:
         )
 
 
-def _prime_camera_pipeline_session(
-    harness: _Harness,
-    snapshot: ViewSnapshot,
-) -> None:
-    """Match production's routed startup ensure before pipeline assertions."""
-
-    request = viewport_handoff.request_from_snapshot(
-        harness.base_request,
-        snapshot,
-    )
-    request = harness.loop._with_camera_value_route(request)
-    request = harness.loop._with_rtpt_digest_route(request)
-    harness.controller.ensure(request)
-    harness.loop._observed_session_revision = harness.controller._session_revision
-
-
 @contextmanager
 def _running(loop: LatestViewRenderLoop):
     thread = threading.Thread(target=loop.run, name="latest-view-test", daemon=True)
@@ -437,6 +534,262 @@ def _running(loop: LatestViewRenderLoop):
         loop.request_stop()
         thread.join(WAIT_S)
         assert not thread.is_alive()
+
+
+# --- Async read pipelining (performance-improvements Phase 03) -------------
+
+
+def test_pipelined_acquisition_overlaps_write_with_pending_read(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Depth 2: the first sample stays synchronous (cold-start cook), then
+    a later sample's write goes out while a prior sample's read is pending."""
+
+    # n-03-08: the bounded inner poll loop (default budget) resolves a
+    # 2-poll ticket inside the same outer tick it was begun in, which
+    # avoids ever needing a second write in flight -- exactly the overhead
+    # n-03-07 found and this fix removes. This test asserts the pre-fix
+    # single-poll-per-tick contract still holds with budget=0 (its escape
+    # hatch); genuine overlap-for-fast-tickets is covered instead by
+    # test_pipeline_poll_budget_avoids_unnecessary_overlap_for_fast_ticket.
+    monkeypatch.setenv("OVRTX_RENDER_PIPELINE_DEPTH", "2")
+    monkeypatch.setenv("OVRTX_RENDER_PIPELINE_POLL_BUDGET_MS", "0")
+    client = _Client()
+    client.async_supported = True
+    client.poll_resolve_after = 2
+    harness = _Harness(monkeypatch, tmp_path, client=client)
+
+    with _running(harness.loop):
+        harness.mailbox.write(_snapshot(tx=2.0, max_samples=4))
+        assert _wait_until(lambda: len(harness.slot.frames()) >= 4)
+
+    frames = [f for f in harness.slot.frames() if f.status == FRAME_STATUS_FRAME]
+    assert [frame.completed_samples for frame in frames[:4]] == [1, 2, 3, 4]
+    assert client.render_additional_samples == [1]
+    assert client.begin_render_calls == 3
+    assert client.max_outstanding == 2
+    assert client.render_calls == 4
+    assert [
+        frame.timing_marks["render_call_started_monotonic_ns"]
+        for frame in frames[1:4]
+    ] == [pending.native_started_ns for pending in client.pending_samples]
+
+
+@pytest.mark.parametrize('public_successor', [False, True])
+def test_pending_sample_keeps_submission_snapshot_after_same_view_rewrite(tmp_path, monkeypatch, public_successor):
+    """A resolving old ticket must not borrow a successor's snapshot timestamp."""
+    harness = _warm_public_pipeline(tmp_path, monkeypatch)
+    loop, client = harness.loop, harness.client
+    client.camera_successor_deferral = public_successor
+    try:
+        original = loop._snapshot
+        oldest = loop._pending_samples[0]
+        newer = replace(original, written_monotonic_ns=oldest.native_started_ns + 1,
+                        timing_marks={'redraw_requested_monotonic_ns': oldest.native_started_ns + 1})
+        loop._adopt_snapshot(newer)
+        assert loop._snapshot is newer and newer.key == original.key
+        oldest.remaining = 0
+        loop._iterate()  # Resolves oldest; before_copy also submits a successor.
+        frame = [frame for frame in harness.slot.frames() if frame.status == FRAME_STATUS_FRAME][-1]
+        assert len(client.pending_samples) > 1
+        assert frame.timing_marks['render_call_started_monotonic_ns'] == oldest.native_started_ns
+        assert frame.timing_marks['snapshot_written_monotonic_ns'] == original.written_monotonic_ns
+        assert frame.timing_marks['snapshot_written_monotonic_ns'] <= frame.timing_marks['render_call_started_monotonic_ns']
+        assert frame.snapshot_key == original.key
+        assert 'redraw_requested_monotonic_ns' not in frame.timing_marks
+        # The newly submitted ticket owns the newer context, not the resolved one.
+        successor = loop._pending_samples[0]
+        successor.remaining = 0
+        loop._iterate()
+        frame = [frame for frame in harness.slot.frames() if frame.status == FRAME_STATUS_FRAME][-1]
+        assert frame.timing_marks['render_call_started_monotonic_ns'] == successor.native_started_ns
+        assert frame.timing_marks['snapshot_written_monotonic_ns'] == newer.written_monotonic_ns
+        assert frame.timing_marks['redraw_requested_monotonic_ns'] == newer.written_monotonic_ns
+    finally:
+        loop._cancel_pending_samples()
+        assert not loop._pending_sample_snapshots
+        loop._pipeline_loop.close()
+
+
+def test_pipeline_poll_budget_avoids_unnecessary_overlap_for_fast_ticket(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """n-03-08: with the default poll budget, a ticket that resolves in a
+    couple of polls is picked up within the outer tick that began it,
+    instead of forcing a second write into flight before the first
+    resolves. Frame delivery is unaffected; only the overlap that n-03-07
+    showed wasn't earning its keep (worker resolves in single-digit ms,
+    well under the default budget) goes away for the fast-ticket case."""
+
+    monkeypatch.setenv("OVRTX_RENDER_PIPELINE_DEPTH", "2")
+    client = _Client()
+    client.async_supported = True
+    client.poll_resolve_after = 1
+    harness = _Harness(monkeypatch, tmp_path, client=client)
+
+    with _running(harness.loop):
+        harness.mailbox.write(_snapshot(tx=2.0, max_samples=4))
+        assert _wait_until(lambda: len(harness.slot.frames()) >= 4)
+
+    frames = [f for f in harness.slot.frames() if f.status == FRAME_STATUS_FRAME]
+    assert [frame.completed_samples for frame in frames[:4]] == [1, 2, 3, 4]
+    assert client.begin_render_calls == 3
+    assert client.max_outstanding == 1
+    assert client.render_calls == 4
+
+
+def test_pipeline_falls_back_to_synchronous_render_when_async_unsupported(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Depth 2 requested, but the native client advertises no async
+    ReadWorldState support: the pre-existing synchronous path is used."""
+
+    monkeypatch.setenv("OVRTX_RENDER_PIPELINE_DEPTH", "2")
+    client = _Client()
+    client.async_supported = False
+    harness = _Harness(monkeypatch, tmp_path, client=client)
+
+    with _running(harness.loop):
+        harness.mailbox.write(_snapshot(tx=2.0, max_samples=3))
+        assert _wait_until(lambda: len(harness.slot.frames()) >= 3)
+
+    frames = [f for f in harness.slot.frames() if f.status == FRAME_STATUS_FRAME]
+    assert [frame.completed_samples for frame in frames[:3]] == [1, 2, 3]
+    assert client.begin_render_calls == 0
+    assert client.render_additional_samples == [1, 1, 1]
+
+
+def test_nonphysics_playback_uses_bounded_async_acquisition(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("OVRTX_RENDER_PIPELINE_DEPTH", "2")
+    client = _Client()
+    client.async_supported = True
+    harness = _Harness(monkeypatch, tmp_path, client=client)
+    with _running(harness.loop):
+        harness.mailbox.write(_snapshot(tx=2.0, max_samples=3, timeline_playing=True))
+        assert _wait_until(lambda: len(harness.slot.frames()) >= 3)
+    assert client.begin_render_calls >= 2
+    assert client.render_additional_samples == [1]
+    assert client.max_outstanding == 1
+
+
+def test_pipeline_cancels_pending_tickets_on_session_replacement(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A session replacement mid-pipeline cancels every outstanding ticket
+    instead of leaking it across the boundary (README: cancel() is
+    non-blocking and idempotent)."""
+
+    monkeypatch.setenv("OVRTX_RENDER_PIPELINE_DEPTH", "2")
+    client = _Client()
+    client.async_supported = True
+    client.poll_resolve_after = 1_000_000  # never resolves on its own
+    harness = _Harness(monkeypatch, tmp_path, client=client)
+
+    with _running(harness.loop):
+        harness.mailbox.write(_snapshot(tx=2.0, max_samples=0))
+        assert _wait_until(lambda: client.begin_render_calls >= 2)
+        pending_before = list(client.pending_samples)
+        assert pending_before
+        assert not any(
+            ticket.cancelled
+            for pending in pending_before
+            for ticket in pending.tickets.values()
+        )
+
+        # A new snapshot with a different camera pose forces a refinement
+        # reset (task02-03), which must cancel the outstanding tickets.
+        harness.mailbox.write(_snapshot(tx=9.0, max_samples=0))
+        assert _wait_until(
+            lambda: all(
+                ticket.cancelled
+                for pending in pending_before
+                for ticket in pending.tickets.values()
+            )
+        )
+
+
+def test_pipeline_cooldown_falls_back_to_sync_after_cancel(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """n-03-09: continuous camera motion resets ``_completed_samples`` on
+    nearly every tick, which re-enables pipelining the very next tick --
+    eagerly starting a new WriteWorldState+ticket that the *next* camera
+    change then cancels before it ever resolves. Measured live: 100% of
+    pipelined attempts wasted during active navigation, doubling the
+    worker's real write/render volume per published frame versus depth=1.
+    After an actual cancellation, no *new* pipelined ticket should start
+    until a short cooldown elapses -- the loop falls back to the
+    synchronous path (matching depth=1) instead of repeating the waste."""
+
+    monkeypatch.setenv("OVRTX_RENDER_PIPELINE_DEPTH", "2")
+    monkeypatch.setenv("OVRTX_RENDER_PIPELINE_CANCEL_COOLDOWN_MS", "400")
+    client = _Client()
+    client.async_supported = True
+    client.poll_resolve_after = 1_000_000  # never resolves on its own
+    harness = _Harness(monkeypatch, tmp_path, client=client)
+
+    with _running(harness.loop):
+        harness.mailbox.write(_snapshot(tx=2.0, max_samples=0))
+        assert _wait_until(lambda: client.begin_render_calls >= 1)
+        begin_calls_before_cancel = client.begin_render_calls
+
+        # A new camera pose forces a refinement reset, cancelling the
+        # outstanding ticket -- the same trigger as the sibling
+        # session-replacement test above. The render thread may already be
+        # mid-tick when the new snapshot lands, so at most one more begin
+        # can race the reset and get cancelled immediately after -- that is
+        # expected. What the cooldown must prevent is any *further* begin
+        # while the camera keeps "moving" (further cancels arriving).
+        harness.mailbox.write(_snapshot(tx=9.0, max_samples=0))
+        renders_at_cancel = client.render_calls
+        assert _wait_until(lambda: client.render_calls >= renders_at_cancel + 2)
+        begin_calls_after_reset = client.begin_render_calls
+        assert begin_calls_after_reset <= begin_calls_before_cancel + 1
+
+        # Several more synchronous samples complete with no *additional*
+        # pipelined ticket begun: the cooldown suppressed re-entry.
+        renders_at_settle = client.render_calls
+        assert _wait_until(lambda: client.render_calls >= renders_at_settle + 20)
+        assert client.begin_render_calls == begin_calls_after_reset
+
+        # Once the cooldown elapses, pipelining resumes.
+        assert _wait_until(
+            lambda: client.begin_render_calls > begin_calls_after_reset,
+            timeout=2.0,
+        )
+
+
+def test_pipeline_survives_applied_revision_bump_before_first_frame(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Live scene activation calls ``note_applied_content`` before any FRAME.
+
+    Depth>1 must keep the first in-flight tickets until they resolve instead
+    of treating unpublished applied_revision as a per-tick cancel.
+    """
+
+    monkeypatch.setenv("OVRTX_RENDER_PIPELINE_DEPTH", "2")
+    client = _Client()
+    client.async_supported = True
+    client.poll_resolve_after = 12
+    harness = _Harness(monkeypatch, tmp_path, client=client)
+    harness.scheduler.note_applied_content()
+
+    with _running(harness.loop):
+        harness.mailbox.write(_snapshot(tx=2.0, max_samples=4))
+        assert _wait_until(lambda: len(harness.slot.frames()) >= 4, timeout=2.0)
+
+    frames = [frame for frame in harness.slot.frames() if frame.status == FRAME_STATUS_FRAME]
+    assert [frame.completed_samples for frame in frames[:4]] == [1, 2, 3, 4]
+    cancelled = [
+        ticket.cancelled
+        for pending in client.pending_samples
+        for ticket in pending.tickets.values()
+    ]
+    assert cancelled.count(True) < client.begin_render_calls
+    assert client.begin_render_calls >= 3
 
 
 # --- Fresh snapshot: one sample per iteration, refine to max ---------------
@@ -464,1349 +817,6 @@ def test_fresh_snapshot_acquires_one_sample_per_iteration_to_max(
     # Latency-sensitive viewport refinement advances one sample per native call.
     assert harness.client.starts == 1
     assert harness.loop.diagnostics()["last_reset_reason"] == "camera_changed"
-
-
-def test_async_read_keeps_one_ticket_and_does_not_queue_same_camera_refinement(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    client = _AsyncClient()
-    harness = _Harness(monkeypatch, tmp_path, client=client)
-
-    with _running(harness.loop):
-        harness.mailbox.write(_snapshot(tx=2.0, max_samples=4))
-        assert _wait_until(lambda: len(harness.slot.frames()) >= 4)
-        assert _wait_until(lambda: harness.mailbox.park_count() >= 2)
-
-    assert client.async_events == [
-        ("submit", 1, 2.0),
-        ("begin", 1, 2.0),
-        ("complete", 1, 2.0),
-        ("submit", 2, 2.0),
-        ("begin", 2, 2.0),
-        ("complete", 2, 2.0),
-        ("submit", 3, 2.0),
-        ("begin", 3, 2.0),
-        ("complete", 3, 2.0),
-        ("submit", 4, 2.0),
-        ("begin", 4, 2.0),
-        ("complete", 4, 2.0),
-    ]
-    assert client.peak_pending_tickets == 1
-    assert [
-        frame.completed_samples for frame in harness.slot.frames()[:4]
-    ] == [1, 2, 3, 4]
-    pipeline = harness.loop.diagnostics()["render_pipeline"]
-    assert pipeline["peak_active_reads"] == 1
-    assert client.peak_active_read_tickets == 1
-    assert pipeline["async_read_begins"] == 4
-    assert pipeline["async_read_completions"] == 4
-    assert pipeline["synchronous_acquisitions"] == 0
-    assert pipeline["last_mode"] == "async"
-
-
-@pytest.mark.parametrize(
-    ("field", "value"),
-    [
-        ("camera_prim_path", "/World/OtherCamera"),
-        ("camera_projection", _projection(35.0)),
-        ("min_samples", 2),
-        ("max_samples", 8),
-        ("selected_sensor_paths", ("/Render/Other",)),
-        ("render_var", "HdrColor"),
-        ("width", 2),
-        ("height", 2),
-        ("timeline_controls_enabled", True),
-        ("timeline_playing", True),
-        ("timeline_frame", 2),
-        ("timeline_start", 0),
-        ("timeline_end", 2),
-        ("simulation_reset_token", 1),
-    ],
-)
-def test_camera_successor_rejects_every_non_pose_snapshot_change(
-    field: str,
-    value: object,
-) -> None:
-    current = _snapshot(tx=2.0)
-    candidate = replace(_snapshot(tx=5.0), **{field: value})
-
-    assert not LatestViewRenderLoop._pure_camera_successor(current, candidate)
-
-
-def test_newer_mailbox_snapshot_wins_over_preserved_deferred_view(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    harness = _Harness(monkeypatch, tmp_path)
-    snapshot_b = _snapshot(tx=5.0)
-    snapshot_c = _snapshot(tx=9.0)
-    harness.loop._deferred_snapshot = snapshot_b
-    harness.mailbox.write(snapshot_c)
-
-    assert harness.loop._take_next_snapshot() is snapshot_c
-    assert harness.loop._deferred_snapshot is None
-
-
-def test_camera_successor_failure_is_counted_once_across_nested_owners(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    harness = _Harness(monkeypatch, tmp_path)
-    error = RenderClientError("successor failed_for_test")
-
-    harness.loop._note_camera_successor_failure(error)
-    harness.loop._note_camera_successor_failure(error)
-
-    assert harness.loop.diagnostics()["render_pipeline"][
-        "camera_successor_failures"
-    ] == 1
-
-
-def test_async_read_pipelines_two_fifo_successors_and_one_deferred_snapshot(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    client = _AsyncClient()
-    client.release_read = threading.Event()
-    # Once the predecessor gate is released, every rendered result is already
-    # terminal at its first poll. This pins the producer/consumer boundary:
-    # B/C remain FIFO, B's read begins, then D replenishes its freed slot.
-    client.pending_polls = 0
-    harness = _Harness(monkeypatch, tmp_path, client=client)
-    snapshot_a = _snapshot(tx=2.0, max_samples=1)
-    snapshot_b = _snapshot(tx=5.0, max_samples=1)
-    snapshot_c = _snapshot(tx=9.0, max_samples=1)
-    snapshot_d = _snapshot(tx=12.0, max_samples=1)
-    _prime_camera_pipeline_session(harness, snapshot_a)
-    original_publish = harness.slot.publish
-
-    def _record_ordered_publication(frame: FrameState) -> FrameState:
-        if frame.status == FRAME_STATUS_FRAME and frame.snapshot_key == snapshot_a.key:
-            client.async_events.append(("publish_a", 0, None))
-        return original_publish(frame)
-
-    harness.slot.publish = _record_ordered_publication
-
-    with _running(harness.loop):
-        harness.mailbox.write(snapshot_a)
-        assert client.read_started.wait(WAIT_S)
-        harness.mailbox.write(snapshot_b)
-        assert _wait_until(
-            lambda: harness.loop.diagnostics()["render_pipeline"][
-                "camera_successor_submissions"
-            ]
-            >= 1
-        )
-        # B is rendered while A owns the only native read, but B's read has
-        # not begun and A is still nonterminal.
-        assert ("submit", 2, 5.0) in client.async_events
-        assert not any(
-            event[0] == "begin" and event[1] == 2
-            for event in client.async_events
-        )
-        assert not any(
-            event[0] == "complete" and event[1] == 1
-            for event in client.async_events
-        )
-        harness.mailbox.write(snapshot_c)
-        assert _wait_until(
-            lambda: ("submit", 3, 9.0) in client.async_events
-        )
-        pipeline = harness.loop.diagnostics()["render_pipeline"]
-        assert pipeline["queued_camera_successor_count"] == 2
-        harness.mailbox.write(snapshot_d)
-        assert _wait_until(
-            lambda: harness.loop._deferred_snapshot is snapshot_d
-        )
-        # A owns the read; B/C own the two prepared slots; D is data-only.
-        assert [event[0] for event in client.async_events].count("submit") == 3
-        client.release_read.set()
-        assert _wait_until(lambda: len(harness.slot.frames()) >= 4)
-
-    assert [frame.snapshot_key for frame in harness.slot.frames()[:4]] == [
-        snapshot_a.key,
-        snapshot_b.key,
-        snapshot_c.key,
-        snapshot_d.key,
-    ]
-    assert [
-        event for event in client.async_events if event[0] == "submit"
-    ][:4] == [
-        ("submit", 1, 2.0),
-        ("submit", 2, 5.0),
-        ("submit", 3, 9.0),
-        ("submit", 4, 12.0),
-    ]
-    events = client.async_events
-    assert events.index(("submit", 2, 5.0)) < events.index(
-        ("complete", 1, 2.0)
-    )
-    assert events.index(("submit", 3, 9.0)) < events.index(
-        ("complete", 1, 2.0)
-    )
-    assert events.index(("complete", 1, 2.0)) < events.index(
-        ("begin", 2, 5.0)
-    )
-    assert events.index(("begin", 2, 5.0)) < events.index(
-        ("submit", 4, 12.0)
-    )
-    assert events.index(("submit", 4, 12.0)) < events.index(
-        ("publish_a", 0, None)
-    )
-    assert events.index(("submit", 4, 12.0)) < events.index(
-        ("complete", 2, 5.0)
-    )
-    pipeline = harness.loop.diagnostics()["render_pipeline"]
-    assert pipeline["peak_active_reads"] == 1
-    assert pipeline["queued_camera_successor_count"] == 0
-    assert pipeline["peak_queued_camera_successors"] == 2
-    assert pipeline["peak_deferred_snapshots"] == 1
-    assert client.peak_pending_tickets == 3
-
-
-def test_two_successor_capacity_retains_only_latest_deferred_camera(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    client = _AsyncClient()
-    client.release_read = threading.Event()
-    client.pending_polls = 0
-    harness = _Harness(monkeypatch, tmp_path, client=client)
-    snapshot_a = _snapshot(tx=2.0, max_samples=1)
-    snapshot_b = _snapshot(tx=5.0, max_samples=1)
-    snapshot_c = _snapshot(tx=9.0, max_samples=1)
-    snapshot_d = _snapshot(tx=12.0, max_samples=1)
-    snapshot_e = _snapshot(tx=15.0, max_samples=1)
-    _prime_camera_pipeline_session(harness, snapshot_a)
-
-    with _running(harness.loop):
-        harness.mailbox.write(snapshot_a)
-        assert client.read_started.wait(WAIT_S)
-        harness.mailbox.write(snapshot_b)
-        assert _wait_until(lambda: ("submit", 2, 5.0) in client.async_events)
-        harness.mailbox.write(snapshot_c)
-        assert _wait_until(lambda: ("submit", 3, 9.0) in client.async_events)
-        harness.mailbox.write(snapshot_d)
-        assert _wait_until(
-            lambda: harness.loop._deferred_snapshot is snapshot_d
-        )
-        harness.mailbox.write(snapshot_e)
-        assert _wait_until(
-            lambda: harness.loop._deferred_snapshot is snapshot_e
-        )
-        assert [event[0] for event in client.async_events].count("submit") == 3
-        client.release_read.set()
-        assert _wait_until(lambda: len(harness.slot.frames()) >= 4)
-
-    assert [frame.snapshot_key for frame in harness.slot.frames()[:4]] == [
-        snapshot_a.key,
-        snapshot_b.key,
-        snapshot_c.key,
-        snapshot_e.key,
-    ]
-    submitted_cameras = [
-        event[2] for event in client.async_events if event[0] == "submit"
-    ]
-    assert submitted_cameras[:4] == [2.0, 5.0, 9.0, 15.0]
-    assert 12.0 not in submitted_cameras
-    pipeline = harness.loop.diagnostics()["render_pipeline"]
-    assert pipeline["peak_queued_camera_successors"] == 2
-    assert pipeline["peak_deferred_snapshots"] == 1
-    assert pipeline["deferred_snapshot_replacements"] >= 1
-
-
-def test_prefetched_head_keeps_two_tail_slots_and_latest_post_prefetch_view(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    client = _AsyncClient()
-    client.release_read = threading.Event()
-    client.pending_polls = 0
-    client.blocked_tickets.add(2)
-    harness = _Harness(monkeypatch, tmp_path, client=client)
-    snapshots = [
-        _snapshot(tx=translation, max_samples=1)
-        for translation in (2.0, 5.0, 9.0, 12.0, 15.0, 18.0)
-    ]
-    snapshot_a, snapshot_b, snapshot_c, snapshot_d, snapshot_e, snapshot_f = (
-        snapshots
-    )
-    _prime_camera_pipeline_session(harness, snapshot_a)
-
-    with _running(harness.loop):
-        harness.mailbox.write(snapshot_a)
-        assert client.read_started.wait(WAIT_S)
-        harness.mailbox.write(snapshot_b)
-        assert _wait_until(lambda: ("submit", 2, 5.0) in client.async_events)
-        harness.mailbox.write(snapshot_c)
-        assert _wait_until(lambda: ("submit", 3, 9.0) in client.async_events)
-        harness.mailbox.write(snapshot_d)
-        assert _wait_until(lambda: harness.loop._deferred_snapshot is snapshot_d)
-        client.release_read.set()
-        assert _wait_until(lambda: ("begin", 2, 5.0) in client.async_events)
-        assert _wait_until(lambda: ("submit", 4, 12.0) in client.async_events)
-
-        harness.mailbox.write(snapshot_e)
-        assert _wait_until(lambda: harness.loop._deferred_snapshot is snapshot_e)
-        harness.mailbox.write(snapshot_f)
-        assert _wait_until(lambda: harness.loop._deferred_snapshot is snapshot_f)
-        pipeline = harness.loop.diagnostics()["render_pipeline"]
-        assert pipeline["prefetched_camera_successor"] is True
-        assert pipeline["queued_camera_successor_count"] == 2
-        assert len(client.pending_tickets) == 3
-
-        client.blocked_tickets.remove(2)
-        assert _wait_until(lambda: len(harness.slot.frames()) >= 5)
-
-    assert [frame.snapshot_key for frame in harness.slot.frames()[:5]] == [
-        snapshot_a.key,
-        snapshot_b.key,
-        snapshot_c.key,
-        snapshot_d.key,
-        snapshot_f.key,
-    ]
-    submitted_cameras = [
-        event[2] for event in client.async_events if event[0] == "submit"
-    ]
-    assert submitted_cameras[:5] == [2.0, 5.0, 9.0, 12.0, 18.0]
-    assert 15.0 not in submitted_cameras
-    assert client.peak_pending_tickets == 3
-    assert client.peak_active_read_tickets == 1
-    pipeline = harness.loop.diagnostics()["render_pipeline"]
-    assert pipeline["peak_queued_camera_successors"] == 2
-    assert pipeline["deferred_snapshot_replacements"] >= 1
-
-
-def test_dynamic_second_pane_waits_for_prefetched_read_reservation(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    monkeypatch.setenv(controller_module.RPC_THREAD_GUARD_ENV, "1")
-    client = _AsyncClient()
-    client.release_read = threading.Event()
-    client.pending_polls = 0
-    client.blocked_tickets.add(2)
-    harness = _Harness(monkeypatch, tmp_path, client=client)
-    snapshot_a = _snapshot(tx=2.0, max_samples=1)
-    snapshot_b = _snapshot(tx=5.0, max_samples=1)
-    snapshot_c = _snapshot(tx=9.0, max_samples=1)
-    snapshot_d = _snapshot(tx=12.0, max_samples=1)
-    snapshot_other = _snapshot(tx=21.0, max_samples=1)
-    _prime_camera_pipeline_session(harness, snapshot_a)
-    second_mailbox = _RecordingMailbox()
-    second_slot = _RecordingSlot()
-    second_loop = LatestViewRenderLoop(
-        mailbox=second_mailbox,
-        frame_slot=second_slot,
-        controller=harness.controller,
-        scheduler=harness.scheduler,
-        request_for_snapshot=lambda snapshot: viewport_handoff.request_from_snapshot(
-            harness.base_request, snapshot
-        ),
-        owns_scheduler=False,
-    )
-
-    with _running(harness.loop):
-        harness.mailbox.write(snapshot_a)
-        assert client.read_started.wait(WAIT_S)
-        harness.mailbox.write(snapshot_b)
-        assert _wait_until(lambda: ("submit", 2, 5.0) in client.async_events)
-        harness.mailbox.write(snapshot_c)
-        assert _wait_until(lambda: ("submit", 3, 9.0) in client.async_events)
-        harness.mailbox.write(snapshot_d)
-        assert _wait_until(lambda: harness.loop._deferred_snapshot is snapshot_d)
-        client.release_read.set()
-        assert _wait_until(lambda: ("begin", 2, 5.0) in client.async_events)
-        assert _wait_until(lambda: ("submit", 4, 12.0) in client.async_events)
-        assert _wait_until(
-            lambda: harness.controller._prefetched_read_reservation
-            == id(harness.loop)
-        )
-        deletes_before_attach = client.deletes
-
-        with _running(second_loop):
-            assert _wait_until(harness.controller._has_shared_presentations)
-            assert harness.controller.diagnostics()["rpc_thread"] == {
-                "owning_thread_ident": 0,
-                "adopted": False,
-                "guard_active": False,
-            }
-            second_mailbox.write(snapshot_other)
-            assert _wait_until(
-                lambda: len(harness.controller._transport_waiters) >= 1
-            )
-            time.sleep(0.02)
-            assert second_slot.frames() == []
-            assert client.render_additional_samples == []
-            assert not any(
-                float(value.matrix[0][3]) == 21.0
-                for batch in client.transform_update_batches
-                for value in batch
-                if value.prim_path == "/World/Camera"
-            )
-
-            client.blocked_tickets.remove(2)
-            assert _wait_until(lambda: len(second_slot.frames()) >= 1)
-            assert _wait_until(
-                lambda: harness.controller._prefetched_read_reservation
-                is controller_module._PRESENTATION_UNSET
-            )
-
-    assert client.deletes == deletes_before_attach
-    assert not client.active_read_tickets
-    assert not any(
-        frame.status == FRAME_STATUS_FAILED
-        for frame in harness.slot.frames() + second_slot.frames()
-    )
-    assert harness.controller.would_replace(harness.base_request) != (
-        "render_operation_failed"
-    )
-
-
-def test_prefetch_begin_failure_publishes_predecessor_then_drains_fifo(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    client = _AsyncClient()
-    client.release_read = threading.Event()
-    client.pending_polls = 0
-    harness = _Harness(monkeypatch, tmp_path, client=client)
-    snapshot_a = _snapshot(tx=2.0, max_samples=1)
-    snapshot_b = _snapshot(tx=5.0, max_samples=1)
-    snapshot_c = _snapshot(tx=9.0, max_samples=1)
-    snapshot_d = _snapshot(tx=12.0, max_samples=1)
-    _prime_camera_pipeline_session(harness, snapshot_a)
-
-    with _running(harness.loop):
-        harness.mailbox.write(snapshot_a)
-        assert client.read_started.wait(WAIT_S)
-        harness.mailbox.write(snapshot_b)
-        assert _wait_until(
-            lambda: ("submit", 2, 5.0) in client.async_events
-        )
-        harness.mailbox.write(snapshot_c)
-        assert _wait_until(
-            lambda: ("submit", 3, 9.0) in client.async_events
-        )
-        harness.mailbox.write(snapshot_d)
-        assert _wait_until(
-            lambda: harness.loop._deferred_snapshot is snapshot_d
-        )
-        client.begin_failures_remaining = 1
-        client.release_read.set()
-        assert _wait_until(
-            lambda: any(
-                frame.status == FRAME_STATUS_FAILED
-                for frame in harness.slot.frames()
-            )
-        )
-        assert _wait_until(
-            lambda: harness.loop._snapshot_key == snapshot_d.key
-        )
-
-    events = client.async_events
-    assert events.index(("complete", 1, 2.0)) < events.index(
-        ("begin_failed", 2, 5.0)
-    )
-    assert ("begin", 2, 5.0) not in events
-    assert ("discard", 2, 5.0) in events
-    assert ("discard", 3, 9.0) in events
-    assert not any(event[0] == "submit" and event[2] == 12.0 for event in events)
-    assert not any(event[0] == "discard" and event[2] == 12.0 for event in events)
-    assert not client.pending_tickets
-    assert [frame.snapshot_key for frame in harness.slot.frames()[:2]] == [
-        snapshot_a.key,
-        snapshot_b.key,
-    ]
-    assert [frame.status for frame in harness.slot.frames()[:2]] == [
-        FRAME_STATUS_FRAME,
-        FRAME_STATUS_FAILED,
-    ]
-    pipeline = harness.loop.diagnostics()["render_pipeline"]
-    assert pipeline["active_read"] is False
-    assert pipeline["queued_camera_successor"] is False
-    assert pipeline["queued_camera_successor_count"] == 0
-    assert pipeline["camera_successor_discards"] == 1
-    assert pipeline["camera_successor_failures"] == 1
-    assert pipeline["retirement_recovery_unavailable"] is True
-
-
-def test_revision_change_discards_entire_successor_fifo_and_keeps_newest_view(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    client = _AsyncClient()
-    client.release_read = threading.Event()
-    harness = _Harness(monkeypatch, tmp_path, client=client)
-    snapshot_a = _snapshot(tx=2.0, max_samples=1)
-    snapshot_b = _snapshot(tx=5.0, max_samples=1)
-    snapshot_c = _snapshot(tx=9.0, max_samples=1)
-    snapshot_d = _snapshot(tx=12.0, max_samples=1)
-    _prime_camera_pipeline_session(harness, snapshot_a)
-
-    with _running(harness.loop):
-        harness.mailbox.write(snapshot_a)
-        assert client.read_started.wait(WAIT_S)
-        harness.mailbox.write(snapshot_b)
-        assert _wait_until(
-            lambda: ("submit", 2, 5.0) in client.async_events
-        )
-        harness.mailbox.write(snapshot_c)
-        assert _wait_until(
-            lambda: ("submit", 3, 9.0) in client.async_events
-        )
-        harness.mailbox.write(snapshot_d)
-        assert _wait_until(
-            lambda: harness.loop._deferred_snapshot is snapshot_d
-        )
-        harness.scheduler.note_applied_content()
-        client.release_read.set()
-        assert _wait_until(
-            lambda: [event[0] for event in client.async_events].count("discard")
-            >= 2
-        )
-        assert _wait_until(lambda: len(harness.slot.frames()) >= 2)
-
-    assert ("discard", 2, 5.0) in client.async_events
-    assert ("discard", 3, 9.0) in client.async_events
-    assert ("begin", 2, 5.0) not in client.async_events
-    assert ("begin", 3, 9.0) not in client.async_events
-    assert [frame.snapshot_key for frame in harness.slot.frames()[:2]] == [
-        snapshot_a.key,
-        snapshot_d.key,
-    ]
-    assert [frame.applied_revision for frame in harness.slot.frames()[:2]] == [
-        0,
-        1,
-    ]
-    assert [
-        event[2]
-        for event in client.async_events
-        if event[0] == "submit"
-    ][:4] == [2.0, 5.0, 9.0, 12.0]
-    pipeline = harness.loop.diagnostics()["render_pipeline"]
-    assert pipeline["queued_camera_successor_count"] == 0
-    assert pipeline["camera_successor_discards"] == 2
-
-
-def test_terminal_poll_failure_discards_fifo_and_preserves_newest_deferred_view(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    client = _AsyncClient()
-    client.release_read = threading.Event()
-    harness = _Harness(monkeypatch, tmp_path, client=client)
-    snapshot_a = _snapshot(tx=2.0, max_samples=1)
-    snapshot_b = _snapshot(tx=5.0, max_samples=1)
-    snapshot_c = _snapshot(tx=9.0, max_samples=1)
-    snapshot_d = _snapshot(tx=12.0, max_samples=1)
-    _prime_camera_pipeline_session(harness, snapshot_a)
-
-    with _running(harness.loop):
-        harness.mailbox.write(snapshot_a)
-        assert client.read_started.wait(WAIT_S)
-        harness.mailbox.write(snapshot_b)
-        assert _wait_until(lambda: ("submit", 2, 5.0) in client.async_events)
-        harness.mailbox.write(snapshot_c)
-        assert _wait_until(lambda: ("submit", 3, 9.0) in client.async_events)
-        harness.mailbox.write(snapshot_d)
-        assert _wait_until(
-            lambda: harness.loop._deferred_snapshot is snapshot_d
-        )
-        client.terminal_poll_failures_remaining = 1
-        assert _wait_until(
-            lambda: any(
-                frame.status == FRAME_STATUS_FAILED
-                for frame in harness.slot.frames()
-            )
-        )
-        assert _wait_until(
-            lambda: harness.loop._snapshot_key == snapshot_d.key
-        )
-
-    assert ("poll_failed", 1, 2.0) in client.async_events
-    assert ("discard", 2, 5.0) in client.async_events
-    assert ("discard", 3, 9.0) in client.async_events
-    assert not any(
-        event[0] == "submit" and event[2] == 12.0
-        for event in client.async_events
-    )
-    assert not client.pending_tickets
-    pipeline = harness.loop.diagnostics()["render_pipeline"]
-    assert pipeline["active_read"] is False
-    assert pipeline["queued_camera_successor_count"] == 0
-    assert pipeline["camera_successor_discards"] == 2
-    assert pipeline["retirement_recovery_unavailable"] is True
-
-
-def test_successor_submit_failure_is_fatal_and_never_retried_as_ineligible(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    client = _AsyncClient()
-    client.release_read = threading.Event()
-    harness = _Harness(monkeypatch, tmp_path, client=client)
-    snapshot_a = _snapshot(tx=2.0, max_samples=1)
-    snapshot_b = _snapshot(tx=5.0, max_samples=1)
-    _prime_camera_pipeline_session(harness, snapshot_a)
-
-    with _running(harness.loop):
-        harness.mailbox.write(snapshot_a)
-        assert client.read_started.wait(WAIT_S)
-        client.submit_failures_remaining = 1
-        harness.mailbox.write(snapshot_b)
-        assert _wait_until(
-            lambda: any(
-                frame.status == FRAME_STATUS_FAILED
-                for frame in harness.slot.frames()
-            )
-        )
-        assert _wait_until(
-            lambda: harness.loop._snapshot_key == snapshot_b.key
-        )
-
-    assert client.camera_translation == 5.0
-    assert [event for event in client.async_events if event[0] == "submit"] == [
-        ("submit", 1, 2.0)
-    ]
-    assert ("cancel", 1, 2.0) in client.async_events
-    assert ("delete", 0, 5.0) in client.async_events
-    assert client.async_events.index(("cancel", 1, 2.0)) < client.async_events.index(
-        ("delete", 0, 5.0)
-    )
-    # The first delete is the test's routed startup replacement; the second
-    # retires the ambiguous camera-successor session.
-    assert client.deletes == 2
-    assert client.closed == 1
-    assert harness.controller.would_replace(harness.base_request) == "no_active_session"
-    failed_frames = [
-        frame
-        for frame in harness.slot.frames()
-        if frame.status == FRAME_STATUS_FAILED
-    ]
-    assert len(failed_frames) == 1
-    assert failed_frames[0].snapshot_key == snapshot_a.key
-    assert "OvrtxSessionRetirementRequiredError" in failed_frames[0].detail
-    assert "No active OVRTX session" not in failed_frames[0].detail
-    pipeline = harness.loop.diagnostics()["render_pipeline"]
-    assert pipeline["camera_successor_failures"] == 1
-    assert pipeline["camera_successor_submissions"] == 0
-    assert pipeline["retirement_recovery_unavailable"] is True
-
-
-def test_ambiguous_successor_failure_recreates_session_and_renders_same_view(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    client = _AsyncClient()
-    client.release_read = threading.Event()
-    harness = _Harness(monkeypatch, tmp_path, client=client)
-    harness.loop = LatestViewRenderLoop(
-        mailbox=harness.mailbox,
-        frame_slot=harness.slot,
-        controller=harness.controller,
-        scheduler=harness.scheduler,
-        request_for_snapshot=lambda snapshot: viewport_handoff.request_from_snapshot(
-            harness.base_request, snapshot
-        ),
-        lifecycle=SessionLifecycleHooks(
-            ensure_session=lambda request: (
-                harness.controller.ensure(request),
-                harness.scheduler,
-            )[1],
-            replacement_reason=harness.controller.would_replace,
-            retry_allowed=lambda: True,
-        ),
-        owns_scheduler=False,
-    )
-    snapshot_a = _snapshot(tx=2.0, max_samples=1)
-    snapshot_b = _snapshot(tx=5.0, max_samples=1)
-    _prime_camera_pipeline_session(harness, snapshot_a)
-    starts_before_failure = client.starts
-
-    with _running(harness.loop):
-        harness.mailbox.write(snapshot_a)
-        assert client.read_started.wait(WAIT_S)
-        client.submit_failures_remaining = 1
-        client.delete_failures_remaining = 1
-        harness.mailbox.write(snapshot_b)
-        assert _wait_until(
-            lambda: any(
-                frame.status == FRAME_STATUS_FAILED
-                for frame in harness.slot.frames()
-            )
-        )
-        client.release_read.set()
-        assert _wait_until(
-            lambda: any(
-                frame.status == FRAME_STATUS_FRAME
-                and frame.snapshot_key == snapshot_b.key
-                for frame in harness.slot.frames()
-            )
-        ), harness.loop.diagnostics()["last_failure_detail"]
-
-    assert client.starts == starts_before_failure + 1
-    assert any(
-        event[0] == "submit" and event[2] == 5.0
-        for event in client.async_events
-    )
-    assert harness.loop.diagnostics()["session_replacements"] == 1
-
-
-def test_terminal_poll_failure_retries_retirement_without_new_input(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    client = _AsyncClient()
-    harness = _Harness(monkeypatch, tmp_path, client=client)
-    harness.loop = LatestViewRenderLoop(
-        mailbox=harness.mailbox,
-        frame_slot=harness.slot,
-        controller=harness.controller,
-        scheduler=harness.scheduler,
-        request_for_snapshot=lambda snapshot: viewport_handoff.request_from_snapshot(
-            harness.base_request, snapshot
-        ),
-        lifecycle=SessionLifecycleHooks(
-            ensure_session=lambda request: (
-                harness.controller.ensure(request),
-                harness.scheduler,
-            )[1],
-            replacement_reason=harness.controller.would_replace,
-            retry_allowed=lambda: True,
-        ),
-        owns_scheduler=False,
-    )
-    snapshot_a = _snapshot(tx=2.0, max_samples=1)
-    _prime_camera_pipeline_session(harness, snapshot_a)
-    starts_before_failure = client.starts
-    client.terminal_poll_failures_remaining = 1
-    client.delete_failures_remaining = 1
-
-    with _running(harness.loop):
-        harness.mailbox.write(snapshot_a)
-        assert _wait_until(
-            lambda: any(
-                frame.status == FRAME_STATUS_FAILED
-                for frame in harness.slot.frames()
-            )
-        )
-        assert harness.loop.diagnostics()["render_pipeline"]["active_read"] is False
-        assert _wait_until(
-            lambda: any(
-                frame.status == FRAME_STATUS_FRAME
-                and frame.snapshot_key == snapshot_a.key
-                for frame in harness.slot.frames()
-            )
-        ), harness.loop.diagnostics()["last_failure_detail"]
-
-    pipeline = harness.loop.diagnostics()["render_pipeline"]
-    assert pipeline["async_read_cancel_failures"] >= 2
-    assert pipeline["active_read"] is False
-    assert client.starts == starts_before_failure + 1
-    assert harness.loop.diagnostics()["session_replacements"] == 1
-
-
-def test_retirement_error_retires_origin_not_current_controller_provider(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    harness = _Harness(monkeypatch, tmp_path, client=_AsyncClient("origin"))
-    origin = harness.controller
-    replacement_client = _AsyncClient("replacement")
-    monkeypatch.setattr(
-        controller_module,
-        "_runtime_client_from_request",
-        lambda request: replacement_client,
-    )
-    replacement = controller_module.OvrtxSessionController()
-    replacement.ensure(harness.base_request)
-    assert replacement._session_revision == origin._session_revision
-    loop = LatestViewRenderLoop(
-        mailbox=harness.mailbox,
-        frame_slot=harness.slot,
-        controller_provider=lambda: replacement,
-        scheduler=harness.scheduler,
-        request_for_snapshot=lambda snapshot: viewport_handoff.request_from_snapshot(
-            harness.base_request, snapshot
-        ),
-    )
-    error = origin._render_retirement_error(
-        "render read poll",
-        RenderClientError("failed_for_test"),
-    )
-
-    loop._publish_failure(error, {})
-
-    assert harness.client.deletes == 1
-    assert replacement_client.deletes == 0
-    assert origin.would_replace(harness.base_request) == "no_active_session"
-    assert replacement.would_replace(harness.base_request) == ""
-    assert harness.slot.frames()[-1].status == FRAME_STATUS_FAILED
-
-
-def test_stop_cancels_active_read_and_discards_entire_prepared_fifo(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    client = _AsyncClient()
-    client.release_read = threading.Event()
-    harness = _Harness(monkeypatch, tmp_path, client=client)
-    snapshot_a = _snapshot(tx=2.0, max_samples=1)
-    snapshot_b = _snapshot(tx=5.0, max_samples=1)
-    snapshot_c = _snapshot(tx=9.0, max_samples=1)
-    snapshot_d = _snapshot(tx=12.0, max_samples=1)
-    _prime_camera_pipeline_session(harness, snapshot_a)
-
-    with _running(harness.loop):
-        harness.mailbox.write(snapshot_a)
-        assert client.read_started.wait(WAIT_S)
-        harness.mailbox.write(snapshot_b)
-        assert _wait_until(
-            lambda: ("submit", 2, 5.0) in client.async_events
-        )
-        harness.mailbox.write(snapshot_c)
-        assert _wait_until(
-            lambda: ("submit", 3, 9.0) in client.async_events
-        )
-        harness.mailbox.write(snapshot_d)
-        assert _wait_until(
-            lambda: harness.loop._deferred_snapshot is snapshot_d
-        )
-
-    assert ("cancel", 1, 2.0) in client.async_events
-    assert ("discard", 2, 5.0) in client.async_events
-    assert ("discard", 3, 9.0) in client.async_events
-    assert ("begin", 2, 5.0) not in client.async_events
-    assert not any(
-        event[0] == "submit" and event[2] == 12.0
-        for event in client.async_events
-    )
-    assert not client.pending_tickets
-    pipeline = harness.loop.diagnostics()["render_pipeline"]
-    assert pipeline["camera_successor_discards"] == 2
-    assert pipeline["queued_camera_successor"] is False
-    assert pipeline["queued_camera_successor_count"] == 0
-    assert pipeline["peak_queued_camera_successors"] == 2
-
-
-def test_stop_cancels_prefetched_head_and_discards_each_unstarted_tail_once(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    client = _AsyncClient()
-    client.release_read = threading.Event()
-    client.pending_polls = 0
-    client.blocked_tickets.add(2)
-    harness = _Harness(monkeypatch, tmp_path, client=client)
-    snapshot_a = _snapshot(tx=2.0, max_samples=1)
-    snapshot_b = _snapshot(tx=5.0, max_samples=1)
-    snapshot_c = _snapshot(tx=9.0, max_samples=1)
-    snapshot_d = _snapshot(tx=12.0, max_samples=1)
-    _prime_camera_pipeline_session(harness, snapshot_a)
-
-    with _running(harness.loop):
-        harness.mailbox.write(snapshot_a)
-        assert client.read_started.wait(WAIT_S)
-        harness.mailbox.write(snapshot_b)
-        assert _wait_until(lambda: ("submit", 2, 5.0) in client.async_events)
-        harness.mailbox.write(snapshot_c)
-        assert _wait_until(lambda: ("submit", 3, 9.0) in client.async_events)
-        harness.mailbox.write(snapshot_d)
-        assert _wait_until(lambda: harness.loop._deferred_snapshot is snapshot_d)
-        client.release_read.set()
-        assert _wait_until(lambda: ("begin", 2, 5.0) in client.async_events)
-        assert _wait_until(lambda: ("submit", 4, 12.0) in client.async_events)
-        assert _wait_until(lambda: len(harness.slot.frames()) >= 1)
-        pipeline = harness.loop.diagnostics()["render_pipeline"]
-        assert pipeline["prefetched_camera_successor"] is True
-        assert pipeline["queued_camera_successor_count"] == 2
-
-    assert client.async_events.count(("cancel", 2, 5.0)) == 1
-    assert client.async_events.count(("discard", 3, 9.0)) == 1
-    assert client.async_events.count(("discard", 4, 12.0)) == 1
-    assert ("begin", 3, 9.0) not in client.async_events
-    assert not client.pending_tickets
-    assert [frame.snapshot_key for frame in harness.slot.frames()] == [
-        snapshot_a.key
-    ]
-    pipeline = harness.loop.diagnostics()["render_pipeline"]
-    assert pipeline["active_read"] is False
-    assert pipeline["prefetched_camera_successor"] is False
-    assert pipeline["queued_camera_successor_count"] == 0
-    assert pipeline["async_read_cancels"] == 1
-    assert pipeline["camera_successor_discards"] == 2
-    assert pipeline["peak_active_reads"] == 1
-
-
-def test_live_prefetched_cancel_failure_retires_and_releases_reservation(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    client = _AsyncClient()
-    client.release_read = threading.Event()
-    client.pending_polls = 0
-    client.blocked_tickets.add(2)
-    harness = _Harness(monkeypatch, tmp_path, client=client)
-    snapshot_a = _snapshot(tx=2.0, max_samples=1)
-    snapshot_b = _snapshot(tx=5.0, max_samples=1)
-    snapshot_c = _snapshot(tx=9.0, max_samples=1)
-    snapshot_d = _snapshot(tx=12.0, max_samples=1)
-    _prime_camera_pipeline_session(harness, snapshot_a)
-    deletes_before_failure = client.deletes
-
-    with _running(harness.loop):
-        harness.mailbox.write(snapshot_a)
-        assert client.read_started.wait(WAIT_S)
-        harness.mailbox.write(snapshot_b)
-        assert _wait_until(lambda: ("submit", 2, 5.0) in client.async_events)
-        harness.mailbox.write(snapshot_c)
-        assert _wait_until(lambda: ("submit", 3, 9.0) in client.async_events)
-        harness.mailbox.write(snapshot_d)
-        assert _wait_until(lambda: harness.loop._deferred_snapshot is snapshot_d)
-        client.release_read.set()
-        assert _wait_until(lambda: ("begin", 2, 5.0) in client.async_events)
-        assert _wait_until(lambda: ("submit", 4, 12.0) in client.async_events)
-        client.cancel_failures_remaining = 10
-
-    assert client.async_events.count(("cancel_failed", 2, 5.0)) >= 3
-    assert ("cancel", 2, 5.0) not in client.async_events
-    assert client.deletes == deletes_before_failure + 1
-    assert not client.pending_tickets
-    assert not client.active_read_tickets
-    assert harness.controller._prefetched_read_reservation is (
-        controller_module._PRESENTATION_UNSET
-    )
-    assert harness.controller.would_replace(harness.base_request) == (
-        "no_active_session"
-    )
-    pipeline = harness.loop.diagnostics()["render_pipeline"]
-    assert pipeline["active_read"] is False
-    assert pipeline["prefetched_camera_successor"] is False
-    assert pipeline["async_read_cancel_failures"] >= 3
-
-
-def test_prefetched_poll_failure_discards_each_unstarted_tail_once(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    client = _AsyncClient()
-    client.release_read = threading.Event()
-    client.pending_polls = 0
-    client.blocked_tickets.add(2)
-    harness = _Harness(monkeypatch, tmp_path, client=client)
-    snapshot_a = _snapshot(tx=2.0, max_samples=1)
-    snapshot_b = _snapshot(tx=5.0, max_samples=1)
-    snapshot_c = _snapshot(tx=9.0, max_samples=1)
-    snapshot_d = _snapshot(tx=12.0, max_samples=1)
-    _prime_camera_pipeline_session(harness, snapshot_a)
-
-    with _running(harness.loop):
-        harness.mailbox.write(snapshot_a)
-        assert client.read_started.wait(WAIT_S)
-        harness.mailbox.write(snapshot_b)
-        assert _wait_until(lambda: ("submit", 2, 5.0) in client.async_events)
-        harness.mailbox.write(snapshot_c)
-        assert _wait_until(lambda: ("submit", 3, 9.0) in client.async_events)
-        harness.mailbox.write(snapshot_d)
-        assert _wait_until(lambda: harness.loop._deferred_snapshot is snapshot_d)
-        client.release_read.set()
-        assert _wait_until(lambda: ("begin", 2, 5.0) in client.async_events)
-        assert _wait_until(lambda: ("submit", 4, 12.0) in client.async_events)
-        assert _wait_until(lambda: len(harness.slot.frames()) >= 1)
-        client.terminal_poll_failures_remaining = 1
-        assert _wait_until(
-            lambda: any(
-                frame.status == FRAME_STATUS_FAILED
-                for frame in harness.slot.frames()
-            )
-        )
-
-    assert client.async_events.count(("poll_failed", 2, 5.0)) == 1
-    assert client.async_events.count(("discard", 3, 9.0)) == 1
-    assert client.async_events.count(("discard", 4, 12.0)) == 1
-    assert ("begin", 3, 9.0) not in client.async_events
-    assert not client.pending_tickets
-    assert [frame.snapshot_key for frame in harness.slot.frames()[:2]] == [
-        snapshot_a.key,
-        snapshot_b.key,
-    ]
-    assert [frame.status for frame in harness.slot.frames()[:2]] == [
-        FRAME_STATUS_FRAME,
-        FRAME_STATUS_FAILED,
-    ]
-    pipeline = harness.loop.diagnostics()["render_pipeline"]
-    assert pipeline["active_read"] is False
-    assert pipeline["prefetched_camera_successor"] is False
-    assert pipeline["queued_camera_successor_count"] == 0
-    assert pipeline["camera_successor_discards"] == 2
-    assert pipeline["camera_successor_failures"] == 1
-    assert pipeline["peak_active_reads"] == 1
-
-
-def test_prefetch_replenish_failure_cancels_head_and_preserves_latest_view(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    client = _AsyncClient()
-    client.release_read = threading.Event()
-    client.pending_polls = 0
-    harness = _Harness(monkeypatch, tmp_path, client=client)
-    snapshot_a = _snapshot(tx=2.0, max_samples=1)
-    snapshot_b = _snapshot(tx=5.0, max_samples=1)
-    snapshot_c = _snapshot(tx=9.0, max_samples=1)
-    snapshot_d = _snapshot(tx=12.0, max_samples=1)
-    _prime_camera_pipeline_session(harness, snapshot_a)
-
-    with _running(harness.loop):
-        harness.mailbox.write(snapshot_a)
-        assert client.read_started.wait(WAIT_S)
-        harness.mailbox.write(snapshot_b)
-        assert _wait_until(lambda: ("submit", 2, 5.0) in client.async_events)
-        harness.mailbox.write(snapshot_c)
-        assert _wait_until(lambda: ("submit", 3, 9.0) in client.async_events)
-        harness.mailbox.write(snapshot_d)
-        assert _wait_until(lambda: harness.loop._deferred_snapshot is snapshot_d)
-        client.submit_failures_remaining = 1
-        client.release_read.set()
-        assert _wait_until(
-            lambda: any(
-                frame.status == FRAME_STATUS_FAILED
-                for frame in harness.slot.frames()
-            )
-        )
-        assert _wait_until(lambda: harness.loop._snapshot_key == snapshot_d.key)
-
-    events = client.async_events
-    assert events.index(("complete", 1, 2.0)) < events.index(("begin", 2, 5.0))
-    assert events.index(("begin", 2, 5.0)) < events.index(("cancel", 2, 5.0))
-    assert events.count(("cancel", 2, 5.0)) == 1
-    assert events.count(("discard", 3, 9.0)) == 1
-    assert not any(event[0] == "submit" and event[2] == 12.0 for event in events)
-    assert not client.pending_tickets
-    assert [frame.snapshot_key for frame in harness.slot.frames()[:2]] == [
-        snapshot_a.key,
-        snapshot_b.key,
-    ]
-    assert [frame.status for frame in harness.slot.frames()[:2]] == [
-        FRAME_STATUS_FRAME,
-        FRAME_STATUS_FAILED,
-    ]
-    pipeline = harness.loop.diagnostics()["render_pipeline"]
-    assert pipeline["active_read"] is False
-    assert pipeline["prefetched_camera_successor"] is False
-    assert pipeline["queued_camera_successor_count"] == 0
-    assert pipeline["async_read_cancels"] == 1
-    assert pipeline["camera_successor_discards"] == 1
-    assert pipeline["camera_successor_failures"] == 1
-
-
-def test_exclusive_job_cancels_prefetched_head_before_running(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    client = _AsyncClient()
-    client.release_read = threading.Event()
-    client.pending_polls = 0
-    client.blocked_tickets.add(2)
-    harness = _Harness(monkeypatch, tmp_path, client=client)
-    snapshot_a = _snapshot(tx=2.0, max_samples=1)
-    snapshot_b = _snapshot(tx=5.0, max_samples=1)
-    snapshot_c = _snapshot(tx=9.0, max_samples=1)
-    snapshot_d = _snapshot(tx=12.0, max_samples=1)
-    _prime_camera_pipeline_session(harness, snapshot_a)
-    deletes_before_job = client.deletes
-
-    def _job() -> tuple[int, ...]:
-        pending = tuple(sorted(client.pending_tickets))
-        client.async_events.append(("prefetched_job", 0, None))
-        return pending
-
-    with _running(harness.loop):
-        harness.mailbox.write(snapshot_a)
-        assert client.read_started.wait(WAIT_S)
-        harness.mailbox.write(snapshot_b)
-        assert _wait_until(lambda: ("submit", 2, 5.0) in client.async_events)
-        harness.mailbox.write(snapshot_c)
-        assert _wait_until(lambda: ("submit", 3, 9.0) in client.async_events)
-        harness.mailbox.write(snapshot_d)
-        assert _wait_until(lambda: harness.loop._deferred_snapshot is snapshot_d)
-        client.release_read.set()
-        assert _wait_until(lambda: ("begin", 2, 5.0) in client.async_events)
-        assert _wait_until(lambda: ("submit", 4, 12.0) in client.async_events)
-
-        future = harness.loop.call(_job, label="prefetched-cleanup")
-        assert future.result(WAIT_S) == ()
-        assert _wait_until(
-            lambda: any(
-                frame.snapshot_key == snapshot_d.key
-                and frame.status == FRAME_STATUS_FRAME
-                for frame in harness.slot.frames()
-            )
-        )
-
-    events = client.async_events
-    assert events.index(("cancel", 2, 5.0)) < events.index(("discard", 3, 9.0))
-    assert events.index(("discard", 3, 9.0)) < events.index(
-        ("prefetched_job", 0, None)
-    )
-    assert events.index(("discard", 4, 12.0)) < events.index(
-        ("prefetched_job", 0, None)
-    )
-    assert events.index(("prefetched_job", 0, None)) < events.index(
-        ("submit", 5, 12.0)
-    )
-    assert client.deletes == deletes_before_job
-    assert harness.controller._prefetched_read_reservation is (
-        controller_module._PRESENTATION_UNSET
-    )
-    assert not client.pending_tickets
-
-
-def test_controller_wide_exclusive_cancels_blocked_prefetched_read(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    client = _AsyncClient()
-    client.release_read = threading.Event()
-    client.pending_polls = 0
-    client.blocked_tickets.add(2)
-    harness = _Harness(monkeypatch, tmp_path, client=client)
-    snapshot_a = _snapshot(tx=2.0, max_samples=1)
-    snapshot_b = _snapshot(tx=5.0, max_samples=1)
-    snapshot_c = _snapshot(tx=9.0, max_samples=1)
-    snapshot_d = _snapshot(tx=12.0, max_samples=1)
-    _prime_camera_pipeline_session(harness, snapshot_a)
-    deletes_before_exclusive = client.deletes
-    exclusive_entered = threading.Event()
-    release_exclusive = threading.Event()
-
-    def _foreign_exclusive() -> None:
-        harness.controller._request_exclusive_transport()
-        try:
-            with harness.controller._exclusive_transport():
-                client.async_events.append(("foreign_exclusive", 0, None))
-                exclusive_entered.set()
-                release_exclusive.wait(WAIT_S)
-        finally:
-            harness.controller._release_exclusive_transport()
-
-    with _running(harness.loop):
-        harness.mailbox.write(snapshot_a)
-        assert client.read_started.wait(WAIT_S)
-        harness.mailbox.write(snapshot_b)
-        assert _wait_until(lambda: ("submit", 2, 5.0) in client.async_events)
-        harness.mailbox.write(snapshot_c)
-        assert _wait_until(lambda: ("submit", 3, 9.0) in client.async_events)
-        harness.mailbox.write(snapshot_d)
-        assert _wait_until(lambda: harness.loop._deferred_snapshot is snapshot_d)
-        client.release_read.set()
-        assert _wait_until(lambda: ("begin", 2, 5.0) in client.async_events)
-        assert _wait_until(lambda: ("submit", 4, 12.0) in client.async_events)
-
-        exclusive = threading.Thread(
-            target=_foreign_exclusive,
-            name="foreign-controller-exclusive",
-            daemon=True,
-        )
-        exclusive.start()
-        try:
-            assert exclusive_entered.wait(WAIT_S)
-            assert 2 in client.blocked_tickets
-            assert not client.active_read_tickets
-            assert harness.controller._prefetched_read_reservation is (
-                controller_module._PRESENTATION_UNSET
-            )
-        finally:
-            release_exclusive.set()
-            exclusive.join(WAIT_S)
-        assert not exclusive.is_alive()
-        assert _wait_until(
-            lambda: not harness.controller._has_pending_exclusive_transport()
-        )
-
-    events = client.async_events
-    assert events.index(("cancel", 2, 5.0)) < events.index(
-        ("foreign_exclusive", 0, None)
-    )
-    assert client.deletes == deletes_before_exclusive
-    assert harness.controller.would_replace(harness.base_request) != (
-        "render_operation_failed"
-    )
-
-
-def test_revision_change_while_prefetched_discards_tail_and_renders_latest(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    client = _AsyncClient()
-    client.release_read = threading.Event()
-    client.pending_polls = 0
-    client.blocked_tickets.add(2)
-    harness = _Harness(monkeypatch, tmp_path, client=client)
-    snapshot_a = _snapshot(tx=2.0, max_samples=1)
-    snapshot_b = _snapshot(tx=5.0, max_samples=1)
-    snapshot_c = _snapshot(tx=9.0, max_samples=1)
-    snapshot_d = _snapshot(tx=12.0, max_samples=1)
-    _prime_camera_pipeline_session(harness, snapshot_a)
-
-    with _running(harness.loop):
-        harness.mailbox.write(snapshot_a)
-        assert client.read_started.wait(WAIT_S)
-        harness.mailbox.write(snapshot_b)
-        assert _wait_until(lambda: ("submit", 2, 5.0) in client.async_events)
-        harness.mailbox.write(snapshot_c)
-        assert _wait_until(lambda: ("submit", 3, 9.0) in client.async_events)
-        harness.mailbox.write(snapshot_d)
-        assert _wait_until(lambda: harness.loop._deferred_snapshot is snapshot_d)
-        client.release_read.set()
-        assert _wait_until(lambda: ("begin", 2, 5.0) in client.async_events)
-        assert _wait_until(lambda: ("submit", 4, 12.0) in client.async_events)
-
-        harness.scheduler.note_applied_content()
-        client.blocked_tickets.remove(2)
-        assert _wait_until(lambda: len(harness.slot.frames()) >= 3)
-
-    assert [frame.snapshot_key for frame in harness.slot.frames()[:3]] == [
-        snapshot_a.key,
-        snapshot_b.key,
-        snapshot_d.key,
-    ]
-    assert [frame.applied_revision for frame in harness.slot.frames()[:3]] == [
-        0,
-        0,
-        1,
-    ]
-    events = client.async_events
-    assert events.count(("discard", 3, 9.0)) == 1
-    assert events.count(("discard", 4, 12.0)) == 1
-    assert ("begin", 3, 9.0) not in events
-    assert ("begin", 4, 12.0) not in events
-    assert ("submit", 5, 12.0) in events
-    assert harness.controller._prefetched_read_reservation is (
-        controller_module._PRESENTATION_UNSET
-    )
-    assert harness.controller.would_replace(harness.base_request) != (
-        "render_operation_failed"
-    )
-
-
-def test_exclusive_job_discards_prepared_fifo_before_running_and_resumes_newest(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    client = _AsyncClient()
-    client.release_read = threading.Event()
-    client.pending_polls = 0
-    harness = _Harness(monkeypatch, tmp_path, client=client)
-    snapshot_a = _snapshot(tx=2.0, max_samples=1)
-    snapshot_b = _snapshot(tx=5.0, max_samples=1)
-    snapshot_c = _snapshot(tx=9.0, max_samples=1)
-    snapshot_d = _snapshot(tx=12.0, max_samples=1)
-    _prime_camera_pipeline_session(harness, snapshot_a)
-
-    def job() -> tuple[int, ...]:
-        pending = tuple(sorted(client.pending_tickets))
-        client.async_events.append(("job", 0, None))
-        client.release_read.set()
-        return pending
-
-    with _running(harness.loop):
-        harness.mailbox.write(snapshot_a)
-        assert client.read_started.wait(WAIT_S)
-        harness.mailbox.write(snapshot_b)
-        assert _wait_until(lambda: ("submit", 2, 5.0) in client.async_events)
-        harness.mailbox.write(snapshot_c)
-        assert _wait_until(lambda: ("submit", 3, 9.0) in client.async_events)
-        harness.mailbox.write(snapshot_d)
-        assert _wait_until(
-            lambda: harness.loop._deferred_snapshot is snapshot_d
-        )
-        future = harness.loop.call(job, label="pipeline-cleanup")
-        assert future.result(WAIT_S) == ()
-        assert _wait_until(lambda: len(harness.slot.frames()) >= 1)
-
-    events = client.async_events
-    assert events.index(("cancel", 1, 2.0)) < events.index(("job", 0, None))
-    assert events.index(("discard", 2, 5.0)) < events.index(("job", 0, None))
-    assert events.index(("discard", 3, 9.0)) < events.index(("job", 0, None))
-    assert events.index(("job", 0, None)) < events.index(("submit", 4, 12.0))
-    assert [frame.snapshot_key for frame in harness.slot.frames()[:1]] == [
-        snapshot_d.key
-    ]
-    pipeline = harness.loop.diagnostics()["render_pipeline"]
-    assert pipeline["queued_camera_successor_count"] == 0
-    assert pipeline["camera_successor_discards"] == 2
-    assert harness.loop.diagnostics()["exclusive_jobs"] == 1
-
-
-def test_async_environment_switch_uses_synchronous_render_fallback(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    monkeypatch.setenv(ASYNC_RENDER_READ_ENV, "0")
-    client = _AsyncClient()
-    harness = _Harness(monkeypatch, tmp_path, client=client)
-
-    with _running(harness.loop):
-        harness.mailbox.write(_snapshot(tx=2.0, max_samples=2))
-        assert _wait_until(lambda: len(harness.slot.frames()) >= 2)
-
-    assert client.async_events == []
-    assert client.render_additional_samples == [1, 1]
-    pipeline = harness.loop.diagnostics()["render_pipeline"]
-    assert pipeline["async_enabled"] is False
-    assert pipeline["synchronous_acquisitions"] == 2
-    assert pipeline["last_mode"] == "synchronous"
-
-
-def test_async_read_falls_back_while_controller_is_shared_by_two_panes(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    client = _AsyncClient()
-    harness = _Harness(monkeypatch, tmp_path, client=client)
-    harness.controller._allow_serialized_threads()
-    second_mailbox = _RecordingMailbox()
-    second_slot = _RecordingSlot()
-    second_loop = LatestViewRenderLoop(
-        mailbox=second_mailbox,
-        frame_slot=second_slot,
-        controller=harness.controller,
-        scheduler=harness.scheduler,
-        request_for_snapshot=lambda snapshot: viewport_handoff.request_from_snapshot(
-            harness.base_request, snapshot
-        ),
-        owns_scheduler=False,
-    )
-
-    with _running(harness.loop), _running(second_loop):
-        assert _wait_until(harness.controller._has_shared_presentations)
-        harness.mailbox.write(_snapshot(tx=2.0, max_samples=1))
-        second_mailbox.write(_snapshot(tx=9.0, max_samples=1))
-        assert _wait_until(lambda: len(harness.slot.frames()) >= 1)
-        assert _wait_until(lambda: len(second_slot.frames()) >= 1)
-
-    assert client.async_events == []
-    assert client.render_additional_samples == [1, 1]
-    assert harness.loop.diagnostics()["render_pipeline"]["last_mode"] == (
-        "synchronous"
-    )
-    assert second_loop.diagnostics()["render_pipeline"]["last_mode"] == (
-        "synchronous"
-    )
-
-
-def test_async_render_read_environment_parser() -> None:
-    assert _async_render_read_enabled({}) is True
-    assert _async_render_read_enabled({ASYNC_RENDER_READ_ENV: "invalid"}) is True
-    assert _async_render_read_enabled({ASYNC_RENDER_READ_ENV: "false"}) is False
-    assert _async_render_read_enabled({ASYNC_RENDER_READ_ENV: "yes"}) is True
-
-
-def test_stop_cancels_active_async_read_without_publication(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    client = _AsyncClient()
-    client.release_read = threading.Event()
-    harness = _Harness(monkeypatch, tmp_path, client=client)
-    thread = threading.Thread(
-        target=harness.loop.run,
-        name="latest-view-async-stop-test",
-        daemon=True,
-    )
-    thread.start()
-    harness.mailbox.write(_snapshot(tx=2.0, max_samples=0))
-    assert client.read_started.wait(WAIT_S)
-    harness.loop.request_stop()
-    thread.join(WAIT_S)
-
-    assert not thread.is_alive()
-    assert client.async_events == [
-        ("submit", 1, 2.0),
-        ("begin", 1, 2.0),
-        ("cancel", 1, 2.0),
-    ]
-    assert harness.slot.frames() == []
-    pipeline = harness.loop.diagnostics()["render_pipeline"]
-    assert pipeline["active_read"] is False
-    assert pipeline["async_read_cancels"] == 1
 
 
 def test_no_sleep_between_publication_and_next_take_while_refining(
@@ -2370,7 +1380,8 @@ def test_shared_continuous_presentations_use_one_session_output_shape(
             harness.mailbox.write(
                 _snapshot(tx=3.0, width=800, height=600, max_samples=0)
             )
-        assert _wait_until(lambda: harness.client.starts == shared_starts + 1)
+        assert _wait_until(lambda: harness.controller._spec.width == 800)
+        assert harness.client.starts == shared_starts
         restored_spec = harness.controller._spec
         assert restored_spec.width == 800
         assert restored_spec.height == 600
@@ -2675,89 +1686,111 @@ def test_scheduler_due_work_parks_until_publication_wake(
 # --- Failure publication -----------------------------------------------------
 
 
-def test_render_failure_retires_once_then_waits_for_fresh_input(
+def test_render_failure_publishes_failed_state_and_loop_survives(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     harness = _Harness(monkeypatch, tmp_path)
     harness.client.fail_render = True
-    harness.loop = LatestViewRenderLoop(
-        mailbox=harness.mailbox,
-        frame_slot=harness.slot,
-        controller=harness.controller,
-        scheduler=harness.scheduler,
-        request_for_snapshot=lambda snapshot: viewport_handoff.request_from_snapshot(
-            harness.base_request, snapshot
-        ),
-        lifecycle=SessionLifecycleHooks(
-            ensure_session=lambda request: (
-                harness.controller.ensure(request),
-                harness.scheduler,
-            )[1],
-            replacement_reason=harness.controller.would_replace,
-            retry_allowed=lambda: True,
-        ),
-        owns_scheduler=False,
-    )
 
     with _running(harness.loop) as thread:
         harness.mailbox.write(_snapshot(tx=2.0, max_samples=0))
-        assert _wait_until(
-            lambda: len(
-                [
-                    frame
-                    for frame in harness.slot.frames()
-                    if frame.status == FRAME_STATUS_FAILED
-                ]
-            )
-            >= 2
-        )
+        assert _wait_until(lambda: len(harness.slot.frames()) >= 1)
         failure = harness.slot.frames()[0]
         assert failure.status == FRAME_STATUS_FAILED
-        assert "OvrtxSessionRetirementRequiredError" in failure.detail
+        assert "RenderClientError" in failure.detail
         assert "render failed" in failure.detail
         assert thread.is_alive()
-        # One automatic replacement is allowed. A persistent failure then
-        # parks instead of restarting the session in a busy loop.
+        # A failed view parks (no busy retry of the same failure).
         assert _wait_until(lambda: harness.mailbox.park_count() >= 2)
         renders = harness.client.render_calls
         time.sleep(0.1)
         assert harness.client.render_calls == renders
-        assert harness.loop.diagnostics()["render_pipeline"][
-            "retirement_recovery_wait_for_input"
-        ] is True
-        # Failure-driven redraw feedback produces an identical snapshot; it
-        # must not reset the bounded recovery budget.
-        snapshots_before_duplicate = harness.loop.diagnostics()["snapshots_taken"]
-        harness.mailbox.write(_snapshot(tx=2.0, max_samples=0))
-        assert _wait_until(
-            lambda: harness.loop.diagnostics()["snapshots_taken"]
-            > snapshots_before_duplicate
-        )
-        time.sleep(0.1)
-        assert harness.client.render_calls == renders
-        # A semantically changed view is genuine fresh input and may retry.
+        # Fresh input retries: same view identity is enough.
         harness.client.fail_render = False
-        harness.mailbox.write(_snapshot(tx=3.0, max_samples=0))
-        assert _wait_until(
-            lambda: len(
-                [
-                    frame
-                    for frame in harness.slot.frames()
-                    if frame.status == FRAME_STATUS_FRAME
-                ]
-            )
-            >= 4
-        )
+        harness.mailbox.write(_snapshot(tx=2.0, max_samples=0))
+        assert _wait_until(lambda: len(harness.slot.frames()) >= 5)
 
     frames = harness.slot.frames()
-    rendered = [frame for frame in frames if frame.status == FRAME_STATUS_FRAME]
-    assert [frame.completed_samples for frame in rendered[:4]] == [1, 2, 3, 4]
+    assert [frame.completed_samples for frame in frames[1:5]] == [1, 2, 3, 4]
+    assert all(frame.status == FRAME_STATUS_FRAME for frame in frames[1:5])
     diagnostics = harness.loop.diagnostics()
-    assert diagnostics["failures"] == 2
+    assert diagnostics["failures"] == 1
     assert diagnostics["failed_state"] is False
-    assert diagnostics["render_pipeline"][
-        "retirement_recovery_wait_for_input"
-    ] is False
+
+
+def test_persistent_failure_with_snapshot_noise_has_bounded_rpcs_and_publications(tmp_path, monkeypatch):
+    harness = _Harness(monkeypatch, tmp_path)
+    harness.client.fail_render = True
+    clock = [100.0]
+    monkeypatch.setattr(time, "monotonic", lambda: clock[0])
+    for _ in range(1000):
+        harness.loop._adopt_snapshot(_snapshot(tx=2.0, max_samples=1))
+        harness.loop._iterate()
+        clock[0] += 0.01
+    assert harness.client.render_calls == 3
+    failures = [f for f in harness.slot.frames() if f.status == FRAME_STATUS_FAILED]
+    assert len(failures) == 3
+    assert all("render failed" in f.detail for f in failures)
+    assert not harness.loop._retry_allowed()
+    harness.client.fail_render = False
+    harness.loop._adopt_snapshot(_snapshot(tx=3.0, max_samples=1))
+    harness.loop._iterate()
+    assert harness.slot.frames()[-1].status == FRAME_STATUS_FRAME
+    harness.controller.shutdown()
+
+
+def test_camera_validation_runs_before_scheduler_and_transform_writes(tmp_path, monkeypatch):
+    harness = _Harness(monkeypatch, tmp_path)
+    def invalid(*args):
+        raise ValueError("injected complete camera validation failure")
+    harness.client.validate_attribute_values = invalid
+    harness.loop._adopt_snapshot(_snapshot(tx=2.0, max_samples=1))
+    harness.loop._iterate()
+    assert harness.client.transform_update_batches == []
+    assert harness.client.render_calls == 0
+    assert "injected complete camera validation failure" in harness.slot.frames()[-1].detail
+    harness.controller.shutdown()
+
+
+@pytest.mark.parametrize("fault", ["prefix", "ambiguous"])
+def test_one_explicit_recovery_merges_newer_camera_and_queued_edits(tmp_path, monkeypatch, fault):
+    # Exercise the production SDK client/controller/scheduler/producer path. Values
+    # adopted during quarantine have not yet reached the client's desired ledger.
+    from public_sdk_recovery_fixture import fault_client
+    real, native, identity = fault_client(tmp_path, monkeypatch)
+    harness = _Harness(monkeypatch, tmp_path)
+    harness.client.update_transforms = lambda sid, values: real.update_transforms(identity, values)
+    harness.client.update_attribute_values = lambda sid, values: real.update_attribute_values(identity, values)
+    harness.client.validate_attribute_values = lambda sid, values: real.validate_attribute_values(identity, values)
+    harness.client.recover_value_updates = lambda sid, **kwargs: real.recover_value_updates(identity, **kwargs)
+    harness.client.begin_recovery_update = lambda sid: real.begin_recovery_update(identity)
+    harness.client.end_recovery_update = lambda sid, **kwargs: real.end_recovery_update(identity, **kwargs)
+    harness.loop._camera_value_probe = _honored_camera_probe()
+    native.remote_fault = fault
+    harness.loop._adopt_snapshot(_snapshot(tx=2., max_samples=1, camera_projection=_projection(40.)))
+    harness.loop._iterate()
+    assert harness.loop._failure_permanent, harness.slot.frames()[-1].detail
+    harness.loop._adopt_snapshot(_snapshot(tx=3., max_samples=1,
+        camera_projection=replace(_projection(55.), clipping_range=(0.5, 800.))))
+    harness.scheduler.submit_edit(_transform_intent(_matrix(7.)))
+    harness.loop._iterate()
+    assert native.write_attempts == 1
+    native.remote_fault = ""
+    assert harness.controller.recover_value_updates()
+    assert native.accepted == {}  # Latest producers must contribute before replay.
+    harness.loop._iterate()
+    assert harness.slot.frames()[-1].status == FRAME_STATUS_FRAME
+    assert native.accepted[("/World/Camera", "omni:xform")][0][3] == 3.
+    assert native.accepted[("/World/Cube", "omni:xform")][0][3] == 7.
+    assert native.accepted[("/World/Camera", "clippingRange")] == [0.5, 800.]
+    assert native.accepted[("/World/Camera", "focalLength")] == 55.
+    assert sum(op == "recover" for op, _ in native.calls) == 1
+    assert not harness.scheduler.has_pending_view_updates
+    assert not real.states[identity].recovery_pending
+    assert not harness.loop._failure_permanent
+    assert not native.shutdown_called
+    harness.controller.shutdown()
+    real.shutdown()
 
 
 def test_composition_failure_publishes_failed_state(
@@ -3115,6 +2148,39 @@ def test_tick_result_sink_receives_successful_tick_on_loop_thread(
     assert loop.diagnostics()["last_timeline_reset"] is False
 
 
+def test_tick_result_waits_for_synchronous_image_before_mirroring(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    harness = _Harness(monkeypatch, tmp_path)
+    sink_calls = []
+    entered, release = threading.Event(), threading.Event()
+
+    def block_first_render(call_index):
+        if call_index == 0:
+            entered.set()
+            assert release.wait(WAIT_S)
+
+    harness.client.render_hook = block_first_render
+    loop = LatestViewRenderLoop(
+        mailbox=harness.mailbox, frame_slot=harness.slot,
+        controller=harness.controller, scheduler=harness.scheduler,
+        request_for_snapshot=lambda snapshot: viewport_handoff.request_from_snapshot(
+            harness.base_request, snapshot
+        ),
+        tick_result_sink=lambda result, request: sink_calls.append((result, request)),
+    )
+    with _running(loop):
+        try:
+            harness.mailbox.write(_snapshot(tx=2.0, timeline_frame=7))
+            assert entered.wait(WAIT_S)
+            assert sink_calls == []
+            assert harness.slot.frames() == []
+        finally:
+            release.set()
+        assert _wait_until(lambda: bool(harness.slot.frames()))
+        assert sink_calls
+
+
 def test_tick_result_sink_not_called_for_failed_tick(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -3155,11 +2221,11 @@ def test_tick_result_sink_not_called_for_failed_tick(
     assert sink_calls == []
 
 
-def test_tick_result_hands_off_before_render_step_failure(
+def test_tick_result_hands_off_after_render_step_failure(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    # The tick result is handed off before controller.render runs, so physics
-    # poses mirror even when the render step fails.
+    # Solver state still hands off when rendering fails, allowing restoration
+    # and playback-lock transitions without a successful image publication.
     harness = _Harness(monkeypatch, tmp_path)
     harness.client.fail_render = True
     sink_calls: list[tuple] = []
@@ -3360,6 +2426,204 @@ def test_active_controller_resolves_current_and_raises_when_absent() -> None:
         loop._active_controller()
 
 
+@pytest.mark.parametrize("provider_state", ["dead_rna", "cleared"])
+def test_stop_and_detach_survive_released_engine_provider(tmp_path, monkeypatch, provider_state):
+    harness = _Harness(monkeypatch, tmp_path)
+    released = threading.Event()
+    def provider():
+        if released.is_set():
+            if provider_state == "dead_rna":
+                raise ReferenceError("StructRNA of type OvrtxExampleRenderEngine has been removed")
+            return None
+        return harness.controller
+    harness.loop._controller_provider = provider
+    with _running(harness.loop):
+        harness.mailbox.write(_snapshot(max_samples=1))
+        assert _wait_until(lambda: len(harness.slot.frames()) == 1)
+        assert _wait_until(lambda: harness.mailbox.park_count() >= 2)
+        assert id(harness.loop) in harness.controller._presentations
+        released.set()
+        # Rendering must not fall back to stale ownership after RNA removal.
+        with pytest.raises(RenderClientError):
+            harness.loop._active_controller()
+        # The teardown path can still wake a queued transaction and detach.
+        harness.loop.request_stop()
+        assert _wait_until(lambda: not harness.loop._running)
+    assert id(harness.loop) not in harness.controller._presentations
+    assert harness.client.render_calls == 1
+    harness.controller.shutdown()
+
+
+@pytest.mark.parametrize("stop_requested", [True, False])
+@pytest.mark.parametrize("provider_state", ["dead_rna", "cleared", "render_error"])
+def test_stop_during_idle_controller_lookup_runs_queued_teardown(
+    tmp_path, monkeypatch, provider_state, stop_requested
+):
+    harness = _Harness(monkeypatch, tmp_path)
+    entered = threading.Event()
+    resume = threading.Event()
+    released = threading.Event()
+    work_due = harness.loop._work_due_without_new_snapshot
+
+    def provider():
+        if released.is_set():
+            if provider_state == "dead_rna":
+                raise ReferenceError("StructRNA has been removed")
+            if provider_state == "render_error":
+                raise RenderClientError("unrelated transport failure")
+            return None
+        return harness.controller
+
+    def gated_work_due():
+        entered.set()
+        assert resume.wait(WAIT_S)
+        return work_due()
+
+    harness.loop._controller_provider = provider
+    thread = ViewportRenderThread("stop-during-controller-lookup")
+    thread.start()
+    try:
+        thread.submit(harness.loop.run, label="latest-view-loop")
+        harness.mailbox.write(_snapshot(max_samples=1))
+        assert _wait_until(lambda: len(harness.slot.frames()) == 1)
+        assert _wait_until(lambda: harness.mailbox.park_count() >= 2)
+        monkeypatch.setattr(harness.loop, "_work_due_without_new_snapshot", gated_work_due)
+        harness.mailbox.wake()
+        assert entered.wait(WAIT_S)
+        # The loop has passed its stop checks, just as fixed03 did. Queue the
+        # real controller cleanup behind run(), then invalidate the provider.
+        if stop_requested:
+            harness.loop.request_stop()
+        teardown = thread.call(harness.controller.shutdown, label="teardown")
+        released.set()
+        resume.set()
+        expected_failure = not stop_requested or provider_state == "render_error"
+        if expected_failure:
+            with pytest.raises(RenderThreadError, match="render thread failed"):
+                teardown.result(WAIT_S)
+        else:
+            teardown.result(WAIT_S)
+    finally:
+        released.clear()
+        harness.loop.request_stop()
+        resume.set()
+        outcome = thread.stop(WAIT_S)
+    assert outcome["joined"] is True
+    assert outcome["leaked_thread"] is False
+    diagnostics = thread.diagnostics()
+    if expected_failure:
+        assert diagnostics["status"] == "failed"
+        assert diagnostics["commands_failed"] == 1
+        assert diagnostics["commands_rejected"] == 1
+        if provider_state == "render_error":
+            assert "unrelated transport failure" in diagnostics["failure"]
+        harness.controller.shutdown()
+        return
+    assert diagnostics["status"] == "stopped"
+    assert diagnostics["commands_completed"] == 2
+    assert diagnostics["commands_failed"] == 0
+    assert diagnostics["commands_rejected"] == 0
+    assert diagnostics["failure"] == ""
+    assert harness.loop.diagnostics()["failures"] == 0
+    assert id(harness.loop) not in harness.controller._presentations
+    assert harness.client.render_calls == 1
+
+
+@pytest.mark.parametrize("stop_requested", [True, False])
+@pytest.mark.parametrize("provider_state", ["dead_rna", "cleared"])
+def test_controller_loss_after_job_dequeue_settles_every_future(
+    tmp_path, monkeypatch, provider_state, stop_requested
+):
+    harness = _Harness(monkeypatch, tmp_path)
+    entered = threading.Event()
+    resume = threading.Event()
+    released = threading.Event()
+    main_thread = threading.get_ident()
+
+    def provider():
+        if (harness.loop._job_active and not resume.is_set()
+                and threading.get_ident() != main_thread):
+            entered.set()
+            assert resume.wait(WAIT_S)
+        if released.is_set():
+            if provider_state == "dead_rna":
+                raise ReferenceError("StructRNA has been removed")
+            return None
+        return harness.controller
+
+    harness.loop._controller_provider = provider
+    first = harness.loop.call(lambda: pytest.fail("dequeued job ran after ownership loss"))
+    second = harness.loop.call(lambda: pytest.fail("queued job ran after ownership loss"))
+    thread = ViewportRenderThread("stop-after-job-dequeue")
+    thread.start()
+    try:
+        thread.submit(harness.loop.run, label="latest-view-loop")
+        assert entered.wait(WAIT_S)
+        teardown = thread.call(harness.controller.shutdown, label="teardown")
+        if stop_requested:
+            harness.loop.request_stop()
+        released.set()
+        resume.set()
+        if stop_requested:
+            teardown.result(WAIT_S)
+        else:
+            with pytest.raises(RenderThreadRejectedError):
+                teardown.result(WAIT_S)
+        assert first.done(), "dequeued job future was lost during controller lookup"
+        assert second.done()
+        with pytest.raises(RenderThreadRejectedError if stop_requested else RenderClientError):
+            first.result(0)
+        with pytest.raises(RenderThreadRejectedError):
+            second.result(0)
+    finally:
+        released.clear()
+        resume.set()
+        harness.loop.request_stop()
+        outcome = thread.stop(WAIT_S)
+    assert outcome["joined"] is True
+    assert outcome["leaked_thread"] is False
+    assert not harness.loop._job_active
+    assert not harness.loop._pending_jobs
+    assert harness.controller._exclusive_pending == 0
+    diagnostics = thread.diagnostics()
+    assert diagnostics["commands_failed"] == (0 if stop_requested else 1)
+    assert diagnostics["commands_completed"] == (2 if stop_requested else 0)
+    if not stop_requested:
+        harness.controller.shutdown()
+
+
+@pytest.mark.parametrize("failure_phase", ["admission", "after_result"])
+def test_job_transport_failure_settles_only_unresolved_result(
+    tmp_path, monkeypatch, failure_phase
+):
+    harness = _Harness(monkeypatch, tmp_path)
+    failure = RenderClientError("exclusive transport failed")
+    calls = []
+
+    @contextmanager
+    def transaction():
+        if failure_phase == "admission":
+            raise failure
+        yield
+        raise failure
+
+    monkeypatch.setattr(harness.controller, "_exclusive_transport", transaction)
+    future = harness.loop.call(lambda: calls.append("ran") or 42)
+    with pytest.raises(RenderClientError) as error:
+        harness.loop._run_pending_jobs()
+    assert error.value is failure
+    assert future.done()
+    if failure_phase == "admission":
+        assert future.exception(0) is failure
+        assert calls == []
+    else:
+        assert future.result(0) == 42
+        assert calls == ["ran"]
+    assert not harness.loop._job_active
+    assert not harness.loop._pending_jobs
+    harness.controller.shutdown()
+
+
 def test_loop_follows_engine_controller_swap(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -3451,3 +2715,140 @@ def test_ensure_defers_while_runtime_services_prepare(
     assert diagnostics["failures"] == 0
     assert diagnostics["ensure_failures"] == 0
     assert diagnostics["ensure_pending"] is True
+
+
+# --- Worker death without new input (build 29 review) ----------------------
+
+
+def _worker_lost_error(message: str = "renderer render: connection reset") -> RenderClientError:
+    """A lost worker as the loop sees it: the client wraps the session error."""
+    from ovrtx_blender_example.direct_runtime_session import RuntimeWorkerLost
+
+    try:
+        raise RuntimeWorkerLost(message)
+    except RuntimeWorkerLost as cause:
+        try:
+            raise RenderClientError(f"Public SDK render: {cause}") from cause
+        except RenderClientError as error:
+            return error
+
+
+def _failing_renders(client: _Client, failures: list[BaseException]) -> None:
+    def hook(_call_index: int) -> None:
+        if failures:
+            raise failures.pop(0)
+
+    client.render_hook = hook
+
+
+def test_static_view_retries_once_after_worker_death(tmp_path, monkeypatch):
+    harness = _Harness(monkeypatch, tmp_path)
+    harness.loop._failure_retry_backoff_seconds = 0.01
+    _failing_renders(harness.client, [_worker_lost_error()])
+
+    with _running(harness.loop):
+        # One input only: the view never changes again.
+        harness.mailbox.write(_snapshot(tx=2.0, max_samples=2))
+        assert _wait_until(lambda: any(
+            frame.status == FRAME_STATUS_FRAME and frame.completed_samples >= 2
+            for frame in harness.slot.frames()))
+
+    frames = harness.slot.frames()
+    assert frames[0].status == FRAME_STATUS_FAILED
+    assert "connection reset" in frames[0].detail
+    assert harness.mailbox.diagnostics()["writes"] == 1
+    diagnostics = harness.loop.diagnostics()
+    assert diagnostics["worker_failure_retries"] == 1
+    assert diagnostics["failed_state"] is False
+
+
+def test_static_view_worker_retry_is_one_shot_and_paced(tmp_path, monkeypatch):
+    harness = _Harness(monkeypatch, tmp_path)
+    harness.loop._failure_retry_backoff_seconds = 0.01
+    _failing_renders(harness.client, [_worker_lost_error("first"), _worker_lost_error("second"),
+                                      _worker_lost_error("third")])
+
+    with _running(harness.loop):
+        harness.mailbox.write(_snapshot(tx=2.0, max_samples=2))
+        assert _wait_until(lambda: harness.client.render_calls == 2)
+        # The retry failed too: the view parks until new input.
+        assert _wait_until(lambda: harness.mailbox.park_count() >= 2)
+        time.sleep(0.3)
+        assert harness.client.render_calls == 2
+        failures = [frame for frame in harness.slot.frames() if frame.status == FRAME_STATUS_FAILED]
+        assert len(failures) == 2
+        # Fresh input still retries under the existing attempt limit.
+        harness.mailbox.write(_snapshot(tx=2.0, max_samples=2))
+        assert _wait_until(lambda: harness.client.render_calls == 3)
+        assert harness.loop.diagnostics()["worker_failure_retries"] == 1
+
+
+def test_static_view_does_not_auto_retry_rejections_or_recovery_required(tmp_path, monkeypatch):
+    from ovrtx_blender_example.ovrtx_runtime_client import ValueUpdateRecoveryRequired
+
+    lost = _worker_lost_error()
+    recovery_required = ValueUpdateRecoveryRequired(str(lost))
+    recovery_required.__cause__ = lost
+    for failure in (RenderClientError("render failed"), recovery_required):
+        harness = _Harness(monkeypatch, tmp_path)
+        harness.loop._failure_retry_backoff_seconds = 0.01
+        _failing_renders(harness.client, [failure])
+        with _running(harness.loop):
+            harness.mailbox.write(_snapshot(tx=2.0, max_samples=2))
+            assert _wait_until(lambda: harness.mailbox.park_count() >= 2)
+            time.sleep(0.2)
+            assert harness.client.render_calls == 1
+        assert harness.loop.diagnostics()["worker_failure_retries"] == 0
+    # ValueUpdateRecoveryRequired stays permanent: fresh input does not retry it.
+    assert harness.loop._failure_permanent is True
+    assert not harness.loop._retry_allowed()
+
+
+class _WatchedClient(_Client):
+    """Fake client whose worker can exit while the view is idle."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.exited = False
+        self.watch_calls = 0
+
+    def worker_exited(self) -> bool:
+        self.watch_calls += 1
+        return self.exited
+
+    def render_result(self, simulation_id: str, **kwargs: object) -> RenderResult:
+        # The session respawns the worker on its next request.
+        self.exited = False
+        return super().render_result(simulation_id, **kwargs)
+
+
+def test_idle_worker_exit_rerenders_the_static_view_without_input(tmp_path, monkeypatch):
+    from ovrtx_blender_example import viewport_render_thread
+
+    monkeypatch.setattr(viewport_render_thread, "WORKER_EXIT_WATCH_SECONDS", 0.02)
+    client = _WatchedClient()
+    harness = _Harness(monkeypatch, tmp_path, client)
+
+    with _running(harness.loop):
+        harness.mailbox.write(_snapshot(tx=2.0, max_samples=2))
+        assert _wait_until(lambda: harness.client.render_calls == 2)
+        # Converged and idle: the loop watches the worker instead of parking forever.
+        assert _wait_until(lambda: client.watch_calls >= 3)
+        assert harness.client.render_calls == 2
+        client.exited = True
+        assert _wait_until(lambda: harness.client.render_calls == 4)
+
+    frames = [frame for frame in harness.slot.frames() if frame.status == FRAME_STATUS_FRAME]
+    assert [frame.completed_samples for frame in frames] == [1, 2, 1, 2]
+    assert harness.mailbox.diagnostics()["writes"] == 1
+    diagnostics = harness.loop.diagnostics()
+    assert diagnostics["idle_worker_exits"] == 1
+    assert diagnostics["last_reset_reason"] == "worker_exited"
+
+
+def test_idle_loop_without_worker_watch_still_parks(tmp_path, monkeypatch):
+    harness = _Harness(monkeypatch, tmp_path)
+    with _running(harness.loop):
+        harness.mailbox.write(_snapshot(tx=2.0, max_samples=1))
+        assert _wait_until(lambda: harness.mailbox.park_count() >= 1)
+        assert all(timeout in (None, 0.0) for timeout, _taken in harness.mailbox.records)

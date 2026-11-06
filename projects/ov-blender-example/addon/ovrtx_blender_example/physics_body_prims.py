@@ -17,24 +17,24 @@ def discover_dynamic_body_prims(input_usd_path: str, root: str = DEFAULT_DYNAMIC
     if not path.is_file():
         return ()
     discovered = _discover_dynamic_body_prims_with_usd(path, root)
-    if discovered:
+    if discovered is not None:
         return discovered
     if path.suffix.lower() == ".usda":
         return _discover_dynamic_body_prims_from_usda(path, root)
     return ()
 
 
-def _discover_dynamic_body_prims_with_usd(path: Path, root: str) -> tuple[str, ...]:
+def _discover_dynamic_body_prims_with_usd(path: Path, root: str) -> tuple[str, ...] | None:
     try:
         from pxr import Usd  # type: ignore
     except Exception:
-        return ()
+        return None
     try:
         stage = Usd.Stage.Open(str(path))
     except Exception:
-        return ()
+        return None
     if stage is None:
-        return ()
+        return None
     prefix = root.rstrip("/") + "/"
     body_paths: list[str] = []
     for prim in stage.Traverse():
@@ -46,6 +46,9 @@ def _discover_dynamic_body_prims_with_usd(path: Path, root: str) -> tuple[str, .
         except Exception:
             schemas = set()
         if "PhysicsRigidBodyAPI" not in schemas:
+            continue
+        enabled_attr = prim.GetAttribute("physics:rigidBodyEnabled")
+        if enabled_attr and enabled_attr.Get() is False:
             continue
         kinematic_attr = prim.GetAttribute("physics:kinematicEnabled")
         is_kinematic = bool(kinematic_attr and kinematic_attr.Get())
@@ -59,11 +62,12 @@ _USDA_PRIM_RE = re.compile(r'^\s*(?:def|over|class)(?:\s+\w+)?\s+"([^"]+)"')
 
 def _discover_dynamic_body_prims_from_usda(path: Path, root: str) -> tuple[str, ...]:
     class _PrimBlock:
-        def __init__(self, path: str, close_depth: int, has_rigid_body: bool, is_kinematic: bool) -> None:
+        def __init__(self, path: str, close_depth: int, has_rigid_body: bool, is_kinematic: bool, disabled: bool) -> None:
             self.path = path
             self.close_depth = close_depth
             self.has_rigid_body = has_rigid_body
             self.is_kinematic = is_kinematic
+            self.disabled = disabled
 
     lines = path.read_text(encoding="utf-8").splitlines()
     prefix = root.rstrip("/") + "/"
@@ -82,6 +86,7 @@ def _discover_dynamic_body_prims_from_usda(path: Path, root: str) -> tuple[str, 
                 close_depth=close_depth,
                 has_rigid_body=bool(item["has_rigid_body"]),
                 is_kinematic=bool(item["is_kinematic"]),
+                disabled=bool(item["disabled"]),
             )
         )
 
@@ -92,6 +97,7 @@ def _discover_dynamic_body_prims_from_usda(path: Path, root: str) -> tuple[str, 
                 (block.path == root or block.path.startswith(prefix))
                 and block.has_rigid_body
                 and not block.is_kinematic
+                and not block.disabled
             ):
                 body_paths.append(block.path)
 
@@ -100,10 +106,12 @@ def _discover_dynamic_body_prims_from_usda(path: Path, root: str) -> tuple[str, 
         close_count = line.count("}")
         rigid = "PhysicsRigidBodyAPI" in line
         kinematic = "physics:kinematicEnabled" in line and "true" in line.lower()
+        disabled = "physics:rigidBodyEnabled" in line and "false" in line.lower()
 
         if pending is not None:
             pending["has_rigid_body"] = bool(pending["has_rigid_body"] or rigid)
             pending["is_kinematic"] = bool(pending["is_kinematic"] or kinematic)
+            pending["disabled"] = bool(pending["disabled"] or disabled)
             if open_count:
                 _push(pending, depth)
                 pending = None
@@ -117,6 +125,7 @@ def _discover_dynamic_body_prims_from_usda(path: Path, root: str) -> tuple[str, 
                     "path": prim_path,
                     "has_rigid_body": rigid,
                     "is_kinematic": kinematic,
+                    "disabled": disabled,
                 }
                 if open_count:
                     _push(pending, depth)
@@ -124,6 +133,7 @@ def _discover_dynamic_body_prims_from_usda(path: Path, root: str) -> tuple[str, 
             elif stack:
                 stack[-1].has_rigid_body = bool(stack[-1].has_rigid_body or rigid)
                 stack[-1].is_kinematic = bool(stack[-1].is_kinematic or kinematic)
+                stack[-1].disabled = bool(stack[-1].disabled or disabled)
 
         depth += open_count - close_count
         _close_completed_blocks()

@@ -264,7 +264,7 @@ def usd_attribute_values(material: Any) -> tuple[UsdAttributeValue, ...]:
                 shader_family="ND_open_pbr_surface_surfaceshader",
             )
         )
-        if weight > _EPSILON and base_color_value is not None and any(abs(channel - 1.0) > _EPSILON for channel in base_color_value):
+        if base_color_value is not None:
             attributes.append(
                 _attribute(
                     "inputs:transmission_color",
@@ -351,6 +351,13 @@ def texture_wired_input_links(material: Any) -> dict[str, bool] | None:
         if socket is None:
             continue
         links[usd_attribute] = socket_is_linked(socket)
+    # Reuse the actual MaterialX converter wiring names, including its scalar
+    # texture inputs. Resolution selects the active shader family per material.
+    from .materialx_openpbr_conversion import _TEXTURE_INPUTS
+    for socket_name, (input_name, *_rest) in _TEXTURE_INPUTS.items():
+        socket = node_input(principled, socket_name)
+        if socket is not None and "inputs:" + input_name in SUPPORTED_USD_ATTRIBUTES:
+            links["inputs:" + input_name] = socket_is_linked(socket)
     return links
 
 
@@ -497,13 +504,14 @@ def _append_subsurface_values(
         return
     effective_radius = tuple(max(0.0, channel * float_value(scale.value, 0.05)) for channel in _rgb_tuple(radius.value))
     max_radius = max(effective_radius)
-    if max_radius <= _EPSILON:
-        return
+    # Zero radius disables the authored lobe. Explicitly clear an already
+    # accepted weight; omitting it would retain scattering from the predecessor.
+    inactive_radius = max_radius <= _EPSILON
     attributes.extend(
         (
             _attribute(
                 "inputs:subsurface_weight",
-                float_value(weight.value, 0.0),
+                0.0 if inactive_radius else float_value(weight.value, 0.0),
                 "principled:Subsurface Weight",
                 ("Principled BSDF.Subsurface Weight",),
                 shader_family="ND_open_pbr_surface_surfaceshader",
@@ -517,7 +525,7 @@ def _append_subsurface_values(
             ),
             _attribute(
                 "inputs:subsurface_radius_scale",
-                tuple(channel / max_radius for channel in effective_radius),
+                (0.0, 0.0, 0.0) if inactive_radius else tuple(channel / max_radius for channel in effective_radius),
                 "principled:Subsurface Radius",
                 ("Principled BSDF.Subsurface Radius", "Principled BSDF.Subsurface Scale"),
                 shader_family="ND_open_pbr_surface_surfaceshader",
@@ -548,13 +556,28 @@ def _append_subsurface_values(
 
 
 def _principled_node(material: Any) -> Any | None:
-    node_tree = getattr(material, "node_tree", None)
-    for node in getattr(node_tree, "nodes", ()) or ():
-        node_type = str(getattr(node, "type", "") or "")
-        node_name = str(getattr(node, "name", "") or "")
-        if node_type == "BSDF_PRINCIPLED" or node_name == "Principled BSDF":
-            return node
-    return None
+    """Resolve the direct active surface owned by the native constant lane."""
+    nodes = tuple(getattr(getattr(material, "node_tree", None), "nodes", ()) or ())
+    def kind(node):
+        return str(getattr(node, "type", getattr(node, "bl_idname", "")))
+    outputs = [node for node in nodes if kind(node) in {"OUTPUT_MATERIAL", "ShaderNodeOutputMaterial"}]
+    if outputs:
+        active = [node for node in outputs if bool(getattr(node, "is_active_output", True))]
+        if len(active) != 1:
+            return None
+        surface = node_input(active[0], "Surface")
+        if surface is None:
+            surface = next((socket for socket in getattr(active[0], "inputs", ())
+                            if getattr(socket, "name", "") == "Surface"), None)
+        links = tuple(getattr(surface, "links", ()) or ())
+        if len(links) != 1:
+            return None
+        node = getattr(links[0], "from_node", None)
+        return node if kind(node) in {"BSDF_PRINCIPLED", "ShaderNodeBsdfPrincipled"} else None
+    # Compatibility for outputless conversion fixtures; real output graphs
+    # never select a disconnected or composite shader by collection order.
+    candidates = [node for node in nodes if kind(node) in {"BSDF_PRINCIPLED", "ShaderNodeBsdfPrincipled"}]
+    return candidates[0] if len(candidates) == 1 else None
 
 
 def _unlinked_input_value(node: Any, name: str) -> _InputValue:

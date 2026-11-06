@@ -164,3 +164,79 @@ def test_open_log_folder_result_fails_cleanly_without_file_logging() -> None:
     assert result["status"] == "failed"
     assert result["log_dir"] == ""
     assert "OV_BLENDER_EXAMPLE_WORKER_LOG" in result["error"]
+
+
+def _stub_version_sources(monkeypatch, *, bl_info, build_label: str) -> None:
+    """Point `addon_version_label` at controlled `bl_info` / build metadata.
+
+    `addon_version_label` reads `bl_info` off the already-imported
+    `ovrtx_blender_example` package module and late-imports
+    `addon_build_label` from the same module, so both are patched there
+    rather than on `ui`.
+    """
+
+    package = sys.modules["ovrtx_blender_example"]
+    monkeypatch.setattr(package, "bl_info", bl_info, raising=False)
+    monkeypatch.setattr(package, "addon_build_label", lambda *_a, **_k: build_label, raising=False)
+
+
+def test_addon_version_label_renders_name_and_version(monkeypatch: pytest.MonkeyPatch) -> None:
+    _stub_version_sources(
+        monkeypatch,
+        bl_info={"name": "ovrtx Blender Example", "version": (0, 1, 0)},
+        build_label="",
+    )
+
+    assert ui.addon_version_label() == "ovrtx Blender Example v0.1.0"
+
+
+def test_addon_version_label_appends_build_label(monkeypatch: pytest.MonkeyPatch) -> None:
+    _stub_version_sources(
+        monkeypatch,
+        bl_info={"name": "ovrtx Blender Example", "version": (0, 2, 0)},
+        build_label="Build 1842 (abc1234)",
+    )
+
+    assert ui.addon_version_label() == "ovrtx Blender Example v0.2.0 · Build 1842 (abc1234)"
+
+
+@pytest.mark.parametrize("version", [None, (), ""], ids=["missing", "empty-tuple", "empty-string"])
+def test_addon_version_label_omits_dangling_v_without_a_version(
+    monkeypatch: pytest.MonkeyPatch, version: object
+) -> None:
+    """A missing/empty `bl_info["version"]` must not render a trailing "v"."""
+
+    bl_info: dict[str, object] = {"name": "ovrtx Blender Example"}
+    if version is not None:
+        bl_info["version"] = version
+    _stub_version_sources(monkeypatch, bl_info=bl_info, build_label="")
+
+    assert ui.addon_version_label() == "ovrtx Blender Example"
+
+
+def test_addon_version_label_keeps_build_label_without_a_version(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _stub_version_sources(
+        monkeypatch,
+        bl_info={"name": "ovrtx Blender Example", "version": ()},
+        build_label="Build 1842 (abc1234)",
+    )
+
+    assert ui.addon_version_label() == "ovrtx Blender Example · Build 1842 (abc1234)"
+
+
+def test_addon_version_label_falls_back_to_product_name_without_bl_info(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _stub_version_sources(monkeypatch, bl_info={}, build_label="")
+
+    assert ui.addon_version_label() == "ovrtx"
+
+
+def test_addon_version_label_falls_back_to_product_name_without_an_addon_name(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _stub_version_sources(monkeypatch, bl_info={"version": (0, 1, 0)}, build_label="")
+
+    assert ui.addon_version_label() == "ovrtx v0.1.0"

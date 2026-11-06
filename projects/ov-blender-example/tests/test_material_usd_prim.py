@@ -267,3 +267,20 @@ def test_material_resolution_fails_closed_for_ambiguity_missing_attribute_and_st
     assert missing_result.error_reason == material.ERROR_MISSING_PRIM_ATTRIBUTE
     assert unavailable_result.error_reason == material.ERROR_USD_STAGE_UNAVAILABLE
     assert unavailable_result.diagnostics["stage_reason"] == "stage_open_failed"
+
+
+def test_missing_openpbr_inputs_require_exact_shader_schema_and_verified_root():
+    root = '/OVRTX_Materials/Paint'
+    for shader_id in ('ND_open_pbr_surface_surfaceshader', 'UsdPreviewSurface', 'CustomShader'):
+        prims = [_FakePrim(root, type_name='Material'),
+                 _FakePrim(root + '/Shader', type_name='Shader', info_id=shader_id)]
+        for attribute in ('inputs:specular_ior', 'inputs:coat_weight', 'inputs:emission_luminance',
+                          'inputs:diffuseColor', 'inputs:unknown'):
+            for roots in ((), ('/Foreign',), (root,)):
+                index = material._material_prim_index_from_prims(prims, usd_attribute=attribute,
+                                                               schema_default_material_paths=roots)
+                resolved = material.resolve_material_usd_prim(_FakeMaterial('Paint'), index,
+                                                               known_prim_path=root)
+                expected = (shader_id == 'ND_open_pbr_surface_surfaceshader' and roots == (root,)
+                            and attribute in ('inputs:specular_ior', 'inputs:coat_weight', 'inputs:emission_luminance'))
+                assert (resolved.value is not None) == expected, (shader_id, attribute, roots)

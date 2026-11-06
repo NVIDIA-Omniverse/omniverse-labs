@@ -24,6 +24,61 @@ from . import user_messages
 
 BLENDER_AVAILABLE = bpy is not None
 
+# The rendered "info text" (session status label + hint) is a live value that
+# changes as the worker comes up (starting/compiling/ready/resync), so the
+# panel must force its own redraw when it changes rather than wait for some
+# other event to tag the Properties area. Blender's panel draw already happens
+# on many triggers, but status text emitted solely from a session poll has no
+# native RNA dependency to invalidate the panel. We cache the last drawn info
+# text here and, on change, tag every Properties area for a redraw so the new
+# text becomes visible promptly.
+_INFO_TEXT_CACHE: dict[str, str] = {}
+
+
+def _info_text_key() -> str:
+    """Cache key for the last drawn info text.
+
+    Keyed per screen (workspace), not per Properties space: one screen can hold
+    several Properties editors, and a change tags every Properties area anyway,
+    so per-screen granularity is what the cache actually needs. Contexts with no
+    screen (background/headless) collapse to one constant key, which is correct
+    because there is no per-screen state to separate there.
+    """
+    return repr(bpy.context.screen) if bpy is not None else ""
+
+
+def _force_properties_redraw_on_info_change(info_text: str) -> None:
+    """Tag Properties areas for redraw when the info text changes."""
+    _bpy = _require_blender()
+    key = _info_text_key()
+    if _INFO_TEXT_CACHE.get(key) == info_text:
+        return
+    _INFO_TEXT_CACHE[key] = info_text
+    for screen in _bpy.data.screens:
+        for area in screen.areas:
+            if area.type == "PROPERTIES":
+                area.tag_redraw()
+
+
+def addon_version_label() -> str:
+    """Render-settings header label: 'ovrtx <version> (build ...)'."""
+    parts: list[str] = []
+    bl = getattr(sys.modules.get(__package__ or "", None), "bl_info", None)
+    if bl:
+        version = ".".join(str(part) for part in (bl.get("version") or ()))
+        name = str(bl.get("name") or "ovrtx")
+        # A missing or empty version must not render a dangling "v".
+        parts.append(f"{name} v{version}" if version else name)
+    try:
+        from . import addon_build_label
+    except Exception:  # pragma: no cover - defensive under non-Blender import
+        build = ""
+    else:
+        build = addon_build_label()
+    if build:
+        parts.append(build)
+    return " · ".join(parts) if parts else "ovrtx"
+
 
 def _require_blender() -> Any:
     if bpy is None:
@@ -521,6 +576,10 @@ if bpy is not None:
 
         def execute(self, context: Any) -> set[str]:
             result = _with_wait_cursor(context, restart_ovrtx_worker_result)
+            if result.get("status") == "restart_pending":
+                user_messages.report_for_operator(self, {"INFO"}, "OVRTX worker restart requested")
+                _tag_view3d_redraw()
+                return {"FINISHED"}
             error = _recovery_error(
                 result, "restarted", "OVRTX worker teardown was not confirmed"
             )
@@ -555,6 +614,22 @@ if bpy is not None:
             )
             return {"CANCELLED"}
 
+    class OVRTXEXAMPLE_PT_shadow_visibility(bpy.types.Panel):
+        bl_label = "OVRTX Visibility"
+        bl_idname = "OVRTXEXAMPLE_PT_shadow_visibility"
+        bl_space_type = "PROPERTIES"
+        bl_region_type = "WINDOW"
+        bl_context = "object"
+
+        @classmethod
+        def poll(cls, context):
+            return (context.engine == ENGINE_ID and context.object is not None
+                    and context.object.type == "MESH")
+
+        def draw(self, context):
+            self.layout.prop(context.object, "visible_shadow", text="Cast Shadows")
+            self.layout.label(text="Updates the scene generation")
+
     class OVRTXEXAMPLE_PT_render_settings(bpy.types.Panel):  # type: ignore[misc]
         bl_label = "ovrtx Example"
         bl_idname = "OVRTXEXAMPLE_PT_render_settings"
@@ -571,6 +646,8 @@ if bpy is not None:
             layout = self.layout
             settings = context.scene.ovrtx_example
             status = viewport_session_status()
+            # Version header at the very top of the render-settings panel.
+            layout.label(text=addon_version_label())
             # render_product_path / camera_prim_path are deliberately not
             # shown: the live route generates both prims (mirroring the
             # Blender viewport or scene camera) and ignores the settings;
@@ -588,13 +665,10 @@ if bpy is not None:
             layout.prop(settings, "rtpt_max_specular_and_transmission_bounces")
             layout.prop(settings, "rtpt_max_volume_bounces")
             layout.prop(settings, "rtpt_firefly_filter_enabled")
-            # DLSS Super-Resolution toggle. Honored on the RenderProduct at
-            # session creation (real-GPU A/B, runtime measurements), so a change
-            # re-keys the session and applies on the next viewport refresh with
-            # no worker restart. This worker build exposes no full DLSS off, so
-            # unchecking selects the DLSS Performance execution mode; the tooltip
-            # states the proven behavior and apply latency.
+            # Preserve the baseline default/Performance preset control.
             layout.prop(settings, "dlss_enabled")
+            layout.prop(settings, "final_supersample")
+            layout.prop(settings, "viewport_supersample")
             row = layout.row(align=True)
             row.prop(settings, "sync_viewport_camera")
             row.operator("ovrtx_example.reset_viewport_camera", text="Reset")
@@ -642,6 +716,13 @@ if bpy is not None:
             box = layout.box()
             box.label(text=f"OVRTX Session: {status['label']}")
             hint = str(status.get("hint", "") or "")
+            _info_text = f"{status['label']}\n{hint}"
+            # The session status box content ("info text") is live data from a
+            # session poll with no RNA dependency, so when it changes the panel
+            # would otherwise stay stale until another event tags a redraw.
+            # Force a Properties-area redraw on change so the new label/hint
+            # appears immediately.
+            _force_properties_redraw_on_info_change(_info_text)
             if hint:
                 # The actionable detail (e.g. a blocked-conversion reason)
                 # must be visible where the user looks, not only in a
@@ -664,6 +745,7 @@ else:
     OVRTXEXAMPLE_OT_reconnect_viewport_session = None  # type: ignore[assignment]
     OVRTXEXAMPLE_OT_restart_ovrtx_worker = None  # type: ignore[assignment]
     OVRTXEXAMPLE_OT_open_log_folder = None  # type: ignore[assignment]
+    OVRTXEXAMPLE_PT_shadow_visibility = None
     OVRTXEXAMPLE_PT_render_settings = None  # type: ignore[assignment]
 
 
@@ -675,6 +757,7 @@ _CLASSES = tuple(
         OVRTXEXAMPLE_OT_restart_ovrtx_worker,
         OVRTXEXAMPLE_OT_open_log_folder,
         OVRTXEXAMPLE_PT_render_settings,
+        OVRTXEXAMPLE_PT_shadow_visibility,
     )
     if cls is not None
 )
@@ -700,12 +783,16 @@ def unregister() -> None:
             if "missing bl_rna" not in str(exc) and "not registered" not in str(exc):
                 raise
     unregister_stock_panel_compat()
+    # Drop the per-screen info-text cache so a re-enabled add-on does not start
+    # from a stale entry that suppresses the first forced redraw.
+    _INFO_TEXT_CACHE.clear()
 
 
 __all__ = [
     "BLENDER_AVAILABLE",
     "LDR_COLOR_GATING_EXPLANATION",
     "color_control_gating",
+    "addon_version_label",
     "STOCK_PANEL_COMPAT_EXCLUSIONS",
     "STOCK_PANEL_COMPAT_EXTRA_INCLUSIONS",
     "stock_panel_included",

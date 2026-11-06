@@ -67,6 +67,17 @@ class OvrtxSessionUpdatePort:
     client: Any
     simulation_id: str
 
+    def validate_camera_update(self, transform: OvrtxTransformValue | None,
+                               values: Sequence[OvrtxAttributeValue]) -> None:
+        validator = getattr(self.client, "validate_attribute_values", None)
+        if not callable(validator):
+            return
+        batch = list(values)
+        if transform is not None:
+            batch.extend((OvrtxAttributeValue(transform.prim_path, "omni:xform", transform.matrix, "Matrix4d"),
+                          OvrtxAttributeValue(transform.prim_path, "omni:resetXformStack", True, "Bool")))
+        validator(self.simulation_id, batch)
+
     def update_transforms(
         self,
         values: Sequence[OvrtxTransformValue],

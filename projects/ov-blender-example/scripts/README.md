@@ -1,5 +1,8 @@
 # Scripts
 
+For opt-in Blender-process pyinstrument call trees and exact per-scope wall
+timers, see [Blender-side performance profiling](../docs/performance-profiling.md).
+
 - For a source-only add-on change, run
   `python -m pytest <test-path>` or
   `python scripts/validate_suite.py <suite> --runtime-root <prepared-runtime>`

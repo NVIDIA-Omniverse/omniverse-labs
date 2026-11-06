@@ -1,0 +1,59 @@
+#usda 1.0
+(defaultPrim = "World"; upAxis = "Y"; metersPerUnit = 1)
+def Xform "World" {
+def Mesh "Left" (prepend apiSchemas = ["SemanticsAPI:class"]) {
+ string semantic:class:params:semanticType = "class"
+ string semantic:class:params:semanticData = "class_a"
+ point3f[] points = [(-1.7, -0.7, 0), (-0.30000000000000004, -0.7, 0), (-0.30000000000000004, 0.7, 0), (-1.7, 0.7, 0)]
+ int[] faceVertexCounts = [4]
+ int[] faceVertexIndices = [0,1,2,3]
+ uniform token subdivisionScheme = "none"
+ color3f[] primvars:displayColor = [(0.5,0.2,0.1)]
+ }
+def Mesh "Right" (prepend apiSchemas = ["SemanticsAPI:class"]) {
+ string semantic:class:params:semanticType = "class"
+ string semantic:class:params:semanticData = "class_b"
+ point3f[] points = [(0.30000000000000004, -0.7, 0), (1.7, -0.7, 0), (1.7, 0.7, 0), (0.30000000000000004, 0.7, 0)]
+ int[] faceVertexCounts = [4]
+ int[] faceVertexIndices = [0,1,2,3]
+ uniform token subdivisionScheme = "none"
+ color3f[] primvars:displayColor = [(0.5,0.2,0.1)]
+ }
+def Mesh "Occluder" (prepend apiSchemas = ["SemanticsAPI:class"]) {
+ string semantic:class:params:semanticType = "class"
+ string semantic:class:params:semanticData = "class_a"
+ point3f[] points = [(-0.09999999999999998, -0.7, 0.3), (0.6, -0.7, 0.3), (0.6, 0.7, 0.3), (-0.09999999999999998, 0.7, 0.3)]
+ int[] faceVertexCounts = [4]
+ int[] faceVertexIndices = [0,1,2,3]
+ uniform token subdivisionScheme = "none"
+ color3f[] primvars:displayColor = [(0.5,0.2,0.1)]
+ }
+ def Camera "Camera" {
+ float focalLength = 35
+ float horizontalAperture = 36
+ float verticalAperture = 24
+ double3 xformOp:translate = (0,0,7)
+ uniform token[] xformOpOrder = ["xformOp:translate"]
+ }
+ def DomeLight "Light" {
+ float inputs:intensity = 1500
+ }
+}
+def Scope "Render" {
+ def RenderProduct "Camera" {
+ int2 resolution = (160,120)
+ rel camera = </World/Camera>
+ rel orderedVars = [<HdrColor>,<SemanticSegmentation>,<SemanticIdMap>]
+ bool omni:rtx:dlss:enabled = false
+ bool omni:rtx:dlss:frameGeneration:enabled = false
+ def RenderVar "HdrColor" {
+ uniform string sourceName = "HdrColor"
+ }
+ def RenderVar "SemanticSegmentation" {
+ uniform string sourceName = "SemanticSegmentation"
+ }
+ def RenderVar "SemanticIdMap" {
+ uniform string sourceName = "SemanticIdMap"
+ }
+ }
+}

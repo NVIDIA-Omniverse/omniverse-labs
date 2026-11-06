@@ -1,25 +1,34 @@
 {
   "approval": {
-    "approved_at_utc": "2026-07-01T06:18:17Z",
+    "approved_at_utc": "2026-08-13T22:39:26Z",
     "approved_by": "nkagan",
-    "note": "Operator accepted the corrected Classroom HDR/AgX candidate in session on 2026-06-30."
+    "note": "Operator reviewed and approved the CI candidate from run 31676425138 after the Bridges runtime cutover."
   },
   "capture": {
-    "host_profile": "linux-rtx6000-ada",
-    "result_sha256": "586bd5ec34236448c236f48f4cc105c96749f702e61dd4e1c9b70d57f5b0d7a3",
+    "host_profile": "github-actions-linux-x64",
+    "result_sha256": "868b3733fad4bfd8d35e4595a0ba7f1b3094074ca577b78df688bc31b0b43227",
     "samples": 64
   },
   "capture_workload": {
     "camera_prim_path": "/OvrtxCamera",
-    "fixture_usd_sha256": "5fb563e19a9ecd8affd3435ef9bd25a93cf046ad3f4c24e6f8821ed757ecba9d",
-    "fixture_content_sha256": null,
+    "fixture_usd_sha256": "77e25334f3baed02b7b49bf99839fd68542c464702f8fd59435724248e029880",
+    "fixture_content_sha256": "28391f40849ca1d98bed9b0401fb777b8256ec299c07662222adc7f0bbfafe43",
     "id": "perf_blender_classroom_1280x720",
     "render_product_path": "/Render/OmniverseKit/HydraTextures/ViewportTexture0"
+  },
+  "platform_capture_workloads": {
+    "win32": {
+      "camera_prim_path": "/OvrtxCamera",
+      "fixture_usd_sha256": "185f6e207a5dfd3b21336e43a7bf43b0616d1b43b469b4a92a260d999c20cbed",
+      "fixture_content_sha256": "3c130441a1d70146a3a43598a7ae314c58f8b0d3b25dd190eeb5539afd8812a3",
+      "id": "perf_blender_classroom_1280x720",
+      "render_product_path": "/Render/OmniverseKit/HydraTextures/ViewportTexture0"
+    }
   },
   "case": "perf_blender_classroom_1280x720",
   "frame": {
     "path": "frame.png",
-    "sha256": "674331eab298a7df3a918fbe3bded211574d5130e4fadd6d7edc229680723bbb"
+    "sha256": "868b3733fad4bfd8d35e4595a0ba7f1b3094074ca577b78df688bc31b0b43227"
   },
   "kind": "ov-blender-example-golden-image",
   "presentation": "scene_linear_hdr",

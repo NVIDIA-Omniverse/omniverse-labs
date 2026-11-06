@@ -1,6 +1,6 @@
 ---
 name: ovrtx-addon-install-and-preflight
-description: Install, enable, update, and preflight the OVRTX Blender add-on and its runtime bundle. Use when installing an extension ZIP or developer checkout, diagnosing a missing OVRTX render engine, or verifying runtime readiness through the documented setup.
+description: Install, enable and preflight the ovrtx Blender Example release package (add-on plus locked external SDK runtime) in stock Blender 5.2 or newer. Use for installation, upgrades, a missing render engine or runtime integrity diagnostics.
 license: "Apache-2.0"
 metadata:
   author: "Max Bickley"
@@ -14,76 +14,63 @@ metadata:
     - lighting
     - addon-development
 ---
-# OVRTX add-on install and preflight
+# OVRTX addon installation and preflight
 
-Treat the add-on and the OVRTX/OVPhysX runtime as two distribution layers. The add-on source is inspectable and may be extended. The native worker and client are installed or supplied as runtime components through the supported installer/configuration surface.
+Install from the release package ZIP for the platform (`windows-x64` or
+`linux-x64`). It pairs the add-on, the locked external SDK runtime, their
+distribution manifest and the installer. Stock Blender 5.2 or newer loads the
+Python add-on and transport reader; native SDKs execute only in the external
+runtime. Follow the package's `INSTALL.txt` and this project's README.
 
-## When to Use
+## Install the release package
 
-Use when installing an extension ZIP or developer checkout, diagnosing a missing OVRTX render engine, or verifying runtime readiness through the documented setup.
+Extract the package, close Blender, and run the installer from the extracted
+folder with an explicit Blender executable: `install.bat BLENDER_EXE` on Windows,
+`sh install.sh BLENDER_EXECUTABLE` on Linux. It installs into that Blender's own
+settings folder, uses Blender's Python, and warms up the renderer's shader caches
+(exit code 3 means the add-on is installed but the warm-up failed). For a
+separate configuration, pass a new empty `SETTINGS_DIR` to both the installer and
+`launch.bat`/`launch.sh`. Re-running a newer package's installer is the upgrade
+path; it removes the previous add-on and runtime first.
+Settings paths may contain spaces and non-ASCII characters; on Windows a non-ASCII
+settings folder keeps the native runtime in the folder named by
+`ovrtx-sdk\native-root.json` (`%ProgramData%\ovrtx-blender\<hash>`), which Remove
+Runtime deletes. Keep the package files together, install only the package the
+user selected, and preserve existing user settings and scene files.
 
-## Instructions
+The installed ready selector chooses the verified sidecar interpreter and worker
+script. Native bridge client/module overrides and online release discovery are
+not part of this port's supported setup. Do not substitute another runtime when
+an integrity or version check fails.
 
-1. Confirm Blender meets the version requirement in the included README and add-on manifest.
-2. Install only a release the user selected from a documented distribution
-   location. Verify its publisher and declared digest or signature when one is
-   supplied. Obtain explicit consent before any network download or native
-   component installation. In Blender, install the release extension ZIP
-   through the Extensions/Add-ons “Install from Disk” flow, then enable `ovrtx
-   Blender Example` and restart Blender if requested.
-   Keep the selected Release page URL with that ZIP. Do not discover, infer, or
-   substitute a “latest” release.
-3. For contributor work, use the checked-out `addon/` package only through the documented development/install workflow. Do not copy individual Python modules into Blender's user scripts directory: the extension registration and manifest are a unit.
-4. Confirm that the render engine `OVRTX_EXAMPLE` appears and that the OVRTX Example panel is registered. If it does not, collect the Blender console traceback and verify that the installed package matches the intended Blender version.
+## Readiness checks
 
-## Install or verify the runtime
+- Stock Blender 5.2 or newer, enabled installed extension and `OVRTX_EXAMPLE` engine.
+- Installed add-on/runtime pair from one package, complete locked tuple and exact shipped file hashes.
+- Ready selector and external interpreter/worker within the settings folder.
+- Camera, visible geometry and lighting/world in the current scene.
+- Actual finite/nonblank rendered pixels and natural owned-worker/resource cleanup.
 
-Open the add-on Preferences and inspect the Runtime panel. **Install Runtime
-From** intentionally starts empty. Paste the exact GitHub Release page URL that
-supplied the add-on ZIP, or enter an absolute folder containing that Release's
-external manifest and every component archive. The install action remains
-disabled until a source is explicit. Never guess a repository, tag, or parent
-folder. The add-on verifies the external manifest against its embedded digest
-before acquiring components and materializes the verified platform runtime in
-Blender extension storage.
+Smoke-test by selecting `OVRTX_EXAMPLE`, switching the viewport to Rendered
+shading and rendering a still of a scene with a camera, geometry and lights. For a
+fixed reference, follow the project's `docs/verification-workload.md`. The
+automated installed-package verifier belongs to the upstream build repository and
+is not part of this project. Preserve the first error.
 
-Use **Reset to Installed Runtime** after experimenting with advanced overrides. Advanced fields (worker command, native client path, and module name) are diagnostic escape hatches, not ordinary artist prerequisites.
+LDR arrives pre-corrected and bypasses Blender color correction. Only scene-linear
+HDR receives Blender's configured display transform. Do not hide a color
+ownership error by changing material, light or exposure values.
 
-Use the documented setup and runtime diagnostics. If an organization supplies a preinstalled runtime, use the documented path/module values or leave them at the installed defaults.
+Release qualification used representative runs; exhaustive benchmarking and long
+stress work are deferred. See the project's `docs/support-platforms.md` for the
+measured Windows and Linux scope.
 
-## Preflight gates
+## Troubleshoot and report
 
-Run the add-on's own preflight/status view and classify each result:
-
-- **Blender/add-on:** Blender version, add-on enabled, and `OVRTX_EXAMPLE` engine registered.
-- **Runtime bundle:** installed state, manifest match, platform, and verified component files.
-- **OVRTX worker:** configured command is resolved and launchable by the add-on.
-- **Native client:** configured path exists and the installed module exposes the installed client surface expected by the add-on.
-- **Scene boundary:** a current `.blend` or imported USD is available; no developer fixture catalog is required for a user scene.
-
-Only claim “ready” when all required checks pass. A missing runtime, client import error, incompatible platform, or unavailable GPU is a blocked preflight; report the check label and message exactly as shown.
-
-## Smoke test
-
-1. Start Blender with the add-on enabled and open a disposable scene or a copy of the user's `.blend`.
-2. Set the render engine to OVRTX Example, choose a camera, and request a one-sample or low-sample render.
-3. Confirm that an image or rendered viewport appears, then raise samples only after the first frame is valid.
-4. Keep the add-on session logs and the output path. If the smoke fails, use the panel's log-folder action and preserve the first error; do not mask it with repeated restarts.
-
-## Troubleshooting boundaries
-
-- **Add-on absent:** reinstall the extension ZIP/check the package manifest and restart Blender.
-- **Runtime missing or stale:** use Install/Verify/Retry, then Reset to Installed Runtime; do not hand-edit cached runtime files.
-- **Worker/client check fails:** verify the installed runtime status and documented configuration. Treat the worker/client as installed components; escalate with the status message, platform, add-on version, and logs.
-- **Engine registered but render fails:** continue with `ovrtx-current-scene-workflow` diagnostics and capture the session log. A Blender Cycles/Eevee render is not evidence that OVRTX rendered.
-- **Offline environment:** download the complete paired Release asset set on an
-  approved connected system, transfer it unchanged into one directory, and use
-  that absolute directory as **Install Runtime From**. Do not invent an offline
-  package or substitute a different renderer while claiming OVRTX success.
-
-## Closeout
-
-Return the readiness decision, Blender/add-on version, runtime state, smoke
-result, and first actionable blocker. Create or share a diagnostic bundle only
-when troubleshooting requires it; never include credentials, and sanitize logs
-before sharing.
+For a missing engine, inspect the extension/profile registration error. For an
+unavailable runtime, retain the exact manifest/interpreter/path/version diagnostic
+and re-run the installer from the complete, unmodified package. For blank pixels, inspect camera, geometry,
+lighting and Rendered viewport shading before altering scene colors. A Cycles or
+EEVEE frame does not establish OVRTX rendering. Return the selected Blender/settings folder,
+package identity, readiness result, actual smoke result and first actionable
+blocker. Keep logs local and sanitize credentials before any authorized sharing.

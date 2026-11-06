@@ -1,15 +1,16 @@
 schema_version = "1.0.0"
 
 id = "ovrtx_blender_example"
-version = "0.1.0"
+version = "0.2.0"
 name = "ovrtx Blender Example"
 tagline = "ovrtx render shell"
 maintainer = "OVRTX Blender Example contributors"
 type = "add-on"
 
-blender_version_min = "5.1.0"
+blender_version_min = "5.2.0"
 license = ["SPDX:Apache-2.0"]
-platforms = ["linux-x64", "linux-arm64"]
+# linux-arm64 is postponed and out of scope for this release; see docs/support-platforms.md.
+platforms = ["linux-x64", "windows-x64"]
 
 [permissions]
 files = "Read fixture USD files and write local render artifacts"

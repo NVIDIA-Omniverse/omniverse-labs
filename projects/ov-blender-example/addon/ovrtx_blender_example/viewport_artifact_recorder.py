@@ -5,11 +5,48 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import json
+from pathlib import Path
+import threading
 import time
 from typing import Any, Callable, Mapping
 
 from . import color_presentation
 from . import render_requests
+
+
+_OUTPUT_LOCK = threading.Lock()
+
+
+def write_output(path: str, payload: Mapping[str, Any]) -> None:
+    """Serialize live and terminal writers for the same diagnostic destination."""
+    with _OUTPUT_LOCK:
+        Path(path).write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def finalize_outputs(outputs, thread_model, cleanup, render_records_summary) -> None:
+    """Finish captured JSON after teardown without touching Blender ownership.
+
+    A newer session may already have published to the configured destination.
+    Compare its unique session token under the same lock as ordinary writers.
+    """
+    for path, payload in outputs:
+        artifact = payload.get("viewport_artifact", payload)
+        model = artifact["thread_model"]
+        model["render_thread"] = dict(thread_model.get("render_thread", {}))
+        model["render_loop"] = dict(thread_model.get("render_loop", {}))
+        draws = artifact.get("profile", {}).get("recent_draws", [])
+        artifact["render_thread_profile"] = render_records_summary(
+            list(thread_model.get("render_loop_records", [])), draws)
+        artifact["latest_view"] = _latest_view_evidence(model["render_loop"])
+        artifact["session_lifecycle"]["cleanup"] = dict(cleanup)
+        artifact["written_at_ns"] = time.time_ns()
+        with _OUTPUT_LOCK:
+            current = json.loads(Path(path).read_text(encoding="utf-8"))
+            current_artifact = current.get("viewport_artifact", current)
+            if current_artifact.get("session_output_id") != artifact["session_output_id"]:
+                continue
+            Path(path).write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
 @dataclass(frozen=True)
@@ -58,6 +95,9 @@ class State:
     redraw_signaling: Mapping[str, Any] = field(default_factory=dict)
     tick_absorb: Mapping[str, Any] = field(default_factory=dict)
     render_loop_records: list[dict[str, Any]] = field(default_factory=list)
+    # Failed renderer workers (worker_failure_logs): native log paths, the last
+    # matched error lines and GPU crash dumps.
+    worker_failures: list[Mapping[str, Any]] = field(default_factory=list)
 
 
 class Recorder:
@@ -170,6 +210,7 @@ class Recorder:
             "shared_stage_composition": dict(state.shared_stage_composition),
             "runtime_startup": dict(state.startup),
             "session_lifecycle": dict(state.session_lifecycle),
+            "worker_failures": [dict(failure) for failure in state.worker_failures],
             "session_started_at_ns": int(state.session_started_at_ns),
             "session_end_reason": str(state.end_reason),
             "session_ended_at_ns": time.time_ns(),

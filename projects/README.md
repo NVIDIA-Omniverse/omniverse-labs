@@ -35,6 +35,7 @@ linked here and archived.
 | Project | Description | Stage | Docs |
 | :--- | :--- | :---: | :---: |
 | [ovfmi](./ovfmi/) | FMI models driven from USD with FMPy, `ovrtx` rendering, and optional `ovphysx` rigid-body simulation | Exploration | [↗](./ovfmi/README.md) |
+| [ov-blender-example](./ov-blender-example/) | Blender add-on that renders with `ovrtx` and simulates with `ovphysx` through external workers (v0.2.0, Windows x64 and Linux x64, Blender 5.2+, Apache-2.0) | Pre-release | [↗](./ov-blender-example/README.md) |
 | [nanousd-labs](./nanousd-labs/) | An experimental exploration of generating USD implementations and stacks from the USD Core Specification via agents | Exploration | [↗](./nanousd-labs/README.md) |
 
 ---

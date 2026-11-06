@@ -204,16 +204,17 @@ def test_texture_wired_input_links_reports_blender_link_state() -> None:
     )
 
     assert unlinked == {
-        "inputs:diffuseColor": False,
-        "inputs:emissiveColor": False,
-        "inputs:roughness": False,
-        "inputs:metallic": False,
+        "inputs:diffuseColor": False, "inputs:emissiveColor": False,
+        "inputs:roughness": False, "inputs:metallic": False,
+        "inputs:base_color": False, "inputs:base_metalness": False,
+        "inputs:specular_roughness": False, "inputs:geometry_opacity": False,
+        "inputs:transmission_weight": False, "inputs:emission_color": False,
     }
     assert linked == {
-        "inputs:diffuseColor": True,
-        "inputs:emissiveColor": False,
-        "inputs:roughness": False,
-        "inputs:metallic": False,
+        "inputs:diffuseColor": True, "inputs:emissiveColor": False,
+        "inputs:roughness": False, "inputs:metallic": False,
+        "inputs:base_color": True, "inputs:base_metalness": False,
+        "inputs:specular_roughness": False, "inputs:emission_color": False,
     }
     assert no_principled is None
 
@@ -224,3 +225,41 @@ def test_material_field_classification_reports_topology_unsupported_and_non_rend
     assert conversion.classify_field(material, "use_nodes").status == conversion.STATUS_TOPOLOGY
     assert conversion.classify_field(material, "diffuse_color").reason == "unsupported_material_datablock_surface_value"
     assert conversion.classify_field(material, "use_fake_user").status == conversion.STATUS_NON_RENDER
+
+
+def test_transmission_tint_returns_to_white_without_stale_predecessor():
+    material = _material()
+    accepted = {row.name: row.value for row in conversion.usd_attribute_values(material)}
+    material.node_tree.nodes[0].inputs['Base Color'].default_value = (1, 1, 1, 1)
+    accepted.update({row.name: row.value for row in conversion.usd_attribute_values(material)})
+    assert accepted['inputs:transmission_color'] == (1, 1, 1)
+
+
+@pytest.mark.parametrize('field, value', [('Subsurface Scale', 0), ('Subsurface Radius', (0, 0, 0))])
+def test_zero_subsurface_radius_disables_previously_accepted_lobe(field, value):
+    material = _material()
+    accepted = {row.name: row.value for row in conversion.usd_attribute_values(material)}
+    material.node_tree.nodes[0].inputs[field].default_value = value
+    accepted.update({row.name: row.value for row in conversion.usd_attribute_values(material)})
+    assert accepted['inputs:subsurface_weight'] == 0
+    assert accepted['inputs:subsurface_radius'] == 0
+    assert accepted['inputs:subsurface_radius_scale'] == (0, 0, 0)
+    material.node_tree.nodes[0].inputs['Subsurface Scale'].default_value = .05
+    material.node_tree.nodes[0].inputs['Subsurface Radius'].default_value = (1, .4, .2)
+    accepted.update({row.name: row.value for row in conversion.usd_attribute_values(material)})
+    assert accepted['inputs:subsurface_weight'] == .6
+
+
+def test_direct_active_surface_wins_over_disconnected_principled_collection_order():
+    material = _material()
+    active = material.node_tree.nodes[0]
+    disconnected = _Node('BSDF_PRINCIPLED', {'Roughness': _Socket(.1)})
+    surface = _Socket(None, linked=True)
+    surface.links = [SimpleNamespace(from_node=active)]
+    output = _Node('OUTPUT_MATERIAL', {'Surface': surface})
+    output.is_active_output = True
+    material.node_tree.nodes[:] = [disconnected, active, output]
+    rows = {row.name: row.value for row in conversion.usd_attribute_values(material)}
+    assert rows['inputs:roughness'] == .45
+    surface.links[0].from_node = _Node('MIX_SHADER', {})
+    assert conversion.usd_attribute_values(material) == ()

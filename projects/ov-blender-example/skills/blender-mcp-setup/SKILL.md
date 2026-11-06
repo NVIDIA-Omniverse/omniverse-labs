@@ -23,7 +23,7 @@ Use when a user is new to Blender MCP, asks to create or edit a scene through MC
 
 ## Prerequisites
 
-- Blender 5.1 or newer is recommended for the OVRTX example.
+- Blender 5.2 or newer is required for the OVRTX example.
 - Blender is running with the user's Blender MCP add-on/server enabled.
 - The agent has access to scene inspection, Blender-Python execution, and (when available) a viewport screenshot tool.
 

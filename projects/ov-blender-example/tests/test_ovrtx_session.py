@@ -47,6 +47,23 @@ def _request(tmp_path: Path, **changes: object) -> RenderRequest:
     return replace(request, **changes)
 
 
+def test_camera_exit_keeps_geometry_identity_with_live_output_and_dof(tmp_path, monkeypatch):
+    monkeypatch.setenv("OV_BLENDER_EXAMPLE_VIEWPORT_WORK_DIR", str(tmp_path / "work"))
+    camera = CameraProjectionState(source="active_camera_view", projection="perspective",
+        focal_length=35, horizontal_aperture=32, vertical_aperture=16,
+        f_stop=20, focus_distance=8.73)
+    request = _request(tmp_path, camera_projection=camera,
+        camera_value_route_classes=("projection", "clip", "dof"),
+        output_size_value_route=True)
+    initial = ovrtx_session.build_spec(request)
+    orbit = ovrtx_session.build_spec(replace(request, width=400, height=300,
+        camera_projection=replace(camera, f_stop=0, focus_distance=0, vertical_aperture=24)))
+    assert ovrtx_session.reuse_decision(initial, orbit).reuse
+    assert initial.ovrtx_scene_composition.digest == orbit.ovrtx_scene_composition.digest
+    changed_scene = ovrtx_session.build_spec(replace(request, input_usd_path=str(tmp_path / "changed.usda")))
+    assert not ovrtx_session.reuse_decision(initial, changed_scene).reuse
+
+
 def _material_layer(*, material_count: int) -> MaterialPresentationLayer:
     return MaterialPresentationLayer(
         target_path="/World/Geom",
@@ -191,9 +208,10 @@ def test_build_spec_uses_creation_inputs_only(tmp_path: Path) -> None:
 def test_render_var_joins_session_identity(tmp_path: Path) -> None:
     """task02-02: the resolved presentation render var is session identity.
 
-    The selected output also joins the authored render product, and
-    ``reuse_decision`` returns a replace with ``render_var_changed`` (both
-    directions). An unset/empty mapping keeps the LDR default.
+    Two requests differing only in the classified ``render_var`` build specs
+    that differ solely in that field, and ``reuse_decision`` returns a replace
+    with ``render_var_changed`` (both directions). An unset/empty mapping keeps
+    the LDR default so pre-task requests are unchanged.
     """
 
     ldr = ovrtx_session.build_spec(_request(tmp_path))
@@ -203,13 +221,9 @@ def test_render_var_joins_session_identity(tmp_path: Path) -> None:
 
     assert ldr.render_var == "LdrColor"
     assert hdr.render_var == "HdrColor"
-    assert ldr.ovrtx_scene_composition.digest != hdr.ovrtx_scene_composition.digest
-    ldr_text = _presentation_text(ldr.ovrtx_scene_composition)
-    hdr_text = _presentation_text(hdr.ovrtx_scene_composition)
-    assert "rel orderedVars = [</Render/ProductA/LdrColor>]" in ldr_text
-    assert "HdrColor" not in ldr_text
-    assert "rel orderedVars = [</Render/ProductA/HdrColor>]" in hdr_text
-    assert "LdrColor" not in hdr_text
+    # Selecting one output also changes the composed orderedVars relation.
+    assert hdr.ovrtx_scene_composition.digest != ldr.ovrtx_scene_composition.digest
+    assert replace(hdr, render_var=ldr.render_var, ovrtx_scene_composition=ldr.ovrtx_scene_composition) == ldr
     assert ovrtx_session.reuse_decision(ldr, hdr) == ovrtx_session.OvrtxSessionReuseDecision(
         reuse=False,
         reason="render_var_changed",
@@ -369,7 +383,7 @@ def test_scene_composition_authors_every_declared_render_product(
     assert "rel orderedVars = [</Render/ProductA/LdrColor>]" in text
     assert "rel orderedVars = [</Render/ProductB/LdrColor>]" in text
     assert text.count('def RenderVar "LdrColor"') == 2
-    assert 'def RenderVar "HdrColor"' not in text
+    assert text.count('def RenderVar "HdrColor"') == 2
 
 
 def test_scene_composition_generates_fixed_render_products_for_resolved_camera(
@@ -397,7 +411,7 @@ def test_scene_composition_generates_fixed_render_products_for_resolved_camera(
     assert "rel orderedVars = [</Render/ProductA/LdrColor>]" in text
     assert "rel orderedVars = [</Render/ProductB/LdrColor>]" in text
     assert text.count('def RenderVar "LdrColor"') == 2
-    assert 'def RenderVar "HdrColor"' not in text
+    assert text.count('def RenderVar "HdrColor"') == 2
     assert 'uniform string sourceName = "LdrColor"' in text
 
 
@@ -428,7 +442,7 @@ def test_final_render_composition_authors_the_scene_camera_pose(
         "matrix4d xformOp:transform = "
         "( (1, 0, 0, 0), (0, 0, -1, 0), (0, 1, 0, 0), (1.5, -2, 3.25, 1) )"
     ) in text
-    assert 'uniform token[] xformOpOrder = ["xformOp:transform"]' in text
+    assert 'uniform token[] xformOpOrder = ["!resetXformStack!", "xformOp:transform"]' in text
     # Artifact diagnostics recompute contributions from the request; the
     # authored pose must round-trip through the digest validation.
     evidence = ovrtx_scene_composition.diagnostics(
@@ -606,7 +620,6 @@ def test_direct_composition_uses_canonical_empty_and_unordered_sensors(
         height=180,
         camera_projection=None,
         material_scene_layer=None,
-        render_vars=("LdrColor",),
     )
     unordered = ovrtx_scene_composition.compose(
         source_scene_path=str(tmp_path / "scene.usda"),
@@ -616,7 +629,6 @@ def test_direct_composition_uses_canonical_empty_and_unordered_sensors(
         height=180,
         camera_projection=None,
         material_scene_layer=None,
-        render_vars=("LdrColor",),
     )
     empty_evidence = ovrtx_scene_composition.diagnostics(
         empty,

@@ -694,9 +694,10 @@ def test_world_event_with_world_id_keeps_the_real_topology_edit_only() -> None:
     assert "unsupported_reason" not in edits[0].metadata
 
 
-def test_world_node_tree_only_update_on_supported_world_builds_nothing() -> None:
-    # An unlinked utility node next to the bare Background keeps the world
-    # supported: nothing render-relevant changed, no record, no report.
+def test_world_node_tree_only_update_on_supported_world_uses_typed_value_lane() -> None:
+    # Background socket edits and unlinked utility edits have the same
+    # ShaderNodeTree-only notification. Submit the current bounded World
+    # values; do not silently lose socket edits or classify them as topology.
     node_tree = _FakeBlenderId(
         name="WorldNodes",
         nodes=[
@@ -725,7 +726,10 @@ def test_world_node_tree_only_update_on_supported_world_builds_nothing() -> None
         worlds=(world,),
     )
 
-    assert edits == []
+    assert {edit.usd_attribute for edit in edits} == {'inputs:intensity', 'inputs:color'}
+    assert all(edit.shape == EditShape.VALUE for edit in edits)
+    assert all(edit.usd_prim_path == '/World/StudioDome' for edit in edits)
+    assert all(edit.blender_property_path == 'world_dome' for edit in edits)
 
 
 def test_unmatched_node_tree_update_builds_nothing() -> None:

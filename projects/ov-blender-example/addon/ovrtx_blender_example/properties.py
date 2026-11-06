@@ -14,6 +14,7 @@ try:
     from bpy.props import (  # type: ignore
         BoolProperty,
         EnumProperty,
+        FloatProperty,
         IntProperty,
         PointerProperty,
         StringProperty,
@@ -22,6 +23,7 @@ except ModuleNotFoundError:
     bpy = None  # type: ignore[assignment]
     BoolProperty = None  # type: ignore[assignment]
     EnumProperty = None  # type: ignore[assignment]
+    FloatProperty = None  # type: ignore[assignment]
     IntProperty = None  # type: ignore[assignment]
     PointerProperty = None  # type: ignore[assignment]
     StringProperty = None  # type: ignore[assignment]
@@ -82,6 +84,23 @@ DLSS_EXECMODE_ATTRIBUTE = "omni:rtx:post:dlss:execMode"
 #: no true off, so unchecking changes the DLSS execution mode rather than
 #: disabling DLSS.
 DLSS_DISABLED_EXECMODE = 0
+from .supersample import SUPERSAMPLE_ITEMS  # noqa: E402
+
+DLSS_QUALITY_ITEMS = (
+    ('INHERIT', 'Use Source', 'Preserve the source render quality'),
+    ('auto', 'Auto', 'Choose a DLSS preset for the output resolution'),
+    ('quality', 'Quality', 'Prioritize image quality'),
+    ('balanced', 'Balanced', 'Balance image quality and rendering cost'),
+    ('performance', 'Performance', 'Prioritize rendering performance'),
+)
+
+
+def resolve_dlss_quality(quality='INHERIT', dlss_enabled=True):
+    """One global policy, retaining the legacy Performance toggle mapping."""
+    if quality not in {item[0] for item in DLSS_QUALITY_ITEMS}:
+        raise ValueError('Invalid DLSS quality')
+    return ('performance' if not dlss_enabled else None) if quality == 'INHERIT' else quality
+
 
 
 # UI-selectable color presentation modes. Identifiers are the mode constants
@@ -310,6 +329,12 @@ if bpy is not None:
             update=_rtpt_setting_update("rtpt_firefly_filter_enabled"),
         )
 
+        dlss_quality: EnumProperty(
+            name='DLSS Quality', items=DLSS_QUALITY_ITEMS, default='INHERIT',
+            description='Global quality for desktop and headset. Recreates render products; refresh XR after changing',
+            update=_tag_view3d_redraw,
+        )
+
         dlss_enabled: BoolProperty(  # type: ignore[valid-type]
             name="DLSS Super-Resolution",
             description=(
@@ -323,6 +348,50 @@ if bpy is not None:
                 "freshly launched workers)"
             ),
             default=True,
+            update=_tag_view3d_redraw,
+        )
+
+        final_supersample: EnumProperty(
+            name="Final Render Anti-Aliasing",
+            items=SUPERSAMPLE_ITEMS, default="2",
+            description=(
+                "Edge anti-aliasing for Render Image/Animation (F12). The OVRTX "
+                "real-time path tracer leaves silhouette and shadow edges aliased "
+                "and none of its AA/DLSS/jitter settings change that, so the frame is "
+                "rendered at this multiple of the output width and height and averaged "
+                "down. 2x2 renders 4x the pixels: measured on Classroom, a re-render "
+                "takes about 2.2x as long as 1x, an edit re-render about 1.4x, and the "
+                "first render of a scene about +5%. 1x is fastest for quick previews"
+            ),
+            update=_tag_view3d_redraw,
+        )
+
+        viewport_supersample: EnumProperty(
+            name="Viewport Anti-Aliasing",
+            items=SUPERSAMPLE_ITEMS, default="1",
+            description=(
+                "Edge anti-aliasing for the rendered viewport: render at this multiple "
+                "of the viewport resolution and let the display filter it down. Off by "
+                "default because it multiplies the rendered pixels and the interactive "
+                "frame time"
+            ),
+            update=_tag_view3d_redraw,
+        )
+
+        semantic_output_path: StringProperty(
+            name="Semantic Capture Prefix (Future Work)",
+            description="Unavailable in the Windows MVP; nonempty requests are explicitly rejected",
+            subtype="FILE_PATH", default="",
+        )
+
+        native_auto_exposure: BoolProperty(
+            name="Auto Exposure (Future Work)", default=False,
+            description="Use native OVRTX camera auto exposure",
+            update=_tag_view3d_redraw,
+        )
+        native_exposure_white_point_scale: FloatProperty(
+            name="White Point Scale (Future Work)", default=10.0, min=0.001, soft_max=100.0,
+            description="Native OVRTX white point scale, passed directly to the renderer",
             update=_tag_view3d_redraw,
         )
 
@@ -368,7 +437,16 @@ if bpy is not None:
             update=_tag_view3d_redraw,
         )
 
+    class OvrtxCameraExposureSettings(bpy.types.PropertyGroup):
+        use_scene_defaults: BoolProperty(name="Use Scene Defaults", default=True,
+            update=_tag_view3d_redraw)
+        native_auto_exposure: BoolProperty(name="Auto Exposure (Future Work)", default=False,
+            update=_tag_view3d_redraw)
+        native_exposure_white_point_scale: FloatProperty(name="White Point Scale",
+            default=10.0, min=0.001, soft_max=100.0, update=_tag_view3d_redraw)
+
 else:
+    OvrtxCameraExposureSettings = None
     OvrtxExampleRenderSettings = None  # type: ignore[assignment]
 
 
@@ -376,14 +454,22 @@ def register() -> None:
     _bpy = _require_blender()
     if not getattr(OvrtxExampleRenderSettings, "is_registered", False):
         _bpy.utils.register_class(OvrtxExampleRenderSettings)
+    if not getattr(OvrtxCameraExposureSettings, "is_registered", False):
+        _bpy.utils.register_class(OvrtxCameraExposureSettings)
+    if not hasattr(_bpy.types.Camera, "ovrtx_exposure"):
+        _bpy.types.Camera.ovrtx_exposure = PointerProperty(type=OvrtxCameraExposureSettings)
     if not hasattr(_bpy.types.Scene, "ovrtx_example"):
         _bpy.types.Scene.ovrtx_example = PointerProperty(type=OvrtxExampleRenderSettings)
 
 
 def unregister() -> None:
     _bpy = _require_blender()
+    if hasattr(_bpy.types.Camera, "ovrtx_exposure"):
+        del _bpy.types.Camera.ovrtx_exposure
     if hasattr(_bpy.types.Scene, "ovrtx_example"):
         del _bpy.types.Scene.ovrtx_example
+    if getattr(OvrtxCameraExposureSettings, "is_registered", False):
+        _bpy.utils.unregister_class(OvrtxCameraExposureSettings)
     try:
         _bpy.utils.unregister_class(OvrtxExampleRenderSettings)
     except (RuntimeError, ValueError) as exc:

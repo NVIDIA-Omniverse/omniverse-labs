@@ -74,6 +74,7 @@ def _combined_update_result(updates: Sequence[Mapping[str, Any]]) -> dict[str, A
         ),
         "physics_generation_reset": any(update.get("physics_generation_reset", False) for update in non_empty),
         "failed": failed,
+        "recovery_required": any(update.get("recovery_required", False) for update in non_empty),
         "skipped_reason": ";".join(
             str(update.get("skipped_reason", "")) for update in non_empty if update.get("skipped_reason", "")
         ),
@@ -114,14 +115,18 @@ class ViewUpdateStream:
         *,
         transform_sink: Callable[[Sequence[OvrtxTransformValue]], None] | None = None,
         attribute_sink: Callable[[Sequence[OvrtxAttributeValue]], None] | None = None,
+        target_resolver: Callable[[EditIntent], EditIntent | None] | None = None,
+        pending_lock: Any | None = None,
     ) -> None:
         self._pending_updates: dict[tuple[Any, ...], EditIntent] = {}
         # one insertion-ordered map is the bounded cross-thread
-        # state; replace by semantic target, keep first-target order.
-        self._pending_lock = threading.Lock()
+        # state; retain first-target order without a generation resolver and
+        # latest-submission order when aliases need consumption-time rebinding.
+        self._pending_lock = pending_lock if pending_lock is not None else threading.Lock()
         self._last_result: dict[str, Any] = {}
         self._transform_sink = transform_sink
         self._attribute_sink = attribute_sink
+        self._target_resolver = target_resolver
         self._wake_hook: Callable[[], None] | None = None
 
     @property
@@ -166,9 +171,10 @@ class ViewUpdateStream:
         return intent.data_authority == DataAuthority.VIEW and _view_value_kind(intent) in _VIEW_VALUE_KINDS
 
     def queue(self, intent: EditIntent, *, notify: bool = True) -> dict[str, Any]:
-        self._retain_queued_value(intent)
         with self._pending_lock:
             key = _pending_target(intent)
+            if self._target_resolver is not None:
+                self._pending_updates.pop(key, None)
             self._pending_updates[key] = intent
         result = update_result(intent, physics_generation_reset=False, queued=True)
         self._last_result = result
@@ -177,12 +183,19 @@ class ViewUpdateStream:
             wake_hook()
         return result
 
-    def _retain_queued_value(self, intent: EditIntent) -> None:
+    def _retain_acknowledged_value(self, intent: EditIntent) -> None:
         retain_view_value(
             intent,
             transform_sink=self._transform_sink,
             attribute_sink=self._attribute_sink,
         )
+
+    def discard_pending(self) -> int:
+        """Explicit restart discards unsent renderer intent, never accepted state."""
+        with self._pending_lock:
+            count = len(self._pending_updates)
+            self._pending_updates = {}
+        return count
 
     def unsupported_result(self, intent: EditIntent) -> dict[str, Any]:
         result = update_result(intent, physics_generation_reset=False, queued=False)
@@ -203,6 +216,29 @@ class ViewUpdateStream:
             pending = self._pending_updates
             self._pending_updates = {}
         pending_intents = list(pending.values())
+        removed: list[dict[str, Any]] = []
+        if self._target_resolver is not None:
+            # Resolve against the native generation at consumption, not the
+            # accepted authoring generation observed by an earlier callback.
+            # Activation can replace sparse namespaces while callbacks queue.
+            try:
+                resolved: dict[tuple[Any, ...], EditIntent] = {}
+                for intent in pending_intents:
+                    mapped = self._target_resolver(intent)
+                    if mapped is None:
+                        record = update_result(intent, physics_generation_reset=False, queued=False)
+                        record['skipped_reason'] = 'scene_generation_target_removed'
+                        removed.append(record)
+                    elif isinstance(mapped, EditIntent):
+                        resolved[_pending_target(mapped)] = mapped
+                    else:
+                        raise TypeError('View target resolver must return a typed edit or None')
+                pending_intents = list(resolved.values())
+            except Exception as exc:
+                self._retain_failed_intents(pending_intents)
+                self._last_result = {'values_written': False, 'failed': True,
+                    'skipped_reason': f'view_target_resolution_error:{type(exc).__name__}:{exc}'}
+                return dict(self._last_result)
         view_grouped, unsupported = _pending_by_kind(pending_intents)
         camera_intents = view_grouped["camera"]
         camera_value_intents = view_grouped["camera_value"]
@@ -212,7 +248,7 @@ class ViewUpdateStream:
         light_intents = view_grouped["light"]
         world_intents = view_grouped["world"]
         uv_intents = view_grouped["uv"]
-        updates: list[dict[str, Any]] = []
+        updates: list[dict[str, Any]] = removed
 
         transform_updates = [*camera_intents, *transform_intents]
         if transform_updates:
@@ -267,6 +303,10 @@ class ViewUpdateStream:
                 "unsupported_uv_value_attribute",
             ),
         ):
+            if any(update.get("recovery_required") for update in updates):
+                # The accepted prefix is retained. Do not make further native
+                # mutations after an uncertain group, even through another port.
+                break
             if intents:
                 updates.append(
                     self._apply_attribute_updates(
@@ -311,11 +351,20 @@ class ViewUpdateStream:
             apply_ms = (time.perf_counter_ns() - started_ns) / 1_000_000.0
             failed = outcome.updated_count != len(values)
             result = _value_update_result_mapping(outcome)
+            if failed:
+                result["recovery_required"] = True
         except Exception as exc:
-            result = {"status": "error", "error": f"{type(exc).__name__}: {exc}"}
+            result = {"status": "error", "error": f"{type(exc).__name__}: {exc}",
+                      "retryable": bool(getattr(exc, "retryable", not isinstance(exc, (ValueError, TypeError)))),
+                      "recovery_required": bool(getattr(exc, "recovery_required", False))}
             apply_ms = 0.0
             failed = True
 
+        if failed and not result.get("recovery_required", False):
+            self._retain_failed_intents(intents)
+        elif not failed:
+            for intent in intents:
+                self._retain_acknowledged_value(intent)
         update = view_value_update_result(
             intents,
             values=values,
@@ -323,6 +372,7 @@ class ViewUpdateStream:
             apply_ms=apply_ms,
             failed=failed,
         )
+        update["recovery_required"] = bool(result.get("recovery_required", False))
         self._last_result = update
         return update
 
@@ -347,6 +397,8 @@ class ViewUpdateStream:
             apply_ms = (time.perf_counter_ns() - started_ns) / 1_000_000.0
             result_mapping = _value_update_result_mapping(outcome)
             failed = outcome.updated_count != len(values)
+            if failed:
+                result_mapping["recovery_required"] = True
         except Exception as exc:
             skipped_reason = (
                 "value_update_unavailable"
@@ -355,12 +407,19 @@ class ViewUpdateStream:
             )
             if not skipped_reason and unsupported_error in str(exc):
                 skipped_reason = unsupported_reason
-            result_mapping = {"status": "error", "error": f"{type(exc).__name__}: {exc}"}
+            result_mapping = {"status": "error", "error": f"{type(exc).__name__}: {exc}",
+                              "retryable": bool(getattr(exc, "retryable", not isinstance(exc, (ValueError, TypeError)))),
+                              "recovery_required": bool(getattr(exc, "recovery_required", False))}
             if skipped_reason:
                 result_mapping["skipped_reason"] = skipped_reason
             apply_ms = 0.0
             failed = True
 
+        if failed and not result_mapping.get("recovery_required", False):
+            self._retain_failed_intents(intents)
+        elif not failed:
+            for intent in intents:
+                self._retain_acknowledged_value(intent)
         result = result_fn(
             intents,
             values=values,
@@ -368,8 +427,22 @@ class ViewUpdateStream:
             apply_ms=apply_ms,
             failed=failed,
         )
+        result["recovery_required"] = bool(result_mapping.get("recovery_required", False))
         self._last_result = result
         return result
+
+    def _retain_failed_intents(self, intents: Sequence[EditIntent]) -> None:
+        """Keep failed desired values without replacing concurrently queued corrections."""
+        with self._pending_lock:
+            retained = {}
+            for intent in intents:
+                retained[_pending_target(intent)] = intent
+            # Concurrent submissions are newer, including aliases which only
+            # become the same target when the next native generation resolves.
+            for key, intent in self._pending_updates.items():
+                retained.pop(key, None)
+                retained[key] = intent
+            self._pending_updates = retained
 
 
 def _pending_target(intent: EditIntent) -> tuple[Any, ...]:

@@ -53,7 +53,7 @@ from ovrtx_blender_example.properties import (  # noqa: E402
 from ovrtx_blender_example.render_requests import RenderRequest  # noqa: E402
 
 
-_DLSS_OFF_LINE = f"int {DLSS_EXECMODE_ATTRIBUTE} = {int(DLSS_DISABLED_EXECMODE)}"
+_DLSS_OFF_LINE = f'token {DLSS_EXECMODE_ATTRIBUTE} = "performance"'
 _DLSS_CARB_PATH = ("rtx", "post", "dlss", "execMode")
 
 
@@ -318,11 +318,13 @@ def test_diagnostics_report_dlss_state(
 # --- Panel row (source-level) -----------------------------------------------
 
 
-def test_panel_draws_dlss_toggle_after_quality_controls() -> None:
+def test_panel_preserves_baseline_dlss_toggle_after_quality_controls() -> None:
     ui_source = (ROOT / "addon" / "ovrtx_blender_example" / "ui.py").read_text(
         encoding="utf-8"
     )
     draw = ui_source[ui_source.index("def draw(self, context"):]
+    assert 'layout.prop(settings, "dlss_quality")' not in draw
+    assert 'color_box.prop(settings, "native_auto_exposure")' not in draw
     assert 'layout.prop(settings, "dlss_enabled")' in draw
     assert draw.index('rtpt_firefly_filter_enabled') < draw.index(
         'layout.prop(settings, "dlss_enabled")'

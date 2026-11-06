@@ -11,6 +11,7 @@ from typing import Any, Callable, Mapping, Protocol, Sequence
 
 from .native_client_support import coerce_mapping_float as _mapping_float
 from .native_client_support import coerce_mapping_int as _mapping_int
+from . import performance_profile
 from .physics_pose_set import complete_physics_pose_set
 from .shared_stage_composition import BodyPose
 from .shared_stage_errors import SharedStageCompositionError
@@ -421,6 +422,8 @@ class PhysicsPoseProducer:
             diagnostics["composition_lock_skip_count"] = self.composition_lock_skip_count
             return diagnostics
 
+    @performance_profile.profiled_thread("physics-pose-producer")
+    @performance_profile.timed("background.physics_pose_producer")
     def _publication_loop(self, generation: int, stop_event: threading.Event) -> None:
         next_tick_ns = time.monotonic_ns()
         try:
@@ -450,6 +453,7 @@ class PhysicsPoseProducer:
                 self._in_flight = False
                 self._playback_active = False
 
+    @performance_profile.timed("background.physics_pose_publication")
     def _produce_publication(
         self,
         generation: int,

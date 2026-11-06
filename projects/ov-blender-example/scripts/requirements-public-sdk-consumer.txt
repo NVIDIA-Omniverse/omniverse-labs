@@ -1,0 +1,4 @@
+# Windows x64 CPython 3.13 diagnostic consumer only; never install in SDK Python.
+usd-core==25.11 --hash=sha256:cd7a873eff6a83f9c4a8b779ec392b53e960f2dc149a91a4f6900bd1aafc3e30
+numpy==2.3.3 --hash=sha256:f0dadeb302887f07431910f67a14d57209ed91130be0adea2f9793f1a4f817cf
+pillow==11.3.0 --hash=sha256:0bce5c4fd0921f99d2e858dc4d4d64193407e1b99478bc5cacecba2311abde51

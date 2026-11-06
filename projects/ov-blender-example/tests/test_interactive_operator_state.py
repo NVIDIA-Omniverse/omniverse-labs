@@ -290,6 +290,23 @@ def test_runtime_pose_mirror_prepares_pending_scene_update_without_render_sessio
     }
 
 
+def test_runtime_pose_mirror_matches_untagged_authored_objects_by_session_uid():
+    cube = _FakeBlenderObject()
+    cube.session_uid = 42
+    cube["ovrtx.usd_prim_path"] = "/Stale/Tag"
+    scene = SimpleNamespace(name="Scene", objects=[cube])
+    path = "/World/Cube"
+    pending, diagnostics = operator_state.prepare_runtime_pose_mirror(
+        (BodyPose(path, (0.0, 0.0, 0.5), (0.0, 0.0, 0.0, 1.0)),),
+        object(), SimpleNamespace(scene=scene), object_paths_by_session_uid={42: path},
+    )
+    assert diagnostics["scheduled_mirror_count"] == 1
+    assert pending["object_paths_by_session_uid"] == {42: path}
+    assert operator_state._pose_object_path(cube, pending["object_paths_by_session_uid"]) == path
+    cube.session_uid = 43  # A different object with the same name must not inherit the pose.
+    assert operator_state._pose_object_path(cube, pending["object_paths_by_session_uid"]) == ""
+
+
 def test_initial_condition_and_mirror_policy_are_operator_state() -> None:
     request = SimpleNamespace(
         timeline_controls_enabled=True,

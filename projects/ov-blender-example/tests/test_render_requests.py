@@ -167,6 +167,7 @@ def test_render_request_translator_records_render_signal_source_and_engine_id() 
     assert request.max_samples == 16
     assert request.simulation_reset_token == 7
     assert request.input_usd_path == "/tmp/resolved.usdc"
+
     assert request.camera_prim_path == "/Generated/Camera"
     assert request.blender_signal == {
         "source": "view_draw",
@@ -198,6 +199,117 @@ def test_render_request_translator_records_render_signal_source_and_engine_id() 
     )
 
 
+@pytest.mark.parametrize('current', [False, True])
+def test_final_translator_preserves_current_camera_pose_without_depsgraph_field(current):
+    scene = _render_scene()
+    # The final boundary already evaluates the pose. Render signals have no
+    # depsgraph field, and fake/current handles need not expose evaluated_get.
+    scene.camera = SimpleNamespace(matrix_world=(
+        (1., 0., 0., 7.), (0., 1., 0., 8.), (0., 0., 1., 9.), (0., 0., 0., 1.)))
+    signal = BlenderRenderSignal(source=BlenderRenderSignalSource.FINAL_RENDER,
+        intent=BlenderRenderIntent.FINAL_RENDER, scene=scene,
+        input_usd_path='/tmp/current.usda', camera_prim_path='/World/Camera',
+        render_product_path='/Render/Product', current_scene_generation=current)
+    request = RenderRequestTranslator(include_material_presentation=False).translate(signal)
+    assert request.camera_matrix is None
+    assert request.scene_camera_matrix is None
+    assert request.native_scene_camera_matrix == (render_requests.matrix_to_usd_rows(scene.camera.matrix_world) if current else None)
+
+
+@pytest.mark.parametrize('field,value,attribute,expected', [
+    ('lens', 75., 'focalLength', 75.),
+    ('sensor_width', 20., 'horizontalAperture', 20.),
+    ('shift_x', .3, 'horizontalApertureOffset', 10.8),
+    ('clip_start', 15., 'clippingRange', (15., 100.)),
+    ('dof', SimpleNamespace(use_dof=True, focus_distance=2., aperture_fstop=.5, focus_object=None), 'fStop', 50.),
+])
+def test_current_scene_unsynced_viewport_carries_authored_camera_values(field, value, attribute, expected):
+    scene = _render_scene()
+    data = SimpleNamespace(type='PERSP', lens=50., sensor_width=36., sensor_height=24.,
+        sensor_fit='AUTO', shift_x=0., shift_y=0., clip_start=.1, clip_end=100.,
+        dof=SimpleNamespace(use_dof=False))
+    scene.camera = SimpleNamespace(data=data, matrix_world=(
+        (1.,0.,0.,7.),(0.,1.,0.,8.),(0.,0.,1.,9.),(0.,0.,0.,1.)))
+    context = _viewport_context(scene=scene)
+    signal = BlenderRenderSignal(BlenderRenderSignalSource.VIEW_DRAW, BlenderRenderIntent.VIEWPORT,
+        scene, '/tmp/current.usda', camera_prim_path='/World/Camera',
+        render_product_path='/Render/Product', context=context, current_scene_generation=True)
+    translator = RenderRequestTranslator(include_material_presentation=False)
+    before = translator.translate(signal)
+    setattr(data, field, value)
+    after = translator.translate(signal)
+    assert after.camera_matrix is None and after.scene_camera_matrix is None
+    assert after.native_scene_camera_matrix[3][:3] == (7.,8.,9.)
+    assert after.camera_projection != before.camera_projection
+    from ovrtx_blender_example import direct_camera_updates
+    rows = {row['attribute_name']: row['value'] for row in
+            direct_camera_updates.projection_values(after.camera_prim_path, after.camera_projection)}
+    assert rows[attribute] == expected
+    # Explicit-stage USD authority must not borrow the active Blender camera.
+    exact = translator.translate(replace(signal, current_scene_generation=False))
+    assert exact.camera_projection is None and exact.native_scene_camera_matrix is None
+    # A synchronized user view must continue to use its viewport projection.
+    scene.ovrtx_example.sync_viewport_camera = True
+    synced = translator.translate(signal)
+    assert synced.camera_projection.source == render_requests.PERSPECTIVE_USER_VIEW
+    assert synced.camera_projection.focal_length == 28.
+    assert synced.native_scene_camera_matrix is None
+
+
+def test_unsynced_camera_replacement_uses_selected_generation_mapping():
+    from ovrtx_blender_example.blender_callback_adapters import BlenderRenderCallbackAdapter
+    from ovrtx_blender_example.scene_generation import BlenderId, BlenderPrimPath
+    scene = _render_scene()
+    cameras = [SimpleNamespace(session_uid=uid, name=f'Camera{uid}',
+        data=SimpleNamespace(type='PERSP', lens=lens, sensor_width=36., sensor_height=24.,
+            sensor_fit='AUTO', shift_x=0., shift_y=0., clip_start=.1, clip_end=100., dof=None),
+        matrix_world=((1.,0.,0.,x),(0.,1.,0.,0.),(0.,0.,1.,0.),(0.,0.,0.,1.)))
+        for uid,lens,x in ((41,50.,7.),(42,80.,2.))]
+    generation = SimpleNamespace(blender_prim_paths={BlenderId('OBJECT', c.session_uid):
+        BlenderPrimPath(c.name,'CAMERA',f'/World/{c.name}',f'/World/{c.name}/Camera') for c in cameras},
+        materialize_usd=lambda:'/tmp/current.usda')
+    adapter = BlenderRenderCallbackAdapter(generation_for_scene=lambda _:generation,
+        translator=RenderRequestTranslator(include_material_presentation=False))
+    for camera in cameras + cameras[:1]:
+        scene.camera = camera
+        request = adapter.view_draw_from_scene(scene,_viewport_context(scene=scene))
+        assert request.camera_prim_path == f'/World/{camera.name}/Camera'
+        assert request.camera_projection.focal_length == camera.data.lens
+        assert request.native_scene_camera_matrix[3][0] == camera.matrix_world[0][3]
+
+
+@pytest.mark.parametrize("playing", [False, True])
+def test_current_scene_viewport_uses_blender_timeline_without_environment(monkeypatch, playing):
+    monkeypatch.delenv("OV_BLENDER_EXAMPLE_SHARED_STAGE", raising=False)
+    scene = _render_scene()
+    context = _viewport_context(scene=scene)
+    context.screen = SimpleNamespace(is_animation_playing=playing)
+    signal = BlenderRenderSignal(
+        source=BlenderRenderSignalSource.VIEW_DRAW,
+        intent=BlenderRenderIntent.VIEWPORT,
+        scene=scene, context=context, current_scene_generation=True,
+        input_usd_path="/tmp/generated.usdc", camera_prim_path="/World/Camera",
+        render_product_path="/Render/Product",
+    )
+    request = RenderRequestTranslator(include_material_presentation=False).translate(signal)
+    assert request.timeline_controls_enabled
+    assert request.timeline_playing is playing
+    assert request.timeline_frame == scene.frame_current
+
+
+@pytest.mark.parametrize("setting,enabled", [("", False), ("0", False), ("false", False), ("1", True)])
+def test_exact_stage_timeline_respects_boolean_environment(monkeypatch, setting, enabled):
+    monkeypatch.setenv("OV_BLENDER_EXAMPLE_SHARED_STAGE", setting)
+    signal = BlenderRenderSignal(
+        source=BlenderRenderSignalSource.VIEW_DRAW,
+        intent=BlenderRenderIntent.VIEWPORT,
+        scene=_render_scene(), context=_viewport_context(),
+        input_usd_path="/tmp/exact.usda", camera_prim_path="/World/Camera",
+        render_product_path="/Render/Product",
+    )
+    assert RenderRequestTranslator(include_material_presentation=False).translate(signal).timeline_controls_enabled is enabled
+
+
 def test_render_intent_selects_policy_without_rewriting_event_provenance(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -226,7 +338,8 @@ def test_render_intent_selects_policy_without_rewriting_event_provenance(
         BlenderRenderSignal(intent=BlenderRenderIntent.FINAL_RENDER, **common)
     )
 
-    assert material_modes == [True, False]
+    # Both intents use the MaterialX/OpenPBR route (F12 matches the viewport).
+    assert material_modes == [True, True]
     assert viewport.rtpt_value_route is True
     assert final.rtpt_value_route is False
     assert viewport.camera_matrix is not None
@@ -308,7 +421,7 @@ def test_render_request_translator_preserves_scene_presentation_for_every_callba
     assert request.color_presentation["display_transform_owner"] == display_owner
 
 
-def test_render_request_translator_skips_unused_bundled_runtime_discovery(
+def test_render_request_translator_ignores_legacy_native_path_and_worker_overrides(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
@@ -318,11 +431,6 @@ def test_render_request_translator_skips_unused_bundled_runtime_discovery(
     monkeypatch.setenv(
         "OV_BLENDER_EXAMPLE_NATIVE_CLIENT_PATH",
         str(native_client_path),
-    )
-    monkeypatch.setattr(
-        bundled_runtime,
-        "defaults",
-        lambda: pytest.fail("explicit runtime paths must not trigger discovery"),
     )
 
     request = RenderRequestTranslator().translate(
@@ -337,9 +445,9 @@ def test_render_request_translator_skips_unused_bundled_runtime_discovery(
         )
     )
 
-    assert request.worker_command
-    assert str(native_client_path) in sys.path
-    sys.path.remove(str(native_client_path))
+    assert request.worker_command != "worker"
+    assert request.native_client_module == ""
+    assert str(native_client_path) not in sys.path
 
 
 def test_render_request_translator_reuses_bundled_runtime_discovery(
@@ -774,6 +882,45 @@ def test_camera_can_keep_fixed_resolution_while_syncing_view(
     assert request.camera_controls_mode == "blender_view"
 
 
+@pytest.mark.parametrize('fit,width,height,expected', [('HORIZONTAL',1280,720,(3.6,-7.2)),('VERTICAL',1280,720,(2.4,-4.8)),('AUTO',720,1280,(3.6,-7.2))])
+def test_active_camera_lens_shift_uses_fitted_sensor_units(fit,width,height,expected):
+    data=SimpleNamespace(type='PERSP',lens=50,sensor_width=36,sensor_height=24,sensor_fit=fit,shift_x=.1,shift_y=-.2)
+    projection=render_requests.camera_projection_from_scene_camera(SimpleNamespace(camera=SimpleNamespace(data=data)),None,width,height)
+    assert (projection.horizontal_aperture_offset,projection.vertical_aperture_offset)==expected
+
+
+@pytest.mark.parametrize("camera_type", ("PANO", "UNKNOWN_PROJECTION"))
+@pytest.mark.parametrize("viewport", (False, True))
+def test_unsupported_scene_camera_projection_is_reported_without_perspective_fallback(
+    camera_type, viewport, monkeypatch,
+):
+    from ovrtx_blender_example.ovrtx_runtime_client import RenderClientError
+
+    monkeypatch.setenv(render_requests.ENV_FIXED_VIEWPORT_RESOLUTION, "1")
+    camera_data = SimpleNamespace(
+        type=camera_type, lens=50.0, sensor_width=36.0, sensor_height=24.0,
+        sensor_fit="AUTO", shift_x=0.0, shift_y=0.0,
+    )
+    scene = SimpleNamespace(camera=SimpleNamespace(data=camera_data))
+    context = _viewport_context("CAMERA", scene) if viewport else None
+    with pytest.raises(RenderClientError, match="unsupported in OVRTX.*perspective or orthographic"):
+        render_requests.camera(
+            base_width=640, base_height=360, camera_prim_path="/World/Camera",
+            sync_viewport_camera=viewport, context=context, scene=scene,
+        )
+    assert camera_data.type == camera_type
+
+
+def test_unsupported_active_camera_does_not_block_independent_user_perspective_view():
+    scene = SimpleNamespace(camera=SimpleNamespace(data=SimpleNamespace(type="PANO")))
+    request = render_requests.camera(
+        base_width=640, base_height=360, camera_prim_path="/World/Camera",
+        sync_viewport_camera=True, context=_viewport_context("PERSP", scene), scene=scene,
+    )
+    assert request.camera_projection.projection == "perspective"
+    assert request.camera_projection.source == render_requests.PERSPECTIVE_USER_VIEW
+
+
 def test_camera_derives_active_camera_projection_and_dof_state() -> None:
     camera_data = SimpleNamespace(
         type="PERSP",
@@ -813,8 +960,8 @@ def test_camera_derives_active_camera_projection_and_dof_state() -> None:
         "focalLength": 50.0,
         "horizontalAperture": 36.0,
         "verticalAperture": 20.25,
-        "horizontalApertureOffset": 0.0,
-        "verticalApertureOffset": 0.0,
+        "horizontalApertureOffset": 3.6,
+        "verticalApertureOffset": -7.2,
         "fStop": 200.0,
         "clippingRange": (0.05, 250.0),
         "focusDistance": 7.5,
@@ -1042,3 +1189,70 @@ def test_reset_reason_value_edit_yields_to_existing_reasons() -> None:
         render_requests.reset_reason(composition_changed=True, value_edit=True)
         == "composition_changed"
     )
+
+
+@pytest.mark.parametrize("generation_path,expected", [
+    ("/tmp/generated.usdc", {7: "/World/_materials/Lamp"}),
+    ("/tmp/other.usdc", None),
+])
+def test_current_scene_translation_passes_generation_material_identity(
+    monkeypatch: pytest.MonkeyPatch, generation_path: str, expected,
+) -> None:
+    from ovrtx_blender_example import direct_scene_updates, scene_generation, scene_generation_sessions
+
+    scene = _render_scene()
+    generation = SimpleNamespace(
+        usd_path=generation_path,
+        blender_prim_paths={
+            scene_generation.BlenderId("MATERIAL", 7): SimpleNamespace(schema_path="/World/_materials/Lamp"),
+            scene_generation.BlenderId("OBJECT", 9): SimpleNamespace(schema_path="/World/Lamp/Mesh"),
+        },
+    )
+    monkeypatch.setitem(scene_generation_sessions._owners, int(getattr(scene, "session_uid", 0)),
+                        SimpleNamespace(current_generation=generation))
+    monkeypatch.setattr(direct_scene_updates, "presentation", lambda *_: None)
+    seen = {}
+    translator = RenderRequestTranslator(
+        blender_module_provider=lambda: SimpleNamespace(data=SimpleNamespace(materials=(object(),), objects=()))
+    )
+    monkeypatch.setattr(translator, "_material_scene_layer_from_scene",
+                        lambda *_args, **kwargs: seen.update(kwargs) or None)
+    monkeypatch.setattr(translator, "_light_scene_layer_from_scene", lambda *_args, **_kwargs: None)
+
+    translator.translate(BlenderRenderSignal(
+        BlenderRenderSignalSource.VIEW_UPDATE, BlenderRenderIntent.VIEWPORT, scene, "/tmp/generated.usdc",
+        camera_prim_path="/Camera/Camera", render_product_path="/Render/OVRTX/Product",
+        context=_viewport_context(), current_scene_generation=True))
+
+    assert seen["known_material_paths"] == expected
+
+
+def test_material_route_selection_per_intent() -> None:
+    from ovrtx_blender_example.blender_signal_translation import material_route_uses_materialx
+
+    assert material_route_uses_materialx(BlenderRenderIntent.VIEWPORT) is True
+    assert material_route_uses_materialx(BlenderRenderIntent.FINAL_RENDER) is True
+
+
+def test_final_render_reuses_nothing_and_viewport_reuses_material_layer(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    scene = _render_scene()
+    calls: list[tuple[bool, bool]] = []
+    translator = RenderRequestTranslator()
+    monkeypatch.setattr(
+        translator,
+        "_material_scene_layer_from_scene",
+        lambda *_args, **kwargs: calls.append((kwargs["reuse"], kwargs["use_materialx"])),
+    )
+    common = {
+        "source": BlenderRenderSignalSource.VIEW_DRAW,
+        "scene": scene,
+        "input_usd_path": "/tmp/resolved.usdc",
+        "camera_prim_path": "/Generated/Camera",
+        "render_product_path": "/Generated/Product",
+        "context": _viewport_context(),
+    }
+    translator.translate(BlenderRenderSignal(intent=BlenderRenderIntent.VIEWPORT, **common))
+    translator.translate(BlenderRenderSignal(intent=BlenderRenderIntent.FINAL_RENDER, **common))
+    assert calls == [(True, True), (False, True)]

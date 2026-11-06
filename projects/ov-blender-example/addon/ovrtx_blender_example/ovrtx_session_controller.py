@@ -7,30 +7,28 @@ from __future__ import annotations
 import copy
 from collections import deque
 from contextlib import contextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from functools import wraps
 import os
 import threading
 import time
 from typing import Any, Callable, Mapping
 
-from . import color_presentation, ovrtx_session, render_requests, rtpt_worker_config
+from . import (
+    color_presentation,
+    ovrtx_session,
+    performance_profile,
+    render_requests,
+    rtpt_worker_config,
+)
 from .ovrtx_runtime_client import (
-    OvrtxRuntimeClient,
     RenderClientError,
-    RenderReadTicket,
     RenderResult,
-    RenderSubmission,
 )
 from .ovrtx_scene_composition import OvrtxSceneComposition, diagnostics as composition_diagnostics
-from .ovrtx_value_updates import (
-    OvrtxSessionUpdatePort,
-    OvrtxTransformValue,
-    OvrtxUpdatePort,
-    OvrtxValueUpdateResult,
-)
+from .ovrtx_value_updates import OvrtxSessionUpdatePort, OvrtxUpdatePort
 from .render_requests import RenderRequest
-from .runtime_scheduler import RuntimeTickResult
+from .runtime_scheduler import RuntimeTickResult, RuntimeTickStatus
 
 
 RPC_THREAD_GUARD_ENV = "OV_BLENDER_EXAMPLE_DEBUG_RPC_THREAD_GUARD"
@@ -40,7 +38,7 @@ _PRESENTATION_UNSET = object()
 def _serialized(function: Callable[..., Any]) -> Callable[..., Any]:
     @wraps(function)
     def call(self: "OvrtxSessionController", *args: Any, **kwargs: Any) -> Any:
-        with self._transport_lock:
+        with self._owned_transport():
             return function(self, *args, **kwargs)
 
     return call
@@ -50,47 +48,20 @@ class OvrtxThreadConfinementError(RenderClientError):
     """An srtx RPC entry point was called off the owning render thread."""
 
 
-class OvrtxSessionRetirementRequiredError(RenderClientError):
-    """A split-render RPC left its exact-time session unsafe to reuse."""
-
-    def __init__(
-        self,
-        message: str,
-        *,
-        controller: Any,
-        session_revision: int,
-        operation: str,
-    ) -> None:
-        super().__init__(message)
-        self.controller = controller
-        self.session_revision = int(session_revision)
-        self.operation = str(operation)
-
-
 def _rpc_thread_guard_enabled(env: Mapping[str, str] = os.environ) -> bool:
     return env.get(RPC_THREAD_GUARD_ENV, "").strip().lower() in {"1", "true", "yes", "on"}
 
 
-def _runtime_client_from_request(request: RenderRequest) -> OvrtxRuntimeClient:
-    return OvrtxRuntimeClient(
-        worker_command=request.worker_command,
-        native_client_module=request.native_client_module,
-    )
+def _runtime_client_from_request(request: RenderRequest):
+    from .direct_sdk_client import PublicSdkRenderClient
+    return PublicSdkRenderClient(request)
 
 
 @dataclass(frozen=True)
 class OvrtxEnsureResult:
     composition: OvrtxSceneComposition
     session_started: bool
-
-
-@dataclass(frozen=True)
-class OvrtxPreparedRenderSubmission:
-    """One transform batch and the sample submitted immediately behind it."""
-
-    submission: RenderSubmission
-    update_result: OvrtxValueUpdateResult
-    session_revision: int
+    value_state_preserved: bool = False
 
 
 class OvrtxSessionController:
@@ -110,6 +81,9 @@ class OvrtxSessionController:
         self._client: Any | None = None
         self._simulation_id: str | None = None
         self._spec: ovrtx_session.OvrtxSessionSpec | None = None
+        self._camera_request: RenderRequest | None = None
+        self._direct_camera_catalog = None
+        self._direct_camera_catalog_source = None
         self._runtime_binding: tuple[str, str] | None = None
         self._project_complete_pose = False
         self._closed = False
@@ -124,15 +98,14 @@ class OvrtxSessionController:
         self._value_update_timings: dict[str, Any] = {}
         self._ensure_timings: dict[str, float] = {}
         self._last_stop_status = "not_found"
+        self._last_worker_stop: Mapping[str, Any] | None = None
         self._owning_thread_ident: int | None = None
         self._thread_guard_active = False
         self._transport_lock = threading.RLock()
-        self._render_session_invalid_revision: int | None = None
+        self._transport_local = threading.local()
         self._exclusive_gate = threading.Condition()
         self._exclusive_pending = 0
         self._transport_waiters: deque[object] = deque()
-        self._serialized_presentation_key: Any = _PRESENTATION_UNSET
-        self._prefetched_read_reservation: Any = _PRESENTATION_UNSET
         self._presentations: dict[
             int, tuple[Callable[[], None] | None, Callable[[], None] | None]
         ] = {}
@@ -169,21 +142,15 @@ class OvrtxSessionController:
         """
 
         ident = int(thread_ident) if thread_ident is not None else threading.get_ident()
-        with self._exclusive_gate:
-            if len(self._presentations) > 1:
-                self._owning_thread_ident = None
-                self._thread_guard_active = False
-            else:
-                self._owning_thread_ident = ident
-                self._thread_guard_active = _rpc_thread_guard_enabled()
+        self._owning_thread_ident = ident
+        self._thread_guard_active = _rpc_thread_guard_enabled()
         return ident
 
     def _allow_serialized_threads(self) -> None:
         """Use transport serialization when several presentation threads share us."""
 
-        with self._exclusive_gate:
-            self._owning_thread_ident = None
-            self._thread_guard_active = False
+        self._owning_thread_ident = None
+        self._thread_guard_active = False
 
     def _attach_presentation(
         self,
@@ -193,24 +160,10 @@ class OvrtxSessionController:
     ) -> None:
         with self._exclusive_gate:
             self._presentations[presentation_key] = (wake, restore)
-            if len(self._presentations) > 1:
-                # Shared presentations serialize through _transport_lock; no
-                # single render thread can remain the controller-wide RPC
-                # owner. Handle both attach-before-adopt and adopt-before-attach.
-                self._owning_thread_ident = None
-                self._thread_guard_active = False
 
     def _detach_presentation(self, presentation_key: int) -> None:
         with self._exclusive_gate:
             self._presentations.pop(presentation_key, None)
-            if self._prefetched_read_reservation == presentation_key:
-                # Detach is the last-resort abort boundary. Normal teardown
-                # cancels and releases first; if it did not, fail the session
-                # closed so another pane cannot reuse potentially live native
-                # ownership after this orphan-prevention release.
-                self._prefetched_read_reservation = _PRESENTATION_UNSET
-                self._render_session_invalid_revision = self._session_revision
-                self._exclusive_gate.notify_all()
             callbacks = next(iter(self._presentations.values()), (None, None))
             restore_single = len(self._presentations) == 1
         if restore_single and callbacks[1] is not None:
@@ -228,73 +181,6 @@ class OvrtxSessionController:
         with self._exclusive_gate:
             return len(self._presentations) > 1
 
-    def _reserve_prefetched_render_read(self, presentation_key: int) -> bool:
-        """Reserve transport re-entry for one presentation's live read ticket.
-
-        The check is atomic with presentation attach and global-exclusive
-        admission. It is valid only while ``presentation_key`` owns the current
-        serialized transaction; callers cannot manufacture a reservation from
-        outside that boundary.
-        """
-
-        with self._exclusive_gate:
-            current = self._prefetched_read_reservation
-            if current is not _PRESENTATION_UNSET:
-                return current == presentation_key
-            if (
-                self._serialized_presentation_key != presentation_key
-                or presentation_key not in self._presentations
-                or len(self._presentations) != 1
-                or self._exclusive_pending
-            ):
-                return False
-            self._prefetched_read_reservation = presentation_key
-            return True
-
-    def _release_prefetched_render_read(self, presentation_key: int) -> bool:
-        """Release ``presentation_key``'s logical transport reservation."""
-
-        with self._exclusive_gate:
-            if self._prefetched_read_reservation != presentation_key:
-                return False
-            self._prefetched_read_reservation = _PRESENTATION_UNSET
-            self._exclusive_gate.notify_all()
-            return True
-
-    def _supports_split_render(self) -> bool:
-        """Whether the active client exposes the bounded split-render API."""
-
-        client = self._client
-        return client is not None and all(
-            callable(getattr(client, name, None))
-            for name in (
-                "submit_render_sample",
-                "complete_render_sample",
-                "discard_render_sample",
-            )
-        )
-
-    def _supports_async_render_read(self) -> bool:
-        """Whether the active client exposes the complete async-read API."""
-
-        client = self._client
-        if client is None:
-            return False
-        methods_present = all(
-            callable(getattr(client, name, None))
-            for name in (
-                "begin_render_sample_read",
-                "poll_render_sample_read",
-                "cancel_render_sample_read",
-            )
-        )
-        if not methods_present:
-            return False
-        supports = getattr(client, "supports_async_render_read", None)
-        if supports is None:
-            return True
-        return bool(supports() if callable(supports) else supports)
-
     def _advance_session_revision(self) -> None:
         self._session_revision += 1
         with self._exclusive_gate:
@@ -307,112 +193,84 @@ class OvrtxSessionController:
             wake()
 
     @contextmanager
+    def _owned_transport(self):
+        """Track reentrant ownership without depending on private RLock APIs."""
+        with self._transport_lock:
+            depth = getattr(self._transport_local, "depth", 0)
+            self._transport_local.depth = depth + 1
+            try:
+                yield
+            finally:
+                self._transport_local.depth = depth
+
+    @contextmanager
     def _serialized_transport(
         self,
         presentation_key: Any = _PRESENTATION_UNSET,
         exclusive_pending: Callable[[], bool] | None = None,
         cancelled: Callable[[], bool] | None = None,
     ):
-        """Keep one presentation's mutation and readback contiguous, FIFO.
+        """Keep one presentation's mutation and readback contiguous, FIFO."""
 
-        A presentation with a live prefetched read retains a logical
-        reservation after its physical lock scope ends. Other presentations
-        remain FIFO-blocked while its owner may bypass the queue to drain or
-        cancel that one ticket.
-        """
-
+        if getattr(self._transport_local, "depth", 0):
+            # Authored activation re-enters inside the viewport's transaction.
+            # Queuing behind a second pane would deadlock: that pane needs the
+            # RLock this thread already owns. The outer admission retains FIFO
+            # order and presentation identity for the complete operation.
+            yield False, bool(cancelled and cancelled())
+            return
         while True:
             waiter = object()
             with self._exclusive_gate:
                 self._transport_waiters.append(waiter)
-            cancelled_entry = False
             while True:
                 caller_has_job = bool(exclusive_pending and exclusive_pending())
                 with self._exclusive_gate:
-                    reservation = self._prefetched_read_reservation
-                    caller_owns_reservation = (
-                        reservation is not _PRESENTATION_UNSET
-                        and presentation_key == reservation
-                    )
                     if cancelled and cancelled():
                         self._transport_waiters.remove(waiter)
                         self._exclusive_gate.notify_all()
-                        cancelled_entry = True
-                        reservation_reentry = caller_owns_reservation
-                        caller_owns_exclusive = caller_owns_reservation
-                        break
-                    if caller_owns_reservation:
-                        self._transport_waiters.remove(waiter)
-                        reservation_reentry = True
-                        caller_owns_exclusive = bool(
-                            caller_has_job or self._exclusive_pending
-                        )
-                        break
-                    if reservation is not _PRESENTATION_UNSET:
-                        self._exclusive_gate.wait()
-                        continue
+                        yield False, True
+                        return
                     if caller_has_job or (
                         not self._exclusive_pending
                         and self._transport_waiters[0] is waiter
                     ):
-                        reservation_reentry = False
                         caller_owns_exclusive = bool(caller_has_job)
                         if caller_owns_exclusive:
                             self._transport_waiters.remove(waiter)
                         break
                     self._exclusive_gate.wait()
-            if cancelled_entry and not reservation_reentry:
-                yield False, True
-                return
-            if reservation_reentry or caller_owns_exclusive:
+            if caller_owns_exclusive:
                 try:
-                    with self._transport_lock:
-                        with self._exclusive_gate:
-                            previous_serialized_key = (
-                                self._serialized_presentation_key
-                            )
-                            self._serialized_presentation_key = presentation_key
-                        try:
-                            yield False, bool(
-                                caller_owns_exclusive or cancelled_entry
-                            )
-                        finally:
-                            with self._exclusive_gate:
-                                self._serialized_presentation_key = (
-                                    previous_serialized_key
-                                )
+                    with self._owned_transport():
+                        yield False, True
                 finally:
                     with self._exclusive_gate:
                         self._exclusive_gate.notify_all()
                 return
             try:
-                with self._transport_lock:
+                with self._owned_transport():
                     with self._exclusive_gate:
                         self._transport_waiters.remove(waiter)
-                        reservation = self._prefetched_read_reservation
-                        blocked_by_reservation = (
-                            reservation is not _PRESENTATION_UNSET
-                            and presentation_key != reservation
-                        )
-                        if self._exclusive_pending or blocked_by_reservation:
+                        if self._exclusive_pending:
                             self._exclusive_gate.notify_all()
                             continue
-                        previous_serialized_key = self._serialized_presentation_key
-                        self._serialized_presentation_key = presentation_key
                     presentation_changed = (
                         presentation_key is not _PRESENTATION_UNSET
                         and self._presentation_key is not _PRESENTATION_UNSET
                         and presentation_key != self._presentation_key
                     )
-                    try:
-                        yield presentation_changed, False
-                        if presentation_key is not _PRESENTATION_UNSET:
-                            self._presentation_key = presentation_key
-                    finally:
-                        with self._exclusive_gate:
-                            self._serialized_presentation_key = (
-                                previous_serialized_key
-                            )
+                    if presentation_changed:
+                        self.cancel_pending_renders()
+                    if not self.drain_render_cancellations():
+                        # Native cancellation is not native completion. Yield
+                        # the owner lock after one bounded poll, retaining this
+                        # stage for the previous ticket until its acknowledgement.
+                        yield False, True
+                        return
+                    yield presentation_changed, False
+                    if presentation_key is not _PRESENTATION_UNSET:
+                        self._presentation_key = presentation_key
             finally:
                 with self._exclusive_gate:
                     self._exclusive_gate.notify_all()
@@ -428,24 +286,15 @@ class OvrtxSessionController:
     def _validated_session(self, revision: int):
         """Keep publication atomic with respect to session replacement."""
 
-        with self._transport_lock:
+        with self._owned_transport():
             yield self._session_revision == int(revision)
 
     def _request_exclusive_transport(self) -> None:
         """Prevent new presentation transactions while an exclusive job waits."""
 
-        wake_reserved_owner = None
         with self._exclusive_gate:
             self._exclusive_pending += 1
-            reservation = self._prefetched_read_reservation
-            if reservation is not _PRESENTATION_UNSET:
-                wake_reserved_owner = self._presentations.get(
-                    reservation,
-                    (None, None),
-                )[0]
             self._exclusive_gate.notify_all()
-        if wake_reserved_owner is not None:
-            wake_reserved_owner()
 
     def _release_exclusive_transport(self) -> None:
         with self._exclusive_gate:
@@ -453,29 +302,21 @@ class OvrtxSessionController:
             if not self._exclusive_pending:
                 self._exclusive_gate.notify_all()
 
-    def _has_pending_exclusive_transport(self) -> bool:
-        """Whether any controller-wide exclusive owner is waiting or active."""
-
-        with self._exclusive_gate:
-            return bool(self._exclusive_pending)
-
     @contextmanager
     def _exclusive_transport(self):
-        """Hold the shared runtime after any prefetched read is released."""
+        """Hold the shared runtime across one complete exclusive job."""
 
-        while True:
-            with self._exclusive_gate:
-                while self._prefetched_read_reservation is not _PRESENTATION_UNSET:
-                    self._exclusive_gate.wait()
-            self._transport_lock.acquire()
-            with self._exclusive_gate:
-                if self._prefetched_read_reservation is _PRESENTATION_UNSET:
-                    break
-            self._transport_lock.release()
-        try:
+        with self._owned_transport():
             yield
-        finally:
-            self._transport_lock.release()
+
+    def _dlss_policy_changed(self, request: RenderRequest) -> bool:
+        previous = self._camera_request
+        if previous is None:
+            return False
+        def policy(value):
+            return (bool(getattr(value, "dlss_enabled", True)),
+                    str(getattr(value, "dlss_quality", "INHERIT")))
+        return policy(previous) != policy(request)
 
     def would_replace(self, request: RenderRequest) -> str:
         """Reason the next :meth:`ensure` would replace the session.
@@ -486,50 +327,92 @@ class OvrtxSessionController:
         (``output_shape_changed``, ``scene_composition_changed``,
         ``declared_sensors_changed``, ``camera_prim_changed``,
         ``camera_pose_override_removed``, ``render_var_changed``),
-        ``runtime_binding_changed``, ``render_operation_failed``, or
-        ``no_active_session``. Performs no RPCs, so it is deliberately not
+        ``dlss_policy_changed``,
+        ``runtime_binding_changed``, or ``no_active_session``. Performs no
+        RPCs, so it is deliberately not
         thread-guarded, and it mutates no controller state.
         """
 
         if self._closed or self._spec is None or self._simulation_id is None:
             return "no_active_session"
-        if self._render_session_invalid_revision == self._session_revision:
-            return "render_operation_failed"
         binding = (request.worker_command, request.native_client_module)
         if self._runtime_binding != binding:
             return "runtime_binding_changed"
+        if self._dlss_policy_changed(request):
+            return "dlss_policy_changed"
+        current = self._spec
+        if self._reuse.get("reason") == "direct_render_parameters":
+            # Direct ACKs preserve the loaded bootstrap USD while committing
+            # a newer live parameter state. Comparing against that old USD
+            # would resync forever after a projection change. Identical
+            # accepted requests need no composition work on the render loop.
+            if request == self._camera_request:
+                return ""
+            current = ovrtx_session.build_spec(self._camera_request)
         desired = ovrtx_session.build_spec(request)
-        decision = ovrtx_session.reuse_decision(self._spec, desired)
+        decision = ovrtx_session.reuse_decision(current, desired)
         return "" if decision.reuse else decision.reason
 
+    @performance_profile.timed("session_controller.ensure")
     @_serialized
     def ensure(self, request: RenderRequest) -> OvrtxEnsureResult:
         self._guard_rpc_thread("ensure")
         ensure_started_ns = time.perf_counter_ns()
         self._require_open()
+        # DLSS is a session-creation policy. In particular, removing the
+        # explicit Performance override must not leave its retained native
+        # opinion active when returning to inherited settings. This boundary
+        # also applies to exact-stage inputs whose USD digest is unchanged.
+        dlss_changed = self._dlss_policy_changed(request)
+        if not dlss_changed and self._try_direct_request(request, ensure_started_ns):
+            return OvrtxEnsureResult(self._spec.ovrtx_scene_composition, False, True)
         build_started_ns = time.perf_counter_ns()
         desired = ovrtx_session.build_spec(request)
         build_spec_ms = (time.perf_counter_ns() - build_started_ns) / 1_000_000.0
         reuse_decision_ms = 0.0
+        phase_timings = {}
         binding = (request.worker_command, request.native_client_module)
         reuse = {"reuse": False, "reason": "no_active_session"}
         if self._spec is not None and self._simulation_id is not None:
-            if self._render_session_invalid_revision == self._session_revision:
-                reuse = {"reuse": False, "reason": "render_operation_failed"}
-            elif self._runtime_binding == binding:
+            if self._runtime_binding == binding:
                 reuse_started_ns = time.perf_counter_ns()
-                decision = ovrtx_session.reuse_decision(self._spec, desired)
+                current = self._spec
+                if self._reuse.get("reason") == "direct_render_parameters":
+                    # Resetting a live override to authored USD must restore
+                    # native values, even when the desired USD equals the
+                    # bootstrap we loaded before that override was applied.
+                    current = ovrtx_session.build_spec(self._camera_request)
+                decision = (ovrtx_session.OvrtxSessionReuseDecision(False, "dlss_policy_changed")
+                            if dlss_changed else ovrtx_session.reuse_decision(current, desired))
                 reuse_decision_ms = (
                     time.perf_counter_ns() - reuse_started_ns
                 ) / 1_000_000.0
                 reuse = {"reuse": decision.reuse, "reason": decision.reason}
-                if decision.reuse:
+                retargeted = False
+                if not decision.reuse and not dlss_changed:
+                    phase_started = time.perf_counter_ns()
+                    retargeted = self._try_camera_retarget(request, desired, previous=current)
+                    phase_timings['camera_retarget_attempt_ms'] = (time.perf_counter_ns()-phase_started)/1_000_000
+                if retargeted:
+                    self._resize_output(request)
                     self._spec = desired
+                    self._camera_request = request
+                    self._reuse = {"reuse": True, "reason": "render_product_camera_retarget"}
+                    total_ms = (time.perf_counter_ns() - ensure_started_ns) / 1_000_000.0
+                    self._ensure_timings = {**phase_timings, "total_ms": total_ms, "build_spec_ms": build_spec_ms,
+                        "reuse_decision_ms": reuse_decision_ms,
+                        "other_ms": max(0.0, total_ms-build_spec_ms-reuse_decision_ms)}
+                    return OvrtxEnsureResult(desired.ovrtx_scene_composition, False, True)
+                if decision.reuse:
+                    self._resize_output(request)
+                    self._spec = desired
+                    self._camera_request = request
                     self._reuse = reuse
                     total_ms = (
                         time.perf_counter_ns() - ensure_started_ns
                     ) / 1_000_000.0
                     self._ensure_timings = {
+                        **phase_timings,
                         "total_ms": total_ms,
                         "build_spec_ms": build_spec_ms,
                         "reuse_decision_ms": reuse_decision_ms,
@@ -541,11 +424,59 @@ class OvrtxSessionController:
                     return OvrtxEnsureResult(
                         composition=desired.ovrtx_scene_composition,
                         session_started=False,
+                        value_state_preserved=True,
+                    )
+                can_update = getattr(self._client, "can_update_scene", None)
+                update_scene = getattr(self._client, "update_scene", None)
+                phase_started = time.perf_counter_ns()
+                compatible_update = (
+                    not dlss_changed
+                    and callable(can_update)
+                    and callable(update_scene)
+                    and can_update(self._spec, desired)
+                )
+                phase_timings['scene_update_compatibility_ms'] = (time.perf_counter_ns()-phase_started)/1_000_000
+                if compatible_update:
+                    # The external SDK client owns the transactional population
+                    # swap and rollback. Commit controller identity only after
+                    # the existing native stage has accepted the new source.
+                    configure = getattr(self._client, "configure_session", None)
+                    if callable(configure):
+                        configure(request)
+                    phase_started = time.perf_counter_ns()
+                    update_scene(self._simulation_id, desired)
+                    phase_timings['scene_update_ms'] = (time.perf_counter_ns()-phase_started)/1_000_000
+                    self._spec = desired
+                    self._camera_request = request
+                    self._project_complete_pose = True
+                    self._reuse = {"reuse": True, "reason": "stage_updated"}
+                    self._startup = dict(getattr(self._client, "startup_diagnostics", {}))
+                    self._advance_session_revision()
+                    self._events.append({
+                        "event": "stage_updated",
+                        "reason": decision.reason,
+                        "simulation_id": self._simulation_id,
+                        "time_ns": time.time_ns(),
+                    })
+                    total_ms = (time.perf_counter_ns() - ensure_started_ns) / 1_000_000.0
+                    self._ensure_timings = {
+                        **phase_timings,
+                        "total_ms": total_ms,
+                        "build_spec_ms": build_spec_ms,
+                        "reuse_decision_ms": reuse_decision_ms,
+                        "other_ms": max(0.0, total_ms - build_spec_ms - reuse_decision_ms),
+                    }
+                    return OvrtxEnsureResult(
+                        composition=desired.ovrtx_scene_composition,
+                        session_started=False,
                     )
             else:
                 reuse = {"reuse": False, "reason": "runtime_binding_changed"}
 
         active_before_close = self._simulation_id is not None
+        # Every new renderer starts from authored USD. A preserved, paused
+        # physics owner may have no dirty paths, but its complete current pose
+        # must still be projected before this renderer can publish a frame.
         replacing = active_before_close or self._project_complete_pose
         replacement_client = self._client if self._runtime_binding == binding else None
         self._close_active(
@@ -569,8 +500,12 @@ class OvrtxSessionController:
             request.worker_command,
             getattr(request, "rtpt_quality", None),
             self._dlss_enabled,
+            str(getattr(request, "dlss_quality", "INHERIT")),
         )
         client = replacement_client or _runtime_client_from_request(request)
+        configure = getattr(client, "configure_session", None)
+        if callable(configure):
+            configure(request)
         try:
             if self._requested_simulation_id:
                 simulation_id = client.start_session(
@@ -590,9 +525,9 @@ class OvrtxSessionController:
         self._client = client
         self._simulation_id = simulation_id
         self._spec = desired
+        self._camera_request = request
         self._runtime_binding = binding
-        self._render_session_invalid_revision = None
-        self._project_complete_pose = replacing
+        self._project_complete_pose = True
         self._reuse = reuse
         self._startup = dict(getattr(client, "startup_diagnostics", {}))
         self._advance_session_revision()
@@ -606,6 +541,7 @@ class OvrtxSessionController:
         )
         total_ms = (time.perf_counter_ns() - ensure_started_ns) / 1_000_000.0
         self._ensure_timings = {
+            **phase_timings,
             "total_ms": total_ms,
             "build_spec_ms": build_spec_ms,
             "reuse_decision_ms": reuse_decision_ms,
@@ -616,6 +552,72 @@ class OvrtxSessionController:
             session_started=True,
         )
 
+    def _try_direct_request(self, request, started_ns):
+        if (self._spec is None or self._simulation_id is None
+                or not getattr(self._client, 'supports_direct_render_parameters', False)):
+            return False
+        from . import direct_camera_updates
+        # Inspect bootstrap identity once per accepted population, never build
+        # a fresh presentation composition for ordinary camera/quality edits.
+        previous = self._camera_request
+        if previous is None or previous.input_usd_path != request.input_usd_path:
+            return False
+        source = self._spec.ovrtx_scene_composition.composed_scene_path
+        if source != self._direct_camera_catalog_source:
+            self._direct_camera_catalog = direct_camera_updates.request_catalog(source)
+            self._direct_camera_catalog_source = source
+        rows = direct_camera_updates.request_rows(previous, request, self._spec, self._direct_camera_catalog)
+        if rows is None:
+            return False
+        from .ovrtx_value_updates import OvrtxAttributeValue
+        values = tuple(OvrtxAttributeValue(r['prim_path'], r['attribute_name'], r['value'], r['value_type']) for r in rows)
+        configure = getattr(self._client, 'configure_session', None)
+        if callable(configure): configure(request)
+        # Unknown native acceptance is an error; never fall through to another
+        # population operation after possibly applying this packet.
+        result = self._client.update_attribute_values(self._simulation_id, values)
+        if (self._spec.width, self._spec.height) != (request.width, request.height):
+            self._client.resize_output(self._simulation_id, max(1, request.width), max(1, request.height))
+        self._spec = replace(self._spec, width=max(1, request.width), height=max(1, request.height),
+                             camera_prim_path=request.camera_prim_path,
+                             camera_pose_source=ovrtx_session.RUNTIME_UPDATE if request.camera_matrix is not None else ovrtx_session.COMPOSED_SCENE)
+        self._client.accept_render_parameters(self._simulation_id, self._spec)
+        self._camera_request = request
+        self._value_update_timings = dict(getattr(result, 'timings', {}) or getattr(self._client, 'last_value_update_timings', {}))
+        self._reuse = {'reuse': True, 'reason': 'direct_render_parameters'}
+        self._advance_session_revision()
+        self._ensure_timings = {'total_ms': (time.perf_counter_ns()-started_ns)/1_000_000,
+                               'build_spec_ms': 0.0, 'reuse_decision_ms': 0.0,
+                               'direct_render_parameter_count': len(rows)}
+        return True
+
+    def _try_camera_retarget(self, request, desired, *, previous=None):
+        apply = getattr(self._client, 'retarget_camera', None)
+        if not callable(apply):
+            return False
+        from .camera_retarget import camera_values
+        try:
+            rows = camera_values(self._camera_request, request,
+                                 self._spec if previous is None else previous, desired)
+        except Exception as exc:
+            self._events.append({'event': 'camera_retarget_preparation_fallback',
+                                 'reason': str(exc), 'time_ns': time.time_ns()})
+            return False
+        if rows is None:
+            return False
+        # Unknown remote acceptance must fail closed, not fall through to
+        # replacement after a possibly partially applied camera transaction.
+        configure = getattr(self._client, 'configure_session', None)
+        if callable(configure):
+            configure(request)
+        result = apply(self._simulation_id, desired, rows)
+        self._value_update_timings = dict(result)
+        self._advance_session_revision()
+        self._events.append({'event': 'camera_retarget_stored', 'camera': desired.camera_prim_path,
+                             'time_ns': time.time_ns()})
+        return True
+
+    @performance_profile.timed("session_controller.apply_runtime_updates")
     @_serialized
     def apply_runtime_updates(
         self,
@@ -623,21 +625,54 @@ class OvrtxSessionController:
     ) -> RuntimeTickResult:
         self._guard_rpc_thread("apply_runtime_updates")
         client, simulation_id = self._active()
-        result = operation(
-            OvrtxSessionUpdatePort(client, simulation_id),
-            self._project_complete_pose,
-        )
+        begin_recovery = getattr(client, "begin_recovery_update", None)
+        recovering = callable(begin_recovery) and begin_recovery(simulation_id)
+        try:
+            result = operation(
+                OvrtxSessionUpdatePort(client, simulation_id),
+                self._project_complete_pose,
+            )
+        except Exception:
+            if recovering:
+                client.end_recovery_update(simulation_id, commit=False)
+            raise
+        if recovering:
+            client.end_recovery_update(
+                simulation_id,
+                commit=isinstance(result, RuntimeTickResult) and result.status != RuntimeTickStatus.FAILED,
+            )
         self._value_update_timings = dict(
             getattr(client, "last_value_update_timings", {})
         )
         if not isinstance(result, RuntimeTickResult):
             raise TypeError("OVRTX runtime update operation must return RuntimeTickResult")
         if result.complete_pose_projected is False:
-            self._close_active(preserve_complete_pose=True)
+            if recovering:
+                self._project_complete_pose = True
+            else:
+                self._close_active(preserve_complete_pose=True)
         elif result.complete_pose_projected is True:
             self._project_complete_pose = False
         return result
 
+    @_serialized
+    def recover_value_updates(self) -> bool:
+        """Explicit recovery after uncertain remote acceptance, preserving the worker.
+
+        The caller must cancel outstanding presentation tickets before invoking
+        this operation on the session owner thread. Ordinary switches never call it.
+        """
+        self._guard_rpc_thread("recover_value_updates")
+        client, simulation_id = self._active()
+        recovered = client.recover_value_updates(simulation_id, defer_replay=True)
+        if recovered:
+            self._project_complete_pose = True
+            self._advance_session_revision()
+            self._events.append({"event": "value_updates_recovered", "simulation_id": simulation_id,
+                                 "time_ns": time.time_ns()})
+        return recovered
+
+    @performance_profile.timed("session_controller.render")
     @_serialized
     def render(
         self,
@@ -647,134 +682,108 @@ class OvrtxSessionController:
     ) -> RenderResult:
         self._guard_rpc_thread("render")
         client, simulation_id = self._active()
+        self._resize_output(request)
         additional_samples = int(additional_samples)
         if additional_samples < 1:
             raise ValueError("additional_samples must be at least 1")
-        try:
-            result = client.render_result(
-                simulation_id,
-                selected_sensor_paths=request.selected_sensor_paths,
-                render_var=str(
-                    request.color_presentation.get(
-                        "render_var",
-                        color_presentation.RENDER_VAR_LDR_COLOR,
-                    )
-                ),
-                additional_samples=additional_samples,
+        render_var = str(request.color_presentation.get(
+            "render_var", color_presentation.RENDER_VAR_LDR_COLOR))
+        needs_replay = getattr(client, "needs_initial_value_replay", None)
+        initialized_values = callable(needs_replay) and needs_replay(simulation_id)
+        if initialized_values:
+            # The native renderer populates geometry on its first sample. World
+            # transforms accepted before population can be composed with authored
+            # parent transforms a second time. Discard that initialization image
+            # and replay the exact desired state before publishing any pixels.
+            client.render_result(
+                simulation_id, selected_sensor_paths=request.selected_sensor_paths,
+                render_var=render_var, additional_samples=1,
             )
-        except Exception as exc:
-            raise self._render_retirement_error("render", exc) from exc
+            client.replay_desired_values(simulation_id)
+        result = client.render_result(
+            simulation_id,
+            selected_sensor_paths=request.selected_sensor_paths,
+            render_var=str(
+                request.color_presentation.get(
+                    "render_var",
+                    color_presentation.RENDER_VAR_LDR_COLOR,
+                )
+            ),
+            additional_samples=additional_samples,
+        )
         self._render_timings = dict(getattr(client, "last_render_timings", {}))
+        self._render_timings["initial_value_replay"] = bool(initialized_values)
         return result
 
-    @_serialized
-    def submit_render_sample(self, request: RenderRequest) -> RenderSubmission:
-        """Submit one sample step while preserving controller confinement."""
+    def supports_pipelined_render(self) -> bool:
+        """Whether ``begin_render``/``poll_render`` are usable right now."""
 
-        self._guard_rpc_thread("submit_render_sample")
-        client, simulation_id = self._active()
         try:
-            return self._submit_render_sample(client, simulation_id, request)
-        except Exception as exc:
-            raise self._render_retirement_error("render submission", exc) from exc
+            client, simulation_id = self._active()
+        except RenderClientError:
+            return False
+        needs_replay = getattr(client, "needs_initial_value_replay", None)
+        if callable(needs_replay) and needs_replay(simulation_id):
+            return False
+        return bool(client.supports_async_render_sample())
 
-    @_serialized
-    def submit_render_sample_after_transforms(
-        self,
-        request: RenderRequest,
-        transforms: tuple[OvrtxTransformValue, ...],
-        *,
-        expected_session_revision: int,
-    ) -> OvrtxPreparedRenderSubmission:
-        """Write camera transforms and submit their sample as one transaction.
+    @property
+    def supports_camera_successor_deferral(self) -> bool:
+        """Explicit client capability; legacy SIL ticket policy is unchanged."""
+        try:
+            client, _simulation_id = self._active()
+        except RenderClientError:
+            return False
+        return bool(getattr(client, "camera_successor_deferral", False))
 
-        This is the producer half of the viewport's bounded camera pipeline.
-        It intentionally does not run the runtime scheduler: queued scene and
-        simulation edits remain owned by the next normal viewport tick.
+    @property
+    def has_pending_render_cancellations(self) -> bool:
+        return bool(getattr(self._client, "has_pending_render_cancellations", False))
+
+    @property
+    def pending_native_render_count(self) -> int:
+        return int(getattr(self._client, "pending_native_render_count", 0))
+
+    def worker_exited(self) -> bool | None:
+        """Whether the active client's worker has exited; ``None`` if it cannot tell.
+
+        A cheap process check without an RPC, so an idle viewport can poll it.
         """
-
-        self._guard_rpc_thread("submit_render_sample_after_transforms")
-        expected = int(expected_session_revision)
-        if self._session_revision != expected:
-            raise RenderClientError(
-                "OVRTX session changed before preparing a camera successor"
-            )
-        client, simulation_id = self._active()
+        probe = getattr(self._client, "worker_exited", None)
+        if not callable(probe):
+            return None
         try:
-            update_result = OvrtxSessionUpdatePort(
-                client,
-                simulation_id,
-            ).update_transforms(transforms)
-            self._value_update_timings = dict(
-                getattr(client, "last_value_update_timings", {})
-            )
-            if self._session_revision != expected:
-                raise RenderClientError(
-                    "OVRTX session changed while preparing a camera successor"
-                )
-            submission = self._submit_render_sample(client, simulation_id, request)
-        except Exception as exc:
-            # The transform RPC may have reached the bridge even when its
-            # client-side outcome is ambiguous. Keep the predecessor read
-            # alive so its owner can cancel/drain it, but make this session
-            # non-reusable until that owner explicitly retires it.
-            raise self._render_retirement_error(
-                "camera successor mutation/submission",
-                exc,
-                session_revision=expected,
-            ) from exc
-        return OvrtxPreparedRenderSubmission(
-            submission=submission,
-            update_result=update_result,
-            session_revision=expected,
-        )
+            return bool(probe())
+        except Exception:
+            return None
 
     @_serialized
-    def retire_render_session(
+    def cancel_pending_renders(self) -> None:
+        cancel = getattr(self._client, "cancel_pending_renders", None)
+        if callable(cancel):
+            cancel()
+
+    @_serialized
+    def drain_render_cancellations(self) -> bool:
+        drain = getattr(self._client, "drain_render_cancellations", None)
+        return bool(drain()) if callable(drain) else True
+
+    @performance_profile.timed("session_controller.begin_render")
+    @_serialized
+    def begin_render(
         self,
-        *,
-        expected_session_revision: int,
-    ) -> str:
-        """Retire an ambiguous session after its predecessor read is drained."""
-
-        self._guard_rpc_thread("retire_render_session")
-        expected = int(expected_session_revision)
-        if self._session_revision != expected:
-            return "superseded"
-        if self._render_session_invalid_revision != expected:
-            return "not_required"
-        return self._deactivate_active(preserve_complete_pose=True)
-
-    def _render_retirement_error(
-        self,
-        operation: str,
-        exc: BaseException,
-        *,
-        session_revision: int | None = None,
-    ) -> OvrtxSessionRetirementRequiredError:
-        revision = (
-            self._session_revision
-            if session_revision is None
-            else int(session_revision)
-        )
-        self._render_session_invalid_revision = revision
-        return OvrtxSessionRetirementRequiredError(
-            f"OVRTX {operation} failed; session retirement is required: {exc}",
-            controller=self,
-            session_revision=revision,
-            operation=operation,
-        )
-
-    @staticmethod
-    def _submit_render_sample(
-        client: Any,
-        simulation_id: str,
         request: RenderRequest,
-    ) -> RenderSubmission:
-        submit = getattr(client, "submit_render_sample", None)
-        if not callable(submit):
-            raise RenderClientError("Active OVRTX client does not support split render submission")
-        return submit(
+    ) -> Any:
+        """Non-blocking counterpart to ``render``: issues one sample's write
+        plus a non-blocking read ticket, pairs with ``poll_render``."""
+
+        self._guard_rpc_thread("render")
+        client, simulation_id = self._active()
+        self._resize_output(request)
+        needs_replay = getattr(client, "needs_initial_value_replay", None)
+        if callable(needs_replay) and needs_replay(simulation_id):
+            raise RenderClientError("Initial live values require synchronous render before pipelining")
+        return client.begin_render_sample(
             simulation_id,
             selected_sensor_paths=request.selected_sensor_paths,
             render_var=str(
@@ -785,88 +794,17 @@ class OvrtxSessionController:
             ),
         )
 
+    @performance_profile.timed("session_controller.poll_render")
     @_serialized
-    def complete_render_sample(self, submission: RenderSubmission) -> RenderResult:
-        """Complete one exact-time split render submission."""
-
-        self._guard_rpc_thread("complete_render_sample")
+    def poll_render(self, pending: Any, *, before_copy=None) -> RenderResult | None:
+        self._guard_rpc_thread("render")
         client, _simulation_id = self._active()
-        complete = getattr(client, "complete_render_sample", None)
-        if not callable(complete):
-            raise RenderClientError("Active OVRTX client does not support split render completion")
-        try:
-            result = complete(submission)
-        except Exception as exc:
-            raise self._render_retirement_error("render completion", exc) from exc
-        self._render_timings = dict(getattr(client, "last_render_timings", {}))
-        return result
-
-    @_serialized
-    def discard_render_sample(self, submission: RenderSubmission) -> None:
-        """Release local ownership of a speculative split render result."""
-
-        self._guard_rpc_thread("discard_render_sample")
-        client, _simulation_id = self._active_for_cleanup()
-        discard = getattr(client, "discard_render_sample", None)
-        if not callable(discard):
-            raise RenderClientError("Active OVRTX client does not support split render discard")
-        discard(submission)
-
-    @_serialized
-    def begin_render_sample_read(
-        self,
-        submission: RenderSubmission,
-    ) -> RenderReadTicket:
-        """Begin an exact-time asynchronous read on the confined RPC thread."""
-
-        self._guard_rpc_thread("begin_render_sample_read")
-        client, _simulation_id = self._active()
-        if not self._supports_async_render_read():
-            raise RenderClientError(
-                "Active OVRTX client does not support asynchronous render read"
-            )
-        try:
-            return client.begin_render_sample_read(submission)
-        except Exception as exc:
-            raise self._render_retirement_error("render read begin", exc) from exc
-
-    @_serialized
-    def poll_render_sample_read(
-        self,
-        ticket: RenderReadTicket,
-    ) -> RenderResult | None:
-        """Poll an asynchronous render read without blocking."""
-
-        self._guard_rpc_thread("poll_render_sample_read")
-        client, _simulation_id = self._active()
-        if not self._supports_async_render_read():
-            raise RenderClientError(
-                "Active OVRTX client does not support asynchronous render read"
-            )
-        try:
-            result = client.poll_render_sample_read(ticket)
-        except Exception as exc:
-            raise self._render_retirement_error("render read poll", exc) from exc
+        result = (client.poll_render_sample(pending, before_copy=before_copy)
+                  if before_copy is not None and self.supports_camera_successor_deferral
+                  else client.poll_render_sample(pending))
         if result is not None:
-            self._render_timings = dict(
-                getattr(client, "last_render_timings", {})
-            )
+            self._render_timings = dict(getattr(client, "last_render_timings", {}))
         return result
-
-    @_serialized
-    def cancel_render_sample_read(self, ticket: RenderReadTicket) -> None:
-        """Cancel and consume an asynchronous render read on its owner thread."""
-
-        self._guard_rpc_thread("cancel_render_sample_read")
-        client, _simulation_id = self._active_for_cleanup()
-        if not self._supports_async_render_read():
-            raise RenderClientError(
-                "Active OVRTX client does not support asynchronous render read"
-            )
-        try:
-            client.cancel_render_sample_read(ticket)
-        except Exception as exc:
-            raise self._render_retirement_error("render read cancellation", exc) from exc
 
     def diagnostics(self) -> Mapping[str, Any]:
         snapshot = {
@@ -881,9 +819,11 @@ class OvrtxSessionController:
             "worker_owned": self.worker_owned,
             "lifecycle_events": tuple(dict(event) for event in self._events),
             "startup": dict(self._startup),
+            "ensure_timings": dict(self._ensure_timings),
             "render_timings": dict(self._render_timings),
             "value_update_timings": dict(self._value_update_timings),
             "stop_status": self._last_stop_status,
+            "worker_stop": self._last_worker_stop,
             "rpc_thread": {
                 "owning_thread_ident": self._owning_thread_ident or 0,
                 "adopted": self._owning_thread_ident is not None,
@@ -941,34 +881,29 @@ class OvrtxSessionController:
     def _guard_rpc_thread(self, operation: str) -> None:
         if not self._thread_guard_active:
             return
-        with self._exclusive_gate:
-            guard_active = self._thread_guard_active
-            owning_thread_ident = self._owning_thread_ident
-        if not guard_active:
-            return
         ident = threading.get_ident()
-        if ident != owning_thread_ident:
+        if ident != self._owning_thread_ident:
             raise OvrtxThreadConfinementError(
                 f"OvrtxSessionController.{operation} was called from thread "
                 f"{ident} ({threading.current_thread().name!r}); srtx RPCs are "
-                f"confined to the owning render thread {owning_thread_ident}"
+                f"confined to the owning render thread {self._owning_thread_ident}"
             )
 
     def _require_open(self) -> None:
         if self._closed:
             raise RenderClientError("OVRTX session controller is shut down")
 
+    def _resize_output(self, request: RenderRequest) -> None:
+        if not getattr(request, "output_size_value_route", False):
+            return
+        spec = self._spec
+        if spec is None or (spec.width, spec.height) == (request.width, request.height):
+            return
+        client, simulation_id = self._active()
+        client.resize_output(simulation_id, request.width, request.height)
+        self._spec = replace(spec, width=request.width, height=request.height)
+
     def _active(self) -> tuple[Any, str]:
-        client, simulation_id = self._active_for_cleanup()
-        if self._render_session_invalid_revision == self._session_revision:
-            raise RenderClientError(
-                "OVRTX session has an ambiguous render operation and must be replaced"
-            )
-        return client, simulation_id
-
-    def _active_for_cleanup(self) -> tuple[Any, str]:
-        """Return an active session even when only cleanup remains legal."""
-
         self._require_open()
         if self._client is None or self._simulation_id is None:
             raise RenderClientError("No active OVRTX session")
@@ -984,10 +919,10 @@ class OvrtxSessionController:
         simulation_id = self._simulation_id
         project_complete_pose = self._project_complete_pose if preserve_complete_pose else False
         if client is None or simulation_id is None:
-            self._render_session_invalid_revision = None
             self._project_complete_pose = project_complete_pose
             self._last_stop_status = "not_found"
             return self._last_stop_status
+        shutdown_confirmed = False
         try:
             status = str(client.delete_simulation(simulation_id) or "failed")
         except Exception as exc:
@@ -999,28 +934,65 @@ class OvrtxSessionController:
                     "time_ns": time.time_ns(),
                 }
             )
-            self._last_stop_status = "failed"
-            return self._last_stop_status
+            if preserve_worker or not getattr(client, "shutdown_after_delete_failure", False):
+                self._last_stop_status = "failed"
+                return self._last_stop_status
+            # An uncertain mutation deliberately blocks further control RPCs.
+            # Explicit teardown must still be able to close/reap its privately
+            # owned process. This is disposal, never an operation retry; keep
+            # the active references if shutdown cannot confirm completion.
+            try:
+                status = str(client.shutdown() or "failed")
+            except Exception as shutdown_error:
+                self._events.append({
+                    "event": "shutdown_failed", "simulation_id": simulation_id,
+                    "error": f"{type(shutdown_error).__name__}: {shutdown_error}",
+                    "time_ns": time.time_ns(),
+                })
+                status = "failed"
+            shutdown_confirmed = status in {"stopped", "not_found"}
         self._last_stop_status = status
         if status not in {"stopped", "not_found"}:
             return "failed"
+        if (not preserve_worker and not shutdown_confirmed
+                and getattr(client, "shutdown_after_delete_failure", False)):
+            # Public delete only unloads the scene. Keep ownership and the
+            # session revision until the process owner confirms close/reap,
+            # including when unloading itself succeeded normally.
+            try:
+                status = str(client.shutdown() or "failed")
+            except Exception as shutdown_error:
+                self._events.append({
+                    "event": "shutdown_failed", "simulation_id": simulation_id,
+                    "error": f"{type(shutdown_error).__name__}: {shutdown_error}",
+                    "time_ns": time.time_ns(),
+                })
+                status = "failed"
+            self._last_stop_status = status
+            if status not in {"stopped", "not_found"}:
+                return "failed"
+            shutdown_confirmed = True
         self._client = None
         self._simulation_id = None
         self._spec = None
+        self._camera_request = None
         self._runtime_binding = None
-        self._render_session_invalid_revision = None
         self._project_complete_pose = project_complete_pose
         self._advance_session_revision()
-        if not preserve_worker:
+        if not preserve_worker and not shutdown_confirmed:
             try:
                 client.shutdown()
             except Exception:
                 pass
+        if not preserve_worker:
+            # Socket close to worker exit, and whether it had to be terminated.
+            self._last_worker_stop = getattr(client, "worker_stop", None)
         self._events.append(
             {
                 "event": "stopped",
                 "status": status,
                 "simulation_id": simulation_id,
+                "worker_stop": None if preserve_worker else self._last_worker_stop,
                 "time_ns": time.time_ns(),
             }
         )
@@ -1042,8 +1014,6 @@ class OvrtxSessionController:
 
 __all__ = [
     "OvrtxEnsureResult",
-    "OvrtxPreparedRenderSubmission",
-    "OvrtxSessionRetirementRequiredError",
     "OvrtxSessionController",
     "OvrtxThreadConfinementError",
     "RPC_THREAD_GUARD_ENV",

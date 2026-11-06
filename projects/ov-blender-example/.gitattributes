@@ -1,2 +1,4 @@
 tests/fixtures/**/*.mdl -text -diff
 tests/fixtures/**/*.usda text eol=lf
+scripts/license_data/** -text -diff
+runtime/physics_adapter_identity.json text eol=lf

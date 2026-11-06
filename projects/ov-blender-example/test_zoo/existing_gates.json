@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "scope": "Existing add-on fixtures complement procedural zoo scenes; a listed fixture is not a pass.",
+  "gates": [
+    {"workflows":["rigid body controls","mass","gravity","damping","speed caps"],"script":"tests/blender_native_body_controls.py"},
+    {"workflows":["fixed joint","hinge","slider","D6","drives","limits"],"script":"tests/blender_native_joints.py"},
+    {"workflows":["kinematic animation","authored poses"],"script":"tests/blender_native_kinematic.py"},
+    {"workflows":["parented rigid poses","nonuniform render scale"],"script":"tests/blender_native_parented_poses.py"},
+    {"workflows":["scene unit scale"],"script":"tests/blender_native_unit_scale.py"},
+    {"workflows":["bone bodies","armature physics mechanisms"],"script":"tests/blender_bone_mechanisms.py"},
+    {"workflows":["offline baking","frame ranges","substeps"],"script":"tests/blender_bake_offline.py"},
+    {"workflows":["bake to object/bone actions","selected targets","action slots"],"script":"tests/blender_bake_actions_native.py"},
+    {"workflows":["bake contact evidence","conversion dependencies"],"script":"tests/blender_bake_conversion_native.py"},
+    {"workflows":["cancel bake","concurrent bake ownership"],"script":"tests/blender_bake_capture_concurrent.py"},
+    {"workflows":["exact position/quaternion channel presentation"],"script":"tests/blender_presentation_exact_channels.py"},
+    {"workflows":["baked playback","simulation ownership"],"script":"tests/blender_baked_playback_gate.py"},
+    {"workflows":["SimReady schema authoring","asset eligibility"],"script":"tests/blender_simready_authoring.py"},
+    {"workflows":["authoring operators","undo","save/reload","joint anchors"],"script":"tests/blender_physics_authoring.py"}
+  ]
+}

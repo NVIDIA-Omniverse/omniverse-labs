@@ -121,6 +121,10 @@ class _Client:
         self.startup_diagnostics = {"render_worker": {"status": "ready"}}
         self.last_render_timings: dict = {}
         self.last_value_update_timings: dict = {}
+        self.output_shape = (1, 1)
+
+    def resize_output(self, simulation_id, width, height):
+        self.output_shape = (width, height)
 
     def start_session(self, spec: object, simulation_id: str | None = None) -> str:
         self.starts += 1
@@ -456,7 +460,7 @@ def test_resync_state_recovers_even_when_the_ensure_reuses_the_session(
     assert harness.loop.diagnostics()["session_replacements"] == 1
 
 
-def test_resize_replacement_waits_for_two_consecutive_same_size_snapshots(
+def test_resize_updates_live_output_on_first_snapshot(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     harness = _Harness(monkeypatch, tmp_path)  # real would_replace probe
@@ -465,24 +469,14 @@ def test_resize_replacement_waits_for_two_consecutive_same_size_snapshots(
         harness.wait_refined()
         assert harness.client.starts == 1
 
-        # First snapshot at the new size: debounced, no replacement yet
-        # (the session keeps rendering; the draw path scales the old frame).
         harness.mailbox.write(_snapshot(2.0, width=4, height=4))
-        assert _wait_until(
-            lambda: harness.loop.diagnostics()["resize_debounce_pending"] is True
-        )
+        assert _wait_until(lambda: harness.client.output_shape == (4, 4))
         assert harness.client.starts == 1
         assert FRAME_STATUS_RESYNCING not in harness.slot.statuses()
-
-        # Second consecutive snapshot at the same new size: replacement.
-        harness.mailbox.write(_snapshot(2.0, width=4, height=4))
-        assert _wait_until(lambda: harness.client.starts == 2)
-        assert FRAME_STATUS_RESYNCING in harness.slot.statuses()
-        assert harness.loop.diagnostics()["last_resync_reason"] == "output_shape_changed"
-    assert harness.loop.diagnostics()["session_replacements"] == 1
+    assert harness.loop.diagnostics()["session_replacements"] == 0
 
 
-def test_oscillating_resize_never_replaces_until_the_size_settles(
+def test_oscillating_resize_keeps_session_and_applies_latest_size(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     harness = _Harness(monkeypatch, tmp_path)
@@ -502,11 +496,12 @@ def test_oscillating_resize_never_replaces_until_the_size_settles(
         assert harness.client.starts == 1
         assert harness.loop.diagnostics()["session_replacements"] == 0
 
-        # The drag ends: two agreeing snapshots replace once.
+        # The final size reaches the existing session.
         harness.mailbox.write(_snapshot(9.0, width=3, height=3))
         harness.mailbox.write(_snapshot(9.5, width=3, height=3))
-        assert _wait_until(lambda: harness.client.starts == 2)
-    assert harness.loop.diagnostics()["session_replacements"] == 1
+        assert _wait_until(lambda: harness.client.output_shape == (3, 3))
+    assert harness.client.starts == 1
+    assert harness.loop.diagnostics()["session_replacements"] == 0
 
 
 def test_ensure_failure_retries_follow_the_auto_retry_policy(

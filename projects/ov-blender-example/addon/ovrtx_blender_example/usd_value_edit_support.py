@@ -89,6 +89,9 @@ MATERIAL_USD_VALUE_TYPES: Mapping[str, str] = MappingProxyType(
 LIGHT_USD_VALUE_TYPES: Mapping[str, str] = MappingProxyType(
     {
         "inputs:intensity": "Float",
+        "inputs:exposure": "Float",
+        "inputs:diffuse": "Float",
+        "inputs:specular": "Float",
         "inputs:color": "Color3f",
         "inputs:normalize": "Bool",
         "inputs:enableColorTemperature": "Bool",
@@ -118,6 +121,8 @@ CAMERA_USD_VALUE_TYPES: Mapping[str, str] = MappingProxyType(
         "horizontalAperture": "Float",
         "verticalAperture": "Float",
         "clippingRange": "Float2",
+        "fStop": "Float",
+        "focusDistance": "Float",
     }
 )
 

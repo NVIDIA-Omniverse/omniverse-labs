@@ -16,13 +16,15 @@ Probe the allowed `color_presentation_mode` enum through
 `ovrtx-current-scene-workflow`, then set it with `ovrtx-render-settings`.
 Do not assume these identifiers exist in another add-on revision.
 
-For the pinned official example, run the public ownership regression:
+For the root-owned Windows port, run the focused ownership controls from the
+repository root:
 
 ```text
-python3 scripts/run_ovrtx_color_presentation_probe.py \
-  --output-dir /absolute/caller-owned/color-probe
+pixi run python -m pytest source/ovrtx-addon/tests/test_color_presentation.py source/ovrtx-addon/tests/test_viewport_display_overlay.py -q
 ```
 
+The worker does not inherit Blender's `OCIO`; the Blender display configuration
+remains unchanged. LDR passthrough and HDR correction must be tested separately.
 For a real scene, render the same camera/light/material state with both the
 requested native mode and a clearly labeled Blender control. Diagnose runtime
 readback and dimensions first, then camera/stage, then light/world, then color

@@ -9,6 +9,19 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 import run_blender_navigation  # noqa: E402
+
+
+def test_installed_measurement_observes_installed_engine_registry(monkeypatch):
+    from types import SimpleNamespace
+    measurement = _measurement()
+    measurement.config['installed_addon'] = 'bl_ext.user_default.ovrtx_blender_example'
+    selected = []
+    def imported(name):
+        selected.append(name)
+        return SimpleNamespace(_ACTIVE_VIEWPORT_ENGINES=[])
+    monkeypatch.setattr(run_blender_navigation.importlib, 'import_module', imported)
+    measurement.post_pixel()
+    assert selected == ['bl_ext.user_default.ovrtx_blender_example.ovrtx_blender_example.engine']
 import run_blender_light_edit_responsiveness  # noqa: E402
 import validation  # noqa: E402
 from ovrtx_blender_example.viewport_handoff import ViewSnapshot  # noqa: E402

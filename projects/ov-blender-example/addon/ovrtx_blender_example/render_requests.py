@@ -42,6 +42,8 @@ CAMERA_PROJECTION_SESSION_IDENTITY_FIELDS = (
 CAMERA_PROJECTION_COMPOSED_USD_ONLY_FIELDS = ("clippingRange",)
 
 
+from .native_exposure import NativeExposure
+
 @dataclass(frozen=True)
 class MaterialPresentationLayer:
     target_path: str
@@ -72,6 +74,10 @@ class RenderRequest:
     #: into the composed scene for final renders (COMPOSED_SCENE pose source).
     #: None on viewport requests, where the pose is a runtime update instead.
     scene_camera_matrix: tuple[tuple[float, ...], ...] | None = None
+    #: Evaluated authoring-camera world pose for native updates only. Bootstrap
+    #: USD already owns the stock camera hierarchy; do not author another world
+    #: transform onto its child or churn USD pose properties between cameras.
+    native_scene_camera_matrix: tuple[tuple[float, ...], ...] | None = None
     #: Camera value probe classes currently routed as live value updates
     #: (blender-live-render task04-05). Attributes owned by these classes
     #: are excluded from the OVRTX scene composition digest so honored (and
@@ -81,6 +87,9 @@ class RenderRequest:
     #: default, used by F12 and direct requests) keeps every composed
     #: camera value in the digest — the pre-task behavior.
     camera_value_route_classes: tuple[str, ...] = ()
+    #: Live viewport RenderProduct resolution; direct/F12 requests retain
+    #: resolution as composition identity.
+    output_size_value_route: bool = False
     #: Provenance of the authored scene generation materialized into
     #: ``input_usd_path`` (blender-live-render task05-04): ADR 0014's
     #: content digest and the generation number, stamped by
@@ -101,6 +110,8 @@ class RenderRequest:
     simulation_reset_token: int = 0
     material_scene_layer: MaterialPresentationLayer | None = None
     light_scene_layer: MaterialPresentationLayer | None = None
+    semantic_output_path: str = ""
+    native_exposure: NativeExposure = NativeExposure()
     color_presentation: Mapping[str, Any] = field(default_factory=dict)
     #: RTPT render-quality values keyed by ``RTPT_RENDER_SETTINGS`` property
     #: name (render-quality-color-controls task01-03). Authored onto the
@@ -127,12 +138,21 @@ class RenderRequest:
     #: execMode value (the strongest exposed change); True leaves the engine
     #: default. Also written to the worker-startup config for fresh workers.
     dlss_enabled: bool = True
+    dlss_quality: str = "INHERIT"
+    #: Edge anti-aliasing supersample factor (cycles-parity n-05-03). ``width``
+    #: and ``height`` are the RENDERED size (output size * factor); F12 averages
+    #: the finished frame back to ``width // supersample``. 1 = off.
+    supersample: int = 1
     blender_signal: Mapping[str, Any] = field(default_factory=dict)
 
     @property
     def render_product_path(self) -> str:
         selected = tuple(path for path in self.selected_sensor_paths if path)
         declared = tuple(path for path in self.sensor_paths if path)
+        if len(selected) > 1 or len(declared) > 1:
+            raise ValueError('Multiple RenderProducts are future work; request exactly one product')
+        if selected and declared and selected[0] not in declared:
+            raise ValueError('Selected output is not declared by the current scene')
         return (selected or declared or (DEFAULT_RENDER_PRODUCT_PATH,))[0]
 
 
@@ -273,6 +293,7 @@ def camera(
     sync_viewport_camera: bool,
     context: Any | None,
     scene: Any | None = None,
+    supersample: int = 1,
 ) -> _Camera:
     known_camera_path = usd_paths.known_usd_path(camera_prim_path)
     camera_matrix = (
@@ -282,6 +303,10 @@ def camera(
     )
     width = int(base_width)
     height = int(base_height)
+    if supersample > 1:
+        # Rendered size = output size * factor; the aspect (and therefore the
+        # camera projection) is unchanged.
+        width, height = clamp_dimension(width * supersample), clamp_dimension(height * supersample)
     if camera_matrix is None:
         camera_projection = (
             camera_projection_from_scene_camera(scene, None, width, height)
@@ -516,7 +541,18 @@ def camera_projection_from_scene_camera(
     data = getattr(camera_object, "data", None)
     if data is None:
         return None
-    if str(getattr(data, "type", "PERSP")) == "ORTHO":
+    camera_type = str(getattr(data, "type", "PERSP"))
+    if camera_type not in {"PERSP", "ORTHO"}:
+        # Use the existing callback error boundary so the viewport reports
+        # rejection instead of presenting an unrelated perspective frustum.
+        from .ovrtx_runtime_client import RenderClientError
+
+        label = "Panoramic" if camera_type == "PANO" else camera_type
+        raise RenderClientError(
+            f"{label} Blender cameras are unsupported in OVRTX. "
+            "Use a perspective or orthographic camera."
+        )
+    if camera_type == "ORTHO":
         return orthographic_projection_from_scene_camera(scene, region, width, height)
     try:
         focal_length = float(getattr(data, "lens"))
@@ -536,14 +572,18 @@ def camera_projection_from_scene_camera(
     clipping_range = camera_data_clipping_range(data)
     f_stop, focus_distance = camera_data_dof(data, camera_object)
     lens_shift = lens_shift_from_camera_data(data)
+    # Blender expresses both shifts in units of the fitted sensor dimension.
+    # Preserve that off-centre frustum in the composed USD camera.
+    fitted_aperture = vertical_aperture if sensor_fit == "VERTICAL" or (sensor_fit == "AUTO" and int(height) > int(width)) else horizontal_aperture
+    offset_x, offset_y = lens_shift or (0.0, 0.0)
     return CameraProjectionState(
         source=ACTIVE_CAMERA_VIEW,
         focal_length=round(focal_length, 9),
         horizontal_aperture=round(horizontal_aperture, 9),
         vertical_aperture=round(vertical_aperture, 9),
         projection="perspective",
-        horizontal_aperture_offset=0.0,
-        vertical_aperture_offset=0.0,
+        horizontal_aperture_offset=round(offset_x * fitted_aperture, 9),
+        vertical_aperture_offset=round(offset_y * fitted_aperture, 9),
         clipping_range=clipping_range,
         f_stop=round(f_stop * DOF_FSTOP_SCALE, 9) if f_stop > 0.0 and focus_distance > 0.0 else 0.0,
         focus_distance=round(focus_distance, 9) if f_stop > 0.0 and focus_distance > 0.0 else 0.0,

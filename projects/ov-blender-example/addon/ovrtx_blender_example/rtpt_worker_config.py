@@ -141,7 +141,7 @@ def rtpt_carb_overrides(rtpt_quality: Mapping[str, Any] | None) -> dict[str, Any
     return overrides
 
 
-def dlss_carb_overrides(dlss_enabled: bool) -> dict[str, Any]:
+def dlss_carb_overrides(dlss_enabled: bool, dlss_quality: str = "INHERIT") -> dict[str, Any]:
     """The ``/rtx/post/dlss/*`` carb subtree for the DLSS toggle, or empty.
 
     ``dlss_enabled=True`` leaves the engine default (no override); ``False``
@@ -152,13 +152,15 @@ def dlss_carb_overrides(dlss_enabled: bool) -> dict[str, Any]:
     full DLSS off; ``False`` selects the Performance execution mode.)
     """
 
-    if dlss_enabled:
+    from .properties import resolve_dlss_quality
+    quality = resolve_dlss_quality(dlss_quality, dlss_enabled)
+    if quality is None:
         return {}
     overrides: dict[str, Any] = {}
     _set_nested(
         overrides,
         _carb_path_segments(DLSS_EXECMODE_ATTRIBUTE),
-        int(DLSS_DISABLED_EXECMODE),
+        {"performance": 0, "balanced": 1, "quality": 2, "auto": 3}[quality],
     )
     return overrides
 
@@ -177,6 +179,7 @@ def compose_worker_config(
     config_text: str,
     rtpt_quality: Mapping[str, Any] | None,
     dlss_enabled: bool = True,
+    dlss_quality: str = "INHERIT",
 ) -> str:
     """Merge the RTPT + DLSS carb overrides into an existing config, return JSON.
 
@@ -191,10 +194,10 @@ def compose_worker_config(
 
     tree = _tolerant_config_load(config_text)
     _deep_merge(tree, rtpt_carb_overrides(rtpt_quality))
-    if dlss_enabled:
+    if dlss_enabled and dlss_quality == "INHERIT":
         _remove_nested(tree, _carb_path_segments(DLSS_EXECMODE_ATTRIBUTE))
     else:
-        _deep_merge(tree, dlss_carb_overrides(dlss_enabled))
+        _deep_merge(tree, dlss_carb_overrides(dlss_enabled, dlss_quality))
     return json.dumps(tree, indent=4) + "\n"
 
 
@@ -230,6 +233,7 @@ def author_worker_config(
     worker_command: str,
     rtpt_quality: Mapping[str, Any] | None,
     dlss_enabled: bool = True,
+    dlss_quality: str = "INHERIT",
 ) -> dict[str, Any]:
     """Write the current RTPT quality values into the worker's startup config.
 
@@ -250,7 +254,7 @@ def author_worker_config(
         # parse and is treated as an empty tree, exactly like corrupt JSON, so a
         # fresh valid config is authored instead of breaking session startup.
         existing = path.read_text(encoding="utf-8", errors="replace") if path.exists() else ""
-        composed = compose_worker_config(existing, rtpt_quality, dlss_enabled)
+        composed = compose_worker_config(existing, rtpt_quality, dlss_enabled, dlss_quality)
         if existing == composed:
             return {"status": "unchanged", "path": str(path)}
         tmp = path.with_name(path.name + ".tmp")

@@ -13,6 +13,22 @@ sys.path.insert(0, str(ROOT / "addon"))
 from ovrtx_blender_example import write_target_resolution as ownership  # noqa: E402
 
 
+@pytest.mark.parametrize("scene_path", ["", None, "  "])
+def test_preview_without_source_rejects_durable_target_before_loading_usd(monkeypatch, scene_path):
+    def unexpected_load(_module):
+        pytest.fail("Preview-only edit must not load/open USD to resolve an absent source")
+
+    monkeypatch.setattr(ownership, "_load_usd_module", unexpected_load)
+    result = ownership.resolve_write_target(
+        scene_path, usd_prim_path="/World/Cube", target_kind=ownership.TARGET_KIND_ATTRIBUTE,
+        usd_property_name="xformOp:transform", explicit_usd_layer_id="unverified.usda",
+    )
+    assert result.status is ownership.WriteTargetResolutionStatus.ERROR
+    assert result.error_reason == ownership.REASON_MISSING_WRITE_TARGET
+    assert result.usd_layer_id is None
+    assert result.diagnostics["failure_detail"] == "missing_input_usd_path"
+
+
 class _FakeLayer:
     def __init__(
         self,

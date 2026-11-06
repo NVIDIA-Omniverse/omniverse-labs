@@ -1,75 +1,34 @@
-# Support Platforms
+# Support platforms
 
-`ov-blender-example` intends to align its release platform targets with OVRTX
-platform targets. This document separates OVRTX-declared platform facts from
-this repository's user release support status.
+This release has Windows x64 and Linux x64 qualification with
+stock Blender 5.2 LTS (measured on 5.2.1). Measured hosts are an NVIDIA RTX A6000 with driver 597.16
+on Windows and an NVIDIA L40 with driver 595.71.05 on Ubuntu 22.04 (glibc 2.35).
+These are observed environments, not claimed minimum GPU/driver requirements.
 
-## Provenance
-
-Inspected OVRTX source:
-
-- Project: [`NVIDIA-Omniverse/ovrtx`](https://github.com/NVIDIA-Omniverse/ovrtx)
-- Commit:
-  [`29d11037fbcaed0f0f53e7f32d17bd0486fd453b`](https://github.com/NVIDIA-Omniverse/ovrtx/tree/29d11037fbcaed0f0f53e7f32d17bd0486fd453b)
-- OVRTX version:
-  [`0.3.0`](https://github.com/NVIDIA-Omniverse/ovrtx/blob/29d11037fbcaed0f0f53e7f32d17bd0486fd453b/VERSION.md)
-- Inspected files:
-  - [`README.md` release platform list](https://github.com/NVIDIA-Omniverse/ovrtx/blob/29d11037fbcaed0f0f53e7f32d17bd0486fd453b/README.md#releases)
-  - [`VERSION.md`](https://github.com/NVIDIA-Omniverse/ovrtx/blob/29d11037fbcaed0f0f53e7f32d17bd0486fd453b/VERSION.md)
-- System requirements source linked by the OVRTX README:
-  [Omniverse Technical Requirements](https://docs.omniverse.nvidia.com/dev-guide/latest/common/technical-requirements.html)
-
-## OVRTX Release Platform Targets
-
-OVRTX publishes binary releases for these OS and CPU architecture pairs. These
-define the intended `ov-blender-example` release platform set.
-
-| OVRTX platform | `ov-blender-example` platform |
+| Platform | Qualification |
 | --- | --- |
-| Linux x86_64 | `linux-x64` |
-| Linux aarch64 | `linux-aarch64` |
+| Windows x64 | Representative installed renderer, viewport, production physics and recovery/cleanup checks; exhaustive benchmarking deferred. |
+| Linux x64 | Native-host local package/install, LDR/HDR rendering, renderer recovery/cleanup, CPU/GPU physics and numeric physics-to-render synchronization. Exhaustive viewport, performance and hardware coverage remain unqualified. |
+| Linux ARM, Windows ARM, macOS | Outside this Windows MVP; no qualification or release-support claim. |
 
+The runtime tuple is pinned in `runtime/public-sdk-lock.json`: OVRTX
+`0.6.0.1791947691`, OVStage `0.3.0.1791986420`, OVStream `0.5.7`, Warp `1.18.0`,
+OVPhysX `0.7.0.74035321` and its PhysX USD schemas `25.11.2.72696984`, with
+external CPython 3.13. The lock also fixes supporting Python
+packages and native artifacts. This project consumes the locked SDK sidecar; it
+does not rebuild an internal native bridge or infer compatibility from unrelated
+public release versions.
 
-## Omniverse Runtime Requirements
+Profile and addon/runtime archive paths may contain spaces and non-ASCII
+characters. The Windows SDK loaders and caches need narrow-path (ASCII) folders, a
+measured limitation, so a profile whose `ovrtx-sdk` path is not ASCII keeps the
+native runtime, its caches and setup logs in `%ProgramData%\ovrtx-blender\<hash>`
+(or `<system drive>\ovrtx-blender\<hash>`), named in `ovrtx-sdk\native-root.json`.
+That folder follows a profile moved as a whole, also to an ASCII path; Remove
+Runtime deletes it, and a failed install removes a folder it created. Installation
+is refused only when no such folder can be created, or for an explicit external
+interpreter in a non-ASCII folder.
 
-The runtime requirements linked by OVRTX constrain hosts for the release
-platforms above. They do not define additional release platforms.
-
-| OS | Minimum version |
-| --- | --- |
-| Linux | Ubuntu 22.04 |
-
-The linked requirements list a GeForce RTX 3070 as the minimum GPU for
-Omniverse Kit. The following table records validated driver minimums by GPU
-generation and type; it is not a list of minimum GPU models.
-
-| OS | GPU generation | GPU type | Minimum validated driver |
-| --- | --- | --- | --- |
-| Linux | Blackwell | GeForce or Workstation | `570.169` |
-| Linux | Blackwell | Data Center | `580.95.05` |
-| Linux | Ada, Ampere, or Turing | GeForce or Workstation | `570.169` |
-| Linux | Ada, Ampere, or Turing | Data Center | `570.158.01` |
-
-## ov-blender-example Support Matrix
-
-Rows marked Supported are this repository's current user support claim. Release
-assets may be added or replaced while active platform release builds are in
-progress.
-
-| Support platform | OVRTX target | Support status | Evidence |
-| --- | --- | --- | --- |
-| `linux-x64` | Yes | Supported | Published `linux-x64` release |
-| `linux-aarch64` | Yes | Supported | Linux aarch64 platform release build is active |
-
-## Maintaining This Matrix
-
-Update this document when OVRTX platform provenance or this repo's release
-status changes.
-
-For each row, keep:
-
-- OVRTX binary release platform evidence
-- Omniverse runtime requirements separate from release platform targets
-- support status
-- release evidence, active release work, or the concrete blocker for
-  unsupported rows
+Install with the release package installer described in the
+[README](../README.md#install). A portable contract test or Windows-produced
+Linux layout does not establish a Linux runtime pass.

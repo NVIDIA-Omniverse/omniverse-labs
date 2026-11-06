@@ -51,7 +51,12 @@ def suppress_interactive_edit_bridge() -> Any:
     try:
         yield
     finally:
-        _INTERACTIVE_EDIT_BRIDGE_SUPPRESS_DEPTH = max(0, _INTERACTIVE_EDIT_BRIDGE_SUPPRESS_DEPTH - 1)
+        try:
+            if _INTERACTIVE_EDIT_BRIDGE_SUPPRESS_DEPTH == 1:
+                from .scene_generation_sessions import absorb_physics_presentation
+                absorb_physics_presentation()
+        finally:
+            _INTERACTIVE_EDIT_BRIDGE_SUPPRESS_DEPTH = max(0, _INTERACTIVE_EDIT_BRIDGE_SUPPRESS_DEPTH - 1)
 
 
 def interactive_edit_bridge_suppressed() -> bool:
@@ -213,8 +218,16 @@ def prepare_runtime_pose_mirror(
     lock_runtime_owned: bool = True,
     owning_generation: int | None = None,
     last_applied: Mapping[str, Any] | None = None,
+    object_paths_by_session_uid: Mapping[int, str] | None = None,
+    presentation_targets: tuple[Any, ...] = (),
+    scene_generation_number: int | None = None,
+    presentation_epoch: int | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """Derive pending runtime pose mirror work and diagnostics from scene state."""
+
+    if presentation_targets:
+        from .physics_pose_presentation import main_thread
+        main_thread()
 
     if not body_poses:
         return {}, {
@@ -250,7 +263,7 @@ def prepare_runtime_pose_mirror(
     for obj in getattr(scene, "objects", ()):
         inspected_object_count += 1
         try:
-            prim_path = str(obj.get("ovrtx.usd_prim_path", ""))
+            prim_path = _pose_object_path(obj, object_paths_by_session_uid)
         except Exception:
             continue
         if prim_path:
@@ -268,6 +281,11 @@ def prepare_runtime_pose_mirror(
         }
 
     pending = {}
+    for target in presentation_targets:
+        pose = poses_by_path.get(target.body_path)
+        if pose is not None and target.enabled and target.role == "DYNAMIC":
+            pending_poses[target.body_path] = {"translate": tuple(pose.translate), "orient": tuple(pose.orient)}
+            matched_paths.add(target.body_path)
     if pending_poses:
         pending = {
             "scene_name": str(getattr(scene, "name", "")),
@@ -276,6 +294,10 @@ def prepare_runtime_pose_mirror(
             "scene_source": scene_source,
             "lock_runtime_owned": bool(lock_runtime_owned),
             "owning_generation": owning_generation,
+            "object_paths_by_session_uid": dict(object_paths_by_session_uid or {}),
+            "presentation_targets": tuple(presentation_targets),
+            "scene_generation_number": scene_generation_number,
+            "presentation_epoch": presentation_epoch,
         }
 
     missing_object_paths = sorted(set(poses_by_path) - matched_paths)
@@ -296,6 +318,13 @@ def prepare_runtime_pose_mirror(
         "mirrored_paths": [],
         "missing_object_paths": missing_object_paths[:12],
     }
+
+
+def _pose_object_path(obj: Any, object_paths_by_session_uid: Mapping[int, str] | None) -> str:
+    uid = int(getattr(obj, "session_uid", 0) or 0)
+    if object_paths_by_session_uid:
+        return str(object_paths_by_session_uid.get(uid, ""))
+    return str(obj.get("ovrtx.usd_prim_path", ""))
 
 
 def apply_pending_runtime_pose_mirror(
@@ -336,6 +365,22 @@ def apply_pending_runtime_pose_mirror(
             "available_body_pose_count": len(poses_by_path),
         }
 
+    # Flush queued user RNA before physics writes suppress the edit bridge.
+    # Updating only inside suppression can consume an unrelated visual edit
+    # together with the mirrored pose, leaving no later depsgraph notification.
+    # Do this before checking the presentation generation: dispatching the
+    # pending edit may invalidate the generation or its output identities.
+    if not interactive_edit_bridge_suppressed() and not pending.get("_authored_edits_flushed"):
+        view_layer = pending.get("_presentation_view_layer") or getattr(getattr(bpy_module, "context", None), "view_layer", None)
+        if view_layer is not None:
+            view_layer.update()
+
+    if pending.get("scene_generation_number") is not None:
+        from .scene_generation_sessions import current_presentation_context
+        number, epoch, _targets = current_presentation_context(scene)
+        if number != pending["scene_generation_number"] or epoch != pending.get("presentation_epoch"):
+            return {"enabled": False, "status": "stale", "reason": "stale_physics_presentation_generation"}
+
     mirrored_paths: list[str] = []
     matched_paths: set[str] = set()
     matched_objects: dict[str, Any] = {}
@@ -343,18 +388,51 @@ def apply_pending_runtime_pose_mirror(
     mirror_error_count = 0
     first_mirror_error = ""
     with suppress_interactive_edit_bridge():
+        targets = pending.get("presentation_targets", ())
+        if targets:
+            if not pending.get("lock_runtime_owned", True):
+                physics_playback_lock.clear(reason="initial_condition_frame", frame1_cleared=True)
+                (pending.get("_presentation_view_layer") or bpy_module.context.view_layer).update()
+                return {"enabled": True, "status": "restored", "mirrored_count": 0}
+            from .physics_pose_presentation import apply
+            try:
+                mirrored_paths.extend(apply(scene, targets, poses_by_path, physics_playback_lock,
+                                            pending.get("scene_generation_number"), pending.get("_presentation_view_layer") or bpy_module.context.view_layer,
+                                            index=pending.get("_presentation_index"), evaluate=False))
+                object_paths = pending.get("object_paths_by_session_uid", {})
+                for target in targets:
+                    record = physics_playback_lock._presentation_records.get(target.body_path)
+                    if record is not None:
+                        record["edit_paths"] = {target.body_path, object_paths.get(target.object_session_uid, "")}
+                physics_playback_lock._owning_generation = _optional_int(pending.get("owning_generation"))
+                matched_paths.update(mirrored_paths)
+            except Exception as exc:
+                physics_playback_lock.clear(reason="physics_presentation_error")
+                return {"enabled": False, "status": "failed", "reason": str(exc), "mirrored_count": 0}
+        target_paths = {target.body_path for target in targets}
         for obj in getattr(scene, "objects", ()):
             try:
-                prim_path = str(obj.get("ovrtx.usd_prim_path", ""))
+                prim_path = _pose_object_path(obj, pending.get("object_paths_by_session_uid"))
             except Exception:
                 continue
             pose = poses_by_path.get(prim_path)
+            if prim_path in target_paths:
+                continue
             if not isinstance(pose, Mapping):
                 continue
             matched_paths.add(prim_path)
             matched_objects[prim_path] = obj
             try:
+                basis = getattr(obj, "matrix_basis", None)
+                if pending.get("lock_runtime_owned", True) and basis is not None:
+                    physics_playback_lock._legacy_initial_bases.setdefault(prim_path, (obj, basis.copy()))
+                    physics_playback_lock._legacy_initial_channels.setdefault(prim_path, {
+                        name: tuple(getattr(obj, name)) for name in
+                        ("location", "rotation_euler", "rotation_quaternion", "rotation_axis_angle", "scale")
+                        if hasattr(obj, name)})
                 translate = tuple(float(value) for value in pose["translate"])
+                meters_per_unit = float(getattr(getattr(scene, "unit_settings", None), "scale_length", 1.0))
+                translate = tuple(value / meters_per_unit for value in translate)
                 orient = tuple(float(value) for value in pose["orient"])
                 scale = obj.matrix_world.decompose()[2]
                 quat = Quaternion((orient[3], orient[0], orient[1], orient[2]))
@@ -374,15 +452,23 @@ def apply_pending_runtime_pose_mirror(
             mirrored_paths.append(prim_path)
             mirrored_objects[prim_path] = obj
         try:
-            view_layer = getattr(getattr(bpy_module, "context", None), "view_layer", None)
+            view_layer = pending.get("_presentation_view_layer") or getattr(getattr(bpy_module, "context", None), "view_layer", None)
             if view_layer is not None:
                 view_layer.update()
-        except Exception:
-            pass
+        except Exception as exc:
+            mirror_error_count += 1
+            if not first_mirror_error:
+                first_mirror_error = f"{type(exc).__name__}: {exc}"
 
     lock_enabled = bool(pending.get("lock_runtime_owned", True))
     owning_generation = pending.get("owning_generation", None)
     if lock_enabled:
+        # Joint handles share runtime ownership and its existing cleanup path;
+        # they are locked but never receive simulated transforms.
+        for obj in getattr(scene, "objects", ()):
+            joint = getattr(getattr(getattr(obj, "ov", None), "physics", None), "joint", None)
+            if joint is not None and joint.enabled and joint.persistent_id:
+                matched_objects["ov-joint:" + joint.persistent_id] = obj
         for prim_path, obj in matched_objects.items():
             physics_playback_lock.lock_object(
                 prim_path,
@@ -413,6 +499,9 @@ class PhysicsPlaybackLock:
 
     def __init__(self) -> None:
         self._records: dict[str, dict[str, Any]] = {}
+        self._presentation_records: dict[str, dict[str, Any]] = {}
+        self._legacy_initial_bases: dict[str, Any] = {}
+        self._legacy_initial_channels: dict[str, Any] = {}
         self._rejected_edit_count = 0
         self._last_rejected_data_authority = ""
         self._last_rejected_edit_path = ""
@@ -460,6 +549,31 @@ class PhysicsPlaybackLock:
             self._unlock_path(prim_path)
 
     def clear(self, *, reason: str, frame1_cleared: bool = False) -> None:
+        with suppress_interactive_edit_bridge():
+            restored_transforms = bool(self._presentation_records or self._legacy_initial_bases)
+            from .physics_pose_presentation import release
+            release(self)
+            for path, (obj, basis) in self._legacy_initial_bases.items():
+                try:
+                    obj.matrix_basis = basis.copy()
+                    for name, value in self._legacy_initial_channels.get(path, {}).items():
+                        setattr(obj, name, value)
+                except (ReferenceError, RuntimeError):
+                    pass
+            self._legacy_initial_bases.clear()
+            self._legacy_initial_channels.clear()
+            if restored_transforms:
+                # Restoring channels leaves matrix_world stale until evaluation.
+                # Evaluate before suppression absorbs the presentation snapshot;
+                # otherwise the next callback mistakes restored scale for a
+                # structural authoring edit and re-exports on the next Play.
+                try:
+                    import bpy
+                except ImportError:
+                    bpy = None
+                view_layer = getattr(getattr(bpy, "context", None), "view_layer", None)
+                if view_layer is not None:
+                    view_layer.update()
         for prim_path in sorted(self._records):
             self._unlock_path(prim_path)
         self._last_reason = reason
@@ -469,10 +583,37 @@ class PhysicsPlaybackLock:
         self._updated_at_ns = time.time_ns()
 
     def is_active(self) -> bool:
-        return bool(self._records)
+        return bool(self._records or self._presentation_records)
 
     def reject_edit(self, edit: InteractiveEdit) -> EditWorkflowResult | None:
         prim_path = str(getattr(edit, "usd_prim_path", ""))
+        for body_path, presentation in self._presentation_records.items():
+            if prim_path not in presentation.get("edit_paths", {body_path}):
+                continue
+            channel, obj = presentation["channel"], presentation["object"]
+            property_path = str(edit.blender_property_path)
+            if channel is obj:
+                owned = _physics_playback_locks_edit(edit) or property_path in {
+                    "matrix_basis", "location", "rotation_euler", "rotation_quaternion", "rotation_axis_angle"}
+            else:
+                prefix = channel.path_from_id() + "."
+                channels = {"matrix", "matrix_world", "matrix_basis", "location", "rotation_euler", "rotation_quaternion", "rotation_axis_angle"}
+                owned = (property_path in {prefix + name for name in channels}
+                         or prim_path == body_path and property_path in channels
+                         or edit.shape == EditShape.TOPOLOGY
+                         or prim_path == body_path and edit.data_authority == DataAuthority.SIM)
+            if not owned:
+                continue
+            with suppress_interactive_edit_bridge():
+                channel.matrix_basis = presentation["display_basis"].copy()
+            self._rejected_edit_count += 1
+            self._last_rejected_data_authority = edit.data_authority.value
+            self._last_rejected_edit_path = prim_path
+            self._last_reason = "physics_playback_lock"
+            self._updated_at_ns = time.time_ns()
+            return EditWorkflowResult(action=WorkflowAction.UNSUPPORTED, status=EditStatus.UNSUPPORTED,
+                reason="physics_playback_locked", diagnostics={"physics_playback_lock": True,
+                "usd_prim_path": prim_path, "discarded_attempted_value": True})
         if not _physics_playback_locks_edit(edit) or prim_path not in self._records:
             return None
         record = self._records[prim_path]
@@ -511,13 +652,14 @@ class PhysicsPlaybackLock:
         )
 
     def diagnostics(self) -> dict[str, Any]:
-        locked_paths = sorted(self._records)
+        locked_paths = sorted(set(self._records) | set(self._presentation_records))
         return {
-            "active": bool(self._records),
+            "active": self.is_active(),
             "reason": self._last_reason,
             "owning_physics_generation": self._owning_generation,
             "locked_object_count": len(locked_paths),
             "locked_object_paths": locked_paths[:12],
+            "locked_bone_count": sum(record["channel"] is not record["object"] for record in self._presentation_records.values()),
             "rejected_edit_count": self._rejected_edit_count,
             "ignored_internal_update_count": self._ignored_internal_update_count,
             "last_rejected_data_authority": self._last_rejected_data_authority,
@@ -548,6 +690,40 @@ class PhysicsPlaybackLock:
                 obj.matrix_world = _copy_matrix_world(matrix_world)
         except Exception:
             return
+
+
+def clear_playback_lock_when_writable(
+    lock: PhysicsPlaybackLock,
+    *,
+    reason: str,
+    still_wanted: Any = None,
+) -> None:
+    """Release a playback lock now, or from a main-loop timer.
+
+    Releasing writes Blender data. Viewport teardown also runs on F12's
+    render job thread and in drawing contexts (a panel pruning a freed
+    engine), where such writes raise; there the release waits for the main
+    loop. ``still_wanted`` is re-checked before a deferred release.
+    """
+
+    import threading
+
+    def release() -> None:
+        if still_wanted is None or still_wanted():
+            lock.clear(reason=reason)
+        return None
+
+    if threading.current_thread() is threading.main_thread():
+        try:
+            release()
+            return
+        except Exception:
+            pass
+    try:
+        import bpy
+    except ImportError:
+        return
+    bpy.app.timers.register(release, first_interval=0.0)
 
 
 def _record_selection_resolution_diagnostics(
