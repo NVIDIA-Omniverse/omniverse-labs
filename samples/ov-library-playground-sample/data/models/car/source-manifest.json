@@ -1,0 +1,119 @@
+{
+  "commit": "723ffc6706725b618b8c14ceb82e3e6904b08a76",
+  "files": [
+    {
+      "path": "CarConcept.gltf",
+      "source": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/723ffc6706725b618b8c14ceb82e3e6904b08a76/Models/CarConcept/glTF/CarConcept.gltf",
+      "bytes": 333111,
+      "sha256": "1a2395a86bdef0a1e9b3d3875bb056f688c624c19cf27c867b6d5cde6f37722f"
+    },
+    {
+      "path": "LICENSE.md",
+      "source": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/723ffc6706725b618b8c14ceb82e3e6904b08a76/Models/CarConcept/LICENSE.md",
+      "bytes": 945,
+      "sha256": "68fe164ee56cceb1d8376c32c228a74ebf83913355fe953217a2aa315c5cf0c3"
+    },
+    {
+      "path": "metadata.json",
+      "source": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/723ffc6706725b618b8c14ceb82e3e6904b08a76/Models/CarConcept/metadata.json",
+      "bytes": 1334,
+      "sha256": "89555a6cb9dc0a4f300abe3cc6476c2d8d77c6f3f2cbde9bf790c1bd320027ed"
+    },
+    {
+      "path": "README.md",
+      "source": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/723ffc6706725b618b8c14ceb82e3e6904b08a76/Models/CarConcept/README.md",
+      "bytes": 20383,
+      "sha256": "2f1869f099a77c8d15a10bf882e447ff1f55d3f7552375a11e2eaef253a54b4b"
+    },
+    {
+      "path": "CarConcept.data.bin",
+      "source": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/723ffc6706725b618b8c14ceb82e3e6904b08a76/Models/CarConcept/glTF/CarConcept.data.bin",
+      "bytes": 8670516,
+      "sha256": "5cd6ceb6a502dc3c79863c2f11c06f6aa7474e53367bb212b3e3c3f1e7611d20"
+    },
+    {
+      "path": "Mechanical_N.png",
+      "source": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/723ffc6706725b618b8c14ceb82e3e6904b08a76/Models/CarConcept/glTF/Mechanical_N.png",
+      "bytes": 251901,
+      "sha256": "bc5865f15bffc94e5248cf0a4bb1beaec06150a640b5ca65ad6de3d58d394ca9"
+    },
+    {
+      "path": "Mechanical_ORM.png",
+      "source": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/723ffc6706725b618b8c14ceb82e3e6904b08a76/Models/CarConcept/glTF/Mechanical_ORM.png",
+      "bytes": 69809,
+      "sha256": "1e026202e92d8b701550d1a6803cb3597f1c0d89adce256b0e360a0f547e4da9"
+    },
+    {
+      "path": "Occlusion.png",
+      "source": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/723ffc6706725b618b8c14ceb82e3e6904b08a76/Models/CarConcept/glTF/Occlusion.png",
+      "bytes": 1411879,
+      "sha256": "766c01462c9b344871711c6af66bcd1f75371fc25f7c392a0185f6b62b2dd4f8"
+    },
+    {
+      "path": "Khronos_C.png",
+      "source": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/723ffc6706725b618b8c14ceb82e3e6904b08a76/Models/CarConcept/glTF/Khronos_C.png",
+      "bytes": 7087,
+      "sha256": "50f16c5a514079b8ea27ba4eb03046b63cd0a9c29686423a2940a8fb2898f1b5"
+    },
+    {
+      "path": "Hex_N.png",
+      "source": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/723ffc6706725b618b8c14ceb82e3e6904b08a76/Models/CarConcept/glTF/Hex_N.png",
+      "bytes": 3331,
+      "sha256": "738427eb37d929a8a9dff41783cea37a10fd2dc98f53d6d320d9aa5c648beea7"
+    },
+    {
+      "path": "Rib_N.png",
+      "source": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/723ffc6706725b618b8c14ceb82e3e6904b08a76/Models/CarConcept/glTF/Rib_N.png",
+      "bytes": 143,
+      "sha256": "516aada2d1c574c59352e1221aaf75cc8fa48104aafe05716f02f30b7349c59f"
+    },
+    {
+      "path": "Dash_E.png",
+      "source": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/723ffc6706725b618b8c14ceb82e3e6904b08a76/Models/CarConcept/glTF/Dash_E.png",
+      "bytes": 27423,
+      "sha256": "23c7ee30e1bf5e2c243330d4d5be7624f96befca8a224a8eec0b9438a64b09a4"
+    },
+    {
+      "path": "Powdercoat_N.png",
+      "source": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/723ffc6706725b618b8c14ceb82e3e6904b08a76/Models/CarConcept/glTF/Powdercoat_N.png",
+      "bytes": 41240,
+      "sha256": "3f1bf8d127374684c89b0d1963ca57d36a8ea59de96bef752b62daebc6362eeb"
+    },
+    {
+      "path": "Dot_C.png",
+      "source": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/723ffc6706725b618b8c14ceb82e3e6904b08a76/Models/CarConcept/glTF/Dot_C.png",
+      "bytes": 321,
+      "sha256": "ac7ca6bf9ee840b78e4a27c82c3c529a1063bba16b9eea120c981a041d922a40"
+    },
+    {
+      "path": "Dot_N.png",
+      "source": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/723ffc6706725b618b8c14ceb82e3e6904b08a76/Models/CarConcept/glTF/Dot_N.png",
+      "bytes": 7969,
+      "sha256": "ca9ef95997b387a597738e2f3e9dfa6e9f140c38d2f0baa7aadf226ce05c3635"
+    },
+    {
+      "path": "Tireside_C.png",
+      "source": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/723ffc6706725b618b8c14ceb82e3e6904b08a76/Models/CarConcept/glTF/Tireside_C.png",
+      "bytes": 8094,
+      "sha256": "871509e74cc44ca8fa3b664e59460e62f0edf30007b035bb9f21ad957d6336c1"
+    },
+    {
+      "path": "Tireside_N.png",
+      "source": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/723ffc6706725b618b8c14ceb82e3e6904b08a76/Models/CarConcept/glTF/Tireside_N.png",
+      "bytes": 396724,
+      "sha256": "a7335b72bf59441a4e1856c819c1e1655a5bb6c72661429f70cf5857eb26f1c2"
+    },
+    {
+      "path": "Tiretread_N.png",
+      "source": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/723ffc6706725b618b8c14ceb82e3e6904b08a76/Models/CarConcept/glTF/Tiretread_N.png",
+      "bytes": 49131,
+      "sha256": "cc8dd22a4b78dfcebdca12270e3db8a9c381d9b1b40b00d7a0043373abd0f72f"
+    },
+    {
+      "path": "Thickness.png",
+      "source": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/723ffc6706725b618b8c14ceb82e3e6904b08a76/Models/CarConcept/glTF/Thickness.png",
+      "bytes": 137601,
+      "sha256": "09d0606c1f90caf3cc5d578d1f695e908df1c10288c9918971890d2d98dc5eae"
+    }
+  ]
+}

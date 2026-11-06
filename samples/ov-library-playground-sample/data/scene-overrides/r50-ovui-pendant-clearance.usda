@@ -1,0 +1,83 @@
+#usda 1.0
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+(
+    customLayerData = {
+        string baseRevision = "r48-wayfinding-landscape"
+        string purpose = "OVUI retained pendants: complete assemblies moved 1.65 m beyond the low ceiling"
+    }
+    metersPerUnit = 1
+    upAxis = "Y"
+)
+
+over "World"
+{
+    over "Environment"
+    {
+        over "R34_interface_R34_interface_0_001"
+        {
+            custom matrix4d xformOp:transform = ( (2.663161091653876e-7, 0.9999999999999645, 0, 0), (-0.9999999999999645, 2.663161091653876e-7, 0, 0), (0, 0, 1, 0), (-27.85000076293945, -14.799999237060547, 5.195000171661377, 1) )
+            custom token[] xformOpOrder = ["xformOp:transform"]
+        }
+
+        over "Pav_R34_interface_R42Retained0_South_bc5e8722b407_r30_acoustic_R46Rear"
+        {
+            custom matrix4d xformOp:transform = ( (1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (-1.65, 0, 0, 1) )
+            custom token[] xformOpOrder = ["xformOp:transform"]
+        }
+
+        over "R34_interface_R34_interface_2_001"
+        {
+            custom matrix4d xformOp:transform = ( (2.663161091653876e-7, 0.9999999999999645, 0, 0), (-0.9999999999999645, 2.663161091653876e-7, 0, 0), (0, 0, 1, 0), (-28.250000381469725, -2.4999992847442627, 5.195000171661377, 1) )
+            custom token[] xformOpOrder = ["xformOp:transform"]
+        }
+
+        over "Pav_R34_interface_R42Retained0_South_42e2e37cd3de_bronze_R46Front"
+        {
+            custom matrix4d xformOp:transform = ( (1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (-1.65, 0, 0, 1) )
+            custom token[] xformOpOrder = ["xformOp:transform"]
+        }
+
+        over "Pav_R34_interface_R42Retained0_South_42e2e37cd3de_bronze_R46Rear"
+        {
+            custom matrix4d xformOp:transform = ( (1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (-1.65, 0, 0, 1) )
+            custom token[] xformOpOrder = ["xformOp:transform"]
+        }
+
+        over "Pav_R34_interface_R42Retained0_South_bc5e8722b407_r30_acoustic_R46Front"
+        {
+            custom matrix4d xformOp:transform = ( (1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (-1.65, 0, 0, 1) )
+            custom token[] xformOpOrder = ["xformOp:transform"]
+        }
+
+        over "Pav_R34_interface_R42Retained4_Rod_interface_0_dark_metal"
+        {
+            custom matrix4d xformOp:transform = ( (1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (-1.65, 0, 0, 1) )
+            custom token[] xformOpOrder = ["xformOp:transform"]
+        }
+
+        over "Pav_R34_interface_R42Retained0_South_1bdf73aad36a_dark_metal_R46Front"
+        {
+            custom matrix4d xformOp:transform = ( (1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (-1.65, 0, 0, 1) )
+            custom token[] xformOpOrder = ["xformOp:transform"]
+        }
+
+        over "Pav_R34_interface_R42Retained4_Housing2_dark_metal"
+        {
+            custom matrix4d xformOp:transform = ( (1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (-1.65, 0, 0, 1) )
+            custom token[] xformOpOrder = ["xformOp:transform"]
+        }
+
+        over "Pav_R34_interface_R42Retained4_Rod_interface_2_dark_metal"
+        {
+            custom matrix4d xformOp:transform = ( (1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (-1.65, 0, 0, 1) )
+            custom token[] xformOpOrder = ["xformOp:transform"]
+        }
+
+        over "Pav_R34_interface_R42Retained4_Back2_white_metal"
+        {
+            custom matrix4d xformOp:transform = ( (1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (-1.65, 0, 0, 1) )
+            custom token[] xformOpOrder = ["xformOp:transform"]
+        }
+    }
+}

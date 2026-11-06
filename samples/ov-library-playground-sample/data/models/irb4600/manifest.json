@@ -1,0 +1,69 @@
+{
+  "commit": "eefdf01c956a6f2129aacb88d598201feff3cf19",
+  "files": [
+    {
+      "source": "https://raw.githubusercontent.com/ros-industrial/abb/eefdf01c956a6f2129aacb88d598201feff3cf19/abb_irb4600_support/urdf/irb4600_60_205_macro.xacro",
+      "sha256": "3bb3587ae3f72fc97fbc91bb6e632f08cc935a5d7d79ceec3c3c77a52e76832d"
+    },
+    {
+      "source": "https://raw.githubusercontent.com/ros-industrial/abb/eefdf01c956a6f2129aacb88d598201feff3cf19/abb_irb4600_support/LICENSE",
+      "sha256": "074e6e32c86a4c0ef8b3ed25b721ca23aca83df277cd88106ef7177c354615ff"
+    },
+    {
+      "source": "https://raw.githubusercontent.com/ros-industrial/abb/eefdf01c956a6f2129aacb88d598201feff3cf19/abb_irb4600_support/package.xml",
+      "sha256": "d82eaa5c3ac2d264a270e77c5c4fa49339e7386ddf43c108a61f591b2cf6942a"
+    },
+    {
+      "source": "https://raw.githubusercontent.com/ros-industrial/abb/eefdf01c956a6f2129aacb88d598201feff3cf19/abb_irb4600_support/meshes/irb4600/visual/base_link.dae",
+      "sha256": "c225763a94be8a5d002f55b1ef30b266dd747e115e72ece126decfed672a4332"
+    },
+    {
+      "source": "https://raw.githubusercontent.com/ros-industrial/abb/eefdf01c956a6f2129aacb88d598201feff3cf19/abb_irb4600_support/meshes/irb4600/visual/link_1.dae",
+      "sha256": "d33635b7ee23fd57c1ab5cf2b2ac4bb3ea8197d877c4119873d6828ad75d60e8"
+    },
+    {
+      "source": "https://raw.githubusercontent.com/ros-industrial/abb/eefdf01c956a6f2129aacb88d598201feff3cf19/abb_irb4600_support/meshes/irb4600_60_205/visual/link_2.dae",
+      "sha256": "b9e5dca8492e412bf5567d0073b5eb12113af5f0982f0025d20edadc192fdf26"
+    },
+    {
+      "source": "https://raw.githubusercontent.com/ros-industrial/abb/eefdf01c956a6f2129aacb88d598201feff3cf19/abb_irb4600_support/meshes/irb4600_60_205/visual/link_3.dae",
+      "sha256": "54a7d9dc6b99c9849f76ef8074ab234069c3a01145422422f584bfc098142394"
+    },
+    {
+      "source": "https://raw.githubusercontent.com/ros-industrial/abb/eefdf01c956a6f2129aacb88d598201feff3cf19/abb_irb4600_support/meshes/irb4600_60_205/visual/link_4.dae",
+      "sha256": "a071005ea000eaad33e8caf199c4299de8996248f8052c66103495f3959b4eba"
+    },
+    {
+      "source": "https://raw.githubusercontent.com/ros-industrial/abb/eefdf01c956a6f2129aacb88d598201feff3cf19/abb_irb4600_support/meshes/irb4600_60_205/visual/link_5.dae",
+      "sha256": "a84ad8ed358c5ab295218dfddce2990cd9035d6bbab1c446e726c40a9183d523"
+    },
+    {
+      "source": "https://raw.githubusercontent.com/ros-industrial/abb/eefdf01c956a6f2129aacb88d598201feff3cf19/abb_irb4600_support/meshes/irb4600_60_205/visual/link_6.dae",
+      "sha256": "ed33dc1fba1766a0bc309fd5083da758e2e24129107a05a9f5c0abfafbade209"
+    }
+  ],
+  "triangles": 60195,
+  "joint_angles_degrees": [
+    0.0,
+    10.0,
+    -30.0,
+    0.0,
+    65.0,
+    0.0
+  ],
+  "display_scale_xyz": [
+    1,
+    1,
+    1
+  ],
+  "bounds_min": [
+    -0.40097299218177795,
+    -6.896667408971193e-17,
+    -0.3194999992847445
+  ],
+  "bounds_max": [
+    1.3131721087329098,
+    2.0011367181462374,
+    0.311706006526947
+  ]
+}

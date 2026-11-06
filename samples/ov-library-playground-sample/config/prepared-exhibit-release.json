@@ -1,0 +1,13 @@
+{
+  "build_hash": "1cf67cbcca32f1f9d9d7bb1a5db43215e4cddda9485dac2279d954ee8d3131a3",
+  "bundle": {
+    "filename": "OV-Library-Lab-prepared-exhibits-portable.zip",
+    "bytes": 317011550,
+    "sha256": "38a98cedb508def6492cd30346b3415404bb0a41ace1ffe46fbf55f676000f39",
+    "prefix": "simready/",
+    "manifest": "release-manifest.json",
+    "manifest_sha256": "ab240b2d799a4f5d0eb9cc6ecacf11a33b3e95d36d3800f3713c28d617b79e9d",
+    "entry": "index.json",
+    "url": "https://github.com/NVIDIA-Omniverse/omniverse-labs/releases/download/ov-library-playground-assets-v0.14.0-rc.2/OV-Library-Lab-prepared-exhibits-portable.zip"
+  }
+}

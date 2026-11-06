@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "revisions": {
+    "r46-ten-gallery": {
+      "directory": "nvidia-campus-r46-ten-gallery",
+      "layout": "ten-gallery",
+      "status": "Legacy ten-gallery architecture",
+      "manifest_sha256": "a1e7a9cbe2edbc704a9787001a2cef9d1e030d301970d78d7817e1d7f199a6b9"
+    },
+    "r48-wayfinding-landscape": {
+      "directory": "nvidia-campus-r48-portable-provenance",
+      "layout": "ten-gallery",
+      "refined_interiors": true,
+      "visitor_polish": true,
+      "status": "Default campus with visitor polish; exterior glass limitations documented",
+      "manifest_sha256": "bfe89d503b51b8840e82522f672a49093822b06b6f54a72efab593ba8175d221"
+    },
+    "r47-gallery-cleanup": {
+      "directory": "nvidia-campus-r47-gallery-cleanup-final",
+      "layout": "ten-gallery",
+      "refined_interiors": true,
+      "status": "Legacy gallery interiors; exterior glass limitations documented",
+      "manifest_sha256": "e2f71035318ee6c6e4e289aff664fe453ee021b3d4c8658d461a348c7c33dcd0"
+    }
+  }
+}

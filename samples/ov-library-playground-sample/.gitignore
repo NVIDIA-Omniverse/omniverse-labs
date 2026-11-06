@@ -1,0 +1,37 @@
+__pycache__/
+*.py[cod]
+.venv*/
+.ov_library_lab_runtime/
+exts/nvidia.ov_library_lab/artifacts/
+deliverables/
+*.log
+.env
+.env.*
+!.env.example
+Thumbs.db
+imgui.ini
+.DS_Store
+data/campus/nvidia-campus-r45-portable/
+data/campus/runtime/
+data/campus/nvidia-campus-r46-ten-gallery/
+data/campus/nvidia-campus-r47-gallery-cleanup-final/
+data/campus/nvidia-campus-r48-wayfinding-landscape/
+data/campus/active-revision.json
+
+data/campus/.install-*/
+
+# Reproducible public assets prepared by tools/setup_simready.py
+data/models/simready/
+data/models/.simready-backups/
+data/models/.simready-install-*/
+
+# Separate artist sources, editable revisions and local validation receipts
+authoring/
+
+# Local audit output and renderer debug artifacts
+analysis/
+checkerboard.png
+data/campus/
+
+# Optional pinned offline artwork archives
+data/scene-archives/

@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "sample_id": "ov-library-playground-sample",
+  "delivery": "GitHub Release assets attached to the sample repository",
+  "campus": {
+    "filename": "nvidia-campus-r48-portable-provenance.zip",
+    "bytes": 986658860,
+    "sha256": "ec6127d444580c72dccfe6892b76e273fc821450483c4e6f57a049db744c99a6",
+    "prefix": "nvidia-campus-r48-wayfinding-landscape/",
+    "manifest": "manifest.json",
+    "manifest_sha256": "bfe89d503b51b8840e82522f672a49093822b06b6f54a72efab593ba8175d221",
+    "entry": "campus-lab.usda",
+    "revision": "r48-wayfinding-landscape",
+    "directory": "nvidia-campus-r48-portable-provenance",
+    "prepared": true,
+    "url": "https://github.com/NVIDIA-Omniverse/omniverse-labs/releases/download/ov-library-playground-assets-v0.14.0-rc.2/nvidia-campus-r48-portable-provenance.zip"
+  },
+  "guide": {
+    "filename": "lab-guide.zip",
+    "bytes": 17921100,
+    "sha256": "26acec23057f3616e8cecc540b60732b2d67725c3a7da3834d3ffa8975c1baa0",
+    "prefix": "lab-guide/",
+    "manifest": "asset-manifest.json",
+    "manifest_sha256": "c5b28277da5ea923f06d59e1482673c881dcc12888bb048a245f64ac7b4f3e30",
+    "entry": "GTCB_Avatar.usda",
+    "url": "https://github.com/NVIDIA-Omniverse/omniverse-labs/releases/download/ov-library-playground-assets-v0.14.0-rc.2/lab-guide.zip"
+  }
+}

@@ -1,0 +1,105 @@
+{
+  "campus_revision": "r48-wayfinding-landscape",
+  "files": [
+    {
+      "asset": "oak_veneer_01",
+      "author": {
+        "Jenelle van Heerden": "All"
+      },
+      "license": "CC0-1.0",
+      "source": "https://polyhaven.com/a/oak_veneer_01",
+      "comparisons": [
+        {
+          "path": "source/textures/oak_color.png",
+          "in_current_archive": true,
+          "source_sha256": "dc760fa4e771d21810391aba7adeef62c0ce7359323a9c0c3ba26e59c41ca940",
+          "archive_sha256": "21c16d1091f35b80d34bccf663d758babc069a8bbb9d417f38e4157ac580b21a",
+          "exact_source_match": false
+        },
+        {
+          "path": "source/textures/oak_roughness.png",
+          "in_current_archive": true,
+          "source_sha256": "c721fe5abff3c3ec04281803e8477f3fc348d8b5882f5830c50709e838977e6f",
+          "archive_sha256": "09e3e626879f1fa4588de78d2861642b4614eab3e98029d3e3f70d3d39845b3f",
+          "exact_source_match": false
+        },
+        {
+          "path": "source/textures/oak_normal.png",
+          "in_current_archive": true,
+          "source_sha256": "c26f922a75022c11243f351d348d1b5615e713f3787c76657fdb06047879b960",
+          "archive_sha256": "c26f922a75022c11243f351d348d1b5615e713f3787c76657fdb06047879b960",
+          "exact_source_match": true
+        }
+      ]
+    },
+    {
+      "asset": "forest_floor",
+      "author": {
+        "eye-candy.xyz": "All"
+      },
+      "license": "CC0-1.0",
+      "source": "https://polyhaven.com/a/forest_floor",
+      "comparisons": [
+        {
+          "path": "source/textures/forest_color.png",
+          "in_current_archive": true,
+          "source_sha256": "96d0cdb27300e7bf021e8d558bfe7e82060cd5bef60095917a21b88405180dfc",
+          "archive_sha256": "96d0cdb27300e7bf021e8d558bfe7e82060cd5bef60095917a21b88405180dfc",
+          "exact_source_match": true
+        },
+        {
+          "path": "source/textures/forest_roughness.png",
+          "in_current_archive": true,
+          "source_sha256": "8847f9914b532e72a1d9b8126c2108b30837bb8b7091310623c20130d42320cb",
+          "archive_sha256": "8847f9914b532e72a1d9b8126c2108b30837bb8b7091310623c20130d42320cb",
+          "exact_source_match": true
+        },
+        {
+          "path": "source/textures/forest_normal.png",
+          "in_current_archive": true,
+          "source_sha256": "1961d7c23582a5d8663fb7d6e083045e2d0888c1a6d17099b58ed525e90684e1",
+          "archive_sha256": "1961d7c23582a5d8663fb7d6e083045e2d0888c1a6d17099b58ed525e90684e1",
+          "exact_source_match": true
+        }
+      ]
+    },
+    {
+      "asset": "rocky_terrain_03",
+      "author": {
+        "Amal Kumar": "All"
+      },
+      "license": "CC0-1.0",
+      "source": "https://polyhaven.com/a/rocky_terrain_03",
+      "comparisons": [
+        {
+          "path": "source/textures/terrain_color.png",
+          "in_current_archive": true,
+          "source_sha256": "6814fa4349d471f2a1ce355cf563e877d73aaba6d94bb1649b38c0645525707e",
+          "archive_sha256": "6814fa4349d471f2a1ce355cf563e877d73aaba6d94bb1649b38c0645525707e",
+          "exact_source_match": true
+        },
+        {
+          "path": "source/textures/terrain_roughness.png",
+          "in_current_archive": true,
+          "source_sha256": "ebcc7bae912f4d89965ff27e13ea0870674d1d68dd47ae16492199ff4f3b0443",
+          "archive_sha256": "ebcc7bae912f4d89965ff27e13ea0870674d1d68dd47ae16492199ff4f3b0443",
+          "exact_source_match": true
+        },
+        {
+          "path": "source/textures/terrain_normal.png",
+          "in_current_archive": true,
+          "source_sha256": "a928b0bdc19cdbd188af4f0c27559ec3f1abae6047e73648fdc628550655bce0",
+          "archive_sha256": "a928b0bdc19cdbd188af4f0c27559ec3f1abae6047e73648fdc628550655bce0",
+          "exact_source_match": true
+        }
+      ]
+    }
+  ],
+  "oak_adaptation": {
+    "description": "Retain photographed grain and adapt albedo and roughness to an oiled-oak finish.",
+    "color": "[0.605, 0.452, 0.298] + (source_rgb - mean(source_rgb, axes=(0, 1))) * 0.68",
+    "roughness": "clip(0.49 + (source - 0.53) * 0.22, 0.36, 0.62)",
+    "normal": "Source image unchanged; shader normal strength 0.14.",
+    "authoring_script_sha256": "8187e9d2f7e159bb38fc5706fc14b1af49d861adc0a2c528307157c25032b138"
+  }
+}

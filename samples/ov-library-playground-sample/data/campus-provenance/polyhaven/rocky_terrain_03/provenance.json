@@ -1,0 +1,33 @@
+{
+  "asset": "Rocky Terrain 03",
+  "author": {
+    "Amal Kumar": "All"
+  },
+  "source": "https://polyhaven.com/a/rocky_terrain_03",
+  "license": "CC0-1.0",
+  "license_source": "https://polyhaven.com/license",
+  "physical_repeat_m": [
+    90.0,
+    90.0
+  ],
+  "files": [
+    {
+      "file": "terrain_color.png",
+      "source": "https://dl.polyhaven.org/file/ph-assets/Textures/png/4k/rocky_terrain_03/rocky_terrain_03_diff_4k.png",
+      "sha256": "6814fa4349d471f2a1ce355cf563e877d73aaba6d94bb1649b38c0645525707e",
+      "source_md5": "f32525a6baaa8ddc6bc8f16546b6467d"
+    },
+    {
+      "file": "terrain_roughness.png",
+      "source": "https://dl.polyhaven.org/file/ph-assets/Textures/png/4k/rocky_terrain_03/rocky_terrain_03_rough_4k.png",
+      "sha256": "ebcc7bae912f4d89965ff27e13ea0870674d1d68dd47ae16492199ff4f3b0443",
+      "source_md5": "0ea71903039fc1d3e899414b08d85f63"
+    },
+    {
+      "file": "terrain_normal.png",
+      "source": "https://dl.polyhaven.org/file/ph-assets/Textures/png/4k/rocky_terrain_03/rocky_terrain_03_nor_gl_4k.png",
+      "sha256": "a928b0bdc19cdbd188af4f0c27559ec3f1abae6047e73648fdc628550655bce0",
+      "source_md5": "154c078e732e5cf6459afaf20030e49e"
+    }
+  ]
+}

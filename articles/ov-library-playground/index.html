@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Omniverse Libraries Playground — Omniverse Labs</title>
+    <meta name="description" content="Explore eight Omniverse libraries through an interactive 3D campus. Try robot sensors, physics, shared scene data and more, then inspect the source to build your own applications." />
+    <link rel="stylesheet" href="../../assets/css/main.css" />
+    <script type="text/javascript">
+    if (location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
+      window.OptanonWrapper = function () {
+        var event = new Event("bannerLoaded");
+        window.dispatchEvent(event);
+      };
+      document.write('<script src="https://cdn.cookielaw.org/scripttemplates/otSDKStub.js" data-document-language="true" type="text/javascript" charset="UTF-8" data-domain-script="019f8341-2fcb-7482-b1aa-375a01df34fb"><\/script>');
+      document.write('<script type="text/javascript" src="https://images.nvidia.com/aem-dam/Solutions/ot-js/ot-custom.js"><\/script>');
+      document.write('<script src="https://assets.adobedtm.com/5d4962a43b79/814eb6e9b4e1/launch-4bc07f1e0b0b.min.js"><\/script>');
+    }
+    </script>
+    <style>
+      .playground-article { max-width: 960px; }
+      .playground-article .prose > p,
+      .playground-article .prose > ul { max-width: 720px; }
+    </style>
+  </head>
+  <body data-base="../../">
+    <header class="site-header site-header--compact">
+      <div class="brand-row">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">OL</div>
+          <p class="brand-title"><a href="../../">Omniverse Labs</a></p>
+        </div>
+        <nav class="header-links" aria-label="Site">
+          <a href="https://github.com/NVIDIA-Omniverse/omniverse-labs/tree/main/samples/ov-library-playground-sample">Sample on GitHub</a>
+          <a href="../sample-catalog/">Samples</a>
+        </nav>
+      </div>
+    </header>
+
+    <article class="article-wrap playground-article">
+      <header class="article-hero">
+        <p class="article-kicker">Sample</p>
+        <h1 class="article-title">Omniverse Libraries Playground</h1>
+        <p class="article-deck">Explore Omniverse libraries through hands-on examples. Try their features, discover where they fit your use case, and follow the code to build something of your own.</p>
+        <div class="article-meta">
+          <span>Eight interactive library showcases</span>
+          <span>November 2026</span>
+        </div>
+        <a href="../../assets/images/articles/ov-library-playground/atrium.webp" aria-label="View full-size image of the Playground atrium">
+          <img src="../../assets/images/articles/ov-library-playground/atrium.webp" alt="The Playground's glass-roofed atrium, with the NVIDIA sculpture, robot guide and entrances to the library galleries" width="1824" height="1191" fetchpriority="high" />
+        </a>
+      </header>
+
+      <div class="prose">
+        <p>The Playground brings eight libraries into one interactive campus. Walk through a virtual campus, enter a gallery and change the scene with live controls. Watch a robot's sensor views respond to an obstacle, compare how cartons behave under different physics settings, or turn one reusable asset into a fleet.</p>
+        <p>Each showcase runs the library it demonstrates. Whether you are getting familiar with Omniverse or exploring an idea for an application, you can connect a feature to a concrete result, then open the source to see how it works.</p>
+
+        <h2>A guide to help you get started</h2>
+        <p>Meet the robot beside the NVIDIA sculpture. Walk up and choose a conversation topic to learn what a library does, what to try in its room and how the example works. Explore on foot, or use the navigation bar to jump directly to another showcase.</p>
+        <figure>
+          <a href="../../assets/images/articles/ov-library-playground/guide.webp" aria-label="View full-size image: Robot guide beside the sculpture with its conversation bubble and topic buttons open">
+            <img src="../../assets/images/articles/ov-library-playground/guide.webp" alt="Robot guide beside the sculpture with its conversation bubble and topic buttons open" width="1920" height="1080" loading="lazy" decoding="async" />
+          </a>
+          <figcaption>Choose a topic for an introduction, suggested experiments or an explanation of the implementation.</figcaption>
+        </figure>
+
+        <h2>OVRTX: see the scene through a robot's sensors</h2>
+        <p>Start with a moving robot and compare a LiDAR point cloud with front- and rear-facing fisheye camera images. Pause the robot, move the target pallet and watch the sensor outputs change. These views make it easy to explore how one scene can supply different kinds of visual and spatial information.</p>
+        <figure>
+          <a href="../../assets/images/articles/ov-library-playground/rtx-sensors.webp" aria-label="View full-size image: OVRTX robot exhibit with a LiDAR point cloud, front and rear fisheye camera images, and interactive controls">
+            <img src="../../assets/images/articles/ov-library-playground/rtx-sensors.webp" alt="OVRTX robot exhibit with a LiDAR point cloud, front and rear fisheye camera images, and interactive controls" width="1920" height="1080" loading="lazy" decoding="async" />
+          </a>
+          <figcaption>LiDAR and both fisheye cameras observe the same scene. The robot follows a scripted route so you can focus on the sensor outputs.</figcaption>
+        </figure>
+        <p>Switch to the concept car or robot arms to explore another side of the renderer: compare surface finishes, adjust lighting and see how materials and reflections respond. The same gallery connects sensor rendering with visual design review.</p>
+
+        <h2>OVPhysX: experiment with motion and contact</h2>
+        <p>Choose a transfer height and release cartons onto a receiving conveyor. The static arrangement on the left provides a reference while rigid-body simulation runs on the right. Change gravity and repeat the drop, settle a stack and nudge its top layer, or compare stopping distances at different friction settings.</p>
+        <figure>
+          <a href="../../assets/images/articles/ov-library-playground/physics.webp" aria-label="View full-size image: OVPhysX carton transfer experiment with static reference, simulated cartons, and controls for height and gravity">
+            <img src="../../assets/images/articles/ov-library-playground/physics.webp" alt="OVPhysX carton transfer experiment with static reference, simulated cartons, and controls for height and gravity" width="1920" height="1080" loading="lazy" decoding="async" />
+          </a>
+          <figcaption>Change a setting, run the experiment and compare the result. Contact, gravity and friction turn scene geometry into physical behavior.</figcaption>
+        </figure>
+        <p>These experiments offer an approachable way to understand the effects of physics parameters before applying them to your own handling, robotics or digital-twin scenarios.</p>
+
+        <h2>OVStage: one shared scene, multiple views</h2>
+        <p>Grow a single mobile robot into a fleet of reusable asset instances. Change their shared cargo and send them across the exhibit, then compare the main view with the second camera. Both reflect the same scene updates.</p>
+        <figure>
+          <a href="../../assets/images/articles/ov-library-playground/stage.webp" aria-label="View full-size image: OVStage gallery with six mobile robots carrying loads and a second camera view of the shared scene">
+            <img src="../../assets/images/articles/ov-library-playground/stage.webp" alt="OVStage gallery with six mobile robots carrying loads and a second camera view of the shared scene" width="1920" height="1080" loading="lazy" decoding="async" />
+          </a>
+          <figcaption>A fleet built from reusable assets, with two cameras reading the same scene state.</figcaption>
+        </figure>
+        <p>The example shows scene composition and live updates in a form you can inspect immediately. Fleet motion is scripted; the focus is organizing and updating shared scene data.</p>
+
+        <h2>Five more libraries to explore</h2>
+        <ul>
+          <li><strong>OVUI:</strong> operate a pallet stacker with buttons, sliders and status controls. Compose a panel and see multiple widgets share the same value model.</li>
+          <li><strong>OVStorage:</strong> save a scene revision, change the layout and restore an earlier snapshot through the library's local file backend.</li>
+          <li><strong>OVStream:</strong> send rendered frames to a local receiving client and commands back to the scene. Pause and resume delivery to explore the connection.</li>
+          <li><strong>OVNewton:</strong> compare articulated gantry transfers and see how the motion profile changes a suspended load's sway.</li>
+          <li><strong>OVPackage:</strong> publish an asset with its dependencies, install a revision in a receiving workspace, verify the files and restore a modified copy.</li>
+        </ul>
+
+        <h2>From exploring to building</h2>
+        <p>The Playground is also a sample you can study and extend. Each room includes example-code access so you can see how its features are implemented. Use the examples as starting points for your own interfaces, scenes and workflows.</p>
+        <div class="callout">
+          <p><strong><a href="https://github.com/NVIDIA-Omniverse/omniverse-labs/tree/main/samples/ov-library-playground-sample">Explore the sample on GitHub →</a></strong></p>
+          <p>Setup instructions and hardware requirements are in the <a href="https://github.com/NVIDIA-Omniverse/omniverse-labs/blob/main/samples/ov-library-playground-sample/README.md">README</a>. The application runs on Windows with a compatible NVIDIA RTX GPU.</p>
+        </div>
+      </div>
+    </article>
+
+    <footer class="site-footer">
+      <div class="site-footer__site">
+        <p class="site-footer__meta">
+          <a href="../../">← All projects</a>
+          <span class="site-footer__sep" aria-hidden="true">·</span>
+          <span>Apache 2.0</span>
+          <span class="site-footer__sep" aria-hidden="true">·</span>
+          <a href="https://github.com/nvidia-omniverse/omniverse-labs/issues">Site feedback</a>
+        </p>
+      </div>
+      <nav class="site-footer__policies" aria-label="NVIDIA legal and policies">
+        <ul>
+          <li>
+            <a href="https://www.nvidia.com/en-us/about-nvidia/privacy-policy/">Privacy Policy</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/about-nvidia/privacy-center/">Your Privacy Choices</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/about-nvidia/terms-of-service/">Terms of Service</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/about-nvidia/accessibility/">Accessibility</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/about-nvidia/company-policies/">Corporate Policies</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/product-security/">Product Security</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/contact/">Contact</a>
+          </li>
+        </ul>
+      </nav>
+    </footer>
+  <script type="text/javascript">if (window._satellite) { window._satellite.pageBottom(); }</script>
+  </body>
+</html>

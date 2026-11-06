@@ -1,0 +1,11 @@
+# Tested Windows CPython 3.12 environment. The arcade keeps its upstream env.
+numpy==2.2.6
+Pillow==13.0.0
+usd-core==26.8
+ovstage==0.2.1.385922
+ovphysx==0.6.4.72118723
+ovrtx @ https://pypi.nvidia.com/ovrtx/ovrtx-0.5.1.385782-py3-none-win_amd64.whl
+ovui==0.2.0
+ovstorage==0.3.0
+ovstream==0.5.6
+warp-lang==1.17.0

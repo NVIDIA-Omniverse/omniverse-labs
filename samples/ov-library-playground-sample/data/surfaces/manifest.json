@@ -1,0 +1,131 @@
+[
+  {
+    "file": "concrete_floor_02_Diffuse.jpg",
+    "asset": "concrete_floor_02",
+    "source": "https://polyhaven.com/a/concrete_floor_02",
+    "authors": {
+      "Rob Tuytel": "All"
+    },
+    "dimensions_mm": [
+      2000,
+      2000
+    ],
+    "license": "CC0-1.0",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/concrete_floor_02/concrete_floor_02_diff_2k.jpg",
+    "sha256": "b08a20dcb306d08ee7f4a05ec216b19b7fd37e95745998ec5f81ecedaac1f0e9"
+  },
+  {
+    "file": "concrete_floor_02_Rough.jpg",
+    "asset": "concrete_floor_02",
+    "source": "https://polyhaven.com/a/concrete_floor_02",
+    "authors": {
+      "Rob Tuytel": "All"
+    },
+    "dimensions_mm": [
+      2000,
+      2000
+    ],
+    "license": "CC0-1.0",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/concrete_floor_02/concrete_floor_02_rough_2k.jpg",
+    "sha256": "cb539b0f8fdc8c63241683e01c923eb040fa701ec4c60cff27b674294746ae67"
+  },
+  {
+    "file": "concrete_floor_02_nor_gl.jpg",
+    "asset": "concrete_floor_02",
+    "source": "https://polyhaven.com/a/concrete_floor_02",
+    "authors": {
+      "Rob Tuytel": "All"
+    },
+    "dimensions_mm": [
+      2000,
+      2000
+    ],
+    "license": "CC0-1.0",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/concrete_floor_02/concrete_floor_02_nor_gl_2k.jpg",
+    "sha256": "ce12d18f283f884f4be6f6c110f81582376049caada1e226958659d3d5fbaae1"
+  },
+  {
+    "file": "plywood_Diffuse.jpg",
+    "asset": "plywood",
+    "source": "https://polyhaven.com/a/plywood",
+    "authors": {
+      "Rob Tuytel": "All"
+    },
+    "dimensions_mm": [
+      499.999940395355,
+      499.999940395355
+    ],
+    "license": "CC0-1.0",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/plywood/plywood_diff_2k.jpg",
+    "sha256": "050a15a796413b91c9cd5ca026dd3c4df83746bb1103ae14ae91503577dead8c"
+  },
+  {
+    "file": "plywood_Rough.jpg",
+    "asset": "plywood",
+    "source": "https://polyhaven.com/a/plywood",
+    "authors": {
+      "Rob Tuytel": "All"
+    },
+    "dimensions_mm": [
+      499.999940395355,
+      499.999940395355
+    ],
+    "license": "CC0-1.0",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/plywood/plywood_rough_2k.jpg",
+    "sha256": "bfd6947bca45a306f8c29add227c5eb9c7903d0cf1e72ce114483eb75305aa74"
+  },
+  {
+    "file": "plywood_nor_gl.jpg",
+    "asset": "plywood",
+    "source": "https://polyhaven.com/a/plywood",
+    "authors": {
+      "Rob Tuytel": "All"
+    },
+    "dimensions_mm": [
+      499.999940395355,
+      499.999940395355
+    ],
+    "license": "CC0-1.0",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/plywood/plywood_nor_gl_2k.jpg",
+    "sha256": "2391dbe49aaecd6584d12731d4470bf91ba33b5c7f05c78ec5900fcae28f0310"
+  },
+  {
+    "file": "cardboard_Diffuse.jpg",
+    "asset": "Cardboard004",
+    "source": "https://ambientcg.com/a/Cardboard004",
+    "authors": {
+      "ambientCG / Lennart Demes": "All"
+    },
+    "license": "CC0-1.0",
+    "url": "https://ambientcg.com/get?file=Cardboard004_2K-JPG.zip",
+    "archive_sha256": "c75c518d8ab2cc54eb496a8c01d83236de29c8110590e0f8e599ef8e62e2caae",
+    "archive_member": "Cardboard004_2K-JPG_Color.jpg",
+    "sha256": "0904604c6692ab6eb46887cb4c452cb65ac64ef55d43846ed900460069668b53"
+  },
+  {
+    "file": "cardboard_Rough.jpg",
+    "asset": "Cardboard004",
+    "source": "https://ambientcg.com/a/Cardboard004",
+    "authors": {
+      "ambientCG / Lennart Demes": "All"
+    },
+    "license": "CC0-1.0",
+    "url": "https://ambientcg.com/get?file=Cardboard004_2K-JPG.zip",
+    "archive_sha256": "c75c518d8ab2cc54eb496a8c01d83236de29c8110590e0f8e599ef8e62e2caae",
+    "archive_member": "Cardboard004_2K-JPG_Roughness.jpg",
+    "sha256": "d821359d9591556657be2094554c7a7764cfc4eae1497c193b4cf09441d8cf78"
+  },
+  {
+    "file": "cardboard_nor_gl.jpg",
+    "asset": "Cardboard004",
+    "source": "https://ambientcg.com/a/Cardboard004",
+    "authors": {
+      "ambientCG / Lennart Demes": "All"
+    },
+    "license": "CC0-1.0",
+    "url": "https://ambientcg.com/get?file=Cardboard004_2K-JPG.zip",
+    "archive_sha256": "c75c518d8ab2cc54eb496a8c01d83236de29c8110590e0f8e599ef8e62e2caae",
+    "archive_member": "Cardboard004_2K-JPG_NormalGL.jpg",
+    "sha256": "76aeae8902da177755083e343f22ac56ab012561be0363a98291d0a849fcd20e"
+  }
+]

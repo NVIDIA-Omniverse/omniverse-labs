@@ -1,0 +1,19 @@
+{
+  "audience": "public",
+  "build_id": "e8f034188eaea2e7",
+  "libraries": [
+    "ovrtx",
+    "ovphysx",
+    "ovstage",
+    "ovui",
+    "ovstorage",
+    "ovstream",
+    "ovnewton",
+    "ovpackage"
+  ],
+  "sample_id": "ov-library-playground-sample",
+  "scene": "R48 campus and robot guide; separate pinned release assets",
+  "automatic_uploads": false,
+  "sample_path": "samples/ov-library-playground-sample/",
+  "artifact_status": "public-source-preview"
+}

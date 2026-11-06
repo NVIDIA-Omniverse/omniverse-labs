@@ -1,0 +1,14 @@
+{
+  "source": "https://github.com/lucide-icons/lucide",
+  "revision": "d672fc43dbf60962d9d829e35bc3b3e5ed89a178",
+  "license": "ISC and MIT (Feather-derived info icon)",
+  "source_sha256": "bc977a64eb96f3e9c1041ffd09a3fceb70e3e65c02b571f76064062ed31f3cb9",
+  "license_sha256": "b495047bd93a9b06913511076f504daba17d5bbeb3e0650f3bb53a4220329c57",
+  "derived": {
+    "file": "info.png",
+    "sha256": "d04e82a65cb2d11f8da2fa832816b871fff74fe91d3c0d6a8f1fd100c33c21ff",
+    "renderer": "sharp 0.35.5",
+    "size": 96,
+    "adaptation": "Original 24-unit paths and 2-unit strokes; white stroke for UI tinting; rendered at 4x."
+  }
+}

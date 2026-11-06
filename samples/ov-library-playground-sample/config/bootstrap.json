@@ -1,0 +1,6 @@
+{
+  "uv_version": "0.12.18",
+  "uv_url": "https://github.com/astral-sh/uv/releases/download/0.12.18/uv-x86_64-pc-windows-msvc.zip",
+  "uv_sha256": "cae6a3bc25239f83dffb467a4b180508d9da23986c04639ebfa44e43e6a84bff",
+  "python": "3.12.14"
+}

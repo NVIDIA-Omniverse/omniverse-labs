@@ -1,0 +1,33 @@
+{
+  "asset": "Forest Floor",
+  "author": {
+    "eye-candy.xyz": "All"
+  },
+  "source": "https://polyhaven.com/a/forest_floor",
+  "license": "CC0-1.0",
+  "license_source": "https://polyhaven.com/license",
+  "physical_repeat_m": [
+    2.1399996280670166,
+    2.1399996280670166
+  ],
+  "files": [
+    {
+      "file": "forest_color.png",
+      "source": "https://dl.polyhaven.org/file/ph-assets/Textures/png/4k/forest_floor/forest_floor_diff_4k.png",
+      "sha256": "96d0cdb27300e7bf021e8d558bfe7e82060cd5bef60095917a21b88405180dfc",
+      "source_md5": "29d061f05146dbd42e609d0830a4ba5e"
+    },
+    {
+      "file": "forest_roughness.png",
+      "source": "https://dl.polyhaven.org/file/ph-assets/Textures/png/4k/forest_floor/forest_floor_rough_4k.png",
+      "sha256": "8847f9914b532e72a1d9b8126c2108b30837bb8b7091310623c20130d42320cb",
+      "source_md5": "7f3658eaad1fd7bf6b29b46fc6e9c09b"
+    },
+    {
+      "file": "forest_normal.png",
+      "source": "https://dl.polyhaven.org/file/ph-assets/Textures/png/4k/forest_floor/forest_floor_nor_gl_4k.png",
+      "sha256": "1961d7c23582a5d8663fb7d6e083045e2d0888c1a6d17099b58ed525e90684e1",
+      "source_md5": "89aff51cd286c61b80446bc1decae7e8"
+    }
+  ]
+}

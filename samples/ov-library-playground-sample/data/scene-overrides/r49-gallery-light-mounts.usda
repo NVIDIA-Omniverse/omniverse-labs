@@ -1,0 +1,565 @@
+#usda 1.0
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+(
+    customLayerData = {
+        string baseRevision = "r48-wayfinding-landscape"
+        string purpose = "Product-pound ceiling clearance and suspension; R48 remains immutable"
+    }
+    metersPerUnit = 1
+    upAxis = "Y"
+)
+
+def "World"
+{
+    def "Environment"
+    {
+        def Xform "R49Mounts"
+        {
+            matrix4d xformOp:transform = ( (1, 0, 0, -0), (0, -2.220446049250312e-16, 0.9999999999999998, 0), (0, -0.9999999999999998, -2.220446049250312e-16, 0), (0, 0, 0, 1) )
+            uniform token[] xformOpOrder = ["xformOp:transform"]
+
+            def Material "Metal"
+            {
+                token outputs:surface.connect = </World/Environment/R49Mounts/Metal/Surface.outputs:surface>
+
+                def Shader "Surface"
+                {
+                    uniform token info:id = "UsdPreviewSurface"
+                    color3f inputs:diffuseColor = (0.24, 0.26, 0.27)
+                    float inputs:metallic = 0.8
+                    float inputs:roughness = 0.3
+                    token outputs:surface
+                }
+            }
+
+            def Cylinder "Pav_R47_GalleryLight_interface_0__1_0" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.6299998283386223
+                rel material:binding = </World/Environment/R49Mounts/Metal>
+                double radius = 0.009
+                double3 xformOp:translate = (-19.50000069242182, 5.03499999046326, 10.499999564762957)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cylinder "Pav_R47_GalleryLight_interface_0__1_0_Mount" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.012
+                rel material:binding = </World/Environment/R49Mounts/Metal>
+                double radius = 0.035
+                double3 xformOp:translate = (-19.50000069242182, 5.343999904632571, 10.499999564762957)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cylinder "Pav_R47_GalleryLight_interface_0__1_1" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.6299998283386232
+                rel material:binding = </World/Environment/R49Mounts/Metal>
+                double radius = 0.009
+                double3 xformOp:translate = (-19.50000069242182, 5.034999990463261, 12.699999564762956)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cylinder "Pav_R47_GalleryLight_interface_0__1_1_Mount" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.012
+                rel material:binding = </World/Environment/R49Mounts/Metal>
+                double radius = 0.035
+                double3 xformOp:translate = (-19.50000069242182, 5.343999904632572, 12.699999564762956)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cylinder "Pav_R47_GalleryLight_interface_0_1_0" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.6299998283386232
+                rel material:binding = </World/Environment/R49Mounts/Metal>
+                double radius = 0.009
+                double3 xformOp:translate = (-19.499999307578072, 5.034999990463259, 5.299999636288714)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cylinder "Pav_R47_GalleryLight_interface_0_1_0_Mount" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.012
+                rel material:binding = </World/Environment/R49Mounts/Metal>
+                double radius = 0.035
+                double3 xformOp:translate = (-19.499999307578072, 5.343999904632571, 5.299999636288714)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cylinder "Pav_R47_GalleryLight_interface_0_1_1" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.6299998283386232
+                rel material:binding = </World/Environment/R49Mounts/Metal>
+                double radius = 0.009
+                double3 xformOp:translate = (-19.499999307578072, 5.034999990463259, 7.499999636288713)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cylinder "Pav_R47_GalleryLight_interface_0_1_1_Mount" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.012
+                rel material:binding = </World/Environment/R49Mounts/Metal>
+                double radius = 0.035
+                double3 xformOp:translate = (-19.499999307578072, 5.343999904632571, 7.499999636288713)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cylinder "Pav_R47_GalleryLight_interface_1__1_0" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.6299998283386232
+                rel material:binding = </World/Environment/R49Mounts/Metal>
+                double radius = 0.009
+                double3 xformOp:translate = (-22.700000740105423, 5.034999990463261, 10.499998712551394)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cylinder "Pav_R47_GalleryLight_interface_1__1_0_Mount" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.012
+                rel material:binding = </World/Environment/R49Mounts/Metal>
+                double radius = 0.035
+                double3 xformOp:translate = (-22.700000740105423, 5.343999904632572, 10.499998712551394)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cylinder "Pav_R47_GalleryLight_interface_1__1_1" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.6299998283386232
+                rel material:binding = </World/Environment/R49Mounts/Metal>
+                double radius = 0.009
+                double3 xformOp:translate = (-22.700000740105423, 5.034999990463261, 12.699998712551393)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cylinder "Pav_R47_GalleryLight_interface_1__1_1_Mount" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.012
+                rel material:binding = </World/Environment/R49Mounts/Metal>
+                double radius = 0.035
+                double3 xformOp:translate = (-22.700000740105423, 5.343999904632572, 12.699998712551393)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cylinder "Pav_R47_GalleryLight_interface_1_1_0" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.6299998283386223
+                rel material:binding = </World/Environment/R49Mounts/Metal>
+                double radius = 0.009
+                double3 xformOp:translate = (-22.699999355261674, 5.034999990463259, 5.299998784077152)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cylinder "Pav_R47_GalleryLight_interface_1_1_0_Mount" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.012
+                rel material:binding = </World/Environment/R49Mounts/Metal>
+                double radius = 0.035
+                double3 xformOp:translate = (-22.699999355261674, 5.34399990463257, 5.299998784077152)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cylinder "Pav_R47_GalleryLight_interface_1_1_1" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.6299998283386223
+                rel material:binding = </World/Environment/R49Mounts/Metal>
+                double radius = 0.009
+                double3 xformOp:translate = (-22.699999355261674, 5.034999990463259, 7.499998784077151)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cylinder "Pav_R47_GalleryLight_interface_1_1_1_Mount" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.012
+                rel material:binding = </World/Environment/R49Mounts/Metal>
+                double radius = 0.035
+                double3 xformOp:translate = (-22.699999355261674, 5.34399990463257, 7.499998784077151)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cylinder "Pav_R47_GalleryLight_storage_0__1_0" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.6299998283386223
+                rel material:binding = </World/Environment/R49Mounts/Metal>
+                double radius = 0.009
+                double3 xformOp:translate = (19.499999653789054, 5.034999990463259, 5.299999836025728)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cylinder "Pav_R47_GalleryLight_storage_0__1_0_Mount" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.012
+                rel material:binding = </World/Environment/R49Mounts/Metal>
+                double radius = 0.035
+                double3 xformOp:translate = (19.499999653789054, 5.34399990463257, 5.299999836025728)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cylinder "Pav_R47_GalleryLight_storage_0__1_1" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.6299998283386232
+                rel material:binding = </World/Environment/R49Mounts/Metal>
+                double radius = 0.009
+                double3 xformOp:translate = (19.499999653789054, 5.034999990463259, 7.499999836025729)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cylinder "Pav_R47_GalleryLight_storage_0__1_1_Mount" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.012
+                rel material:binding = </World/Environment/R49Mounts/Metal>
+                double radius = 0.035
+                double3 xformOp:translate = (19.499999653789054, 5.343999904632571, 7.499999836025729)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cylinder "Pav_R47_GalleryLight_storage_0_1_0" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.6299998283386232
+                rel material:binding = </World/Environment/R49Mounts/Metal>
+                double radius = 0.009
+                double3 xformOp:translate = (19.500000346210925, 5.034999990463261, 10.49999976450011)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cylinder "Pav_R47_GalleryLight_storage_0_1_0_Mount" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.012
+                rel material:binding = </World/Environment/R49Mounts/Metal>
+                double radius = 0.035
+                double3 xformOp:translate = (19.500000346210925, 5.343999904632572, 10.49999976450011)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cylinder "Pav_R47_GalleryLight_storage_0_1_1" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.6299998283386223
+                rel material:binding = </World/Environment/R49Mounts/Metal>
+                double radius = 0.009
+                double3 xformOp:translate = (19.500000346210925, 5.03499999046326, 12.69999976450011)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cylinder "Pav_R47_GalleryLight_storage_0_1_1_Mount" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.012
+                rel material:binding = </World/Environment/R49Mounts/Metal>
+                double radius = 0.035
+                double3 xformOp:translate = (19.500000346210925, 5.343999904632571, 12.69999976450011)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cylinder "Pav_R47_GalleryLight_storage_1_1_0" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.6299998283386232
+                rel material:binding = </World/Environment/R49Mounts/Metal>
+                double radius = 0.009
+                double3 xformOp:translate = (22.700000393894612, 5.034999990463261, 10.49999933839433)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cylinder "Pav_R47_GalleryLight_storage_1_1_0_Mount" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.012
+                rel material:binding = </World/Environment/R49Mounts/Metal>
+                double radius = 0.035
+                double3 xformOp:translate = (22.700000393894612, 5.343999904632572, 10.49999933839433)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cylinder "Pav_R47_GalleryLight_storage_1_1_1" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.6299998283386232
+                rel material:binding = </World/Environment/R49Mounts/Metal>
+                double radius = 0.009
+                double3 xformOp:translate = (22.700000393894612, 5.034999990463261, 12.69999933839433)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cylinder "Pav_R47_GalleryLight_storage_1_1_1_Mount" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.012
+                rel material:binding = </World/Environment/R49Mounts/Metal>
+                double radius = 0.035
+                double3 xformOp:translate = (22.700000393894612, 5.343999904632572, 12.69999933839433)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cylinder "Pav_R47_GalleryLight_storage_1__1_0" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.6299998283386223
+                rel material:binding = </World/Environment/R49Mounts/Metal>
+                double radius = 0.009
+                double3 xformOp:translate = (22.69999970147274, 5.034999990463259, 5.299999409919948)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cylinder "Pav_R47_GalleryLight_storage_1__1_0_Mount" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.012
+                rel material:binding = </World/Environment/R49Mounts/Metal>
+                double radius = 0.035
+                double3 xformOp:translate = (22.69999970147274, 5.34399990463257, 5.299999409919948)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cylinder "Pav_R47_GalleryLight_storage_1__1_1" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.6299998283386223
+                rel material:binding = </World/Environment/R49Mounts/Metal>
+                double radius = 0.009
+                double3 xformOp:translate = (22.69999970147274, 5.034999990463259, 7.499999409919948)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cylinder "Pav_R47_GalleryLight_storage_1__1_1_Mount" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.012
+                rel material:binding = </World/Environment/R49Mounts/Metal>
+                double radius = 0.035
+                double3 xformOp:translate = (22.69999970147274, 5.34399990463257, 7.499999409919948)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+        }
+
+        over "Pav_R47_GalleryLight_interface_0__1"
+        {
+            custom matrix4d xformOp:transform = ( (2.663161091653876e-7, 0.9999999999999645, 0, 0), (-0.9999999999999645, 2.663161091653876e-7, 0, 0), (0, 0, 1, 0), (-18, -9, -0.4499999999999999, 1) )
+            custom token[] xformOpOrder = ["xformOp:transform"]
+        }
+
+        over "Pav_R47_GalleryLens_interface_0__1"
+        {
+            custom matrix4d xformOp:transform = ( (2.663161091653876e-7, 0.9999999999999645, 0, 0), (-0.9999999999999645, 2.663161091653876e-7, 0, 0), (0, 0, 1, 0), (-18, -9, -0.4499999999999999, 1) )
+            custom token[] xformOpOrder = ["xformOp:transform"]
+        }
+
+        over "R47_Gallery_interface_0_1"
+        {
+            custom matrix4d xformOp:transform = ( (-2.220446049250278e-16, 0.9999999999999845, -1.77485964431401e-7, 0), (-0.9635862484088169, 4.745930284787438e-8, 0.2673974993677652, 0), (0.2673975153059034, 1.7102304486481641e-7, 0.963586305843021, 0), (-19.5, -6.400000095367432, 4.595000076293945, 1) )
+            custom token[] xformOpOrder = ["xformOp:transform"]
+        }
+
+        over "Pav_R47_GalleryLens_interface_1__1"
+        {
+            custom matrix4d xformOp:transform = ( (2.663161091653876e-7, 0.9999999999999645, 0, 0), (-0.9999999999999645, 2.663161091653876e-7, 0, 0), (0, 0, 1, 0), (-18, -9, -0.4499999999999999, 1) )
+            custom token[] xformOpOrder = ["xformOp:transform"]
+        }
+
+        over "Pav_R47_GalleryLight_interface_0_1"
+        {
+            custom matrix4d xformOp:transform = ( (2.663161091653876e-7, 0.9999999999999645, 0, 0), (-0.9999999999999645, 2.663161091653876e-7, 0, 0), (0, 0, 1, 0), (-18, -9, -0.4499999999999999, 1) )
+            custom token[] xformOpOrder = ["xformOp:transform"]
+        }
+
+        over "R47_Gallery_interface_0__1"
+        {
+            custom matrix4d xformOp:transform = ( (-2.220446049250278e-16, 0.9999999999999845, -1.77485964431401e-7, 0), (-0.9635862484088169, 4.745930284787438e-8, 0.2673974993677652, 0), (0.2673975153059034, 1.7102304486481641e-7, 0.963586305843021, 0), (-19.5, -11.59999942779541, 4.595000076293945, 1) )
+            custom token[] xformOpOrder = ["xformOp:transform"]
+        }
+
+        over "R47_Gallery_interface_1_1"
+        {
+            custom matrix4d xformOp:transform = ( (-2.2204457845525166e-16, 0.9999998807907104, -2.27479805473258e-8, 0), (-0.9635860445250082, 6.082760197004079e-9, 0.26739778826462407, 0), (0.2673978360790833, 2.1919643188465988e-8, 0.9635862168276502, 0), (-22.69999885559082, -6.399999618530273, 4.595000076293945, 1) )
+            custom token[] xformOpOrder = ["xformOp:transform"]
+        }
+
+        over "Pav_R47_GalleryLens_interface_1_1"
+        {
+            custom matrix4d xformOp:transform = ( (2.663161091653876e-7, 0.9999999999999645, 0, 0), (-0.9999999999999645, 2.663161091653876e-7, 0, 0), (0, 0, 1, 0), (-18, -9, -0.4499999999999999, 1) )
+            custom token[] xformOpOrder = ["xformOp:transform"]
+        }
+
+        over "R47_Gallery_interface_1__1"
+        {
+            custom matrix4d xformOp:transform = ( (-2.220446049250278e-16, 0.9999999999999845, -1.77485964431401e-7, 0), (-0.9635862484088169, 4.745930284787438e-8, 0.2673974993677652, 0), (0.2673975153059034, 1.7102304486481641e-7, 0.963586305843021, 0), (-22.700000762939453, -11.59999942779541, 4.595000076293945, 1) )
+            custom token[] xformOpOrder = ["xformOp:transform"]
+        }
+
+        over "Pav_R47_GalleryLens_interface_0_1"
+        {
+            custom matrix4d xformOp:transform = ( (2.663161091653876e-7, 0.9999999999999645, 0, 0), (-0.9999999999999645, 2.663161091653876e-7, 0, 0), (0, 0, 1, 0), (-18, -9, -0.4499999999999999, 1) )
+            custom token[] xformOpOrder = ["xformOp:transform"]
+        }
+
+        over "Pav_R47_GalleryLight_interface_1__1"
+        {
+            custom matrix4d xformOp:transform = ( (2.663161091653876e-7, 0.9999999999999645, 0, 0), (-0.9999999999999645, 2.663161091653876e-7, 0, 0), (0, 0, 1, 0), (-18, -9, -0.4499999999999999, 1) )
+            custom token[] xformOpOrder = ["xformOp:transform"]
+        }
+
+        over "Pav_R47_GalleryLight_interface_1_1"
+        {
+            custom matrix4d xformOp:transform = ( (2.663161091653876e-7, 0.9999999999999645, 0, 0), (-0.9999999999999645, 2.663161091653876e-7, 0, 0), (0, 0, 1, 0), (-18, -9, -0.4499999999999999, 1) )
+            custom token[] xformOpOrder = ["xformOp:transform"]
+        }
+
+        over "Pav_R47_GalleryLens_storage_1__1"
+        {
+            custom matrix4d xformOp:transform = ( (1.331580543606492e-7, -0.9999999999999911, 0, 0), (0.9999999999999911, 1.331580543606492e-7, 0, 0), (0, 0, 1, 0), (18, -9, -0.4499999999999999, 1) )
+            custom token[] xformOpOrder = ["xformOp:transform"]
+        }
+
+        over "R47_Gallery_storage_1_1"
+        {
+            custom matrix4d xformOp:transform = ( (-2.2204457845525166e-16, -0.9999998807907104, 2.27479805473258e-8, 0), (0.9635860445250082, 6.082760197004079e-9, 0.26739778826462407, 0), (-0.2673978360790833, 2.1919643188465988e-8, 0.9635862168276502, 0), (22.69999885559082, -11.600000381469727, 4.595000076293945, 1) )
+            custom token[] xformOpOrder = ["xformOp:transform"]
+        }
+
+        over "R47_Gallery_storage_1__1"
+        {
+            custom matrix4d xformOp:transform = ( (-3.994742111470634e-7, -1.000000119209198, 1.5287076685628301e-7, 0), (0.9635864207114145, -3.440506161784895e-7, 0.26739754718216807, 0), (-0.2673975153058231, 2.5412255870216815e-7, 0.963586305843025, 0), (22.700000762939453, -6.400000095367432, 4.595000076293945, 1) )
+            custom token[] xformOpOrder = ["xformOp:transform"]
+        }
+
+        over "Pav_R47_GalleryLight_storage_0__1"
+        {
+            custom matrix4d xformOp:transform = ( (1.331580543606492e-7, -0.9999999999999911, 0, 0), (0.9999999999999911, 1.331580543606492e-7, 0, 0), (0, 0, 1, 0), (18, -9, -0.4499999999999999, 1) )
+            custom token[] xformOpOrder = ["xformOp:transform"]
+        }
+
+        over "Pav_R47_GalleryLens_storage_0__1"
+        {
+            custom matrix4d xformOp:transform = ( (1.331580543606492e-7, -0.9999999999999911, 0, 0), (0.9999999999999911, 1.331580543606492e-7, 0, 0), (0, 0, 1, 0), (18, -9, -0.4499999999999999, 1) )
+            custom token[] xformOpOrder = ["xformOp:transform"]
+        }
+
+        over "R47_Gallery_storage_0__1"
+        {
+            custom matrix4d xformOp:transform = ( (-2.220446049250278e-16, -0.9999999999999845, 1.77485964431401e-7, 0), (0.9635862484088169, 4.745930284787438e-8, 0.2673974993677652, 0), (-0.2673975153059034, 1.7102304486481641e-7, 0.963586305843021, 0), (19.5, -6.400000095367432, 4.595000076293945, 1) )
+            custom token[] xformOpOrder = ["xformOp:transform"]
+        }
+
+        over "Pav_R47_GalleryLens_storage_0_1"
+        {
+            custom matrix4d xformOp:transform = ( (1.331580543606492e-7, -0.9999999999999911, 0, 0), (0.9999999999999911, 1.331580543606492e-7, 0, 0), (0, 0, 1, 0), (18, -9, -0.4499999999999999, 1) )
+            custom token[] xformOpOrder = ["xformOp:transform"]
+        }
+
+        over "Pav_R47_GalleryLight_storage_0_1"
+        {
+            custom matrix4d xformOp:transform = ( (1.331580543606492e-7, -0.9999999999999911, 0, 0), (0.9999999999999911, 1.331580543606492e-7, 0, 0), (0, 0, 1, 0), (18, -9, -0.4499999999999999, 1) )
+            custom token[] xformOpOrder = ["xformOp:transform"]
+        }
+
+        over "Pav_R47_GalleryLens_storage_1_1"
+        {
+            custom matrix4d xformOp:transform = ( (1.331580543606492e-7, -0.9999999999999911, 0, 0), (0.9999999999999911, 1.331580543606492e-7, 0, 0), (0, 0, 1, 0), (18, -9, -0.4499999999999999, 1) )
+            custom token[] xformOpOrder = ["xformOp:transform"]
+        }
+
+        over "Pav_R47_GalleryLight_storage_1_1"
+        {
+            custom matrix4d xformOp:transform = ( (1.331580543606492e-7, -0.9999999999999911, 0, 0), (0.9999999999999911, 1.331580543606492e-7, 0, 0), (0, 0, 1, 0), (18, -9, -0.4499999999999999, 1) )
+            custom token[] xformOpOrder = ["xformOp:transform"]
+        }
+
+        over "R47_Gallery_storage_0_1"
+        {
+            custom matrix4d xformOp:transform = ( (-2.220446049250278e-16, -0.9999999999999845, 1.77485964431401e-7, 0), (0.9635862484088169, 4.745930284787438e-8, 0.2673974993677652, 0), (-0.2673975153059034, 1.7102304486481641e-7, 0.963586305843021, 0), (19.5, -11.600000381469727, 4.595000076293945, 1) )
+            custom token[] xformOpOrder = ["xformOp:transform"]
+        }
+
+        over "Pav_R47_GalleryLight_storage_1__1"
+        {
+            custom matrix4d xformOp:transform = ( (1.331580543606492e-7, -0.9999999999999911, 0, 0), (0.9999999999999911, 1.331580543606492e-7, 0, 0), (0, 0, 1, 0), (18, -9, -0.4499999999999999, 1) )
+            custom token[] xformOpOrder = ["xformOp:transform"]
+        }
+    }
+}

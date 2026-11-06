@@ -1,0 +1,50 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+name: Playground source and asset checks
+
+on:
+  pull_request:
+    paths:
+      - 'samples/ov-library-playground-sample/**'
+      - '.github/workflows/playground-checks.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'samples/ov-library-playground-sample/**'
+      - '.github/workflows/playground-checks.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: samples/ov-library-playground-sample
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # These checks use only the Python standard library. Native GPU/application
+      # validation and a complete installation remain separate release checks.
+      - name: Check source syntax and runtime imports
+        run: python tools/check_source.py
+
+      - name: Check license headers and notices
+        run: python tools/check_licensing.py
+
+      - name: Test scene archive installation and recovery
+        run: python tools/check_scene_assets.py
+
+      - name: Test prepared exhibit installation and recovery
+        run: python tools/check_simready_setup.py

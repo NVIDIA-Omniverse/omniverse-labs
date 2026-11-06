@@ -1,0 +1,35 @@
+{
+  "source": "https://github.com/lucide-icons/lucide",
+  "revision": "d672fc43dbf60962d9d829e35bc3b3e5ed89a178",
+  "license": "ISC",
+  "files": {
+    "hand.svg": {
+      "url": "https://raw.githubusercontent.com/lucide-icons/lucide/d672fc43dbf60962d9d829e35bc3b3e5ed89a178/icons/hand.svg",
+      "sha256": "fe3771fa2f0a9a3c7736164c9a855beefacc02548084ac1d6fc8da8a8a9180b0"
+    },
+    "hand-grab.svg": {
+      "url": "https://raw.githubusercontent.com/lucide-icons/lucide/d672fc43dbf60962d9d829e35bc3b3e5ed89a178/icons/hand-grab.svg",
+      "sha256": "2bfb6b9fec56cccce35f8a09f57061896073523f4173df412b34ffc4db96fabf"
+    },
+    "LICENSE.txt": {
+      "url": "https://raw.githubusercontent.com/lucide-icons/lucide/d672fc43dbf60962d9d829e35bc3b3e5ed89a178/LICENSE",
+      "sha256": "b495047bd93a9b06913511076f504daba17d5bbeb3e0650f3bb53a4220329c57"
+    }
+  },
+  "derived": {
+    "hand.png": {
+      "source": "hand.svg",
+      "sha256": "3471ee1769a9e0408dc901e49683d063901ee723b42a078b1e3a03daeeaf3499",
+      "renderer": "sharp 0.35.5",
+      "size": 224,
+      "adaptation": "Original paths; rounded 1.5-unit pale outline over a 3.2-unit dark contrast edge; 2-unit transparent padding."
+    },
+    "hand-grab.png": {
+      "source": "hand-grab.svg",
+      "sha256": "9aa4e78a89d1c8ce3c3ede59fc8178c6e43e8c2209bc0164251d59a6a6a64585",
+      "renderer": "sharp 0.35.5",
+      "size": 224,
+      "adaptation": "Original paths; rounded 1.5-unit pale outline over a 3.2-unit dark contrast edge; 2-unit transparent padding."
+    }
+  }
+}

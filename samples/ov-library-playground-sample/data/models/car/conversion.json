@@ -1,0 +1,43 @@
+{
+  "root": "/World",
+  "up": "Y",
+  "bounds": [
+    [
+      -1.3693947165912628,
+      -0.15929910470534164,
+      -1.9402312433496844
+    ],
+    [
+      1.3589608675557334,
+      1.1486551396891138,
+      2.4171547944235194
+    ]
+  ],
+  "meshes": 97,
+  "triangles": 213347,
+  "materials": [
+    "/World/Looks/Mechanical",
+    "/World/Looks/Glass",
+    "/World/Looks/material2",
+    "/World/Looks/Interior_1",
+    "/World/Looks/Interior_3_Carmine",
+    "/World/Looks/Floormat",
+    "/World/Looks/Panel_Sides",
+    "/World/Looks/Hardware",
+    "/World/Looks/Interior_2",
+    "/World/Looks/Dashboard",
+    "/World/Looks/Neutral_Plate",
+    "/World/Looks/Paint_2_Carmine",
+    "/World/Looks/Paint_1_Carmine",
+    "/World/Looks/Signallight",
+    "/World/Looks/Brakelight",
+    "/World/Looks/Headlight",
+    "/World/Looks/Mirror",
+    "/World/Looks/Rim2",
+    "/World/Looks/Rim1",
+    "/World/Looks/Brake",
+    "/World/Looks/Disc",
+    "/World/Looks/Tireside",
+    "/World/Looks/Tiretread"
+  ]
+}

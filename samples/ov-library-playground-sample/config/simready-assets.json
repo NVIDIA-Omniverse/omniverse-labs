@@ -1,0 +1,1615 @@
+{
+  "schema_version": 1,
+  "dataset": "nvidia/simready-assets",
+  "revision": "cd8a53956ab42cda6281896e4eacec0e43739252",
+  "license": "CC-BY-4.0",
+  "assets": {
+    "carton": {
+      "name": "box_cardboard_a01",
+      "files": [
+        {
+          "path": "box_cardboard_a01/.metadata/LICENSE.txt",
+          "size": 18657,
+          "sha256": null,
+          "git_blob": "da6ab6cc8f333d7e89a99812866df8f24374d47c"
+        },
+        {
+          "path": "box_cardboard_a01/.metadata/com.nvidia.simready.conformance.Package-Candidate@1.0.0.json",
+          "size": 885,
+          "sha256": null,
+          "git_blob": "cbb0952cb56a88a5d2724a66856a2f76fdc6edf1"
+        },
+        {
+          "path": "box_cardboard_a01/.metadata/com.nvidia.simready.conformance.Package@1.0.0.json",
+          "size": 763,
+          "sha256": null,
+          "git_blob": "33ca413d3ac513de4d6697afae1ee3813f06c7ab"
+        },
+        {
+          "path": "box_cardboard_a01/.metadata/com.nvidia.simready.packaging.bom.json",
+          "size": 7116,
+          "sha256": null,
+          "git_blob": "97aa2687fb7c20df0aaf591b6c8836c2ad0a8c0c"
+        },
+        {
+          "path": "box_cardboard_a01/.metadata/com.nvidia.simready.root_usds.json",
+          "size": 97,
+          "sha256": null,
+          "git_blob": "22ec721954481feda0634770a57c2a7ea72cbfbc"
+        },
+        {
+          "path": "box_cardboard_a01/com.nvidia.simready.packaging.json",
+          "size": 562,
+          "sha256": null,
+          "git_blob": "f1f111404070cb33a1e37375c3d738abe9b0e5e3"
+        },
+        {
+          "path": "box_cardboard_a01/simready_usd/Textures/T_Cardbox_A1_Albedo_1.png",
+          "size": 3577615,
+          "sha256": "db4c149f567a693bb0f4d8d94be73988ea8f0ba6b6e15902295146685baf7250",
+          "git_blob": "c3a419b8bbcd0766bb19db0186b2f132126145c2"
+        },
+        {
+          "path": "box_cardboard_a01/simready_usd/Textures/T_Cardbox_A1_Normal_1.png",
+          "size": 2476917,
+          "sha256": "ae67a1b7327bbf244d2141c4b376005b88b3029d8df8ac219610b39f9208e261",
+          "git_blob": "7ca0e4dc08a281a7eecd7dc7102778278bd42140"
+        },
+        {
+          "path": "box_cardboard_a01/simready_usd/Textures/T_Cardbox_A1_ORM_1.png",
+          "size": 2858551,
+          "sha256": "b44ba9bc781bc4755ef60335da869d3a17b2ed214ec8645c40de81c55da1a7f3",
+          "git_blob": "4565c6c5ac130f872e52a61c3d6cdc8b3905cd7a"
+        },
+        {
+          "path": "box_cardboard_a01/simready_usd/payloads/MuJoCo/disabled.usda",
+          "size": 6070,
+          "sha256": "241df91cb9082c760c43a5c2b202ed432c3fdd91209bc3df41318d3a4f8e16e2",
+          "git_blob": "7cd44e7d07ba56020ae62afe091a18469149cf54"
+        },
+        {
+          "path": "box_cardboard_a01/simready_usd/payloads/MuJoCo/enabled.usda",
+          "size": 6698,
+          "sha256": "ed04adf5dd898c2af0ab523857a88ec16715879880186770e95827e4304b1815",
+          "git_blob": "3af32ded5a349ff76e0627022240d81722bb0846"
+        },
+        {
+          "path": "box_cardboard_a01/simready_usd/payloads/Newton/disabled.usda",
+          "size": 6070,
+          "sha256": "241df91cb9082c760c43a5c2b202ed432c3fdd91209bc3df41318d3a4f8e16e2",
+          "git_blob": "7cd44e7d07ba56020ae62afe091a18469149cf54"
+        },
+        {
+          "path": "box_cardboard_a01/simready_usd/payloads/Newton/enabled.usda",
+          "size": 6642,
+          "sha256": "6ae6b5678a777e383c58cb430d40920fce7f38eb2e635138f61abf3c3ce96ec3",
+          "git_blob": "12438e0d7ae8f01b6aa8192be1d7187f51e311b2"
+        },
+        {
+          "path": "box_cardboard_a01/simready_usd/payloads/PhysX/disabled.usda",
+          "size": 6070,
+          "sha256": "241df91cb9082c760c43a5c2b202ed432c3fdd91209bc3df41318d3a4f8e16e2",
+          "git_blob": "7cd44e7d07ba56020ae62afe091a18469149cf54"
+        },
+        {
+          "path": "box_cardboard_a01/simready_usd/payloads/PhysX/enabled.usda",
+          "size": 6342,
+          "sha256": "27ec09cd0115f0196d0960a9735775a75639ce73769e0dd19dafd24b74877446",
+          "git_blob": "60316b48dcb2f01894ac657ac9a4e633823b0152"
+        },
+        {
+          "path": "box_cardboard_a01/simready_usd/payloads/Physics/physics.usda",
+          "size": 6602,
+          "sha256": "1347b8787d442807223561abe360ba4b2e4fe79340178070791e347e3b09c558",
+          "git_blob": "9fa16a5f4ace99bb1d1f39a042ea702a0b18b5ba"
+        },
+        {
+          "path": "box_cardboard_a01/simready_usd/payloads/base.usda",
+          "size": 8744,
+          "sha256": "ce81e6c54a2095b00418ba2bc9ed38ab416598de241c61789a4bfb513c9e0a3b",
+          "git_blob": "d034ae43d2a1df887c5811c69e2d73f96d0c547e"
+        },
+        {
+          "path": "box_cardboard_a01/simready_usd/payloads/geometries.usd",
+          "size": 38587,
+          "sha256": "6b6abbac1fc4bc56c15fa70497b69bf12dec9e51e960072a44d502db17767a87",
+          "git_blob": "55f795f8b604f0d0ee1de843818e978be62e3c24"
+        },
+        {
+          "path": "box_cardboard_a01/simready_usd/payloads/instances.usda",
+          "size": 7133,
+          "sha256": "af0388e8da612a61871c12b56b546a9805f69cf3c425101c80663ee594245389",
+          "git_blob": "9875ca6967a140e56f3990cacbf6aedfc4708210"
+        },
+        {
+          "path": "box_cardboard_a01/simready_usd/payloads/instances_mujoco.usda",
+          "size": 7405,
+          "sha256": "ce214ae6c587700b9b620688f3b7d71ea264f4989133ad061bd02345e9044303",
+          "git_blob": "bd2644f739a011e4ba9c1b5fbd736bd6bce9ae6d"
+        },
+        {
+          "path": "box_cardboard_a01/simready_usd/payloads/instances_newton.usda",
+          "size": 7256,
+          "sha256": "2459af605c7e6052fb436d981388b258a238d4cfd3177abcabe3af153eeb87ea",
+          "git_blob": "53a6912b0340811983bdca1d45d37180771f6ae2"
+        },
+        {
+          "path": "box_cardboard_a01/simready_usd/payloads/instances_physx.usda",
+          "size": 7273,
+          "sha256": "aa4d2da5849f9c905029fac2a1712c061e8b17a9af9c3d8ca78b16125a829dd6",
+          "git_blob": "4339e4b099f34a75930712226501d7cf850424ae"
+        },
+        {
+          "path": "box_cardboard_a01/simready_usd/payloads/materials.usda",
+          "size": 11696,
+          "sha256": "34037fd74988195559495c4c470719da8fefd027c0cefbbf20bdd7d7ae296992",
+          "git_blob": "fd772c2d088baf80cb4928c54127ab02ee1c9ba1"
+        },
+        {
+          "path": "box_cardboard_a01/simready_usd/sm_box_cardboard_a01_01.usd",
+          "size": 24722,
+          "sha256": "6ae98d4279d30d2cbe863df1b8066138e023fd88be0ffb17c73d01e4c2be07f0",
+          "git_blob": "1bff8f2e748b5e7c23c33ca997815bd653e8ecdd"
+        },
+        {
+          "path": "box_cardboard_a01/simready_usd/source_assets/OmniPBR.mdl",
+          "size": 16010,
+          "sha256": null,
+          "git_blob": "7509579a8fd4ec7d069e6d242b37dad39290ec55"
+        },
+        {
+          "path": "box_cardboard_a01/simready_usd/source_assets/OmniPBRBase.mdl",
+          "size": 19369,
+          "sha256": null,
+          "git_blob": "ea5272914d203f50e4f33c5d420d2b94daddbc0f"
+        },
+        {
+          "path": "box_cardboard_a01/simready_usd/source_assets/OmniPBR_ClearCoat.mdl",
+          "size": 29789,
+          "sha256": null,
+          "git_blob": "b83431718cbb6ab7c57d8da75468698bab757644"
+        }
+      ]
+    },
+    "printed_carton": {
+      "name": "box_corrugated_brown_b04",
+      "files": [
+        {
+          "path": "box_corrugated_brown_b04/.metadata/LICENSE.txt",
+          "size": 18657,
+          "sha256": null,
+          "git_blob": "da6ab6cc8f333d7e89a99812866df8f24374d47c"
+        },
+        {
+          "path": "box_corrugated_brown_b04/.metadata/com.nvidia.simready.conformance.Package-Candidate@1.2.0.json",
+          "size": 892,
+          "sha256": null,
+          "git_blob": "096434f64b7980f5fd1b63b8d8c620e63aa3884d"
+        },
+        {
+          "path": "box_corrugated_brown_b04/.metadata/com.nvidia.simready.conformance.Package@1.0.0.json",
+          "size": 763,
+          "sha256": null,
+          "git_blob": "c50de3c1ee209e0a062f280f141a08b1c83f2531"
+        },
+        {
+          "path": "box_corrugated_brown_b04/.metadata/com.nvidia.simready.packaging.bom.json",
+          "size": 9501,
+          "sha256": null,
+          "git_blob": "6586419dddb5b1822f6bce171cd530da1fe87682"
+        },
+        {
+          "path": "box_corrugated_brown_b04/.metadata/com.nvidia.simready.root_usds.json",
+          "size": 104,
+          "sha256": null,
+          "git_blob": "ae7293df05b5649b1ee78ca413588790962e6943"
+        },
+        {
+          "path": "box_corrugated_brown_b04/com.nvidia.simready.packaging.json",
+          "size": 569,
+          "sha256": null,
+          "git_blob": "37300bcba978ca2623ccafd19f3dc48c9f75cf8d"
+        },
+        {
+          "path": "box_corrugated_brown_b04/simready_usd/Textures/T_Plastic_Black_A_ORM.png",
+          "size": 844997,
+          "sha256": "86a06701c6898c5d0026c92432c01a06ca43b34eb37f08376b9746f0ffa8b6b5",
+          "git_blob": "c8b5ae0a3cd43dd6cddb0a2933d05467e20429ef"
+        },
+        {
+          "path": "box_corrugated_brown_b04/simready_usd/Textures/t_corrugatedboxes_b01_tile01_albedo.png",
+          "size": 7528129,
+          "sha256": "5db82f3c8f9700b79bb4d2f801c33718c6ea9f406699948ba7c971a676adc5ea",
+          "git_blob": "531da61f83435ed5f7b10d3428f3dc6dcd2ba544"
+        },
+        {
+          "path": "box_corrugated_brown_b04/simready_usd/Textures/t_corrugatedboxes_b01_tile01_normal.png",
+          "size": 8397701,
+          "sha256": "be1966633f7aa8f8156f47f146927a17f35568c3f4a0e5d39260fb4f268c53ac",
+          "git_blob": "f78b2bc277322433620c758688a5a696e2f8007e"
+        },
+        {
+          "path": "box_corrugated_brown_b04/simready_usd/Textures/t_corrugatedboxes_b01_tile01_orm.png",
+          "size": 4211848,
+          "sha256": "2ad7183e78cb49bcfe1a9591a0c23b423c9fd1a6eb2ea77e07b4cf8386058222",
+          "git_blob": "3eda6159a04d9cdad37eed460b4dda2663398a83"
+        },
+        {
+          "path": "box_corrugated_brown_b04/simready_usd/Textures/t_corrugatedboxes_b01_trim_Albedo.png",
+          "size": 2459866,
+          "sha256": "4a24c65f53b4a7420ac8b3cf570e4dd77df0df81c37a730a65c93305b05289b3",
+          "git_blob": "036762939d867fc9e0a72b38e14c0132bda30e4b"
+        },
+        {
+          "path": "box_corrugated_brown_b04/simready_usd/Textures/t_corrugatedboxes_b01_trim_normal.png",
+          "size": 1290348,
+          "sha256": "1061dc411be515d6f2a95a02b4ebf9fcf897c7d5dbe4692a96889d0cd390713f",
+          "git_blob": "f3441b6e8c43f1d1322e4907893f45d438e9b168"
+        },
+        {
+          "path": "box_corrugated_brown_b04/simready_usd/Textures/t_corrugatedboxes_b01_trim_orm.png",
+          "size": 1817980,
+          "sha256": "37aedb3d2bc48129f27d282c604ff2e8ccb152f1ac091067d6cb70c3aedc5005",
+          "git_blob": "82abeb834915badb965ba64a0a87c78d309fea5e"
+        },
+        {
+          "path": "box_corrugated_brown_b04/simready_usd/payloads/MuJoCo/disabled.usda",
+          "size": 4395,
+          "sha256": "f3f89cd82a946423c7d49d07999b0da50db8b9a65ffcd7a01ebbc32abde31cdf",
+          "git_blob": "be5a1830c2e1c8d820dead7b4eae7fe27dad46a1"
+        },
+        {
+          "path": "box_corrugated_brown_b04/simready_usd/payloads/MuJoCo/enabled.usda",
+          "size": 5458,
+          "sha256": "2051d0c81402ddc93b6965fc9a298b2341ab88d91ec2888a80760f38465ff441",
+          "git_blob": "b3924eaa44c2d4588a58ca39bc6faa235508cbeb"
+        },
+        {
+          "path": "box_corrugated_brown_b04/simready_usd/payloads/Newton/disabled.usda",
+          "size": 4395,
+          "sha256": "f3f89cd82a946423c7d49d07999b0da50db8b9a65ffcd7a01ebbc32abde31cdf",
+          "git_blob": "be5a1830c2e1c8d820dead7b4eae7fe27dad46a1"
+        },
+        {
+          "path": "box_corrugated_brown_b04/simready_usd/payloads/Newton/enabled.usda",
+          "size": 5952,
+          "sha256": "91fa2d44106059042499655a13b52fbadd60d977eef811b5ff2f8a37f49c89dd",
+          "git_blob": "49289760b6c333c35288b2177a1cf2bc59b35b2e"
+        },
+        {
+          "path": "box_corrugated_brown_b04/simready_usd/payloads/PhysX/disabled.usda",
+          "size": 4395,
+          "sha256": "f3f89cd82a946423c7d49d07999b0da50db8b9a65ffcd7a01ebbc32abde31cdf",
+          "git_blob": "be5a1830c2e1c8d820dead7b4eae7fe27dad46a1"
+        },
+        {
+          "path": "box_corrugated_brown_b04/simready_usd/payloads/PhysX/enabled.usda",
+          "size": 4696,
+          "sha256": "f04d03096b7a18d4973b183c3632ec3da811a12b6e888f69161b8e76d57b37d9",
+          "git_blob": "8c8f5690b59024f37272cafdd6741daeda111fe3"
+        },
+        {
+          "path": "box_corrugated_brown_b04/simready_usd/payloads/Physics/physics.usda",
+          "size": 6215,
+          "sha256": "1b180479be4c7bcfaab03d18784307a06ded09c4f1e8541a6c068d5d17f508f6",
+          "git_blob": "e255d29e35a185a5e8a3261d628051347a65c370"
+        },
+        {
+          "path": "box_corrugated_brown_b04/simready_usd/payloads/base.usda",
+          "size": 8907,
+          "sha256": "f662aa4469f7136d209979f2327c4587df09e251a2669efa2d39d9e93cae9351",
+          "git_blob": "f542a3af3aacf0794130c8449cac86a583e90f17"
+        },
+        {
+          "path": "box_corrugated_brown_b04/simready_usd/payloads/geometries.usd",
+          "size": 998139,
+          "sha256": "36b4faf88353c389038f5b035a235aa6dd19ac8146fc661161346c7ca2e52b8b",
+          "git_blob": "bda61843a63411bd06d7a5239d6d26719b9ba103"
+        },
+        {
+          "path": "box_corrugated_brown_b04/simready_usd/payloads/instances.usda",
+          "size": 8008,
+          "sha256": "ca799481607a6b379a0b40af6d8359c1d228b83daaf38177b79aa946ada6b3bc",
+          "git_blob": "e7d4fd989af6f65567fd369140c196658519ce85"
+        },
+        {
+          "path": "box_corrugated_brown_b04/simready_usd/payloads/instances_mujoco.usda",
+          "size": 8280,
+          "sha256": "3a2d1256f3904181591bb6292e79c0c08c7226798ab4243eac52c5b1bed27293",
+          "git_blob": "2a21c740c291c88576e97ff09d7f429474ed83bb"
+        },
+        {
+          "path": "box_corrugated_brown_b04/simready_usd/payloads/instances_newton.usda",
+          "size": 8131,
+          "sha256": "12294dfd83bae5d0c121161312197e2530355a9ad4305665cf48d363246a6735",
+          "git_blob": "5576e824e1fff250999d5902490f009dcac77804"
+        },
+        {
+          "path": "box_corrugated_brown_b04/simready_usd/payloads/instances_physx.usda",
+          "size": 8148,
+          "sha256": "1e2c8824788de24b291970a8d80a3805c24e66f2072adc3757f6af76f3d70097",
+          "git_blob": "3cd68fc2be337b546f620a2d003e36523882efd0"
+        },
+        {
+          "path": "box_corrugated_brown_b04/simready_usd/payloads/materials.usda",
+          "size": 29431,
+          "sha256": "4db1684339d56e0b3d0ac669e490b6f7f267b04f31c47d636ec1c0c772a4d4ae",
+          "git_blob": "77a22b8ac41e34e5ac511adc207910f44c60cbd5"
+        },
+        {
+          "path": "box_corrugated_brown_b04/simready_usd/sm_box_corrugated_brown_b04_01.usd",
+          "size": 6189,
+          "sha256": "e65d6c5944c50ec383e41ce3476ed86c40f35aa5293bcfe3cfc9035c63dd6ad2",
+          "git_blob": "5152555b4411eb6e76c0d49fee59cb38a13868c3"
+        },
+        {
+          "path": "box_corrugated_brown_b04/simready_usd/source_assets/OmniPBR.mdl",
+          "size": 16010,
+          "sha256": null,
+          "git_blob": "7509579a8fd4ec7d069e6d242b37dad39290ec55"
+        },
+        {
+          "path": "box_corrugated_brown_b04/simready_usd/source_assets/OmniPBRBase.mdl",
+          "size": 19369,
+          "sha256": null,
+          "git_blob": "ea5272914d203f50e4f33c5d420d2b94daddbc0f"
+        },
+        {
+          "path": "box_corrugated_brown_b04/simready_usd/source_assets/OmniPBR_ClearCoat.mdl",
+          "size": 29789,
+          "sha256": null,
+          "git_blob": "b83431718cbb6ab7c57d8da75468698bab757644"
+        }
+      ]
+    },
+    "conveyor": {
+      "name": "conveyor_belt_a05",
+      "files": [
+        {
+          "path": "conveyor_belt_a05/.metadata/LICENSE.txt",
+          "size": 18657,
+          "sha256": null,
+          "git_blob": "da6ab6cc8f333d7e89a99812866df8f24374d47c"
+        },
+        {
+          "path": "conveyor_belt_a05/.metadata/com.nvidia.simready.conformance.Package-Candidate@1.0.0.json",
+          "size": 885,
+          "sha256": null,
+          "git_blob": "693da741aa596235855e362c7db14229b6f666cf"
+        },
+        {
+          "path": "conveyor_belt_a05/.metadata/com.nvidia.simready.conformance.Package@1.0.0.json",
+          "size": 763,
+          "sha256": null,
+          "git_blob": "f369ca7db7145341912761c44cf7148a73b8f08b"
+        },
+        {
+          "path": "conveyor_belt_a05/.metadata/com.nvidia.simready.packaging.bom.json",
+          "size": 18875,
+          "sha256": null,
+          "git_blob": "4676d75db2217fa7be33dc643d572d3e0e98e08c"
+        },
+        {
+          "path": "conveyor_belt_a05/.metadata/com.nvidia.simready.root_usds.json",
+          "size": 97,
+          "sha256": null,
+          "git_blob": "d67935b903d93b826f9f907ae84c4a257fe694f8"
+        },
+        {
+          "path": "conveyor_belt_a05/com.nvidia.simready.packaging.json",
+          "size": 562,
+          "sha256": null,
+          "git_blob": "ac1554734d0d3d63f9b04518020c2d18abc47538"
+        },
+        {
+          "path": "conveyor_belt_a05/simready_usd/Textures/T_Aluminium_Brushed_A1_Albedo.png",
+          "size": 3444684,
+          "sha256": "27f7cbc9e584a808e47bfc1fe8101f4f061f44da67de2d457e49ef83525d8892",
+          "git_blob": "61504e4b8a4e81ecb1801afe45ea73aa1f466233"
+        },
+        {
+          "path": "conveyor_belt_a05/simready_usd/Textures/T_Aluminium_Brushed_A1_Normal.png",
+          "size": 2273010,
+          "sha256": "c3f57cd1107cebd878ad0e374a2e59b4fc0ce4e7e981bc47a312dc2dd793adf7",
+          "git_blob": "df08bff9297ecb820afea90ade6990fb061c0afc"
+        },
+        {
+          "path": "conveyor_belt_a05/simready_usd/Textures/T_Aluminium_Brushed_A1_ORM.png",
+          "size": 2074427,
+          "sha256": "66178e5699df07bf2a140dfa9b22335204d07496af39734d9c2cdd75e8adc405",
+          "git_blob": "954affcfb9a0f44ad3b0e4b1afeec51f3f329c51"
+        },
+        {
+          "path": "conveyor_belt_a05/simready_usd/Textures/T_ConveyorBelt_A01_Trim_Albedo.png",
+          "size": 2885638,
+          "sha256": "20bd2d10cc6a7b489d962fe20458f0eff41f149d8c7045cebb143d6fe8594862",
+          "git_blob": "6540afa105cd568f1702fb241d9e198613db252e"
+        },
+        {
+          "path": "conveyor_belt_a05/simready_usd/Textures/T_ConveyorBelt_A01_Trim_Normal.png",
+          "size": 1466380,
+          "sha256": "f00a65f7b753597d67bbc299392ed44cfb76e6a6688e2d5bef06b8782b458944",
+          "git_blob": "8ff8948c879eef3599ed412bfb3a789806b5527a"
+        },
+        {
+          "path": "conveyor_belt_a05/simready_usd/Textures/T_ConveyorBelt_A01_Trim_ORM.png",
+          "size": 2514877,
+          "sha256": "0e2c2c7cc8e3a8aa42d5726795555396a107f4a5ec20a87990472a9e5fd7e3aa",
+          "git_blob": "d1a2e894d2bab9995b753393fd791ffed6ed453a"
+        },
+        {
+          "path": "conveyor_belt_a05/simready_usd/Textures/T_ConveyorsBelt_A01_Decal_Albedo.png",
+          "size": 1082819,
+          "sha256": "1627a4849ea7bd51585541c868f2d3b2d24bc4ca1b3872c9a87e03be611eb5cb",
+          "git_blob": "e1b021c50b3538d573ca68e82d73ff1deef3ea48"
+        },
+        {
+          "path": "conveyor_belt_a05/simready_usd/Textures/T_ConveyorsBelt_A01_Decal_ORM.png",
+          "size": 1312350,
+          "sha256": "9c7f76f5f80c7d9cf64291ad125c3df7cb935c7984f7ee4921ab42993ce2dbf9",
+          "git_blob": "c2dd84113253b54394d9832672355aad5ffd3daf"
+        },
+        {
+          "path": "conveyor_belt_a05/simready_usd/Textures/T_MetalPainted_White_Glossy_A_Normal.png",
+          "size": 2325135,
+          "sha256": "774d302d5deb1b7233bb01d9480d889bb41c3c75c6a8274da3db22c387c9a352",
+          "git_blob": "8856dfc9762546f778a2db5d78e97b3289215874"
+        },
+        {
+          "path": "conveyor_belt_a05/simready_usd/Textures/T_MetalPainted_White_Glossy_A_ORM.png",
+          "size": 1821970,
+          "sha256": "fa86de21fe705fa4a826e4785d4001c6e90d5418bdefbfa24e7eaca14e5cc5bf",
+          "git_blob": "b1f56e5c429e6da341329b82d2f93c1b88a5ded7"
+        },
+        {
+          "path": "conveyor_belt_a05/simready_usd/Textures/T_Metal_Glossy_A_Albedo.png",
+          "size": 3314214,
+          "sha256": "1f2c43526c30270e07b6e0ea5ccba7be5b588db5a19e70cc909ed69f17dabd4e",
+          "git_blob": "bb2c12f2c1ac9f7494724a9e5307baf309ecb6aa"
+        },
+        {
+          "path": "conveyor_belt_a05/simready_usd/Textures/T_Metal_Glossy_A_Normal.png",
+          "size": 159602,
+          "sha256": "e3d8bdd35ff2bc77775b162b98d1723e0008b02cfbaf1a058d3160e90dc3fac6",
+          "git_blob": "a681c3f9ec063f9f13722a9015c6820dfbf9ac83"
+        },
+        {
+          "path": "conveyor_belt_a05/simready_usd/Textures/T_Metal_Glossy_A_ORM.png",
+          "size": 2707096,
+          "sha256": "a6474d52f77d44479366ad3da9d8b595bb3c90c2c1dd597226a477ccb1a3f4a6",
+          "git_blob": "f64e9d3dcd8a4caa7a1054c50589ff5c4c8d9371"
+        },
+        {
+          "path": "conveyor_belt_a05/simready_usd/Textures/T_Plastic_Orange_A_Albedo.png",
+          "size": 3264891,
+          "sha256": "45cb4bad44d311d8b946a0eff3e40d1c0d97024d19fc3f11dd1e201d6e149c58",
+          "git_blob": "53a0eb819294a2c727efba8bb7633c4d7a569995"
+        },
+        {
+          "path": "conveyor_belt_a05/simready_usd/Textures/T_Plastic_Orange_A_Normal.png",
+          "size": 4570654,
+          "sha256": "9ea115a565a13fbd3d37299c8d8d0eeae85b978200a9659e2c7735b4aa92d4fa",
+          "git_blob": "e39d377bb07ce91b7d93b2cd5e0ab2ff42ffcc74"
+        },
+        {
+          "path": "conveyor_belt_a05/simready_usd/Textures/T_Plastic_Orange_A_ORM.png",
+          "size": 3227703,
+          "sha256": "619b74fe3c737612c7b5f7882f9302e3f675b09ec46ec0e42949cf909dea2159",
+          "git_blob": "3005aa3e9fd03cb4b56c738963c44b7e3344b330"
+        },
+        {
+          "path": "conveyor_belt_a05/simready_usd/Textures/T_Plastic_Rough_Black_A_Albedo.png",
+          "size": 2772954,
+          "sha256": "7fefce8d8de3acadf6dd8da7431388fcf93da75dddd65cb6ad6672ac2bb3f7a4",
+          "git_blob": "b84910696fee2877246a8338cb52c91190a87b08"
+        },
+        {
+          "path": "conveyor_belt_a05/simready_usd/Textures/T_Plastic_Rough_Black_A_Normal.png",
+          "size": 4718518,
+          "sha256": "e49906ff61dd7df0620844a8176d183780ae9a8aed4da72e1bac9fd0e2473e28",
+          "git_blob": "bc29e7b7dafce4cccd0c725f3abea7b5d49fbad9"
+        },
+        {
+          "path": "conveyor_belt_a05/simready_usd/Textures/T_Plastic_Rough_Black_A_ORM.png",
+          "size": 3787929,
+          "sha256": "85afc75ff6a80c337aa9264406b6e09c87d30ce42416bc8cd2fbb696b6d039fe",
+          "git_blob": "0869e964793719082664c2db59cb2e8aa047885c"
+        },
+        {
+          "path": "conveyor_belt_a05/simready_usd/Textures/T_Steel_A1_Albedo.png",
+          "size": 5557085,
+          "sha256": "e61898b1e1a7b64dba44ee6e3b8b0d66f873508c09e141394d5535d208d96b12",
+          "git_blob": "830b61a11fca6428361236cf79e63cedb0abe856"
+        },
+        {
+          "path": "conveyor_belt_a05/simready_usd/Textures/T_Steel_A1_Normal.png",
+          "size": 2279404,
+          "sha256": "c6a0ba336a804cd04da8406859bd40323c3eee783ef879ee8cf1699de5d82f60",
+          "git_blob": "5db6279711dfbd9cbf891ac17fac4a418193acdf"
+        },
+        {
+          "path": "conveyor_belt_a05/simready_usd/Textures/T_Steel_A1_ORM.png",
+          "size": 3254657,
+          "sha256": "20fe51937828869ed01a3fdd330de761802d080dbe052250f2a26720d1f73335",
+          "git_blob": "d09d3d2c5b9f1a8cd6ce7395ed33927636a5ebff"
+        },
+        {
+          "path": "conveyor_belt_a05/simready_usd/payloads/MuJoCo/disabled.usda",
+          "size": 4094,
+          "sha256": "5709fbd4240fd3b326f4ce0bf1f0eb304567f5e1e6fb988121cc4348903c5faf",
+          "git_blob": "065dd0772c064ff32b2f6b3c3a4d18be3ff7f679"
+        },
+        {
+          "path": "conveyor_belt_a05/simready_usd/payloads/MuJoCo/enabled.usda",
+          "size": 16849,
+          "sha256": "33a1e6f80622b3c8de94652f5bf91a92a1b1cd6ffa086f19b5ff597036e89851",
+          "git_blob": "b00e15175b745884dfb53cfa53eda21c2fc62d00"
+        },
+        {
+          "path": "conveyor_belt_a05/simready_usd/payloads/Newton/disabled.usda",
+          "size": 4094,
+          "sha256": "5709fbd4240fd3b326f4ce0bf1f0eb304567f5e1e6fb988121cc4348903c5faf",
+          "git_blob": "065dd0772c064ff32b2f6b3c3a4d18be3ff7f679"
+        },
+        {
+          "path": "conveyor_belt_a05/simready_usd/payloads/Newton/enabled.usda",
+          "size": 12173,
+          "sha256": "27d6424eadb257194ccea4b44028baddcfc7198d8bfb30802ad5b080b009241b",
+          "git_blob": "78d62ecd04963c3235f2b718b7a7c9eb17fb2f2c"
+        },
+        {
+          "path": "conveyor_belt_a05/simready_usd/payloads/PhysX/disabled.usda",
+          "size": 4094,
+          "sha256": "5709fbd4240fd3b326f4ce0bf1f0eb304567f5e1e6fb988121cc4348903c5faf",
+          "git_blob": "065dd0772c064ff32b2f6b3c3a4d18be3ff7f679"
+        },
+        {
+          "path": "conveyor_belt_a05/simready_usd/payloads/PhysX/enabled.usda",
+          "size": 9906,
+          "sha256": "2eae135c1f5185d0719077f584b691d38d47dbce6b18b0c2fb29801b136a0397",
+          "git_blob": "7d2bd159112a98d6850b2b42c0a808898713a2e6"
+        },
+        {
+          "path": "conveyor_belt_a05/simready_usd/payloads/Physics/physics.usda",
+          "size": 35112,
+          "sha256": "cf8aac033c4040bbb5e5730909df3ecfe6a14403325f8985770c3098e6b4ac45",
+          "git_blob": "85d306a129a4685f2a787f97054f6e62432b5fe3"
+        },
+        {
+          "path": "conveyor_belt_a05/simready_usd/payloads/base.usda",
+          "size": 76789,
+          "sha256": "ecadf328f57e67d807d2fca37dd2f00b446d2dd1735349ae3e40c7da8bfe6f18",
+          "git_blob": "425e7f518fb594ed59cbf31206c56973f5ac57a9"
+        },
+        {
+          "path": "conveyor_belt_a05/simready_usd/payloads/geometries.usd",
+          "size": 11120175,
+          "sha256": "a09484e0654404528d621083ee9ded038e94a3265af6894efd17d9c2bacf9662",
+          "git_blob": "8fd735237d3bea6a4e8406f6d51415e5ba903741"
+        },
+        {
+          "path": "conveyor_belt_a05/simready_usd/payloads/instances.usda",
+          "size": 39772,
+          "sha256": "b0498199cffa4778ac82895b48d2c95e6bc03c43158e7f177917c7799daec094",
+          "git_blob": "9c1c37736559f624b6630949c3fdc75f788112e5"
+        },
+        {
+          "path": "conveyor_belt_a05/simready_usd/payloads/instances_mujoco.usda",
+          "size": 47932,
+          "sha256": "c43345f41d93a5e3e8ae083fe627efcbc134aa564673dc27671c2e2a1c11db96",
+          "git_blob": "ab2bb4d6ecdf95c0a436e2d25ecbc2ae5c9ff231"
+        },
+        {
+          "path": "conveyor_belt_a05/simready_usd/payloads/instances_newton.usda",
+          "size": 43462,
+          "sha256": "f76ef27bdfece6e68fefe1a8cb60e6e65d17f74a572861cab48db3d7788b9141",
+          "git_blob": "d9cd5b7af961703645b27088ba0afa5b1eb95aa0"
+        },
+        {
+          "path": "conveyor_belt_a05/simready_usd/payloads/instances_physx.usda",
+          "size": 43972,
+          "sha256": "f2c8277296aad111778e2b7d4d41a0e5e85709600a6a0cdfb0ebc3717b7e0b2a",
+          "git_blob": "56c534f5be6dd1a2b529f8a6d18ebca5744464f9"
+        },
+        {
+          "path": "conveyor_belt_a05/simready_usd/payloads/materials.usda",
+          "size": 52751,
+          "sha256": "e3451c7f9d7094be941a7fdc51dd8bccc7e13151a58514958d212ac4f6fa4b2a",
+          "git_blob": "9cbdaabf83c918bb45e90acdca357eb0749ce1f6"
+        },
+        {
+          "path": "conveyor_belt_a05/simready_usd/sm_conveyor_belt_a05_01.usd",
+          "size": 21325,
+          "sha256": "5bf1027cc0b5d79726466d77e80ff67db5a410256cecc18dafceeaef5a8881e4",
+          "git_blob": "a0f6f9c5c3c324cc0721fbb6dc613ca1e4f95f3b"
+        },
+        {
+          "path": "conveyor_belt_a05/simready_usd/source_assets/OmniPBR.mdl",
+          "size": 16010,
+          "sha256": null,
+          "git_blob": "7509579a8fd4ec7d069e6d242b37dad39290ec55"
+        },
+        {
+          "path": "conveyor_belt_a05/simready_usd/source_assets/OmniPBRBase.mdl",
+          "size": 19369,
+          "sha256": null,
+          "git_blob": "ea5272914d203f50e4f33c5d420d2b94daddbc0f"
+        },
+        {
+          "path": "conveyor_belt_a05/simready_usd/source_assets/OmniPBR_ClearCoat.mdl",
+          "size": 29789,
+          "sha256": null,
+          "git_blob": "b83431718cbb6ab7c57d8da75468698bab757644"
+        }
+      ]
+    },
+    "pallet": {
+      "name": "pallet_wood_recycled_a05",
+      "files": [
+        {
+          "path": "pallet_wood_recycled_a05/.metadata/LICENSE.txt",
+          "size": 18657,
+          "sha256": null,
+          "git_blob": "da6ab6cc8f333d7e89a99812866df8f24374d47c"
+        },
+        {
+          "path": "pallet_wood_recycled_a05/.metadata/com.nvidia.simready.conformance.Package-Candidate@1.0.0.json",
+          "size": 892,
+          "sha256": null,
+          "git_blob": "8d6cb42b903f884ee5741f22922fa5ae579b3461"
+        },
+        {
+          "path": "pallet_wood_recycled_a05/.metadata/com.nvidia.simready.conformance.Package@1.0.0.json",
+          "size": 763,
+          "sha256": null,
+          "git_blob": "64fdbb2df678f64b24ba9db7130b5fc357a98f19"
+        },
+        {
+          "path": "pallet_wood_recycled_a05/.metadata/com.nvidia.simready.packaging.bom.json",
+          "size": 14116,
+          "sha256": null,
+          "git_blob": "df691300ee3d960316815255e53ab2481c214dd2"
+        },
+        {
+          "path": "pallet_wood_recycled_a05/.metadata/com.nvidia.simready.root_usds.json",
+          "size": 104,
+          "sha256": null,
+          "git_blob": "acda43c12be7dd398af07527f833c84dbe5eee81"
+        },
+        {
+          "path": "pallet_wood_recycled_a05/com.nvidia.simready.packaging.json",
+          "size": 569,
+          "sha256": null,
+          "git_blob": "ae7842015198ff8916813d7a5b94ed0a7c4f7d53"
+        },
+        {
+          "path": "pallet_wood_recycled_a05/simready_usd/Textures/T_Metal_Glossy_A_Albedo_1.png",
+          "size": 634053,
+          "sha256": "4e233488d3d42d94fc8889dde78ca8e546cd5fed08d51f5373384964c9b3a6e5",
+          "git_blob": "b9466b87e611ad665e6512be7da5ff3b16370c06"
+        },
+        {
+          "path": "pallet_wood_recycled_a05/simready_usd/Textures/T_Metal_Glossy_A_Normal_1.png",
+          "size": 56586,
+          "sha256": "e8254a2ca1b07a70fd151f752acb75b763bbcafb38681ddbb8a000f3452d2da3",
+          "git_blob": "aff72631aa072e2f9bab6b85e5196bce67eb106b"
+        },
+        {
+          "path": "pallet_wood_recycled_a05/simready_usd/Textures/T_Metal_Glossy_A_ORM_1.png",
+          "size": 531802,
+          "sha256": "48f7f6d85358d271f393382ee013635e970bf1ff4d5d66d91537a2f423f1361c",
+          "git_blob": "bc3f9912f686678b8e4644f572f472485e199b16"
+        },
+        {
+          "path": "pallet_wood_recycled_a05/simready_usd/Textures/T_Wood_Recycled_A1_Albedo.png",
+          "size": 5842346,
+          "sha256": "45418be8727fe592d632e2dc99e2eaac17b257ada833703de3a89c662ab3e88b",
+          "git_blob": "f3d7ad0e446dd200d15c614d29fb8e8cb38e216d"
+        },
+        {
+          "path": "pallet_wood_recycled_a05/simready_usd/Textures/T_Wood_Recycled_A1_Normal.png",
+          "size": 3988612,
+          "sha256": "7d79fae351f3398b9f1a5685d79dde0d8d6155ac7678e9c0a143204b9e9609ab",
+          "git_blob": "e2f359805e92c19806acc2a873187d37acef7cb7"
+        },
+        {
+          "path": "pallet_wood_recycled_a05/simready_usd/Textures/T_Wood_Recycled_A1_ORM.png",
+          "size": 2772655,
+          "sha256": "04d04a0a61420c843b0cee7364f31f137505f3f05f8348c80cb8cff36e83d371",
+          "git_blob": "1c386a175b0fde7cd54e6978adc75df1b7997da6"
+        },
+        {
+          "path": "pallet_wood_recycled_a05/simready_usd/payloads/MuJoCo/disabled.usda",
+          "size": 4394,
+          "sha256": "7eb3828088b932c31242217509185478b346b48a394dce16517f60c1532de2e5",
+          "git_blob": "6e8b95a948fedc428401a05ad946c102f5982bfa"
+        },
+        {
+          "path": "pallet_wood_recycled_a05/simready_usd/payloads/MuJoCo/enabled.usda",
+          "size": 5369,
+          "sha256": "c1d4af3c33ca3d7fe67948f7844057d725b83b471470c1cc0e05a118984aa99f",
+          "git_blob": "efa0bd7b351d2b50629e4e175dc156473a02b6b1"
+        },
+        {
+          "path": "pallet_wood_recycled_a05/simready_usd/payloads/Newton/disabled.usda",
+          "size": 4394,
+          "sha256": "7eb3828088b932c31242217509185478b346b48a394dce16517f60c1532de2e5",
+          "git_blob": "6e8b95a948fedc428401a05ad946c102f5982bfa"
+        },
+        {
+          "path": "pallet_wood_recycled_a05/simready_usd/payloads/Newton/enabled.usda",
+          "size": 5330,
+          "sha256": "f8bb80cf814dc9cef681daf9708d3ace4e4ab3155e1e9f76114ba9cddc3b5430",
+          "git_blob": "3e894394a8fbb7b72c63d1d8d7aec7fefaffa0d2"
+        },
+        {
+          "path": "pallet_wood_recycled_a05/simready_usd/payloads/PhysX/disabled.usda",
+          "size": 4394,
+          "sha256": "7eb3828088b932c31242217509185478b346b48a394dce16517f60c1532de2e5",
+          "git_blob": "6e8b95a948fedc428401a05ad946c102f5982bfa"
+        },
+        {
+          "path": "pallet_wood_recycled_a05/simready_usd/payloads/PhysX/enabled.usda",
+          "size": 4802,
+          "sha256": "d8b1392989ca66846bc15f360ea21af6aab798303aac47452f4d572b36c9b199",
+          "git_blob": "b5078110c783f31a408d15efc7f08bdc9537d15b"
+        },
+        {
+          "path": "pallet_wood_recycled_a05/simready_usd/payloads/Physics/physics.usda",
+          "size": 5251,
+          "sha256": "8445dcaa3d4cbdeac28468a919a66205a2ee6577cce25b88b2271e4a4fa18844",
+          "git_blob": "c47e1ec42e23deea231c1821640475c285489fd1"
+        },
+        {
+          "path": "pallet_wood_recycled_a05/simready_usd/payloads/base.usda",
+          "size": 8856,
+          "sha256": "c521165f1e9a8ca2a63a170fd2b79a494e30e0429117a7d96d31d11e26df2a1f",
+          "git_blob": "1e6a32991168c70142a665b5e8b3eec77d41205f"
+        },
+        {
+          "path": "pallet_wood_recycled_a05/simready_usd/payloads/geometries.usd",
+          "size": 917803,
+          "sha256": "670def1938b8a7b6d4454e3918eed79a4f4b68a393d0c4784628eff6aad69ed6",
+          "git_blob": "d3b1c9873969da56d9b7c17885ec2fb6d77fa803"
+        },
+        {
+          "path": "pallet_wood_recycled_a05/simready_usd/payloads/instances.usda",
+          "size": 6390,
+          "sha256": "4a2829475228582b902309641b2e375ba99a8762cf8458ac44f9dac80814a96e",
+          "git_blob": "616b37bdb7efed5022575415fe5acbd573681c46"
+        },
+        {
+          "path": "pallet_wood_recycled_a05/simready_usd/payloads/instances_mujoco.usda",
+          "size": 6662,
+          "sha256": "c0a6049ffd51d3ba319f3e52286fdfc5948efb9a61a26c6eb9547688ec57376f",
+          "git_blob": "bd33e63f9244844c1cdcc2c0a4f7896b9525e048"
+        },
+        {
+          "path": "pallet_wood_recycled_a05/simready_usd/payloads/instances_newton.usda",
+          "size": 6513,
+          "sha256": "9bf69b7f88a336539f2565da3b6b9fccac3a6f2f275fae142a3558eef5454da3",
+          "git_blob": "90b1be34caae92d6d9b7db6f8c90589cdb99ed9c"
+        },
+        {
+          "path": "pallet_wood_recycled_a05/simready_usd/payloads/instances_physx.usda",
+          "size": 6530,
+          "sha256": "8c0f1c39c54839e77aa2485f14f65832aa2b3ec0b35affd1ae88f17b464c430d",
+          "git_blob": "3de006612bd04814f346828119c6c21c4552db2c"
+        },
+        {
+          "path": "pallet_wood_recycled_a05/simready_usd/payloads/materials.usda",
+          "size": 15335,
+          "sha256": "5f9ba603945aebffe2acc4bfc79327a1a86100daed9ae4cedf60b2c2824c8c93",
+          "git_blob": "c259c05ee18b73be629ca3a803bf542f4464ab2f"
+        },
+        {
+          "path": "pallet_wood_recycled_a05/simready_usd/sm_pallet_wood_recycled_a05_01.usd",
+          "size": 22288,
+          "sha256": "83e0054b3bc16394c971397cdbf86d98e60d31601241783d0418fbd45ea56b9c",
+          "git_blob": "9847f1d352014086c207b6a90d9d5d3cb21fa632"
+        },
+        {
+          "path": "pallet_wood_recycled_a05/simready_usd/source_assets/OmniPBR.mdl",
+          "size": 16010,
+          "sha256": null,
+          "git_blob": "7509579a8fd4ec7d069e6d242b37dad39290ec55"
+        },
+        {
+          "path": "pallet_wood_recycled_a05/simready_usd/source_assets/OmniPBRBase.mdl",
+          "size": 19369,
+          "sha256": null,
+          "git_blob": "ea5272914d203f50e4f33c5d420d2b94daddbc0f"
+        },
+        {
+          "path": "pallet_wood_recycled_a05/simready_usd/source_assets/OmniPBR_ClearCoat.mdl",
+          "size": 29789,
+          "sha256": null,
+          "git_blob": "b83431718cbb6ab7c57d8da75468698bab757644"
+        }
+      ]
+    },
+    "rack": {
+      "name": "rack_large_empty_a01",
+      "files": [
+        {
+          "path": "rack_large_empty_a01/.metadata/LICENSE.txt",
+          "size": 18657,
+          "sha256": null,
+          "git_blob": "da6ab6cc8f333d7e89a99812866df8f24374d47c"
+        },
+        {
+          "path": "rack_large_empty_a01/.metadata/com.nvidia.simready.conformance.Package-Candidate@1.0.0.json",
+          "size": 888,
+          "sha256": null,
+          "git_blob": "795104bb7fdd12c8e3c66cf91c660192c756a25c"
+        },
+        {
+          "path": "rack_large_empty_a01/.metadata/com.nvidia.simready.conformance.Package@1.0.0.json",
+          "size": 763,
+          "sha256": null,
+          "git_blob": "232c07a8b937c1448b75d76d8e75e946b448c2b2"
+        },
+        {
+          "path": "rack_large_empty_a01/.metadata/com.nvidia.simready.packaging.bom.json",
+          "size": 19423,
+          "sha256": null,
+          "git_blob": "b7e3f0df257439a3a032b9a624456a4bcdbaa60a"
+        },
+        {
+          "path": "rack_large_empty_a01/.metadata/com.nvidia.simready.root_usds.json",
+          "size": 100,
+          "sha256": null,
+          "git_blob": "70a8943e7d1eb412eb357748a68163fef25a729a"
+        },
+        {
+          "path": "rack_large_empty_a01/com.nvidia.simready.packaging.json",
+          "size": 565,
+          "sha256": null,
+          "git_blob": "69e1bf879bf9fc6e47d66ef39a2148e6043e19d4"
+        },
+        {
+          "path": "rack_large_empty_a01/simready_usd/Textures/T_Rack_A1_Albedo.1001.png",
+          "size": 3161069,
+          "sha256": "1f3b1ee631115cd2ffe389442c1b6f5e0041becbc865b38f01cea5a2c9e6ec44",
+          "git_blob": "df1d05a5d3c82acb5cf9a9bad7c2d98827758949"
+        },
+        {
+          "path": "rack_large_empty_a01/simready_usd/Textures/T_Rack_A1_Albedo.1002.png",
+          "size": 1581868,
+          "sha256": "0b3c783cb03ab77943730160b78b7fac621e4fa552631bbd126794e59d765252",
+          "git_blob": "cc23b40224ba5df301a07a20bb6169f7222edb8b"
+        },
+        {
+          "path": "rack_large_empty_a01/simready_usd/Textures/T_Rack_A1_Albedo.1003.png",
+          "size": 2195053,
+          "sha256": "e0c01a4ba682ee2bf4cda07e11baa5152fe53b98294ef3e08328d574b4a5f50e",
+          "git_blob": "fa7e5a1d3859e57c769447223814998dd47fdda7"
+        },
+        {
+          "path": "rack_large_empty_a01/simready_usd/Textures/T_Rack_A1_Normal.1001.png",
+          "size": 2928843,
+          "sha256": "9e3bd93830222341e2c8c212ef1b782b1f1650391018a843396e7714d8cc2e95",
+          "git_blob": "80b0d4bbb70f79a27315a20b6f366f9477ce97fe"
+        },
+        {
+          "path": "rack_large_empty_a01/simready_usd/Textures/T_Rack_A1_Normal.1002.png",
+          "size": 3513699,
+          "sha256": "9ecaf8e47a51aea09a77ab45d1440e20095306fa3624db46d68c15473da2d6c9",
+          "git_blob": "e1a1871d137b4432ceaf040e3f73bd15d3647018"
+        },
+        {
+          "path": "rack_large_empty_a01/simready_usd/Textures/T_Rack_A1_Normal.1003.png",
+          "size": 63451,
+          "sha256": "8d3c25f625366abb09686c5478092b0231e19c0974c539ab8b355ff803f98c7e",
+          "git_blob": "3ceb24b4d3270452cf51206ee6c484cfce6bc383"
+        },
+        {
+          "path": "rack_large_empty_a01/simready_usd/Textures/T_Rack_A1_ORM.1001.png",
+          "size": 4202012,
+          "sha256": "9aeaec1344f78d91f2c9b8a8ddf013391fe35a9b750cd3dbc44e4ba244ad430e",
+          "git_blob": "95d04730494e8b3c0e681f17c4b98c3b8f74c5a9"
+        },
+        {
+          "path": "rack_large_empty_a01/simready_usd/Textures/T_Rack_A1_ORM.1002.png",
+          "size": 2951843,
+          "sha256": "aae6964b5267c79efd87aaf1ef097ec9adf414f0bdcb6d556b05e0122f21e4d4",
+          "git_blob": "b3afe22340298096e3ba246b058115aa4f3382a2"
+        },
+        {
+          "path": "rack_large_empty_a01/simready_usd/Textures/T_Rack_A1_ORM.1003.png",
+          "size": 2482068,
+          "sha256": "9988e4cf51cdae795cb3a1015335eabff89aadef23b0e938258efc24e1a3bf20",
+          "git_blob": "d988f65706de8e0fd715d14a22db1017e74c6058"
+        },
+        {
+          "path": "rack_large_empty_a01/simready_usd/payloads/MuJoCo/disabled.usda",
+          "size": 8506,
+          "sha256": "2a286341c809d2aeff8def56ed65433f017fac4126ab8522891b407292340469",
+          "git_blob": "ad7e6bf87755e0c5e672697cc7a4bcea4585d4d6"
+        },
+        {
+          "path": "rack_large_empty_a01/simready_usd/payloads/MuJoCo/enabled.usda",
+          "size": 9211,
+          "sha256": "1adb72afaa82ef3a48805a69683934b800086621bf7da44f56fed10aaac0fa46",
+          "git_blob": "b15382754c44da70121438c97fefd4b4d60faba2"
+        },
+        {
+          "path": "rack_large_empty_a01/simready_usd/payloads/Newton/disabled.usda",
+          "size": 8506,
+          "sha256": "2a286341c809d2aeff8def56ed65433f017fac4126ab8522891b407292340469",
+          "git_blob": "ad7e6bf87755e0c5e672697cc7a4bcea4585d4d6"
+        },
+        {
+          "path": "rack_large_empty_a01/simready_usd/payloads/Newton/enabled.usda",
+          "size": 9323,
+          "sha256": "d1c5acba5f121eaa1c8057e65f55e55e4a28e63230d0f01ab07e18710c274a64",
+          "git_blob": "3cae8e37044b92897dfd60101a40dbca67330fda"
+        },
+        {
+          "path": "rack_large_empty_a01/simready_usd/payloads/PhysX/disabled.usda",
+          "size": 8506,
+          "sha256": "2a286341c809d2aeff8def56ed65433f017fac4126ab8522891b407292340469",
+          "git_blob": "ad7e6bf87755e0c5e672697cc7a4bcea4585d4d6"
+        },
+        {
+          "path": "rack_large_empty_a01/simready_usd/payloads/PhysX/enabled.usda",
+          "size": 8783,
+          "sha256": "d98c3f5566393f61148acd0cbe45bc12f325d1562239dc39e965cb9e93044a93",
+          "git_blob": "ba245a74191d24bd80f26dc3c42265779f764c73"
+        },
+        {
+          "path": "rack_large_empty_a01/simready_usd/payloads/Physics/physics.usda",
+          "size": 9360,
+          "sha256": "a6932bd0c3deb6808ce0896c7046229a2a6cf03953c9eb75cd0a9733b1dcd3b7",
+          "git_blob": "c7c307df9aa1cbdb9e5e8846b986c15350132dbf"
+        },
+        {
+          "path": "rack_large_empty_a01/simready_usd/payloads/base.usda",
+          "size": 11338,
+          "sha256": "46defc3b435d387c9d51219be41de969e43a9bd6f8b176f899c1597523ea3c19",
+          "git_blob": "fba2b8a06b6611accaed16ed49de42f2e137c384"
+        },
+        {
+          "path": "rack_large_empty_a01/simready_usd/payloads/geometries.usd",
+          "size": 3297376,
+          "sha256": "900dfcc15582dc9b73ed74118b2a7dcd6b761a6586efcd6c949402f94e7c0e6e",
+          "git_blob": "548ecc9be4d02e60b61cde3dded23501d4c63f1c"
+        },
+        {
+          "path": "rack_large_empty_a01/simready_usd/payloads/instances.usda",
+          "size": 10470,
+          "sha256": "e2d7745083be72fb7e2050c5f6a848f86e2ef123b1d40432e646fa3122c49343",
+          "git_blob": "6f2166a35ec467bbd4a3ea9e17945a1da55f46a1"
+        },
+        {
+          "path": "rack_large_empty_a01/simready_usd/payloads/instances_mujoco.usda",
+          "size": 10742,
+          "sha256": "9a985ccc3bcabb93f73f6bc391a13df29169a950c7d302119b25492a5bac6f1e",
+          "git_blob": "5d08614d84ec1fac9bf25be40e91d8807c73a4c1"
+        },
+        {
+          "path": "rack_large_empty_a01/simready_usd/payloads/instances_newton.usda",
+          "size": 10593,
+          "sha256": "09044e355308250ae85fa9d2647a0541c820371b3b11fea9f73fc403d583e670",
+          "git_blob": "af36f2e75eff6789b3a7b67b9a695e6f3da5f947"
+        },
+        {
+          "path": "rack_large_empty_a01/simready_usd/payloads/instances_physx.usda",
+          "size": 10610,
+          "sha256": "2b08340378b4a4ec569321f984d8db243ae05ca751fbc279bccbd0ec0f6bb8bf",
+          "git_blob": "2feeb9bfe83c0384e9be76c942a779cb71515db6"
+        },
+        {
+          "path": "rack_large_empty_a01/simready_usd/payloads/materials.usda",
+          "size": 19591,
+          "sha256": "e739052fece8deb39bb4373df9c24d42a887855970b2418e393cbe829b6f67ca",
+          "git_blob": "4efa496a4854d2ac81cda13ba7ebe8180cd584f7"
+        },
+        {
+          "path": "rack_large_empty_a01/simready_usd/sm_rack_large_empty_a01_01.usd",
+          "size": 25823,
+          "sha256": "55b2b06e2578f9f6fe96b8abb6a88776c05dedc747be7a710df3a898188f8e14",
+          "git_blob": "c3a27e8122adbad0b7e77c2544254167241393bc"
+        },
+        {
+          "path": "rack_large_empty_a01/simready_usd/source_assets/OmniPBR.mdl",
+          "size": 16010,
+          "sha256": null,
+          "git_blob": "7509579a8fd4ec7d069e6d242b37dad39290ec55"
+        },
+        {
+          "path": "rack_large_empty_a01/simready_usd/source_assets/OmniPBRBase.mdl",
+          "size": 19369,
+          "sha256": null,
+          "git_blob": "ea5272914d203f50e4f33c5d420d2b94daddbc0f"
+        },
+        {
+          "path": "rack_large_empty_a01/simready_usd/source_assets/OmniPBR_ClearCoat.mdl",
+          "size": 29789,
+          "sha256": null,
+          "git_blob": "b83431718cbb6ab7c57d8da75468698bab757644"
+        }
+      ]
+    },
+    "amr": {
+      "name": "equipment_robot_trolley_b01",
+      "files": [
+        {
+          "path": "equipment_robot_trolley_b01/.metadata/LICENSE.txt",
+          "size": 18657,
+          "sha256": null,
+          "git_blob": "da6ab6cc8f333d7e89a99812866df8f24374d47c"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/.metadata/com.nvidia.simready.conformance.Package-Candidate@1.0.0.json",
+          "size": 895,
+          "sha256": null,
+          "git_blob": "5bd5afcd9f2e6f086c8acd026861796036361542"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/.metadata/com.nvidia.simready.conformance.Package@1.0.0.json",
+          "size": 763,
+          "sha256": null,
+          "git_blob": "081ac06ebf68dd92e933e0cb249a978027ac0a36"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/.metadata/com.nvidia.simready.packaging.bom.json",
+          "size": 63770,
+          "sha256": null,
+          "git_blob": "0da6aa4b25549a9272e21813a1bf7570674bc1c8"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/.metadata/com.nvidia.simready.root_usds.json",
+          "size": 107,
+          "sha256": null,
+          "git_blob": "0bbfe9b4f01b3aef6a22bb10460b86eb58db7b33"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/com.nvidia.simready.packaging.json",
+          "size": 572,
+          "sha256": null,
+          "git_blob": "edf882c925299e07406683bf10a90fd57e51d8c3"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/simready_usd/Textures/t_robot_trolley_b01_alb.1001.png",
+          "size": 25479473,
+          "sha256": "8dfbd6ef6e4f5bb421ff72e3dba4f1cccc5ae25068bac852a9d4657d8c479016",
+          "git_blob": "c5149fa66c375201c505433c7d28c22be9a5809a"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/simready_usd/Textures/t_robot_trolley_b01_alb.1002.png",
+          "size": 28784882,
+          "sha256": "fec7be1eb45aa969a33a4e68a17fdfb17eed72eb79e49528f91143d4d3d12eb8",
+          "git_blob": "f352af1cc14749ce998dd35503212ae8a2aa06cb"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/simready_usd/Textures/t_robot_trolley_b01_alb.1003.png",
+          "size": 29420675,
+          "sha256": "9505fcaaf721ac87e391390e388190ea235d72d5775cc32230fe17f814483518",
+          "git_blob": "3f4e05c805962b97747b6e207eaace6fcbc0df37"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/simready_usd/Textures/t_robot_trolley_b01_alb.1004.png",
+          "size": 32455412,
+          "sha256": "a67e3102e38badc7d0c8e9b58c43b815d2a3570ad61d17d09828eca3893fd45f",
+          "git_blob": "527f045fdea04404bc47ad01167f742ba6e43eff"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/simready_usd/Textures/t_robot_trolley_b01_alb.1005.png",
+          "size": 26957211,
+          "sha256": "e014894adfb1f72c0f3d1cc65bf1160bf8ea128f48ad8bfd5963060c89d6b75e",
+          "git_blob": "a6fe00ff317a59f8b66a1057cd60ba9818f2ea6c"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/simready_usd/Textures/t_robot_trolley_b01_alb.1006.png",
+          "size": 16536735,
+          "sha256": "a2f381784e02dd38fc040f540e6e082dc4820dbe8d36359489bf429ac37638e9",
+          "git_blob": "3793fd94ab132725412aea1e7d40f4146eb22232"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/simready_usd/Textures/t_robot_trolley_b01_alb.1007.png",
+          "size": 14492910,
+          "sha256": "27c610f66ed0ec112df1c44ce0660a672ee76c449f17a8e23b7d0eca4ac5c9af",
+          "git_blob": "c412437c049c536d4851ea2dcc494444f48b4d03"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/simready_usd/Textures/t_robot_trolley_b01_alb.1008.png",
+          "size": 16607315,
+          "sha256": "3314544f5ccc83a6e3aaeda06649cd3fbe4c1c438549fae2f97a55747e1b8bf1",
+          "git_blob": "7e7e74eade2db45eee636b81bcdf693d3e3f6963"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/simready_usd/Textures/t_robot_trolley_b01_alb.1009.png",
+          "size": 13276076,
+          "sha256": "e6616ada98965932648ada068a0781396d8477451054804bc8fba3a07beadcfe",
+          "git_blob": "3152528ff2b0a6519472e973d4e7d90a0d05e305"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/simready_usd/Textures/t_robot_trolley_b01_alb.1010.png",
+          "size": 14834709,
+          "sha256": "597616083d0f7743d9a97850c36b3105fd3232b066201cb4a291cdd67067039d",
+          "git_blob": "e6ea13772b1e83743a5d308325bede8d56d3f665"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/simready_usd/Textures/t_robot_trolley_b01_alb.1011.png",
+          "size": 11273575,
+          "sha256": "b7d654d0ce4101abf42b5dd0a554754e3faae08f4fb7d63d12de9f93c1a65395",
+          "git_blob": "9d94e8732da7a51736aca4d9e5f108646c21dc04"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/simready_usd/Textures/t_robot_trolley_b01_alb.1012.png",
+          "size": 11515335,
+          "sha256": "954c749c30b6732ea01532b526fba38c5026dfef8707cb75794151a8ed75ded7",
+          "git_blob": "f6813b91a4f223790d315eb43a89dabe1586d8d1"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/simready_usd/Textures/t_robot_trolley_b01_nor.1001.png",
+          "size": 20102459,
+          "sha256": "ed231a2efb037fbcfdd622b09bfea8222643f8ef961e69cacd4f8e84234d9072",
+          "git_blob": "c032060448429b644731b06239eaead6d63cc2e1"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/simready_usd/Textures/t_robot_trolley_b01_nor.1002.png",
+          "size": 11545222,
+          "sha256": "5db08f8f3855394a9e1774461504aee98a0216ee2864f63113578bbbd7e7a436",
+          "git_blob": "2f58c1e560fd756081b5ff1a3c47dd886019dd82"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/simready_usd/Textures/t_robot_trolley_b01_nor.1003.png",
+          "size": 14272818,
+          "sha256": "b188bff2aeb3d4de7d4a358a933071c8ccf60f1daccd9d2c311aef0358de439e",
+          "git_blob": "97a870649e29a28203c45ae85363e44baffd4f86"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/simready_usd/Textures/t_robot_trolley_b01_nor.1004.png",
+          "size": 8648718,
+          "sha256": "03a0442bf945b4b7a083f691cb95e021f36aae2fff49857e3a3ff6549ef3d59b",
+          "git_blob": "e229af2c47ab8bb0e7bf71b9edc7be5458129809"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/simready_usd/Textures/t_robot_trolley_b01_nor.1005.png",
+          "size": 11687116,
+          "sha256": "23016eaa53c68d52d021a1ec8be8f4686d8c6c4c8e863be1a2c6dafab31c7d7f",
+          "git_blob": "93ce5f64de36787447408575ed301b0a27b9aae4"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/simready_usd/Textures/t_robot_trolley_b01_nor.1006.png",
+          "size": 8517602,
+          "sha256": "3001287e910521ffa363e25414f2e696f979054e81ff8e6e5f876faaed2aa9e3",
+          "git_blob": "a5899b83660857d2c960d08d7f7b0e13895ca654"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/simready_usd/Textures/t_robot_trolley_b01_nor.1007.png",
+          "size": 21399988,
+          "sha256": "1181285ffa9a119651a9b09e745a4fcff9773e5b9b1623f7f2ed03f46e52e367",
+          "git_blob": "bdc3a88d05bf286f19da898318d27f633734a94f"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/simready_usd/Textures/t_robot_trolley_b01_nor.1008.png",
+          "size": 19632724,
+          "sha256": "0f2c00726eac6ce11446974fb1ae24c4f2e390af7c62f31080f65e679059ac41",
+          "git_blob": "8533c0f912618976be8b3ab39f8e2c118f2f8ab9"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/simready_usd/Textures/t_robot_trolley_b01_nor.1009.png",
+          "size": 14202467,
+          "sha256": "d0d1ca581edf9f536a6a008763603d879bd0190339afdf66ed587fda0f96eefb",
+          "git_blob": "bde07fc80885414707cbaf05749a158b808b14ad"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/simready_usd/Textures/t_robot_trolley_b01_nor.1010.png",
+          "size": 9825130,
+          "sha256": "58eeb4016406d85fa4854dd5f55102043a714832c153cdce1cbb5b15409c2aff",
+          "git_blob": "5fa6ab93c61dcc1a9145cd195184ad62e38793c2"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/simready_usd/Textures/t_robot_trolley_b01_nor.1011.png",
+          "size": 14635897,
+          "sha256": "49f2e7337a23bc09cbb1730e6942860c9ca20017a2e1b6403a8a6ba7df8d855e",
+          "git_blob": "0b1ff1440fc27ab05fa1b2034543be8f4827e6b7"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/simready_usd/Textures/t_robot_trolley_b01_nor.1012.png",
+          "size": 6054164,
+          "sha256": "6d4f2c2cf4791cf29dfa26df72181d22a46f9b5ac1011339f5ede9f401b9eb1f",
+          "git_blob": "a305cd629acdbfa7a50969d49a29a1ae2ffbd638"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/simready_usd/Textures/t_robot_trolley_b01_orm.1001.png",
+          "size": 10342959,
+          "sha256": "f6cdf123908aef3efaeb93503200043d48a43b59b3d78f99c143ffe7b30eed20",
+          "git_blob": "40152eb4210ba0966bb09a76c68b7cf6cef8dca6"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/simready_usd/Textures/t_robot_trolley_b01_orm.1002.png",
+          "size": 14668473,
+          "sha256": "1ee0d071fb40fb2898b6abe8a0073eadaf68439ec452a7e84daed4dfd07d91bd",
+          "git_blob": "898aeec6f14fca3200832b3fe00f90b29569a53d"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/simready_usd/Textures/t_robot_trolley_b01_orm.1003.png",
+          "size": 14316689,
+          "sha256": "baadff69380f02bd71a5ba34abea570a3f95f6eaf9db3cb4fff08ff67eed5e2c",
+          "git_blob": "4ec66cbf9f0fd3c449c335e450dacbdf98927f08"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/simready_usd/Textures/t_robot_trolley_b01_orm.1004.png",
+          "size": 16266335,
+          "sha256": "133c62f4081ee99db4c7d6c7700111ea86fcf5ebf9df4a4b74ae1bd885cacb52",
+          "git_blob": "aaec79c5df9b1847c8e081e1b9944597498d7d41"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/simready_usd/Textures/t_robot_trolley_b01_orm.1005.png",
+          "size": 14879715,
+          "sha256": "c8fe9076e15f756deb0eff69705fc02c46cb57e7488652fc16b9bc7d8eef5977",
+          "git_blob": "84b1d4393bab4f6d7a5b16fb50d241f2a72e7106"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/simready_usd/Textures/t_robot_trolley_b01_orm.1006.png",
+          "size": 9503853,
+          "sha256": "638b594597f6cddd7696d4eba9ad34df5c5e23650e429ef7674aa58bf07e9d0b",
+          "git_blob": "8f3229caa2c1f09a3be15abf8dee0afd7640bef3"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/simready_usd/Textures/t_robot_trolley_b01_orm.1007.png",
+          "size": 10893042,
+          "sha256": "1722bb3f188fc1d5c5fe4fdaac300b0400104cf7a594c1b636d36f70f6cba287",
+          "git_blob": "8d213363bcfd97c247440c9ba2aed4319761bb9a"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/simready_usd/Textures/t_robot_trolley_b01_orm.1008.png",
+          "size": 12335834,
+          "sha256": "ff2fc08c8990da4e984c7d35034f74d90a75afb95420649a0cf1bc63e6f8a0be",
+          "git_blob": "b153fa28417ba14be747e599b1fa3e6304bcf615"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/simready_usd/Textures/t_robot_trolley_b01_orm.1009.png",
+          "size": 13193265,
+          "sha256": "82e8f13781005334708a3a3544e3aeff3ae7d2726c0c1bec1eda2ab8a53c03c4",
+          "git_blob": "b19093391c84362471621771c0ae270d5f24293e"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/simready_usd/Textures/t_robot_trolley_b01_orm.1010.png",
+          "size": 13322437,
+          "sha256": "74db079cbf2e62f5dee58f19e95313867b00188251687d2b118d5995716e0a78",
+          "git_blob": "d971d0c5fc2ff04a7dc501d196ed032d3c82b0f4"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/simready_usd/Textures/t_robot_trolley_b01_orm.1011.png",
+          "size": 11760472,
+          "sha256": "7ed9728285a29068ad4f3dd6ba2a6275c5898d9c56268245700df77559d76dae",
+          "git_blob": "2ce054e9e0fe8430f2885e00b1fe0dc2600d4d44"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/simready_usd/Textures/t_robot_trolley_b01_orm.1012.png",
+          "size": 11197590,
+          "sha256": "bb73b33dcee51b7ba35f8c6140ab2606c639ac2c123f662eddc0c066d4e17e0b",
+          "git_blob": "19b5933aa8dd884bcc9fa25dae81be76d53cde44"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/simready_usd/payloads/MuJoCo/disabled.usda",
+          "size": 6720,
+          "sha256": "f29629913aae8179049fe4027b9756c25b8083755cee3338bd6eef6605992918",
+          "git_blob": "86e798fa68d7275c4ca0038923ca50db1929d23e"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/simready_usd/payloads/MuJoCo/enabled.usda",
+          "size": 12728,
+          "sha256": "9d5bf6d88e3f189bc874aa968ea819340c37394e8591ac91eced7fec6c713fd7",
+          "git_blob": "7f30f850487e1e46c8ff35c421e357b0cf94d5ff"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/simready_usd/payloads/Newton/disabled.usda",
+          "size": 6720,
+          "sha256": "f29629913aae8179049fe4027b9756c25b8083755cee3338bd6eef6605992918",
+          "git_blob": "86e798fa68d7275c4ca0038923ca50db1929d23e"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/simready_usd/payloads/Newton/enabled.usda",
+          "size": 11163,
+          "sha256": "0d41a0ac56f31eff8a6d36268e530112e991e6d63e525a8582c49817fc4d55aa",
+          "git_blob": "624b56fa71b2817158923ec0d8d9a6f8320a901a"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/simready_usd/payloads/PhysX/disabled.usda",
+          "size": 6720,
+          "sha256": "f29629913aae8179049fe4027b9756c25b8083755cee3338bd6eef6605992918",
+          "git_blob": "86e798fa68d7275c4ca0038923ca50db1929d23e"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/simready_usd/payloads/PhysX/enabled.usda",
+          "size": 9828,
+          "sha256": "75030de347fbddb332ad9c386826751858fc17603c4761b6146dbad1e051f634",
+          "git_blob": "aeb626057a78c753d75215052e2b71986c36c351"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/simready_usd/payloads/Physics/physics.usda",
+          "size": 24245,
+          "sha256": "8f3c85a08adc6e819d87aaed531fe3246f180ffd6b463034f12a0d6094b937e7",
+          "git_blob": "099b2c8ae5066decba4ec50830a204025617a0bf"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/simready_usd/payloads/base.usda",
+          "size": 46476,
+          "sha256": "515b48fd0b6110b8b731da70da620938c05c1625053cb0c88fe1469b3b5c72a5",
+          "git_blob": "8c1ab3feee81a65949f98ef79bf81aa96ab2f0dd"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/simready_usd/payloads/geometries.usd",
+          "size": 147668292,
+          "sha256": "98a9eeedda44b4e4d76b6b288df4a99d5b4fe8ee8d01558119a2fcb4d5738cde",
+          "git_blob": "db4398f170070b71b9d1d09f91c4416a614b04c1"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/simready_usd/payloads/instances.usda",
+          "size": 37018,
+          "sha256": "50e9fab10c8cb6f85d04a2cfbae64e044774c4452abf1fe4a93d31cdbb2c3072",
+          "git_blob": "0639e0c3fa512dc3f15d63920a0692111439cd0c"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/simready_usd/payloads/materials.usda",
+          "size": 36143,
+          "sha256": "e482932d48d7b05992c09957a4cfdc006a0c2b5ce2d8092331095683830d3893",
+          "git_blob": "f26249ce3023fd9309bb15b06df271e6f81c29ce"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/simready_usd/sm_equipment_robot_trolley_b01_01.usd",
+          "size": 21867,
+          "sha256": "15e2d5175adc2bb7c158d33fa4dcbcfc197c4901a9c95eae5780a67838c7d946",
+          "git_blob": "1fd0f06bf952e447dcf1fab74c7cbebe4af85922"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/simready_usd/source_assets/OmniPBR.mdl",
+          "size": 16010,
+          "sha256": null,
+          "git_blob": "7509579a8fd4ec7d069e6d242b37dad39290ec55"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/simready_usd/source_assets/OmniPBRBase.mdl",
+          "size": 19369,
+          "sha256": null,
+          "git_blob": "ea5272914d203f50e4f33c5d420d2b94daddbc0f"
+        },
+        {
+          "path": "equipment_robot_trolley_b01/simready_usd/source_assets/OmniPBR_ClearCoat.mdl",
+          "size": 29789,
+          "sha256": null,
+          "git_blob": "b83431718cbb6ab7c57d8da75468698bab757644"
+        }
+      ]
+    },
+    "stacker": {
+      "name": "vehicle_forklift_blue_a01",
+      "files": [
+        {
+          "path": "vehicle_forklift_blue_a01/.metadata/LICENSE.txt",
+          "size": 18657,
+          "sha256": null,
+          "git_blob": "da6ab6cc8f333d7e89a99812866df8f24374d47c"
+        },
+        {
+          "path": "vehicle_forklift_blue_a01/.metadata/com.nvidia.simready.conformance.Package@1.0.0.json",
+          "size": 763,
+          "sha256": null,
+          "git_blob": "f15dfeb7f7feca09d4b48ce97fa3403b8254cdb4"
+        },
+        {
+          "path": "vehicle_forklift_blue_a01/.metadata/com.nvidia.simready.packaging.bom.json",
+          "size": 31163,
+          "sha256": null,
+          "git_blob": "e74bb9a11f0fa6f960214473b3f0b4abf2ceecb0"
+        },
+        {
+          "path": "vehicle_forklift_blue_a01/.metadata/static-validation.json",
+          "size": 13917,
+          "sha256": null,
+          "git_blob": "64e884220c03a2c7bb7033d1a64553d0ceb4e294"
+        },
+        {
+          "path": "vehicle_forklift_blue_a01/com.nvidia.simready.packaging.json",
+          "size": 596,
+          "sha256": null,
+          "git_blob": "1435ab7faeb9aa28d03df5625058bd2b8113b92b"
+        },
+        {
+          "path": "vehicle_forklift_blue_a01/simready_usd/.simready/validation.json",
+          "size": 8168,
+          "sha256": null,
+          "git_blob": "c287db96b19b24426b087e8e9185a9358530c858"
+        },
+        {
+          "path": "vehicle_forklift_blue_a01/simready_usd/LICENSE.txt",
+          "size": 18657,
+          "sha256": null,
+          "git_blob": "da6ab6cc8f333d7e89a99812866df8f24374d47c"
+        },
+        {
+          "path": "vehicle_forklift_blue_a01/simready_usd/Textures/T_ForkliftDecal_A1_Albedo.png",
+          "size": 386428,
+          "sha256": "2b577de32c310da47f3ebb1cbadabc5ba37afc2fb08db2c0e009e910c58ab280",
+          "git_blob": "1baed80a862062707ebfcac3f21fc514ba336682"
+        },
+        {
+          "path": "vehicle_forklift_blue_a01/simready_usd/Textures/T_Forklift_A1_Albedo.1001.png",
+          "size": 336571,
+          "sha256": "6fd7e5d6b521cb6123ae97c8d248a1d7d1a418c3dfe26a3b7b80a2872aa44d0d",
+          "git_blob": "425a3053f89a81c671158e5689b312a1097bdf54"
+        },
+        {
+          "path": "vehicle_forklift_blue_a01/simready_usd/Textures/T_Forklift_A1_Albedo.1002.png",
+          "size": 305212,
+          "sha256": "c7422b45d9b818025ba9ec37494b6f5ef9b8358d4bb8ac00faaaa9c503e6980c",
+          "git_blob": "b77b328020f7f275e3cc2058f8dab80e73f227be"
+        },
+        {
+          "path": "vehicle_forklift_blue_a01/simready_usd/Textures/T_Forklift_A1_Albedo.1003.png",
+          "size": 555571,
+          "sha256": "fb639c4c18773b1ad7e548a62f161dffd1740dc3043e6f2833522160d0939260",
+          "git_blob": "12efe0d18c2d75355e02c6f7b1208859e79ec168"
+        },
+        {
+          "path": "vehicle_forklift_blue_a01/simready_usd/Textures/T_Forklift_A1_Normal.1001.png",
+          "size": 590734,
+          "sha256": "a4fffeb53b2677401f92b8b8cd1944ad86c046c7cfd071ac2b11b080cbefcadf",
+          "git_blob": "2673262ed9503c77f27907a3c8f7bbafe4ec7170"
+        },
+        {
+          "path": "vehicle_forklift_blue_a01/simready_usd/Textures/T_Forklift_A1_Normal.1002.png",
+          "size": 620378,
+          "sha256": "01c8665c2f5f857af4d84d68a1800a0726bad1af479f9a216c3c579bca3fcb95",
+          "git_blob": "da84bfa6c690e9758f07c3501c299194f39e4c85"
+        },
+        {
+          "path": "vehicle_forklift_blue_a01/simready_usd/Textures/T_Forklift_A1_Normal.1003.png",
+          "size": 703090,
+          "sha256": "29e3e79bc03111bab7053796944e95b4801179a1a1f4b79651c35abad7cb51a2",
+          "git_blob": "02d83a4309173c62126141eba101a863dd972590"
+        },
+        {
+          "path": "vehicle_forklift_blue_a01/simready_usd/Textures/T_Forklift_A1_ORM.1001.png",
+          "size": 948671,
+          "sha256": "625d0eb04f63ed97a1f5c008e26ccd36a77982e434708ca005a5cdd8ce3ff429",
+          "git_blob": "0e6fb354953d27ed95c65ed87367a8cef4e6bb12"
+        },
+        {
+          "path": "vehicle_forklift_blue_a01/simready_usd/Textures/T_Forklift_A1_ORM.1002.png",
+          "size": 927060,
+          "sha256": "ed5713b3fb41dfa3656556fbcea928a5bb0623722da385fc1d9305b14e716729",
+          "git_blob": "e11a98dfe29f138b639d71280de7cb37fcd8e4e6"
+        },
+        {
+          "path": "vehicle_forklift_blue_a01/simready_usd/Textures/T_Forklift_A1_ORM.1003.png",
+          "size": 1123875,
+          "sha256": "c5e9afa3e94fbeed9885eb65b8a3daf1f9d3c5945d62624f743df31f6ca55d36",
+          "git_blob": "8930520cc3e53980c0966487ecc533519afaaaa5"
+        },
+        {
+          "path": "vehicle_forklift_blue_a01/simready_usd/payloads/MuJoCo/disabled.usda",
+          "size": 4327,
+          "sha256": "eda0591c309d2d47f669567902a78d2be17ceaf49f72cea3e28e60d09798e580",
+          "git_blob": "0df90b96ebc795390dfb69b15efbdf7af89204ff"
+        },
+        {
+          "path": "vehicle_forklift_blue_a01/simready_usd/payloads/MuJoCo/enabled.usda",
+          "size": 11017,
+          "sha256": "e15eda2e8a93e66458a80ed1d1b139ce74e17c55cb86e49d26d1abdb860b4fa8",
+          "git_blob": "70eb5e0cec9268082b08a8cc28b6d0e911e97ca2"
+        },
+        {
+          "path": "vehicle_forklift_blue_a01/simready_usd/payloads/Newton/disabled.usda",
+          "size": 4327,
+          "sha256": "eda0591c309d2d47f669567902a78d2be17ceaf49f72cea3e28e60d09798e580",
+          "git_blob": "0df90b96ebc795390dfb69b15efbdf7af89204ff"
+        },
+        {
+          "path": "vehicle_forklift_blue_a01/simready_usd/payloads/Newton/enabled.usda",
+          "size": 9045,
+          "sha256": "f69bc70c4e6eb53dbf03c03fa6439465fd093801125444269f08b405753a32f4",
+          "git_blob": "ab63bdc7dc59805e1d8e4ed5758b71658619cbe5"
+        },
+        {
+          "path": "vehicle_forklift_blue_a01/simready_usd/payloads/PhysX/disabled.usda",
+          "size": 4327,
+          "sha256": "eda0591c309d2d47f669567902a78d2be17ceaf49f72cea3e28e60d09798e580",
+          "git_blob": "0df90b96ebc795390dfb69b15efbdf7af89204ff"
+        },
+        {
+          "path": "vehicle_forklift_blue_a01/simready_usd/payloads/PhysX/enabled.usda",
+          "size": 7239,
+          "sha256": "ba44ec10271a95340687e78f17cb8c463d4665961d445a7adef0d18a8339fc18",
+          "git_blob": "2234fda68f8b4a02e4d40d445ce1a1c9958eefba"
+        },
+        {
+          "path": "vehicle_forklift_blue_a01/simready_usd/payloads/Physics/physics.usda",
+          "size": 21086,
+          "sha256": "80020f2e398d01b2db3da1254b25368ee737431c837e441d54620665c1fa2861",
+          "git_blob": "1751ea37109c0c6ac1390c50885c60f7299eb9e7"
+        },
+        {
+          "path": "vehicle_forklift_blue_a01/simready_usd/payloads/base.usda",
+          "size": 41794,
+          "sha256": "c5e9ce9745d9b3b765740838c14dd147376ca0165f4c9012d7aefc2165bf1db3",
+          "git_blob": "95be7eefcf68664510928fb8bb5d044491a04b1b"
+        },
+        {
+          "path": "vehicle_forklift_blue_a01/simready_usd/payloads/geometries.usd",
+          "size": 19471517,
+          "sha256": "341428d53459e0279e432ecf14f5070275f0eb5ff815b48f22c242860ffc9ae9",
+          "git_blob": "88617eff0fb534885d1608a0c21fb618a1eac056"
+        },
+        {
+          "path": "vehicle_forklift_blue_a01/simready_usd/payloads/instances.usda",
+          "size": 29412,
+          "sha256": "6dae0d20ce9a7cfa793cfb818c50720751e1be0358c19939e9f01c2388523ff5",
+          "git_blob": "4011a5fb5240ee419904a8a4343a098d6ba3d3ff"
+        },
+        {
+          "path": "vehicle_forklift_blue_a01/simready_usd/payloads/instances_mujoco.usda",
+          "size": 33214,
+          "sha256": "7ed28a47b9615e3131847607559c976e61ddb752ed2843f50cc81fc460ef8462",
+          "git_blob": "c52827f1d06e69551c08980fe6013bc6ced4b909"
+        },
+        {
+          "path": "vehicle_forklift_blue_a01/simready_usd/payloads/instances_newton.usda",
+          "size": 30979,
+          "sha256": "66cbdb0b575745c92853d4e7def0d4fea46ab1b49f213c288d4daae79834c69e",
+          "git_blob": "263e2124a73575a47a6c5a08f2beaa97a73aeb39"
+        },
+        {
+          "path": "vehicle_forklift_blue_a01/simready_usd/payloads/instances_physx.usda",
+          "size": 32359,
+          "sha256": "3dd21686203043626d8621292222ce652e5c84b54f5d7f705ae452fdfa74c1c1",
+          "git_blob": "7eb2744749af393e2f3cda63851c6c09a5d40d99"
+        },
+        {
+          "path": "vehicle_forklift_blue_a01/simready_usd/payloads/materials.usda",
+          "size": 38453,
+          "sha256": "35fe40861c16d7b6e508013de62ddb7211c12fa48375242baa9c88001aaaf6cc",
+          "git_blob": "42d099bc2273ff3168e1582a53d94e93e2395724"
+        },
+        {
+          "path": "vehicle_forklift_blue_a01/simready_usd/sm_vehicle_forklift_blue_a01_01.json",
+          "size": 10858,
+          "sha256": null,
+          "git_blob": "b2ecb99b93b445ae63ebeeb662f311e043e542bb"
+        },
+        {
+          "path": "vehicle_forklift_blue_a01/simready_usd/sm_vehicle_forklift_blue_a01_01.usd",
+          "size": 14813,
+          "sha256": "eb497e325fd0efa7efe18ed6084f7f86a633ae609232121058f4aaf0641e0d86",
+          "git_blob": "757616e9c2be68150d9420d583bcd4953afb3402"
+        },
+        {
+          "path": "vehicle_forklift_blue_a01/simready_usd/source_assets/OmniGlass.mdl",
+          "size": 10205,
+          "sha256": null,
+          "git_blob": "39849aaa57e1d4bf1aec8f108f8fc7f7a25232c7"
+        },
+        {
+          "path": "vehicle_forklift_blue_a01/simready_usd/source_assets/OmniGlass_Opacity.mdl",
+          "size": 17706,
+          "sha256": null,
+          "git_blob": "233328a4737ff2f4ba141cb6c0a109ff1772566f"
+        },
+        {
+          "path": "vehicle_forklift_blue_a01/simready_usd/source_assets/OmniPBR.mdl",
+          "size": 16010,
+          "sha256": null,
+          "git_blob": "7509579a8fd4ec7d069e6d242b37dad39290ec55"
+        },
+        {
+          "path": "vehicle_forklift_blue_a01/simready_usd/source_assets/OmniPBRBase.mdl",
+          "size": 19369,
+          "sha256": null,
+          "git_blob": "ea5272914d203f50e4f33c5d420d2b94daddbc0f"
+        },
+        {
+          "path": "vehicle_forklift_blue_a01/simready_usd/source_assets/OmniPBR_ClearCoat.mdl",
+          "size": 29789,
+          "sha256": null,
+          "git_blob": "b83431718cbb6ab7c57d8da75468698bab757644"
+        }
+      ]
+    }
+  }
+}

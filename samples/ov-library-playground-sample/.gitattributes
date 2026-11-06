@@ -1,0 +1,23 @@
+* text=auto
+*.py text eol=lf
+*.md text eol=lf
+*.toml text eol=lf
+*.yml text eol=lf
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+*.usdc binary
+*.png binary
+*.mp4 binary
+# Keep the vendored cursor sources identical to their recorded upstream hashes.
+data/cursors/*.svg text eol=lf
+data/cursors/*.txt text eol=lf
+data/icons/*.svg text eol=lf
+data/icons/*.txt text eol=lf
+# Preserve original third-party notice/package formatting.
+data/models/car/LicenseRef-LegalMark-Khronos.txt -whitespace
+data/LICENSES/LicenseRef-LegalMark-Khronos.txt -whitespace
+data/models/irb120/package.xml -whitespace
+# Keep the font license byte-identical to its recorded upstream hash.
+data/wayfinding/fonts/*.txt text eol=lf
+# Preserve the original campus provenance and archive packaging inputs byte-for-byte.
+data/campus-provenance/** -text whitespace=cr-at-eol

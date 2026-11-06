@@ -21,6 +21,19 @@
           "dest": "assets/videos/robotiq-pick.webm"
         }
       ]
+    },
+    {
+      "slug": "ov-library-playground",
+      "source_dir": "articles/ov-library-playground",
+      "images_dir": "images",
+      "card_image": "card.webp",
+      "card_image_dest": "assets/images/card-ov-library-playground.webp",
+      "extra_files": [
+        {
+          "src": "index.html",
+          "dest": "projects/ov-library-playground/index.html"
+        }
+      ]
     }
   ],
   "samples": [

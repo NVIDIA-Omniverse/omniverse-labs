@@ -3,7 +3,7 @@
     "title": "Omniverse Labs",
     "tagline": "Early Omniverse experiments you can run, fork, and learn from.",
     "description": "A Sketchpad built by NVIDIA Omniverse Teams \u2014 early samples, prototypes, and write-ups for developers exploring Omniverse.",
-    "dataVersion": "20261016-composable-bindings"
+    "dataVersion": "20261105"
   },
   "projects": [
     {
@@ -208,6 +208,25 @@
       "links": {
         "page": "projects/composable-bindings-reference/",
         "repo": "https://github.com/NVIDIA-Omniverse/omniverse-labs/tree/main/samples/composable-bindings-reference-sample"
+      }
+    },
+    {
+      "slug": "ov-library-playground",
+      "title": "Omniverse Libraries Playground",
+      "subtitle": "Explore eight libraries through hands-on 3D examples, from robot sensors and physics to shared scene data.",
+      "type": "sample",
+      "status": "working",
+      "date": "2026-11-05",
+      "image": "assets/images/card-ov-library-playground.webp",
+      "accent": [
+        "#0a0c10",
+        "#76b900"
+      ],
+      "featured": false,
+      "source": "samples/ov-library-playground-sample",
+      "links": {
+        "page": "projects/ov-library-playground/",
+        "repo": "https://github.com/NVIDIA-Omniverse/omniverse-labs/tree/main/samples/ov-library-playground-sample"
       }
     }
   ]

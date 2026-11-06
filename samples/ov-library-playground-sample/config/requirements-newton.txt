@@ -1,0 +1,12 @@
+# Isolated worker, qualified against the October 2026 public releases.
+ovnewton==0.2.0
+ovstage==0.2.1.385922
+newton==1.6.1
+warp-lang==1.17.0
+numpy==2.5.3
+scipy==1.18.1
+coacd==1.0.14
+fast-simplification==0.2.0
+usd-core==26.8
+newton-usd-schemas==0.5.0
+physx-usd-schemas==25.11.1
