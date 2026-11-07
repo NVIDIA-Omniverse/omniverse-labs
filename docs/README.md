@@ -66,3 +66,12 @@ Do not add internal-only cards (publishing guides, placeholders). The home grid 
 ## Draft content (`_unpublished/`)
 
 Work-in-progress articles and samples live in [`../_unpublished/`](../_unpublished/README.md) at the repo root. That folder is **not** part of the Pages deploy. Do not add draft entries to `data/projects.json` until you follow the publish checklist in `_unpublished/README.md`.
+
+## Blender workflow guides
+
+The Blender landing page is maintained in `docs/projects/ov-blender-example/`.
+Its linked guides are generated from the canonical Markdown under
+`projects/ov-blender-example/docs/`. After editing those guides, run
+`python scripts/sync-blender-guides.py` (requires Pandoc), review the generated
+HTML, and preview locally. This command only regenerates the six Blender guides;
+it preserves the landing page and shared corporate footer.

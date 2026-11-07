@@ -1,0 +1,171 @@
+{
+  "docs_base_commit": "eafccbd448e24ed6ca31ed2f087bc2e961315b05",
+  "source_blend_sha256": "b8dd726478193575649ee12d7e543e06a51e331fc8332e32937cc597b063e413",
+  "authoring_blender": "5.2.1 LTS",
+  "authoring_addon_release": "dev-0.2.0-blender5.2.1-40",
+  "capture_ui_scale": 1.5,
+  "render_mode": "RealTimePathTracing",
+  "beauty_route": "Official native ovrtx SDK full MaterialX/OpenPBR; Blender compositor finish",
+  "blender_frame": 122,
+  "native_presentation_sample": 121,
+  "camera_matrix": [
+    [
+      0.9568805694580078,
+      -0.07031216472387314,
+      0.28184348344802856,
+      0.8548187017440796
+    ],
+    [
+      0.2904815971851349,
+      0.2316165417432785,
+      -0.928425669670105,
+      -2.8198533058166504
+    ],
+    [
+      -4.1806913486652775e-10,
+      0.9702628254890442,
+      0.24205376207828522,
+      0.9764589667320251
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "physics_capture": {
+    "solver": "ovphysx CPU",
+    "samples": 360,
+    "sample_fps": 60,
+    "integration_hz": 240,
+    "native_sample_sha256": "619d941968150a5248fda293a11fb1e6c17f3186e75c4ecb8c4bf084fc0c72e5",
+    "presentation": "First 4 simulated seconds retimed to 8 seconds: 240 frames at30fps"
+  },
+  "limitations": [
+    "UI authoring captures do not prove runtime admission or a new simulation",
+    "Beauty does not establish add-on F12 or live SHM parity",
+    "No v17 animation is included"
+  ],
+  "asset_origins": "Original modeled geometry and procedural textures; no third-party scene or texture downloads included",
+  "images": {
+    "marble-bake.webp": {
+      "sha256": "a33428f6beb7d81f1ebed605a0929de077a22c88ca05ea427c53568fe3466379",
+      "bytes": 20262,
+      "pixels": [
+        1080,
+        500
+      ]
+    },
+    "marble-beauty.webp": {
+      "sha256": "d7b2c7f1def3b93986967647e7756f6bf1388d06118bde088ccfad99b963d411",
+      "bytes": 101718,
+      "pixels": [
+        1600,
+        900
+      ]
+    },
+    "marble-body.webp": {
+      "sha256": "3bb356f23a6ce525ebf08019adf9afe32e0b0618baa9285d14d6246b6a0148a0",
+      "bytes": 28626,
+      "pixels": [
+        1080,
+        870
+      ]
+    },
+    "marble-bowl-wires.webp": {
+      "sha256": "54eca2a4e1b1c5f4eddac027eeffcc26717630aaaea36ca9b4b09cd03e58105d",
+      "bytes": 184932,
+      "pixels": [
+        800,
+        625
+      ]
+    },
+    "marble-bowl.webp": {
+      "sha256": "4502c3b25de1955bfb08e9d781dbb84ab4b49f8bde3b7f42bb4f712fbeae7b74",
+      "bytes": 20460,
+      "pixels": [
+        1080,
+        950
+      ]
+    },
+    "marble-camera.webp": {
+      "sha256": "9f302fe8ce349ff3e160b1b147cbe10b1d58826377f522c6bf5a0c39ecccff3d",
+      "bytes": 13518,
+      "pixels": [
+        1080,
+        625
+      ]
+    },
+    "marble-collider.webp": {
+      "sha256": "3fd571d831a9d31ce48540e1d32c97be2cbe3130e9638730e1592b27c04f74b6",
+      "bytes": 20300,
+      "pixels": [
+        1080,
+        850
+      ]
+    },
+    "marble-joint.webp": {
+      "sha256": "fe262e320f81233ef7066aa4e333ce063bddc7d1be454e8a4ed152725ac4a422",
+      "bytes": 25750,
+      "pixels": [
+        1080,
+        970
+      ]
+    },
+    "marble-material.webp": {
+      "sha256": "8a16f6fb85db9433df2c3865e8c61a800a20731da001e62af99c2d9e409586a5",
+      "bytes": 13434,
+      "pixels": [
+        1080,
+        288
+      ]
+    },
+    "marble-hero-poster.webp": {
+      "sha256": "89072f88a7ce127bea26b047bc54e32ba47b48f450749d14b8a3ae9102b3d7b5",
+      "pixels": [
+        1600,
+        900
+      ]
+    }
+  },
+  "viewport_display": {
+    "width": 1920,
+    "height": 1200,
+    "capture_crop": {
+      "left": 160,
+      "top": 150,
+      "width": 1600,
+      "height": 900
+    },
+    "ui_window": [
+      1100,
+      1200
+    ]
+  },
+  "hero_video": {
+    "source_revision": "v16",
+    "duration_seconds": 8,
+    "fps": 30,
+    "frames": 240,
+    "pixels": [
+      1600,
+      900
+    ],
+    "sha256": "c7cf04f795379d443698c4752691d09d19eafd64db6696d52af8026bb27e0b2f",
+    "native_steps": 32,
+    "formats": {
+      "mp4": {
+        "bytes": 871240,
+        "sha256": "c7cf04f795379d443698c4752691d09d19eafd64db6696d52af8026bb27e0b2f"
+      },
+      "webm": {
+        "bytes": 342454,
+        "sha256": "26449cf4d4a45989e08027d6ec254baf1ce878ee6e55e658b73934c16fd46f43"
+      }
+    }
+  },
+  "site_presentation": "Autoplaying muted looping hero video; no comparison component",
+  "still_revision": "marble-relay-v17",
+  "still_capture_steps": 64
+}

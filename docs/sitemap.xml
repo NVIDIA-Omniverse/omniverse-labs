@@ -44,7 +44,7 @@
   </url>
   <url>
     <loc>https://nvidia-omniverse.github.io/omniverse-labs/projects/ov-blender-example/</loc>
-    <lastmod>2026-07-17</lastmod>
+    <lastmod>2026-11-06</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -77,5 +77,41 @@
     <lastmod>2026-11-05</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://nvidia-omniverse.github.io/omniverse-labs/projects/ov-blender-example/install-guide.html</loc>
+    <lastmod>2026-11-06</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://nvidia-omniverse.github.io/omniverse-labs/projects/ov-blender-example/render-guide.html</loc>
+    <lastmod>2026-11-06</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://nvidia-omniverse.github.io/omniverse-labs/projects/ov-blender-example/physics-guide.html</loc>
+    <lastmod>2026-11-06</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://nvidia-omniverse.github.io/omniverse-labs/projects/ov-blender-example/developer-guide.html</loc>
+    <lastmod>2026-11-06</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://nvidia-omniverse.github.io/omniverse-labs/projects/ov-blender-example/support-platforms.html</loc>
+    <lastmod>2026-11-06</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://nvidia-omniverse.github.io/omniverse-labs/projects/ov-blender-example/release-notes-0.2.html</loc>
+    <lastmod>2026-11-06</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
   </url>
 </urlset>

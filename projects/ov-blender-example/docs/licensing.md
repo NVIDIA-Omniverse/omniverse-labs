@@ -12,7 +12,7 @@ SPDX-License-Identifier: Apache-2.0
 
 The Blender add-on runs inside Blender and uses Blender's Python API.
 
-OVRTX, OVPhysX, their service processes, and their Python/native clients are
+ovrtx, ovphysx, their service processes, and their Python/native clients are
 external runtime components. The add-on communicates with the service
 processes over loopback gRPC. Those
 components retain their own license terms; this repository does not relicense

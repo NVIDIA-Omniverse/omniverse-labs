@@ -3,7 +3,7 @@
     "title": "Omniverse Labs",
     "tagline": "Early Omniverse experiments you can run, fork, and learn from.",
     "description": "A Sketchpad built by NVIDIA Omniverse Teams \u2014 early samples, prototypes, and write-ups for developers exploring Omniverse.",
-    "dataVersion": "20261105"
+    "dataVersion": "20261106"
   },
   "projects": [
     {
@@ -83,10 +83,10 @@
     {
       "slug": "ov-blender-example",
       "title": "ovrtx Blender Example",
-      "subtitle": "Bring NVIDIA RTX rendering into Blender \u2014 review and render without leaving your scene.",
+      "subtitle": "RTX rendering, OVPhysX setup, and editable physics bakes in Blender. Blender 5.2.1 LTS.",
       "type": "sample",
       "status": "working",
-      "date": "2026-07-17",
+      "date": "2026-11-06",
       "image": "assets/images/card-ov-blender-example.png",
       "accent": [
         "#1a1f3d",

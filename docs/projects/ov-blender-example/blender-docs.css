@@ -1,0 +1,61 @@
+/* Scoped styles for the Blender workflow documentation. */
+.blender-page { max-width: 1160px; font-family: var(--font-display); }
+.blender-hero { display: grid; grid-template-columns: 1.05fr 1fr; gap: 3rem; align-items: center; padding: 3rem 0 1rem; }
+.blender-hero-video { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; border-radius: 6px; background: #171914; }
+.blender-hero > div { max-width: 850px; }
+.blender-hero .article-title { font-size: clamp(2.4rem, 4.2vw, 3.5rem); font-weight: 650; line-height: 1.08; }
+.blender-hero .article-deck { font-size: 1.12rem; line-height: 1.65; }
+.blender-hero figure { margin: 0; }
+.blender-hero img { aspect-ratio: 16 / 9; object-fit: contain; }
+.blender-hero figcaption, .blender-credit { font-size: .78rem; color: var(--text-muted); margin-top: .75rem; }
+.blender-tags { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 1.7rem; }
+.blender-tags span { font-size: .73rem; border: 1px solid var(--border); padding: .2rem .6rem; border-radius: 3px; color: var(--text-muted); }
+.blender-button { background: var(--accent); color: #101600; font-weight: 650; display: inline-flex; gap: 1rem; padding: .65rem 1rem; border-radius: 3px; font-size: .9rem; }
+.blender-button:hover { color: #101600; background: #91d21c; }
+.blender-secondary { display: inline-block; font-size: .85rem; margin: .6rem 0 .6rem 1rem; }
+.blender-preview { font-size: .82rem; line-height: 1.6; padding: .85rem 1rem; color: #bbc6aa; border: 1px solid rgba(118,185,0,.25); background: rgba(118,185,0,.055); border-radius: 4px; }
+.blender-paths { display: grid; grid-template-columns: repeat(4,1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 5px; overflow: hidden; margin: 2rem 0 3rem; }
+.blender-paths a { display: flex; flex-direction: column; gap: .5rem; background: var(--bg-elevated); padding: 1.3rem; color: var(--text); }
+.blender-paths a:hover { background: var(--surface); }
+.blender-paths span, .blender-step { color: var(--accent); font-size: .68rem; letter-spacing: .12em; font-weight: 600; }
+.blender-paths strong { font-size: 1rem; font-weight: 600; }
+.blender-paths small { font-size: .78rem; color: var(--text-muted); line-height: 1.5; }
+.blender-body { display: grid; grid-template-columns: 190px minmax(0,1fr); gap: 3rem; }
+.blender-toc nav { position: sticky; top: 1.5rem; display: flex; flex-direction: column; gap: .8rem; font-size: .8rem; line-height: 1.4; }
+.blender-toc p { color: var(--text-muted); font-size: .65rem; letter-spacing: .12em; margin: .4rem 0 .5rem; }
+.blender-toc a { color: var(--text-muted); border-left: 1px solid var(--border); padding-left: .85rem; }
+.blender-toc a:hover { color: var(--accent); border-color: var(--accent); }
+.blender-page .prose { font-size: .97rem; line-height: 1.8; }
+.blender-page .prose section { padding-bottom: 1.4rem; border-bottom: 1px solid var(--border); margin-bottom: 2rem; scroll-margin-top: 2rem; }
+.blender-page .prose section h2 { margin-top: 0; font-size: 1.7rem; letter-spacing: -.025em; }
+.blender-page .prose li { padding-left: .3rem; margin-bottom: .6rem; }
+.blender-page .prose .blender-step { margin-bottom: .6rem; }
+.blender-command { background: var(--bg-elevated); padding: .7rem 1rem .05rem; border: 1px solid var(--border); border-radius: 5px; margin-bottom: 1.25rem; }
+.blender-command h3 { font-size: .75rem; text-transform: uppercase; letter-spacing: .08em; margin: .4rem 0 .4rem; color: var(--text-muted); }
+.blender-command pre { border: 0; padding: .3rem 0; font-size: .85rem; }
+.blender-guide-link { font-size: .83rem; color: var(--text-muted); }
+.blender-guide-link a { display: block; font-size: .93rem; font-weight: 600; }
+.blender-physics-map { display: grid; place-items: center; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 5px; margin: 1rem 0 1.5rem; padding: 1.5rem; font-size: .8rem; line-height: 1.5; }
+.blender-physics-map > div { display: flex; align-items: center; gap: 1rem; }
+.blender-cube { display: grid; place-items: center; width: 48px; height: 48px; border: 1px solid var(--accent); background: var(--accent-dim); font-size: 1.5rem; color: var(--accent); }
+.blender-physics-map small { color: var(--text-muted); }
+.blender-physics-map .blender-floor { border-top: 3px solid #7a8494; width: 80%; justify-content: center; margin-top: 2rem; padding-top: .5rem; }
+.blender-physics-map p { color: var(--text-muted); font-size: .67rem; margin: 1rem 0 0; }
+.blender-guide { max-width: 880px; font-family: var(--font-display); }
+.blender-guide .prose { font-size: .96rem; line-height: 1.8; }
+.blender-guide .prose h1 { font-size: 2.35rem; line-height: 1.2; letter-spacing: -.03em; }
+.blender-guide .prose li { margin-bottom: .5rem; }
+.blender-guide .prose table { display: block; overflow-x: auto; }
+.blender-guide img { max-height: 650px; object-fit: contain; }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+@media (max-width: 800px) { .blender-hero { grid-template-columns: 1fr; gap: 2rem; padding-top: 2rem; } .blender-hero figure { max-width: 620px; } .blender-paths { grid-template-columns: repeat(2,1fr); } .blender-body { grid-template-columns: 1fr; gap: 0; } .blender-toc { display: none; } }
+@media (max-width: 450px) { .blender-paths a { padding: 1rem; } .blender-secondary { margin-left: 0; display: block; } .blender-physics-map > div { flex-wrap: wrap; justify-content: center; gap: .5rem; } }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+.sdk-name { font-family: var(--font-mono); font-weight: inherit; letter-spacing: normal; text-transform: none; }
+.blender-page h1 code, .blender-guide h1 code, .blender-guide h2 code { font-size: 1em; font-weight: inherit; background: none; padding: 0; }
+
+/* Setup screenshots remain readable at the guide column width. */
+.blender-guide figure { margin: 1.5rem 0; }
+.blender-guide figure img { width: 100%; height: auto; max-height: none; }
+.blender-guide figcaption { color: var(--text-muted); font-size: .8rem; line-height: 1.6; margin-top: .5rem; }

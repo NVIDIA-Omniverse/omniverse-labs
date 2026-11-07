@@ -9,8 +9,11 @@
     />
     <title>ovrtx Blender Example — Omniverse Labs</title>
     <link rel="stylesheet" href="../../assets/css/main.css" />
+    <link rel="stylesheet" href="blender-docs.css" />
+    <link rel="canonical" href="https://nvidia-omniverse.github.io/omniverse-labs/projects/ov-blender-example/" />
+    <script src="blender-hero.js" defer></script>
     <script type="text/javascript">
-    if (location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
+    if (location.protocol !== "file:" && location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
       window.OptanonWrapper = function () {
         var event = new Event("bannerLoaded");
         window.dispatchEvent(event);
@@ -39,149 +42,68 @@
       </div>
     </header>
 
-    <article class="article-wrap">
-      <header class="article-hero">
-        <p class="article-kicker">Sample</p>
-        <h1 class="article-title">ovrtx Blender Example</h1>
-        <p class="article-deck">
-          Bring NVIDIA RTX rendering into Blender. Keep creating in the workflows you already know,
-          review your scene through ovrtx, and render a final image without moving your work into a separate application.
-        </p>
-        <div class="article-meta">
-          <span>Status: Working</span>
-          <span>July 2026</span>
+    <article class="article-wrap blender-page">
+      <header class="article-hero blender-hero">
+        <div>
+          <p class="article-kicker">Blender integration · 0.2</p>
+          <h1 class="article-title"><span class="sdk-name">ovrtx</span> rendering<br>in Blender</h1>
+          <p class="article-deck">Render your Blender scene with NVIDIA <span class="sdk-name">ovrtx</span>. Set up rigid-body physics with ovphysx, preview the motion, and bake it into editable animation.</p>
+          <div class="blender-tags"><span>Blender 5.2.1 LTS</span><span>Windows / Linux x64</span><span>External runtime</span></div>
+          <a class="blender-button" href="#install">Install the add-on <span aria-hidden="true">↗</span></a>
+          <a class="blender-secondary" href="#physics">Set up physics <span aria-hidden="true">↓</span></a>
         </div>
-        <img
-          src="../../assets/images/card-ov-blender-example.png"
-          alt="The Junk Shop scene rendered with NVIDIA ovrtx in Blender"
-          width="720"
-          height="405"
-        />
+        <video class="blender-hero-video" muted loop playsinline controls preload="metadata" poster="images/marble-hero-poster.webp" width="1600" height="900" aria-label="Marble rolling down ceramic and brass rails into a bowl">
+          <source src="images/marble-hero.webm" type="video/webm">
+          <source src="images/marble-hero.mp4" type="video/mp4">
+          <a href="images/marble-hero.mp4">Play the marble relay video</a>
+        </video>
       </header>
-
-      <div class="prose">
-        <p>
-          This public example for <strong>Blender 5.2 or newer</strong> packages a Blender add-on that connects your
-          open scene to <strong>NVIDIA ovrtx</strong> for real-time rendered viewport review and final-frame
-          rendering. When supported SimReady physics properties are present,
-          <strong>NVIDIA OVPhysX</strong> drives rigid-body motion in the Timeline before you take an asset
-          into a larger Isaac or Omniverse workflow.
-        </p>
-
-        <p>
-          It demonstrates focused creative rendering and SimReady prop review workflows on supported NVIDIA RTX
-          workstations. It is not a supported production renderer and does not reproduce every Cycles, EEVEE,
-          or Blender feature.
-        </p>
-
-        <h2>What you can do</h2>
-        <ul>
-          <li>View the current Blender scene through ovrtx in the rendered viewport</li>
-          <li>Orbit, pan, and frame your work while the ovrtx image updates</li>
-          <li>Render a final image using the active Blender camera</li>
-          <li>Adjust supported materials, lights, cameras, and object transforms without leaving Blender</li>
-          <li>Play supported SimReady rigid-body motion with OVPhysX in the Blender Timeline</li>
-        </ul>
-
-        <p>
-          The add-on works with the scene already open in Blender — whether you created it in Blender,
-          opened a <code>.blend</code> file, or imported USD through Blender's normal import workflow.
-        </p>
-
-        <h2>Prerequisites</h2>
-        <ul>
-          <li>Blender 5.2 or newer (Windows x64 or Linux x64)</li>
-          <li>A supported 64-bit release platform (see the project
-            <a
-              href="https://github.com/nvidia-omniverse/omniverse-labs/blob/main/projects/ov-blender-example/docs/support-platforms.md"
-              target="_blank"
-              rel="noopener noreferrer"
-            >Support Platforms</a> doc)</li>
-          <li>A compatible NVIDIA RTX GPU and driver</li>
-        </ul>
-
-        <h2>Install</h2>
-        <ol>
-          <li>
-            Download the 0.2.0 release package for your platform (<code>windows-x64</code> or
-            <code>linux-x64</code>) from the
-            <a
-              href="https://github.com/nvidia-omniverse/omniverse-labs/releases/tag/ovrtx-blender-example-0.2"
-              target="_blank"
-              rel="noopener noreferrer"
-            ><code>ovrtx-blender-example-0.2</code> release</a>
-            and extract it. Keep the extracted files together.
-          </li>
-          <li>Close Blender.</li>
-          <li>
-            From the extracted folder, run the installer with your Blender executable:
-            <code>install.bat "C:\Program Files\Blender Foundation\Blender 5.2\blender.exe"</code> on Windows, or
-            <code>sh install.sh /path/to/blender</code> on Linux.
-          </li>
-          <li>
-            Wait for the installer to finish. It installs the add-on and its runtime into that Blender's settings
-            folder, then warms up the renderer's shader caches, which can take several minutes the first time.
-          </li>
-          <li>Start Blender normally. The add-on is already enabled.</li>
-        </ol>
-
-        <p>
-          <strong>Upgrading:</strong> run the installer from a newer release package the same way. It replaces the
-          previous add-on and runtime. See <code>INSTALL.txt</code> in the package for a self-contained Blender
-          configuration and other options.
-        </p>
-
-        <p>
-          The runtime installs beside the add-on in Blender's settings folder. NVIDIA rendering and physics
-          components run outside the Blender process while the add-on provides the Blender experience.
-        </p>
-
-        <h2>Render your first scene</h2>
-        <ol>
-          <li>Open a <code>.blend</code> file or create a scene in Blender.</li>
-          <li>In <strong>Render Properties</strong>, set <strong>Render Engine</strong> to <strong>ovrtx Example</strong>.</li>
-          <li>In the 3D Viewport, select <strong>Rendered</strong> shading.</li>
-          <li>Use Blender's normal orbit, pan, zoom, camera, selection, and transform controls.</li>
-          <li>Press <strong>F12</strong> to render the active camera.</li>
-        </ol>
-
-        <p>
-          The first image can take longer while the runtime starts and prepares rendering resources.
-          Later viewport updates reuse the active rendering session.
-        </p>
-
-        <h2>How it works</h2>
-        <p>
-          Blender remains where you create, edit, and view your scene. The add-on translates the current Blender
-          scene to USD and sends it to the separately installed NVIDIA Library Worker. ovrtx renders the scene
-          and returns pixels to the Blender viewport. When supported physics properties are present, OVPhysX
-          supplies updated poses for ovrtx to render.
-        </p>
-
-        <h2>Repository path</h2>
-        <p>
-          Full source, agent skills, validation suites, and troubleshooting live in the project folder:
-        </p>
-
-        <div class="callout">
-          <p>
-            <strong>Clone and install:</strong>
-            <a
-              href="https://github.com/nvidia-omniverse/omniverse-labs/tree/main/projects/ov-blender-example"
-              target="_blank"
-              rel="noopener noreferrer"
-            ><code>projects/ov-blender-example/</code></a>
-          </p>
-          <p>
-            <strong>Version 0.2.0</strong> (release tag <code>ovrtx-blender-example-0.2</code>). Add-on source is licensed Apache-2.0;
-            the OVRTX and OVPhysX runtimes are separate components that retain their own licenses
-            (see the project <code>THIRD_PARTY_NOTICES.md</code> and <code>docs/licensing.md</code>).
-          </p>
-          <p>
-            Scene credit: <em>The Junk Shop</em> by Alex Treviño, original concept by Anaïs Maamar,
-            licensed <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>.
-            Rendered with NVIDIA ovrtx.
-          </p>
+      <nav class="blender-paths" aria-label="Choose your workflow">
+        <a href="#install"><span>01 / INSTALL</span><strong>Install &amp; upgrade</strong><small>Install the add-on and its runtime.</small></a>
+        <a href="#render"><span>02 / RENDER</span><strong>Render your scene</strong><small>Preview a scene and save an image.</small></a>
+        <a href="#physics"><span>03 / PHYSICS</span><strong>Set up physics</strong><small>Add bodies, colliders and gravity.</small></a>
+        <a href="#bake"><span>04 / BAKE</span><strong>Bake &amp; render</strong><small>Save the motion as Blender animation.</small></a>
+      </nav>
+      <div class="blender-body">
+        <aside class="blender-toc"><nav aria-label="On this page"><p>ON THIS PAGE</p><a href="#before">Before you begin</a><a href="#install">Install &amp; upgrade</a><a href="#render">First render</a><a href="#physics">Physics setup</a><a href="#bake">Bake &amp; render</a><a href="#troubleshooting">Troubleshooting</a><a href="#developers">Build &amp; extend</a></nav></aside>
+        <div class="prose">
+          <section id="before"><h2>Before you begin</h2>
+            <p>This sample connects your current Blender scene to an external Omniverse runtime. Use your own scene, open a <code>.blend</code> file, or import USD using Blender’s normal workflow.</p>
+            <div class="table-wrap"><table><thead><tr><th>You need</th><th>For the 0.2 package</th></tr></thead><tbody><tr><td>Blender</td><td>Use Blender 5.2.1 LTS. Install Blender separately.</td></tr><tr><td>Platform</td><td>Windows x64 or Linux x64. ARM and macOS are unsupported.</td></tr><tr><td>Graphics</td><td>A compatible NVIDIA RTX GPU and driver. Linux rendering needs a Vulkan-capable display session.</td></tr><tr><td>Package</td><td>The complete matched platform ZIP. Keep its add-on, runtime, manifest and installer together.</td></tr></tbody></table></div>
+            <p>See <a href="support-platforms.html">platforms and runtime versions</a> for compatibility details. This is an experimental integration with a supported feature subset; output and behavior can differ from Cycles and EEVEE.</p>
+          </section>
+          <section id="install"><p class="blender-step">01 / INSTALL</p><h2>Install or upgrade</h2>
+            <ol><li>Download the complete <strong>Windows x64</strong> or <strong>Linux x64</strong> package from the <a href="https://github.com/NVIDIA-Omniverse/omniverse-labs/releases/tag/ovrtx-blender-example-0.2">Blender 0.2.0 release</a>, then <strong>extract it</strong>. Run the installer from this extracted folder; do not select the outer ZIP in Blender’s Add-ons menu.</li><li>Close Blender. Open a terminal in the extracted folder and run the command for your platform, replacing the example Blender path.</li></ol>
+            <div class="blender-command"><h3>Windows</h3><pre><code>install.bat "C:\path\to\Blender\blender.exe"</code></pre><h3>Linux</h3><pre><code>sh install.sh "/path/to/blender"</code></pre></div>
+            <ol start="3"><li>Wait for installation and renderer warm-up. Warm-up can take several minutes while shader caches are prepared; progress appears every 30 seconds.</li><li>Start Blender normally. Confirm the <strong><span class="sdk-name">ovrtx</span> Blender Example</strong> add-on is enabled, then select <strong><span class="sdk-name">ovrtx</span> Example</strong> as the render engine.</li></ol>
+            <p>The installer uses Blender’s bundled Python and the local package. Rendering and physics run outside Blender. To upgrade an existing 0.2 installation, close Blender and run the new package’s installer. For an earlier integration, we recommend using a <a href="install-guide.html#use-a-separate-settings-folder">separate Blender settings folder</a>.</p>
+            <p class="blender-guide-link"><a href="install-guide.html">Full installation guide →</a> Separate settings folders, upgrades, warm-up failures and recovery.</p>
+          </section>
+          <section id="render"><p class="blender-step">02 / RENDER</p><h2>Render a scene</h2>
+            <ol><li>Open a demo scene or create one with an object, a light and a camera. Blender’s default scene includes all three. Save a working copy.</li><li>In <strong>Render Properties</strong>, select <strong><span class="sdk-name">ovrtx</span> Example</strong>. Switch the 3D Viewport to <strong>Rendered</strong> shading. The worker starts when rendering is requested.</li><li>Wait for a textured image and check <strong><span class="sdk-name">ovrtx</span> Session</strong> in Render Properties. Orbit the view, move an object, and adjust a supported light or material value to see the changes.</li><li>Choose the active scene camera and output resolution. Press <strong>F12</strong> to render that camera.</li><li>When rendering completes, use <strong>Image → Save As</strong> in Render Result to save the image.</li></ol>
+            <div class="callout"><p><strong>Color and anti-aliasing.</strong> Scene-linear HDR uses Blender’s color-management transform; LDR arrives already display-encoded. Final supersampling defaults to 2×2, while viewport supersampling defaults to 1×. Higher supersampling improves edges and costs more time and memory.</p></div>
+            <p class="blender-guide-link"><a href="render-guide.html">Rendering guide →</a> Samples, RTPT quality, color, EXR output and animation.</p>
+          </section>
+          <section id="physics"><p class="blender-step">03 / PHYSICS</p><h2>Set up a falling cube</h2>
+            <p>Start with a simple cube and a floor. Use the add-on’s <strong>OV</strong> panels in the Properties editor. CPU physics is the default, separate from the GPU used for RTX rendering.</p>
+            <div class="blender-physics-map" aria-label="Physics setup: a dynamic cube above a static floor"><div><span class="blender-cube" aria-hidden="true">↓</span><strong>Dynamic prop</strong><small>Mass + collider</small></div><div class="blender-floor"><strong>Static floor</strong><small>Fixed collision surface</small></div></div>
+            <ol><li>Add a cube above a thin box floor. Apply each object’s scale with <strong>Ctrl+A → Scale</strong> for a straightforward first setup.</li><li>Select the cube. Open <strong>Physics Properties → OV Physics Body / Bone</strong> and click <strong>Assign OV Body</strong>. Choose <strong>Dynamic</strong>, leave it enabled, and set its mass.</li><li>Inspect <strong>OV Colliders</strong>. Assigning a mesh body creates a Convex Hull collider; do not add a duplicate accidentally. Use <strong>Change Collider Shape</strong> if you want a Box collider.</li><li>Select the floor, assign an OV body, and choose <strong>Static</strong>. Inspect its collider too.</li><li>In <strong>Scene Properties → OV Physics Scene</strong>, choose <strong>Apply Scene</strong> and review gravity. Turn on physics indicators and collider wires; keep Blender’s <strong>Show Overlays</strong> enabled.</li><li>With <strong><span class="sdk-name">ovrtx</span> Example</strong> and Rendered shading active, return the Timeline to its start frame and press <strong>Play</strong>. The expected result is a cube falling onto the floor.</li><li>Stop playback and return to the start to reset. After changing physics setup, restart the preview from the start so the solver uses the new settings.</li></ol>
+            <p>To tune friction and bounce, create an <strong>OV Physics Material</strong> in Material Properties and assign it explicitly to the collider.</p>
+            <p class="blender-guide-link"><a href="physics-guide.html">Physics guide →</a> Units, collision shapes, joints, SimReady conversion and device restrictions.</p>
+          </section>
+          <section id="bake"><p class="blender-step">04 / BAKE</p><h2>Bake and render the motion</h2>
+            <ol><li>Open <strong>Scene Properties → ovphysx Animation Bake</strong>. Set Initial Conditions and the Bake Start / Bake End range. Start with Sample Interval 1.</li><li>Resolve any pending joint anchors or animation conflicts, then click <strong>Bake ovphysx Animation</strong> and wait for completion.</li><li>Choose <strong>Activate Baked Playback</strong>. Scrub the Timeline and inspect editable keys in the Action Editor or Graph Editor.</li><li>Save the <code>.blend</code> file with the baked Actions active. Press <strong>F12</strong> for a chosen frame, or set an output directory and use Blender’s <strong>Render Animation</strong>.</li></ol>
+            <p>The saved bake can play in Blender without the simulation worker. Use <strong>Restore Previous Animation</strong> before returning to live physics. See the <a href="physics-guide.html#bake-and-render-the-motion">bake walkthrough</a> for output scope, cancellation and restoration.</p>
+          </section>
+          <section id="troubleshooting"><h2>Troubleshooting</h2>
+            <div class="table-wrap"><table><thead><tr><th>Symptom</th><th>First check</th></tr></thead><tbody><tr><td>Engine is missing</td><td>Use the settings folder you installed into and confirm the paired extension is enabled.</td></tr><tr><td>Installer exits with code 3</td><td>Installation succeeded, but warm-up failed. Read the printed warm-up and worker log paths.</td></tr><tr><td>Blank viewport</td><td>Check Rendered shading, geometry, lights and the <span class="sdk-name">ovrtx</span> Session message before changing materials.</td></tr><tr><td>Physics does not move</td><td>Check enabled Dynamic body, collider, gravity, start frame and the panel’s runtime diagnostic.</td></tr><tr><td>Lost worker connection</td><td>Read the first error, then use Reconnect <span class="sdk-name">ovrtx</span> Session or Restart <span class="sdk-name">ovrtx</span> Worker.</td></tr></tbody></table></div>
+            <p>Some Blender shaders are unsupported, so materials may look different from Cycles or EEVEE. Extra render passes, transparent backgrounds, skinned deformation, cloth and fluids are unavailable. GPU physics has narrower joint support than CPU physics. <a href="render-guide.html">Rendering limitations</a> · <a href="physics-guide.html">Physics limitations</a></p>
+          </section>
+          <section id="developers"><h2>Build and modify the integration</h2>
+            <p>Edit your scene in Blender. The external runtime uses <strong>ovstage</strong> for scene representation, <strong><span class="sdk-name">ovrtx</span></strong> for rendering, <strong>ovstream</strong> for frame transport, and <strong>ovphysx</strong> for simulation.</p>
+            <p>The 0.2 package uses a locked set of SDKs in an external worker. See the developer guide to find the code, make changes and test them.</p>
+            <p><a href="developer-guide.html">Developer guide →</a> Source files, building, testing and logs.<br><a href="release-notes-0.2.html">0.2 release notes →</a> Features and limitations.<br><a href="https://github.com/nvidia-omniverse/omniverse-labs/tree/main/projects/ov-blender-example">Project source and agent skills →</a></p>
+          </section>
         </div>
       </div>
     </article>
