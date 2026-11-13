@@ -8,6 +8,7 @@ through the same ovstage update path as the rest of the lab.
 """
 import math
 from pxr import Gf, Usd, UsdGeom
+from . import semantics
 from .guide_motion import GuideMotion, HOVER_HEIGHT, gesture
 
 
@@ -22,6 +23,7 @@ class GuideScene:
         self.attitude = attitude.AddRotateXYZOp()
         model = UsdGeom.Xform.Define(stage,attitude.GetPath().AppendChild('Avatar'))
         model.GetPrim().GetReferences().AddReference(str(asset.resolve()))
+        semantics.label(model.GetPrim(), 'guide_avatar')
         model.AddRotateXOp().Set(-90.)  # supplied Z-up, lab Y-up; face local +Z
         model.AddScaleOp().Set(Gf.Vec3f(1.65))
         self.parts = {}

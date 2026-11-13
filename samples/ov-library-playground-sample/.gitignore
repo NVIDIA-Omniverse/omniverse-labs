@@ -35,3 +35,6 @@ data/campus/
 
 # Optional pinned offline artwork archives
 data/scene-archives/
+
+# Working files of tools/semantic_labeler (labels, VLM cache, thumbnails)
+data/semantics/

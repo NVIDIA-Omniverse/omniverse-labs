@@ -61,7 +61,9 @@ def build(g):
     from .campus_assets import CAMPUS_REVISION
     if CAMPUS_REVISION == 'r48-wayfinding-landscape':
         for name in ('r51-entrance-floor-infills.usda', 'r50-ovui-pendant-clearance.usda',
-                     'r49-gallery-light-mounts.usda'):
+                     'r49-gallery-light-mounts.usda',
+                     # Weakest: only adds UsdSemantics labels (tools/semantic_labeler).
+                     'r52-semantic-labels.usda'):
             correction = g.data_dir/'scene-overrides'/name
             if correction.is_file():
                 g.stage.GetRootLayer().subLayerPaths.append(str(correction.resolve()))
