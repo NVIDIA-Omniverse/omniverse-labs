@@ -90,5 +90,16 @@ then `author_layer.py`.
   review records corrections in `config/semantic-overrides.json`.
 - Thumbnails show shape and context, not appearance. An `ovrtx` render saved
   under the same file name in `data/semantics/crops/` can replace a thumbnail.
-- `coverage.py` is a quick local check. Use the official `simready-validate`
+- **SL.MAT.001 does not pass on the campus yet.** The campus instances its
+  vegetation, and each instance carries its own copies of its materials (for
+  example `Looks/pavilion_foliage`). USD ignores opinions authored below an
+  instance root, so a sidecar layer cannot label those materials. Only a change to
+  the campus archive can fix this, either by labeling the materials in the
+  prototype source or by binding the shared materials. On the scene the
+  application loads, `coverage.py` reports 1,704 of 1,796 rendered materials as
+  unlabeled because they are inside instances. `simready-validate` counts
+  24,360 SL.MAT.001 failures. The object labels do pass SL.001: in
+  `simready-validate`, failures fall from 8,673 without the layer to 9 with it.
+- `coverage.py` walks instance proxies and counts instanced materials
+  separately. It is a quick local check. Use the official `simready-validate`
   tool before claiming SimReady conformance.

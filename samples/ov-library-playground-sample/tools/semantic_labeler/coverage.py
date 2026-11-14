@@ -8,6 +8,9 @@
   SL.TIME.001  no label attribute is time-sampled
 SL.001 is reported for the object taxonomy (--taxonomy, default wikidata_qcode); a material
 label alone does not count as an object class here, so the class breakdown stays honest.
+The walk includes instance proxies, so geometry and materials inside instanced
+prototypes are counted once per instance, as simready-validate counts them. Prims
+inside instances cannot be edited from a sidecar layer; the report lists them separately.
 This is a fast local check, not a replacement for the official simready-validate tool.
 """
 import argparse
@@ -41,7 +44,7 @@ def measure(stage, instance, material_instance):
     bad_qcodes, time_sampled = set(), set()
     materials = {}
     root = stage.GetDefaultPrim() or stage.GetPseudoRoot()
-    for prim in Usd.PrimRange(root):
+    for prim in Usd.PrimRange(root, Usd.TraverseInstanceProxies()):
         for name in UsdSemantics.LabelsAPI.GetDirectTaxonomies(prim):
             attr = UsdSemantics.LabelsAPI(prim, name).GetLabelsAttr()
             if attr and attr.GetNumTimeSamples():
@@ -53,7 +56,7 @@ def measure(stage, instance, material_instance):
         if not is_rendered_gprim(prim):
             continue
         for shown in rendered_materials(prim):
-            materials[shown.GetPath().pathString] = bool(inherited(shown, material_instance))
+            materials[shown.GetPath().pathString] = (bool(inherited(shown, material_instance)), shown.IsInstanceProxy())
         material = bound_material(prim)
         labels = inherited(prim, instance) or (inherited(material, instance) if material else None)
         size = cache.ComputeWorldBound(prim).ComputeAlignedRange().GetSize()
@@ -84,16 +87,19 @@ def main():
     pct = 100.0*(total-miss)/total if total else 100.0
     for label, n in counts.most_common():
         print('  %-22s %6d gprims %12.1f m^3 bbox' % ('%s %s' % (label, names.get(label, '')), n, volume[label]))
-    labeled_mats = sum(materials.values())
+    labeled_mats = sum(ok for ok, _ in materials.values())
+    missing = sorted(p for p, (ok, _) in materials.items() if not ok)
+    in_instances = sum(materials[p][1] for p in missing)
     print('SL.001       %.1f%% of %d rendered gprims labeled (unlabeled listed largest first)' % (pct, total))
     print('SL.QCODE.001 %d malformed' % len(bad))
-    print('SL.MAT.001   %d/%d rendered materials labeled' % (labeled_mats, len(materials)))
+    print('SL.MAT.001   %d/%d rendered materials labeled; %d unlabeled are inside instances'
+          ' (fix in the source asset, not a sidecar)' % (labeled_mats, len(materials), in_instances))
     print('SL.TIME.001  %d time-sampled label attributes' % len(timed))
     for vol, path in unlabeled[:args.top]:
         print('  unlabeled %10.3f  %s' % (vol, path))
-    for path in sorted(p for p, ok in materials.items() if not ok)[:args.top]:
+    for path in missing[:args.top]:
         print('  material without label: '+path)
-    ok = pct >= args.min_count and not bad and not timed and labeled_mats == len(materials)
+    ok = pct >= args.min_count and not bad and not timed and not missing
     sys.exit(0 if ok else 1)
 
 
