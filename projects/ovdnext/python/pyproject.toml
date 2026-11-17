@@ -1,0 +1,39 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+[build-system]
+requires = ["setuptools==80.9.0", "wheel==0.45.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pvd-ovui"
+license = "Apache-2.0"
+license-files = ["ovd_ui/notices/*", "ovd_ui/assets/fonts/*-OFL.txt"]
+dynamic = ["version"]
+description = "Native PVD capture inspection with a Python OVUI workspace"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "ovui==0.2.0",
+    "ovui-data-adapters-common==0.2.0",
+    "ovui-data-adapters-services==0.2.0",
+    "ovui-widgets-common==0.2.0",
+    "moderngl==5.12.0",
+    "glcontext==3.0.0",
+    "numpy==2.5.2",
+    "pillow==13.0.0",
+]
+classifiers = ["Operating System :: POSIX :: Linux", "Programming Language :: Python :: 3.12"]
+
+[project.scripts]
+pvd-ovui = "ovd_ui.launcher:main"
+
+[tool.setuptools.dynamic]
+version = {attr = "ovd_ui.__version__"}
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["ovd_ui", "ovd_ui.*"]
+namespaces = false
+
+[tool.setuptools.package-data]
+ovd_ui = ["assets/*.json", "assets/fonts/*.ttf", "assets/fonts/*-OFL.txt", "assets/fonts/manifest.json", "assets/icons/*.png", "assets/icons/*.svg", "notices/*", "runtime-build.json"]

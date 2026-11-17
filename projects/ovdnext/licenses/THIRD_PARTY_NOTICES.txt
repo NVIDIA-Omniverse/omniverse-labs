@@ -1,0 +1,85 @@
+OVD Viewer source: third-party notices
+=====================================
+
+This file describes material in the selected v0.2.21 application source.
+It does not substitute for the complete notices and source companion that
+must accompany the qualified Windows and Linux runtime archives.
+
+PxShared / PhysX Foundation and PVD support
+-----------------------------------------
+Location: src/PxShared/ (supported non-console source selection).
+License: BSD-3-Clause except the Android cpu-features files listed below.
+Full PxShared notice: licenses/PxShared-BSD-3-Clause.txt.
+Source provenance: vendored files retain their original per-file NVIDIA,
+AGEIA Technologies and NovodeX copyright notices. Those notices and license
+texts are unchanged. src/PxShared/CMakeLists.txt is NVIDIA-authored build
+integration under Apache-2.0; it does not relicense the vendored sources.
+
+Android Open Source Project cpu-features
+---------------------------------------
+Locations: src/PxShared/src/foundation/externals/src/android/cpu-features.c
+           src/PxShared/src/foundation/externals/src/android/cpu-features.h
+License: BSD-2-Clause. The full notice retained in both source files follows:
+
+Copyright (C) 2010 The Android Open Source Project
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+ * Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+ * Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in
+   the documentation and/or other materials provided with the
+   distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+SUCH DAMAGE.
+
+Geist fonts
+-----------
+Location: python/ovd_ui/assets/fonts/Geist-400.ttf, Geist-500.ttf, Geist-600.ttf.
+License: SIL Open Font License 1.1.
+Full license/copyright: python/ovd_ui/assets/fonts/Geist-OFL.txt.
+Exact upstream paths and checksums: python/ovd_ui/assets/fonts/manifest.json.
+
+DM Mono fonts
+-------------
+Location: python/ovd_ui/assets/fonts/DMMono-400.ttf and DMMono-500.ttf.
+License: SIL Open Font License 1.1.
+Full license/copyright: python/ovd_ui/assets/fonts/DMMono-OFL.txt.
+Exact upstream paths and checksums: python/ovd_ui/assets/fonts/manifest.json.
+
+Runtime notice texts retained in source
+--------------------------------------
+ci/ovui_package/Expat-LICENSE.txt, HACL-LICENSE.txt and
+ci/ovui_package/python-runtime-notices/{windows,linux}/ retain the complete
+upstream terms for the corresponding CPython/runtime components. Their
+presence is not a claim that those components' implementations are vendored.
+
+Separately obtained build and runtime dependencies
+-------------------------------------------------
+Physics/PvdDom/PVDRuntime, OvUI, CPython, Pillow, ModernGL, pybind11,
+GoogleTest and other build/runtime inputs are obtained separately under
+their own licenses. GoogleTest is fetched by test/CMakeLists.txt at
+6910c9d9165801d8827d628cb72eb7ea9dd538c5 (v1.16.0).
+Dependencies fetched at build/runtime are not relicensed by this repository.
+Read the external-material notice in README.md before downloading them.
+
+For the qualified Windows/Linux delivery, distribute the matching
+OvdNext-v0.2.21-third-party-licenses-and-sources.zip alongside BOTH runtime
+ZIPs. Its component inventory and full notices cover the actual binaries,
+including OvUI's transitive components, the CUDA runtime, Microsoft CRT
+and Linux dependencies. Source-only notice corrections do not replace or
+rebuild those previously qualified archives.

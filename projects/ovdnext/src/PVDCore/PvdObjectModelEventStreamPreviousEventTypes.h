@@ -1,0 +1,18 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2008-2014 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+// Copyright (c) 2008-2014 NVIDIA Corporation. All rights reserved.
+
+#define THERE_IS_NO_INCLUDE_GUARD_HERE_FOR_A_REASON
+
+DECLARE_PREVIOUS_EVENT_TYPE(Snapshot)
+DECLARE_PREVIOUS_EVENT_TYPE(CreateInstance)
+DECLARE_PREVIOUS_EVENT_TYPE(SetPropertyValue)
+DECLARE_PREVIOUS_EVENT_TYPE(SetPropertyMessage)
+DECLARE_PREVIOUS_EVENT_TYPE(InsertArrayElement)
+DECLARE_PREVIOUS_EVENT_TYPE(RemoveArrayElement)
+DECLARE_PREVIOUS_EVENT_TYPE(SetArrayElementValue)
+DECLARE_PREVIOUS_EVENT_TYPE(OriginShift)
+
+#undef THERE_IS_NO_INCLUDE_GUARD_HERE_FOR_A_REASON

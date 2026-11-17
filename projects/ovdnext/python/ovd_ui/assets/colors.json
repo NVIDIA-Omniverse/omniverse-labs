@@ -1,0 +1,31 @@
+{
+    "_comment": "ovdnext colour palette. Live-reloaded by the running viewer (save this file with the app open and the next paint picks up the change). Mirrors the omni.physx.pvd kit palette so a tester sees the same colours when comparing the same .ovd in both viewers. Missing keys render as magenta (#FF00FF) — visible signal of a typo or a missing entry, never a baked-in default.",
+
+    "actors": {
+        "rigidStatic":         "#E2E2E2",
+        "rigidDynamicActive":  "#77DD77",
+        "rigidDynamicSleep":   "#2F4C39",
+        "kinematicActive":     "#ABD7F4",
+        "kinematicSleep":      "#3D426B",
+        "articulation":        "#77DD77",
+        "cloth":               "#F4C2AB",
+        "particle":            "#77DD77",
+        "deformableActive":    "#77DD77",
+        "deformableSleep":     "#2F4C39",
+        "fallback":            "#FF00FF"
+    },
+
+    "gizmos": {
+        "contactPoint":        "#FF9933",
+        "contactNormal":       "#FFFF33",
+        "jointParentFrame":    "#FF6600",
+        "jointChildFrame":     "#0099FF",
+        "boundingBox":         "#666666",
+        "centerOfMass":        "#FFFF66",
+        "velocity":            "#FFFFFF",
+        "axisX":               "#FF6666",
+        "axisY":               "#66FF66",
+        "axisZ":               "#6666FF",
+        "selectionTint":       "#787878"
+    }
+}

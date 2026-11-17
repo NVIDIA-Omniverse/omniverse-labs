@@ -1,0 +1,16 @@
+ci/run_windows_ci.bat text eol=crlf
+ci/ovui_package/Expat-LICENSE.txt text eol=lf
+ci/ovui_package/python-runtime-notices/linux/*.txt -text whitespace=-blank-at-eol
+ci/ovui_package/python-runtime-notices/windows/*.txt -text whitespace=-blank-at-eol
+ci/ovui_package/HACL-LICENSE.txt text eol=lf
+# Keep source and packaged Apache notices byte-identical on both platforms.
+LICENSE text eol=lf
+NOTICE text eol=lf
+python/ovd_ui/notices/OvdNext-LICENSE.txt text eol=lf
+python/ovd_ui/notices/OvdNext-NOTICE.txt text eol=lf
+# Hashed JSON assets must keep canonical bytes under Windows checkout filters.
+python/tests/reference_data/*.json -text
+python/ovd_ui/assets/colors.json -text
+# Byte-exact reference assets and relocated header retain original CRLF bytes.
+python/tests/reference_data/shaders/* -text whitespace=cr-at-eol
+src/PVDCore/fakeinstanceheader.h -text whitespace=cr-at-eol

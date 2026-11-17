@@ -1,0 +1,37 @@
+<!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<svg xmlns="http://www.w3.org/2000/svg" width="1260" height="420" viewBox="0 0 1260 420">
+  <title>CPU-control evidence generation and inspection</title>
+  <desc>Record independent CPU controls, prove captured values against live observations, select bounded analytic windows, then inspect exact recorded source points.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L9,3 L0,6" fill="#536273"/></marker>
+    <style>text{font-family:Arial,sans-serif;font-size:19px;fill:#182b3a}.heading{font-size:25px;font-weight:bold}.box{fill:#f1f5f9;stroke:#8191a3;stroke-width:2;rx:14}.green{fill:#e1f3e7;stroke:#338150;stroke-width:2;rx:14}.line{fill:none;stroke:#536273;stroke-width:2;marker-end:url(#arrow)}.note{font-size:16px;fill:#536273}</style>
+  </defs>
+  <rect width="1260" height="420" fill="white"/>
+  <text class="heading" x="30" y="37">Generate qualified evidence</text>
+  <rect class="box" x="30" y="65" width="250" height="82"/>
+  <text x="155" y="98" text-anchor="middle"><tspan x="155">Checked CPU controls</tspan><tspan x="155" dy="25">OVD + paired live SDK log</tspan></text>
+  <path class="line" d="M280,106 H330"/>
+  <rect class="box" x="330" y="65" width="260" height="82"/>
+  <text x="460" y="98" text-anchor="middle"><tspan x="460">Prove all pre/post fields</tspan><tspan x="460" dy="25">Scopes, values, stamps</tspan></text>
+  <path class="line" d="M590,106 H640"/>
+  <rect class="box" x="640" y="65" width="270" height="82"/>
+  <text x="775" y="98" text-anchor="middle"><tspan x="775">Select seven-point windows</tspan><tspan x="775" dy="25">At most eight per capture</tspan></text>
+  <path class="line" d="M910,106 H960"/>
+  <rect class="green" x="960" y="65" width="270" height="82"/>
+  <text x="1095" y="98" text-anchor="middle"><tspan x="1095">Export evidence JSON</tspan><tspan x="1095" dy="25">Retain raw tools + provenance</tspan></text>
+  <text class="note" x="30" y="182">Different rates retain separate window times/widths; ordinal SDK comparisons are omitted across rates.</text>
+  <text class="heading" x="30" y="230">Inspect recorded points</text>
+  <rect class="box" x="30" y="257" width="270" height="82"/>
+  <text x="165" y="289" text-anchor="middle"><tspan x="165">Open capture / import JSON</tspan><tspan x="165" dy="25">Choose finding / capture role</tspan></text>
+  <path class="line" d="M300,298 H350"/>
+  <rect class="box" x="350" y="257" width="260" height="82"/>
+  <text x="480" y="289" text-anchor="middle"><tspan x="480">Read energy + source fields</tspan><tspan x="480" dy="25">Select an evaluated point</tspan></text>
+  <path class="line" d="M610,298 H660"/>
+  <rect class="box" x="660" y="257" width="250" height="82"/>
+  <text x="785" y="289" text-anchor="middle"><tspan x="785">Scene / covering clip</tspan><tspan x="785" dy="25">Go to exact verified sample</tspan></text>
+  <path class="line" d="M910,298 H960"/>
+  <rect class="green" x="960" y="257" width="270" height="82"/>
+  <text x="1095" y="289" text-anchor="middle"><tspan x="1095">Inspect selected frame/object</tspan><tspan x="1095" dy="25">Retain limits and assumptions</tspan></text>
+  <text class="note" x="30" y="384">Observed and Warning are diagnostics. CPU controls do not establish the original GPU behavior, a fix or root cause.</text>
+</svg>

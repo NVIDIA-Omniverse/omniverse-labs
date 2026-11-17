@@ -1,0 +1,38 @@
+<!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<svg xmlns="http://www.w3.org/2000/svg" width="1260" height="420" viewBox="0 0 1260 420">
+  <title>Evidence inspection and verified navigation</title>
+  <desc>Imported JSON stays readable. Capture bytes and native source samples must match before markers and exact navigation are available. Scene and clip selection are explicit.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L9,3 L0,6" fill="#536273"/></marker>
+    <style>text{font-family:Arial,sans-serif;font-size:19px;fill:#182b3a} .box{fill:#f1f5f9;stroke:#8191a3;stroke-width:2;rx:14} .ok{fill:#e1f3e7;stroke:#338150;stroke-width:2;rx:14} .line{fill:none;stroke:#536273;stroke-width:2;marker-end:url(#arrow)} .small{font-size:16px;fill:#536273}</style>
+  </defs>
+  <rect width="1260" height="420" fill="white"/>
+  <text x="30" y="38" font-size="25" font-weight="bold">Import and inspect</text>
+  <rect class="box" x="30" y="65" width="210" height="76"/>
+  <text x="135" y="96" text-anchor="middle"><tspan x="135">Import evidence JSON</tspan><tspan x="135" dy="25">Bounded validation</tspan></text>
+  <path class="line" d="M240,103 H290"/>
+  <rect class="box" x="290" y="65" width="270" height="76"/>
+  <text x="425" y="96" text-anchor="middle"><tspan x="425">Read findings and provenance</tspan><tspan x="425" dy="25">Choose a capture role</tspan></text>
+  <path class="line" d="M560,103 H610"/>
+  <rect class="box" x="610" y="65" width="290" height="76"/>
+  <text x="755" y="96" text-anchor="middle"><tspan x="755">Match retained capture bytes</tspan><tspan x="755" dy="25">Verify native identity / samples</tspan></text>
+  <path class="line" d="M900,103 H950"/>
+  <rect class="ok" x="950" y="65" width="280" height="76"/>
+  <text x="1090" y="96" text-anchor="middle"><tspan x="1090">Show verified point markers</tspan><tspan x="1090" dy="25">Click selects details</tspan></text>
+  <text class="small" x="610" y="169">Missing proof: details remain readable; navigation stays disabled.</text>
+  <text x="30" y="222" font-size="25" font-weight="bold">Go to an exact source sample</text>
+  <rect class="box" x="30" y="249" width="270" height="82"/>
+  <text x="165" y="279" text-anchor="middle"><tspan x="165">Select finding and role</tspan><tspan x="165" dy="25">Select scene and covering clip</tspan></text>
+  <path class="line" d="M300,290 H345"/>
+  <rect class="box" x="345" y="249" width="250" height="82"/>
+  <text x="470" y="279" text-anchor="middle"><tspan x="470">Choose Go to</tspan><tspan x="470" dy="25">Pause / request exact frame</tspan></text>
+  <path class="line" d="M595,290 H640"/>
+  <rect class="box" x="640" y="249" width="285" height="82"/>
+  <text x="782" y="279" text-anchor="middle"><tspan x="782">Recheck applied frozen view</tspan><tspan x="782" dy="25">Identity, values, source stamps</tspan></text>
+  <path class="line" d="M925,290 H970"/>
+  <rect class="ok" x="970" y="249" width="260" height="82"/>
+  <text x="1100" y="279" text-anchor="middle"><tspan x="1100">Display exact frame</tspan><tspan x="1100" dy="25">Select verified object</tspan></text>
+  <text class="small" x="30" y="374">A marker never seeks. Unmarked spans have no implied result. Imported judgments do not certify a simulation.</text>
+  <text class="small" x="640" y="399">Failed final proof preserves the previous display and object selection.</text>
+</svg>

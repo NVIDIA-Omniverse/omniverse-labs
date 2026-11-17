@@ -1,0 +1,39 @@
+# Build output
+build/
+build_ovd/
+build_linux/
+.worktrees/
+_ci/
+artifacts/
+dist/
+
+# Python CI helper caches
+__pycache__/
+
+# Packaged beta distributions (not source)
+package/
+
+# Claude Code
+.claude/
+
+# IDE
+.vs/
+*.user
+*.suo
+*.sln.docstates
+
+# PVD3 temp files
+*.pxd3
+
+# Local-only OVD fixtures (too large for the 5 MiB GitLab blob cap; regen from snippets)
+/test/data/multi_geom_full.ovd
+/test/data/deformable_surface.ovd
+/test/data/deformable_volume.ovd
+# Omniverse Kit / Isaac Sim recordings land in test/data/ as timestamped
+# <date>_<time>_<...>_rec.ovd — multi-hundred-MB, never committed.
+/test/data/*_rec.ovd
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store

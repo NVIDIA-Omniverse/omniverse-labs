@@ -1,0 +1,4 @@
+# Developer trial only; this does not establish public redistribution clearance.
+-r requirements.txt
+# The ovui 0.2.0 Windows wheel imports cudart64_12.dll even on its OpenGL path.
+nvidia-cuda-runtime-cu12==12.9.79; sys_platform == "win32"

@@ -1,0 +1,9 @@
+# Complete runtime closure for Linux CPython 3.12; keep pyproject.toml in sync.
+ovui==0.2.0
+ovui-data-adapters-common==0.2.0
+ovui-data-adapters-services==0.2.0
+ovui-widgets-common==0.2.0
+moderngl==5.12.0
+glcontext==3.0.0
+numpy==2.5.2
+pillow==13.0.0

@@ -1,0 +1,177 @@
+{
+  "schema_version": 1,
+  "source_revisions": {
+    "legacy_tests_commit": "cf7ab5c20ee8675f56aca7fe5395976a38e2e6e0",
+    "ovdnext_data_foundation_commit": "630e1d071522a06ceac534a5dd7e8ab7e65efdd8",
+    "combined_inventory_commit": "bb23606b38222baa409a3fb840e79b6a5c5a7c6e"
+  },
+  "required_configuration": "RelWithDebInfo",
+  "platform_scope": [
+    "windows-x86_64",
+    "linux-x86_64"
+  ],
+  "ctest": {
+    "legacy": {
+      "registered_count": 275,
+      "enabled_count": 270,
+      "disabled_count": 5
+    },
+    "ovdnext_data_foundation": {
+      "registered_count": 4,
+      "enabled_count": 4,
+      "disabled_count": 0
+    },
+    "combined": {
+      "registered_count": 279,
+      "enabled_count": 274,
+      "disabled_count": 5
+    },
+    "disabled_tests": [
+      "OvdLoaderTest.DumpSnapshotToStdout",
+      "RealWorldCaptures/OvdCaptureSmokeTest.DumpSnapshotToStdout/\"2026_04_01_15_21_33_0000019f4952a142.ovd\"",
+      "RealWorldCaptures/OvdCaptureSmokeTest.DumpSnapshotToStdout/\"2026_04_01_16_42_23_00000062b3443b1b.ovd\"",
+      "RealWorldCaptures/OvdCaptureSmokeTest.DumpSnapshotToStdout/\"snippet_meshes.ovd\"",
+      "RealWorldCaptures/OvdCaptureSmokeTest.DumpSnapshotToStdout/\"multi_geom.ovd\""
+    ],
+    "ovdnext_data_test_names": [
+      "ovddata_tests",
+      "ovddata_ingest_tests",
+      "ovddata_omnipvd_tests",
+      "ovdnext_data_probe_tests"
+    ],
+    "required_imported_test_names": [
+      "OvdLiveWorkflowTest.DisabledAcceptanceKeepsCaptureButStopsAutomaticRearm",
+      "OvdMemoryRecordingTest.DestroyedCaptureDoesNotLeakIntoNextListener",
+      "OvdMemoryRecordingTest.ExportRequiresJoinedWorkerEvenAfterProducerEnded",
+      "OvdMemoryRecordingTest.OptionalFileMatchesMemoryAndIsNotNeededForExport",
+      "OvdMemoryRecordingTest.PartialDestinationWriteFailsWithoutLosingRecording",
+      "OvdMemoryRecordingTest.RetentionOffExportsByteExactAndReloadsFromMemory",
+      "OvdMemoryRecordingTest.StreamLimitBoundsRetainedBytesAndRejectsExport",
+      "OvdMemoryRecordingTest.TruncatedCaptureRetainsConsumedBytesButCannotExport",
+      "OvdRecordingLibraryTest.RetentionDefaultsOffWhenSettingIsAbsent",
+      "OvdRepeatedLiveCaptureTest.AlreadyDisplayedFailedFinalizeAdoptsRetainedStagingPath",
+      "OvdRepeatedLiveCaptureTest.DisabledAcceptanceKeepsUsefulSocketCaptureWithoutRearmingListener",
+      "OvdRepeatedLiveCaptureTest.EmptyFinalizeFailureRemovesUndisplayedStagingFile",
+      "OvdRepeatedLiveCaptureTest.EmptyReconnectIsStoredWithoutReplacingUsefulCapture",
+      "OvdRepeatedLiveCaptureTest.FailedStagingCleanupKeepsPathRetryable",
+      "OvdRepeatedLiveCaptureTest.MissingDiscardCallbackConsumesEmptyEngineOwnership",
+      "OvdRepeatedLiveCaptureTest.MissingDisplayCallbackCleansFailedFinalizeStaging",
+      "OvdRepeatedLiveCaptureTest.MissingDisplayCallbackConsumesUsefulEngineOwnership",
+      "OvdRepeatedLiveCaptureTest.MissingDisplayCallbackPreservesAlreadyDisplayedEngineOwnership",
+      "OvdRepeatedLiveCaptureTest.NextUsefulReconnectGetsUniqueRecordingAndBecomesLatest",
+      "OvdRepeatedLiveCaptureTest.RejectedFinalizeFailureRemovesUndisplayedStagingFile",
+      "OvdRepeatedLiveCaptureTest.RejectedReconnectIsStoredWithoutReplacingUsefulCapture",
+      "OvdRepeatedLiveCaptureTest.RetentionDisabledStreamsWithoutCreatingARecording",
+      "OvdSessionClipFileTest.DestinationCreatedDuringWriteIsPreservedAtCommit",
+      "OvdSessionClipFileTest.FailedWritePreservesCompetingDestination",
+      "OvdSessionClipStoreTest.EmptyAndRejectedCapturesPreserveEarlierUsefulCapture",
+      "OvdSessionClipStoreTest.FailedSaveKeepsDestinationAndClipUsableForRetry",
+      "OvdSessionClipStoreTest.IdleListenerIsConsumedWithoutCreatingARow",
+      "OvdSessionClipStoreTest.RejectedHeaderIsRetainedWithoutACompletedConnection",
+      "OvdSessionClipStoreTest.RejectedSourceCannotReplaceDestinationOrLeaveAPartialSave",
+      "OvdSessionClipStoreTest.SaveLaterPreservesExactBytesAndSavedFileAfterRemoval",
+      "OvdSessionClipStoreTest.SequentialCapturesKeepEnginesWithoutCreatingFiles",
+      "SessionClipUiTest.AutoSaveWritesCompletedClipsAndCanBeDisabledForNextConnection",
+      "SessionClipUiTest.DefaultCapturesStayInMemoryAndOlderClipCanBeSelected",
+      "SessionClipUiTest.EmptyReconnectPreservesPreviousDisplayAndHistory",
+      "SessionClipUiTest.NewPreservesHistoryAndRemovingDisplayedClipLeavesOtherClipUsable",
+      "SessionClipUiTest.RejectedPreviewRestoresFileBackedReference",
+      "SessionClipUiTest.RejectedUsefulPreviewRestoresPreviousDisplayAndHistory"
+    ],
+    "allowed_runtime_skips": [
+      {
+        "name": "OvdInputValidationTest.FileLoaderAcceptsLargestAvailableCorpusCapture",
+        "reason": "largest local corpus capture is intentionally uncommitted"
+      },
+      {
+        "name": "OvdMultiSceneTest.FactoryChildrenHaveNoOwningScene",
+        "reason": "committed fixture may contain no PxMaterial"
+      },
+      {
+        "name": "OvdMultiSceneDeformableTest.DeformablesPartitionAcrossScenes",
+        "reason": "VolumeVolumeCollision capture is intentionally uncommitted"
+      },
+      {
+        "name": "ClipSaveUiTest.AccentedTemporaryDirectoryStillOpensPickerAndSavesClip",
+        "reason": "local native filename encoding cannot represent the accented fixture"
+      }
+    ],
+    "maximum_runtime_skip_count": 4,
+    "platform_exclusions": {
+      "windows-x86_64": [],
+      "linux-x86_64": [
+        {
+          "name": "PvdArchiveSecurityTest.RejectsEntryNamesThatDoNotFitZipEntryBuffer",
+          "reason": "_WIN32-guarded test exercises bundled minizip entry-name buffer handling linked only on Windows"
+        },
+        {
+          "name": "PvdArchiveSecurityTest.RejectsTruncatedExtendedTimestampField",
+          "reason": "_WIN32-guarded test exercises bundled minizip extended-timestamp parsing linked only on Windows"
+        }
+      ]
+    }
+  },
+  "pipeline": {
+    "legacy_job_count": 6,
+    "github_job_count": 8,
+    "pull_request_blocking_job_count": 4,
+    "job_mappings": [
+      {
+        "legacy_id": "prepare:release",
+        "category": "release_preparation",
+        "github_ids": [
+          "prepare-release"
+        ],
+        "disposition": "preserved"
+      },
+      {
+        "legacy_id": "verify:windows",
+        "category": "windows_verification",
+        "github_ids": [
+          "verify-root-windows",
+          "verify-ovdnext-data-windows"
+        ],
+        "disposition": "expanded"
+      },
+      {
+        "legacy_id": "verify:linux",
+        "category": "linux_verification",
+        "github_ids": [
+          "verify-root-linux",
+          "verify-ovdnext-data-linux"
+        ],
+        "disposition": "expanded"
+      },
+      {
+        "legacy_id": "package:windows",
+        "category": "windows_packaging",
+        "github_ids": [
+          "package-windows"
+        ],
+        "disposition": "preserved"
+      },
+      {
+        "legacy_id": "package:linux",
+        "category": "linux_packaging",
+        "github_ids": [
+          "package-linux"
+        ],
+        "disposition": "preserved"
+      },
+      {
+        "legacy_id": "release:merged-mr",
+        "category": "release_publication",
+        "github_ids": [
+          "publish-release"
+        ],
+        "disposition": "migrated"
+      }
+    ],
+    "pull_request_blocking_jobs": [
+      "verify-root-windows",
+      "verify-root-linux",
+      "verify-ovdnext-data-windows",
+      "verify-ovdnext-data-linux"
+    ]
+  }
+}

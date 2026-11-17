@@ -1,0 +1,201 @@
+{
+    "qt": "5.15.3",
+    "rows": [
+        {
+            "signed_ok": false,
+            "signed_value": "0",
+            "text": "",
+            "unsigned_ok": false,
+            "unsigned_value": "0"
+        },
+        {
+            "signed_ok": true,
+            "signed_value": "0",
+            "text": "0",
+            "unsigned_ok": true,
+            "unsigned_value": "0"
+        },
+        {
+            "signed_ok": true,
+            "signed_value": "0",
+            "text": "-0",
+            "unsigned_ok": false,
+            "unsigned_value": "0"
+        },
+        {
+            "signed_ok": true,
+            "signed_value": "-1",
+            "text": "-1",
+            "unsigned_ok": false,
+            "unsigned_value": "0"
+        },
+        {
+            "signed_ok": true,
+            "signed_value": "0",
+            "text": "+0",
+            "unsigned_ok": true,
+            "unsigned_value": "0"
+        },
+        {
+            "signed_ok": true,
+            "signed_value": "1",
+            "text": "+1",
+            "unsigned_ok": true,
+            "unsigned_value": "1"
+        },
+        {
+            "signed_ok": false,
+            "signed_value": "0",
+            "text": "  +42\\t",
+            "unsigned_ok": false,
+            "unsigned_value": "0"
+        },
+        {
+            "signed_ok": true,
+            "signed_value": "42",
+            "text": "\t+42\r\n",
+            "unsigned_ok": true,
+            "unsigned_value": "42"
+        },
+        {
+            "signed_ok": false,
+            "signed_value": "0",
+            "text": "1 2",
+            "unsigned_ok": false,
+            "unsigned_value": "0"
+        },
+        {
+            "signed_ok": false,
+            "signed_value": "0",
+            "text": "++1",
+            "unsigned_ok": false,
+            "unsigned_value": "0"
+        },
+        {
+            "signed_ok": false,
+            "signed_value": "0",
+            "text": "+ 1",
+            "unsigned_ok": false,
+            "unsigned_value": "0"
+        },
+        {
+            "signed_ok": true,
+            "signed_value": "42",
+            "text": "00000000000000000000000000000000000000000000000000042",
+            "unsigned_ok": true,
+            "unsigned_value": "42"
+        },
+        {
+            "signed_ok": false,
+            "signed_value": "0",
+            "text": "18446744073709551615",
+            "unsigned_ok": true,
+            "unsigned_value": "18446744073709551615"
+        },
+        {
+            "signed_ok": false,
+            "signed_value": "0",
+            "text": "18446744073709551616",
+            "unsigned_ok": false,
+            "unsigned_value": "0"
+        },
+        {
+            "signed_ok": false,
+            "signed_value": "0",
+            "text": "9223372036854775808",
+            "unsigned_ok": true,
+            "unsigned_value": "9223372036854775808"
+        },
+        {
+            "signed_ok": false,
+            "signed_value": "0",
+            "text": "0x10",
+            "unsigned_ok": false,
+            "unsigned_value": "0"
+        },
+        {
+            "signed_ok": false,
+            "signed_value": "0",
+            "text": "1_000",
+            "unsigned_ok": false,
+            "unsigned_value": "0"
+        },
+        {
+            "signed_ok": false,
+            "signed_value": "0",
+            "text": "12.0",
+            "unsigned_ok": false,
+            "unsigned_value": "0"
+        },
+        {
+            "signed_ok": false,
+            "signed_value": "0",
+            "text": "١٢",
+            "unsigned_ok": false,
+            "unsigned_value": "0"
+        },
+        {
+            "signed_ok": false,
+            "signed_value": "0",
+            "text": "１２",
+            "unsigned_ok": false,
+            "unsigned_value": "0"
+        },
+        {
+            "signed_ok": true,
+            "signed_value": "42",
+            "text": " 42 ",
+            "unsigned_ok": true,
+            "unsigned_value": "42"
+        },
+        {
+            "signed_ok": true,
+            "signed_value": "42",
+            "text": " 42 ",
+            "unsigned_ok": true,
+            "unsigned_value": "42"
+        },
+        {
+            "signed_ok": true,
+            "signed_value": "42",
+            "text": " 42",
+            "unsigned_ok": true,
+            "unsigned_value": "42"
+        },
+        {
+            "signed_ok": true,
+            "signed_value": "42",
+            "text": "42",
+            "unsigned_ok": true,
+            "unsigned_value": "42"
+        },
+        {
+            "signed_ok": false,
+            "signed_value": "0",
+            "text": "​42",
+            "unsigned_ok": false,
+            "unsigned_value": "0"
+        },
+        {
+            "signed_ok": false,
+            "signed_value": "0",
+            "text": "\u001c42",
+            "unsigned_ok": false,
+            "unsigned_value": "0"
+        },
+        {
+            "signed_ok": true,
+            "signed_value": "42",
+            "text": "42",
+            "unsigned_ok": true,
+            "unsigned_value": "42"
+        },
+        {
+            "signed_ok": true,
+            "signed_value": "42",
+            "text": "\u000b42\f",
+            "unsigned_ok": true,
+            "unsigned_value": "42"
+        }
+    ]
+}

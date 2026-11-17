@@ -1,0 +1,55 @@
+{
+  "bundle_sha256": "deb78879cf50e75d029b4cef7c6e1603c480b8c70be560bade601fedb9aa369e",
+  "fonttools": "4.64.0",
+  "fonts": {
+    "Geist-400.ttf": {
+      "sha256": "9236053e723083a001d660af0e6020f19400da57b6acacda7e814e7fa239ec37",
+      "bundle_assets": [
+        "dce5d2b8-6a17-4606-ae97-fc8a77111a53",
+        "4e993492-c27b-40f5-ba93-9071edeb00ee",
+        "302051de-52e3-4ebe-8d39-f42a43d91add",
+        "68b819b1-ee74-43ae-b5e3-09b72079ff6c",
+        "14972e48-4dec-4e47-a6d7-9a8fc71cc317"
+      ],
+      "glyph_count": 853
+    },
+    "Geist-500.ttf": {
+      "sha256": "8d8ef6d74e8bce41df84487e5f0a3b33744c9086f4f90d5c2152ad31a0fd7e3b",
+      "bundle_assets": [
+        "dce5d2b8-6a17-4606-ae97-fc8a77111a53",
+        "4e993492-c27b-40f5-ba93-9071edeb00ee",
+        "302051de-52e3-4ebe-8d39-f42a43d91add",
+        "68b819b1-ee74-43ae-b5e3-09b72079ff6c",
+        "14972e48-4dec-4e47-a6d7-9a8fc71cc317"
+      ],
+      "glyph_count": 853
+    },
+    "Geist-600.ttf": {
+      "sha256": "c86a342f5a767b40df289bfc1fe5d109461cec7dfafbb59c73200bbd18ea36ae",
+      "bundle_assets": [
+        "dce5d2b8-6a17-4606-ae97-fc8a77111a53",
+        "4e993492-c27b-40f5-ba93-9071edeb00ee",
+        "302051de-52e3-4ebe-8d39-f42a43d91add",
+        "68b819b1-ee74-43ae-b5e3-09b72079ff6c",
+        "14972e48-4dec-4e47-a6d7-9a8fc71cc317"
+      ],
+      "glyph_count": 853
+    },
+    "DMMono-400.ttf": {
+      "sha256": "ddc3ffedf48962c56fc56301fc8caad7f9e8b4f7aa2af199e4abf934e88a2eb3",
+      "bundle_assets": [
+        "7c821546-d561-4082-b911-8ec2017ddae0",
+        "d2cc7706-f1e2-4bcb-a01a-5f9ee66fd072"
+      ],
+      "glyph_count": 428
+    },
+    "DMMono-500.ttf": {
+      "sha256": "17856ef3a75d59793f4dd2f031561994d7a1b8d9e1b48464baba84be741f3e72",
+      "bundle_assets": [
+        "1af89a91-203e-44dc-b970-88e11ef0efec",
+        "d7e39e19-e28b-4e0b-976d-200f535eaca1"
+      ],
+      "glyph_count": 428
+    }
+  }
+}

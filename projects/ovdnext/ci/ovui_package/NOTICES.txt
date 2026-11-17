@@ -1,0 +1,13 @@
+OVD Viewer runtime notice provenance
+====================================
+
+NVIDIA application source is covered by LICENSE and NOTICE. Vendored
+PxShared retains its per-file notices and licenses/PxShared-BSD-3-Clause.txt.
+Geist and DM Mono fonts retain their complete OFL texts and source/hash
+manifest in python/ovd_ui/assets/fonts/.
+
+Runtime dependencies retain their own terms. Packaging collects notices
+from the pinned Physics/OvUI inputs, CPython/runtime notice files and
+dependency wheel metadata. The matching runtime component inventory and
+licensing/source companion remain authoritative for each qualified ZIP.
+See licenses/THIRD_PARTY_NOTICES.txt and SOURCE_DISTRIBUTION.md.

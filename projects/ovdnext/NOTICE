@@ -1,0 +1,13 @@
+OVD Viewer
+Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+
+NVIDIA-authored OVD Viewer software is licensed under Apache-2.0 unless an
+individual file states otherwise. Historical copyright notices remain in effect.
+The 23 legacy PVDCore notices retain their original 2008-2014 or 2008-2016
+years and original copyright lines, with the policy SPDX header added above.
+AGEIA and NovodeX notices in SimpleXmlWriter.h are preserved.
+
+Vendored PxShared retains its BSD-3-Clause notices. Bundled Geist and DM Mono
+fonts retain the SIL Open Font License. Dependencies and runtime components
+retain their own terms; the application license does not relicense them.
+See licenses/THIRD_PARTY_NOTICES.txt and SOURCE_DISTRIBUTION.md.

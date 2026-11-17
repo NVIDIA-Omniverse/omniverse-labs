@@ -1,0 +1,1284 @@
+{
+  "schema_version": 1,
+  "source_revisions": {
+    "legacy_tests_commit": "cf7ab5c20ee8675f56aca7fe5395976a38e2e6e0",
+    "ovdnext_data_foundation_commit": "630e1d071522a06ceac534a5dd7e8ab7e65efdd8",
+    "combined_inventory_commit": "bb23606b38222baa409a3fb840e79b6a5c5a7c6e"
+  },
+  "required_configuration": "RelWithDebInfo",
+  "platform_scope": [
+    "windows-x86_64",
+    "linux-x86_64"
+  ],
+  "ctest": {
+    "legacy": {
+      "registered_count": 275,
+      "enabled_count": 270,
+      "disabled_count": 5,
+      "tests": [
+        {
+          "name": "PvdEngineTest.LoadFile_apex_destruction",
+          "disabled": false
+        },
+        {
+          "name": "PvdEngineTest.LoadFile_cloth_physx34",
+          "disabled": false
+        },
+        {
+          "name": "PvdEngineTest.LoadFile_ue4_shooter",
+          "disabled": false
+        },
+        {
+          "name": "PvdEngineTest.RawMemoryBufferRejectsWraparoundGrowth",
+          "disabled": false
+        },
+        {
+          "name": "PvdEngineTest.TemporaryStreamNeverTruncatesAnExistingPath",
+          "disabled": false
+        },
+        {
+          "name": "PvdEngineTest.StreamLoadReleasesSourceAndTemporaryBackingOnDestroy",
+          "disabled": false
+        },
+        {
+          "name": "PvdEngineTest.ObjectModelRejectsOversizedScalarAndArrayElementWrites",
+          "disabled": false
+        },
+        {
+          "name": "PvdEngineTest.PropertyMessageMetadataRejectsWrappedEntryRange",
+          "disabled": false
+        },
+        {
+          "name": "PvdEngineTest.PropertyMessagesRejectMismatchedAndArrayTargets",
+          "disabled": false
+        },
+        {
+          "name": "PvdEngineTest.MetadataRejectsSelfAndCyclicDerivation",
+          "disabled": false
+        },
+        {
+          "name": "PvdEngineTest.MetadataRejectsDerivingAClassWithExistingLayout",
+          "disabled": false
+        },
+        {
+          "name": "PvdEngineTest.InstantiationLocksClassLayout",
+          "disabled": false
+        },
+        {
+          "name": "PvdEngineTest.ArrayPropertiesLockElementLayouts",
+          "disabled": false
+        },
+        {
+          "name": "PvdEngineTest.MetadataLimitsClassAncestryDepth",
+          "disabled": false
+        },
+        {
+          "name": "PvdEngineTest.MetadataConvenienceOverloadsRejectUnknownClasses",
+          "disabled": false
+        },
+        {
+          "name": "PvdEngineTest.ObjectModelRejectsUnknownClassWithoutDereference",
+          "disabled": false
+        },
+        {
+          "name": "PvdEngineTest.ObjectModelRejectsOversizedInstanceData",
+          "disabled": false
+        },
+        {
+          "name": "PvdEngineTest.ObjectModelPreservesInstanceWhenResizeAllocationFails",
+          "disabled": false
+        },
+        {
+          "name": "PvdEngineTest.ObjectModelLocksClassAfterInstanceCreation",
+          "disabled": false
+        },
+        {
+          "name": "PvdEngineTest.ObjectModelHandlesInstanceAllocationFailure",
+          "disabled": false
+        },
+        {
+          "name": "PvdEngineTest.ObjectModelRejectsCrossClassInstanceReuse",
+          "disabled": false
+        },
+        {
+          "name": "PvdEngineTest.ObjectModelRejectsExhaustedInstanceHandles",
+          "disabled": false
+        },
+        {
+          "name": "PvdEngineTest.ObjectModelRejectsOutOfRangeArrayRemoval",
+          "disabled": false
+        },
+        {
+          "name": "PvdEngineTest.ObjectModelOriginShiftAcceptsNullInstance",
+          "disabled": false
+        },
+        {
+          "name": "PvdEngineUE4ShooterTest.SceneNumber",
+          "disabled": false
+        },
+        {
+          "name": "PvdEngineApexDestructionTest.SceneNumber",
+          "disabled": false
+        },
+        {
+          "name": "PvdEngineApexDestructionTest.FrameCount",
+          "disabled": false
+        },
+        {
+          "name": "PvdEngineApexDestructionTest.EventCount",
+          "disabled": false
+        },
+        {
+          "name": "PvdEngineApexDestructionTest.ClassCount",
+          "disabled": false
+        },
+        {
+          "name": "PvdEngineApexDestructionTest.ProfileZonesCount",
+          "disabled": false
+        },
+        {
+          "name": "PvdEngineApexDestructionTest.InstancesCount",
+          "disabled": false
+        },
+        {
+          "name": "PvdEngineApexDestructionTest.InstancesCountAtFrame1",
+          "disabled": false
+        },
+        {
+          "name": "PvdEngineApexDestructionTest.InstancesCountAtFrame128",
+          "disabled": false
+        },
+        {
+          "name": "PvdEngineApexDestructionTest.InstancesCountAtFrame256",
+          "disabled": false
+        },
+        {
+          "name": "PvdEngineApexDestructionTest.MemoryEventEntriesCount",
+          "disabled": false
+        },
+        {
+          "name": "PvdEngineApexDestructionTest.MemoryTotalsCount",
+          "disabled": false
+        },
+        {
+          "name": "PvdEngineApexDestructionTest.MemoryTotalsCountAtFrame1",
+          "disabled": false
+        },
+        {
+          "name": "PvdEngineApexDestructionTest.MemoryTotalsCountAtFrame128",
+          "disabled": false
+        },
+        {
+          "name": "PvdEngineApexDestructionTest.ScrollFrame",
+          "disabled": false
+        },
+        {
+          "name": "PvdLoaderApiCompatibilityTest.RetainsLegacyVirtualOverrideSignatures",
+          "disabled": false
+        },
+        {
+          "name": "PvdLoaderTest.OrdinaryEofCompletesAHeaderOnlyCapture",
+          "disabled": false
+        },
+        {
+          "name": "PvdLoaderTest.RejectsTruncatedStreamInitializationHeader",
+          "disabled": false
+        },
+        {
+          "name": "PvdLoaderTest.RejectsZeroTimestampDenominator",
+          "disabled": false
+        },
+        {
+          "name": "PvdLoaderTest.RejectsUnsupportedStreamVersion",
+          "disabled": false
+        },
+        {
+          "name": "PvdLoaderTest.RejectsUnknownStreamFlags",
+          "disabled": false
+        },
+        {
+          "name": "PvdLoaderTest.RejectsPhysicalEofDuringSetPropertyValue",
+          "disabled": false
+        },
+        {
+          "name": "PvdLoaderTest.RejectsUnrelatedEventInsideSetPropertyValueGroupImmediately",
+          "disabled": false
+        },
+        {
+          "name": "PvdLoaderTest.RejectsStreamEndDuringSetPropertyValue",
+          "disabled": false
+        },
+        {
+          "name": "PvdLoaderTest.RejectedEventGroupFailsTheWholeLoad",
+          "disabled": false
+        },
+        {
+          "name": "PvdLoaderTest.StreamEndDoesNotHideALaterMalformedGroup",
+          "disabled": false
+        },
+        {
+          "name": "PvdLoaderTest.RejectsEventsAfterStreamEndForTheSameStream",
+          "disabled": false
+        },
+        {
+          "name": "PvdLoaderTest.AllowsAnotherStreamAfterStreamEnd",
+          "disabled": false
+        },
+        {
+          "name": "PvdLoaderTest.StreamEndMustBeTheFinalEventInItsGroup",
+          "disabled": false
+        },
+        {
+          "name": "PvdLoaderTest.RejectsUndeclaredTrailingEventBytes",
+          "disabled": false
+        },
+        {
+          "name": "PvdLoaderTest.ZeroByteChunkRequestStillProcessesAvailableData",
+          "disabled": false
+        },
+        {
+          "name": "PvdLoaderTest.RejectedStreamEndReleasesIncompleteSpvState",
+          "disabled": false
+        },
+        {
+          "name": "PvdLoaderTest.RejectsTooManyParserStreamsAcrossFreshStreamIds",
+          "disabled": false
+        },
+        {
+          "name": "PvdLoaderTest.RejectsTooManyIncompleteSpvStatesAcrossFreshStreamIds",
+          "disabled": false
+        },
+        {
+          "name": "PvdLoaderTest.RejectsAggregateRetainedSpvBytesAcrossFreshStreamIds",
+          "disabled": false
+        },
+        {
+          "name": "PvdLoaderTest.ReusesConversionScratchAcrossParserStreams",
+          "disabled": false
+        },
+        {
+          "name": "OvdInputValidationTest.RejectsOversizeDeclaredPayloadBeforePayloadSizedInnerRead",
+          "disabled": false
+        },
+        {
+          "name": "OvdInputValidationTest.RejectsAttributeHandleDepthAboveRuntimeStack",
+          "disabled": false
+        },
+        {
+          "name": "OvdInputValidationTest.RejectsCumulativeAttributePayloadBeforeThirdDomApply",
+          "disabled": false
+        },
+        {
+          "name": "OvdInputValidationTest.RejectsFixedWidthPayloadThatDoesNotMatchRegisteredShape",
+          "disabled": false
+        },
+        {
+          "name": "OvdInputValidationTest.VariableWidthArrayRequiresWholeRegisteredElements",
+          "disabled": false
+        },
+        {
+          "name": "OvdInputValidationTest.RejectsMutationCommandThatDoesNotMatchAttributeKind",
+          "disabled": false
+        },
+        {
+          "name": "OvdInputValidationTest.ReportsOnlyReferenceAttributeMutationsAsTopologyRelevant",
+          "disabled": false
+        },
+        {
+          "name": "OvdInputValidationTest.RejectsNarrowSchemaForFixedWidthPhysxParserHook",
+          "disabled": false
+        },
+        {
+          "name": "OvdInputValidationTest.RejectsNarrowSchemaForGeometryReferenceHook",
+          "disabled": false
+        },
+        {
+          "name": "OvdInputValidationTest.RejectsNarrowRetainedParentLinkBeforeChildLinkUsesIt",
+          "disabled": false
+        },
+        {
+          "name": "OvdInputValidationTest.RejectsNarrowIntegrationVersionBeforeNextObjectUsesIt",
+          "disabled": false
+        },
+        {
+          "name": "OvdInputValidationTest.DistinguishesCleanEofFromTruncatedAndUnknownCommands",
+          "disabled": false
+        },
+        {
+          "name": "OvdInputValidationTest.AcceptsPre03RegisterClassLayoutWithoutBaseHandle",
+          "disabled": false
+        },
+        {
+          "name": "OvdInputValidationTest.UsesBaseClassFieldForNonzeroMajorEvenWhenMinorIsBelow3",
+          "disabled": false
+        },
+        {
+          "name": "OvdInputValidationTest.DuplicateClassHandleCannotEraseRetainedAttributeSlots",
+          "disabled": false
+        },
+        {
+          "name": "OvdInputValidationTest.RejectsAttributeBeforeItsClassCanPoisonInheritanceAccounting",
+          "disabled": false
+        },
+        {
+          "name": "OvdInputValidationTest.RejectsClassWithUnregisteredBase",
+          "disabled": false
+        },
+        {
+          "name": "OvdInputValidationTest.ChargesQuadraticInheritedClassState",
+          "disabled": false
+        },
+        {
+          "name": "OvdInputValidationTest.ChargesSyntheticDomNodesForObjectHandlePayloads",
+          "disabled": false
+        },
+        {
+          "name": "OvdInputValidationTest.RecreatedExternalOwnerGetsFreshSyntheticNodeCharges",
+          "disabled": false
+        },
+        {
+          "name": "OvdInputValidationTest.ChargesLateAttributeVectorGrowthForExistingObjects",
+          "disabled": false
+        },
+        {
+          "name": "OvdInputValidationTest.StreamByteBudgetAcceptsExactAndRejectsOneOver",
+          "disabled": false
+        },
+        {
+          "name": "OvdInputValidationTest.ClassBudgetRejectsOneOver",
+          "disabled": false
+        },
+        {
+          "name": "OvdInputValidationTest.TotalAndPerClassAttributeBudgetsRejectOneOver",
+          "disabled": false
+        },
+        {
+          "name": "OvdInputValidationTest.ObjectCreateBudgetRejectsOneOver",
+          "disabled": false
+        },
+        {
+          "name": "OvdInputValidationTest.MessageBudgetRejectsOneOver",
+          "disabled": false
+        },
+        {
+          "name": "OvdInputValidationTest.LiveBudgetFailureStopsBeforeOverBudgetDomApplyAndJoins",
+          "disabled": false
+        },
+        {
+          "name": "OvdInputValidationTest.LiveMalformedPayloadIsRejectedAndWorkerStopsCleanly",
+          "disabled": false
+        },
+        {
+          "name": "OvdInputValidationTest.LiveCyclicTopologyIsRejectedBeforeStoppedFramePublication",
+          "disabled": false
+        },
+        {
+          "name": "OvdInputValidationTest.StopCancelsConnectedIdleProducerPromptly",
+          "disabled": false
+        },
+        {
+          "name": "OvdInputValidationTest.FileLoaderRejectsMalformedFixedWidthPayload",
+          "disabled": false
+        },
+        {
+          "name": "OvdInputValidationTest.FileLoaderRejectsCyclicDomBeforeAdapterPublication",
+          "disabled": false
+        },
+        {
+          "name": "OvdInputValidationTest.FileLoaderRejectsTinyCommandBudgetAndClearsGlobalMessages",
+          "disabled": false
+        },
+        {
+          "name": "OvdInputValidationTest.FileLoaderReportsStableOpenFailure",
+          "disabled": false
+        },
+        {
+          "name": "OvdInputValidationTest.FileLoaderAcceptsRepresentativeCaptureWithDefaultBudgets",
+          "disabled": false
+        },
+        {
+          "name": "OvdInputValidationTest.FileLoaderAcceptsLargestAvailableCorpusCapture",
+          "disabled": false
+        },
+        {
+          "name": "OvdLoaderTest.LoadOvdFile",
+          "disabled": false
+        },
+        {
+          "name": "OvdLoaderTest.LoadNonExistentOvdReturnsEmptyEngine",
+          "disabled": false
+        },
+        {
+          "name": "OvdLoaderTest.SceneCount",
+          "disabled": false
+        },
+        {
+          "name": "OvdLoaderTest.SceneHasStreamId",
+          "disabled": false
+        },
+        {
+          "name": "OvdLoaderTest.FrameCountPositive",
+          "disabled": false
+        },
+        {
+          "name": "OvdLoaderTest.ClassCountNonZero",
+          "disabled": false
+        },
+        {
+          "name": "OvdLoaderTest.ClassCountAtLeast64",
+          "disabled": false
+        },
+        {
+          "name": "OvdLoaderTest.FindPxSceneClass",
+          "disabled": false
+        },
+        {
+          "name": "OvdLoaderTest.FindPxRigidDynamicClass",
+          "disabled": false
+        },
+        {
+          "name": "OvdLoaderTest.FindPxMaterialClass",
+          "disabled": false
+        },
+        {
+          "name": "OvdLoaderTest.FindPxShapeClass",
+          "disabled": false
+        },
+        {
+          "name": "OvdLoaderTest.FindPxSphereGeometryClass",
+          "disabled": false
+        },
+        {
+          "name": "OvdLoaderTest.PxSceneHasGravityProperty",
+          "disabled": false
+        },
+        {
+          "name": "OvdLoaderTest.PxRigidDynamicHasMassProperty",
+          "disabled": false
+        },
+        {
+          "name": "OvdLoaderTest.PxRigidDynamicHasGlobalPoseProperty",
+          "disabled": false
+        },
+        {
+          "name": "OvdLoaderTest.PxRigidDynamicHasLinearVelocityProperty",
+          "disabled": false
+        },
+        {
+          "name": "OvdLoaderTest.PxMaterialHasStaticFrictionProperty",
+          "disabled": false
+        },
+        {
+          "name": "OvdLoaderTest.PxShapeHasLocalPoseProperty",
+          "disabled": false
+        },
+        {
+          "name": "OvdLoaderTest.PropertyCountOnPxScene",
+          "disabled": false
+        },
+        {
+          "name": "OvdLoaderTest.PxRigidDynamicPropertyListCoversFullChain",
+          "disabled": false
+        },
+        {
+          "name": "OvdLoaderTest.PxRigidStaticHasOnlyInheritedProperties",
+          "disabled": false
+        },
+        {
+          "name": "OvdLoaderTest.PropertyOwnerClassNamesTraceToAncestors",
+          "disabled": false
+        },
+        {
+          "name": "OvdLoaderTest.EnumAttributesGetEnumerationSemantic",
+          "disabled": false
+        },
+        {
+          "name": "OvdLoaderTest.PxRigidDynamicPropertyOwnersAreOnlyAncestors",
+          "disabled": false
+        },
+        {
+          "name": "OvdLoaderTest.InstanceCount",
+          "disabled": false
+        },
+        {
+          "name": "OvdLoaderTest.InstancesAreAlive",
+          "disabled": false
+        },
+        {
+          "name": "OvdLoaderTest.InstanceClassesValid",
+          "disabled": false
+        },
+        {
+          "name": "OvdLoaderTest.HasPxSceneInstance",
+          "disabled": false
+        },
+        {
+          "name": "OvdLoaderTest.HasPxRigidDynamicInstance",
+          "disabled": false
+        },
+        {
+          "name": "OvdLoaderTest.HasPxMaterialInstance",
+          "disabled": false
+        },
+        {
+          "name": "OvdLoaderTest.HasPxShapeInstance",
+          "disabled": false
+        },
+        {
+          "name": "OvdLoaderTest.PxSceneGravityValue",
+          "disabled": false
+        },
+        {
+          "name": "OvdLoaderTest.PxRigidDynamicMassPositive",
+          "disabled": false
+        },
+        {
+          "name": "OvdLoaderTest.PxSphereGeometryRadiusPositive",
+          "disabled": false
+        },
+        {
+          "name": "OvdLoaderTest.PxMaterialRestitutionInRange",
+          "disabled": false
+        },
+        {
+          "name": "OvdLoaderTest.SomeInstancesAreTopLevel",
+          "disabled": false
+        },
+        {
+          "name": "OvdLoaderTest.SceneRemainsNestedWhenPhysicsRootExists",
+          "disabled": false
+        },
+        {
+          "name": "OvdLoaderTest.EventCountZeroForDomAdapter",
+          "disabled": false
+        },
+        {
+          "name": "OvdLoaderTest.LoadPxd2StillWorks",
+          "disabled": false
+        },
+        {
+          "name": "OvdLoaderTest.DumpSnapshotToStdout",
+          "disabled": true
+        },
+        {
+          "name": "OvdLoaderTest.SnapshotFrame1IsNonEmptyAndPosesFinite",
+          "disabled": false
+        },
+        {
+          "name": "OvdLoaderTest.SnapshotIsDeterministic",
+          "disabled": false
+        },
+        {
+          "name": "OvdLoaderTest.SnapshotDiffersAcrossFramesWhenSimulating",
+          "disabled": false
+        },
+        {
+          "name": "OvdLoaderTest.OvdStringPropertiesExposeACompleteHandle",
+          "disabled": false
+        },
+        {
+          "name": "OvdDomAdapterIdentityTest.PublishedInternalKeyDoesNotAliasCollidingExternalHandle",
+          "disabled": false
+        },
+        {
+          "name": "OvdDomAdapterIdentityTest.KnownSegmentDoesNotFallBackToPriorSegmentCandidates",
+          "disabled": false
+        },
+        {
+          "name": "OvdDomAdapterIdentityTest.DomSegmentMetadataOverridesChangedSchemaOrder",
+          "disabled": false
+        },
+        {
+          "name": "OvdDomAdapterEpochTest.SchemaReregistrationAdvancesSegmentEpoch",
+          "disabled": false
+        },
+        {
+          "name": "OvdLiveSegmentEpochStateTest.PublishesSchemaEpochOnlyAtCompletedFrameBoundary",
+          "disabled": false
+        },
+        {
+          "name": "OvdLiveSegmentEpochStateTest.ExactMetadataDetectsDisjointSchemaAtEqualRawFrame",
+          "disabled": false
+        },
+        {
+          "name": "OvdLivePollDecisionTest.EqualRawFrameInNewSegmentInvalidatesCacheAndRerenders",
+          "disabled": false
+        },
+        {
+          "name": "OvdDomAdapterRootTest.MixedPhysicsAndRootlessScenesStayReachableAfterRebuild",
+          "disabled": false
+        },
+        {
+          "name": "OvdDomAdapterTopologyTest.RejectsSceneActorParentCycleWithoutPublishingInstances",
+          "disabled": false
+        },
+        {
+          "name": "OvdMultiSceneTest.FixtureLoads",
+          "disabled": false
+        },
+        {
+          "name": "OvdMultiSceneTest.HasAtLeastTwoSceneInstances",
+          "disabled": false
+        },
+        {
+          "name": "OvdMultiSceneTest.SceneHasNoOwningScene",
+          "disabled": false
+        },
+        {
+          "name": "OvdMultiSceneTest.EveryRigidActorHasValidOwningScene",
+          "disabled": false
+        },
+        {
+          "name": "OvdMultiSceneTest.FactoryChildrenHaveNoOwningScene",
+          "disabled": false
+        },
+        {
+          "name": "OvdMultiSceneDeformableTest.DeformablesPartitionAcrossScenes",
+          "disabled": false
+        },
+        {
+          "name": "OvdResampleTest.FixtureLoads",
+          "disabled": false
+        },
+        {
+          "name": "OvdResampleTest.HasTwoSceneInstances",
+          "disabled": false
+        },
+        {
+          "name": "OvdResampleTest.SceneActorRefsResolveToOwnSegment",
+          "disabled": false
+        },
+        {
+          "name": "OvdResampleTest.ActorShapeRefsResolveToOwnSegment",
+          "disabled": false
+        },
+        {
+          "name": "OvdResampleTest.ExternalActorHandlesResolveWithinReferringScene",
+          "disabled": false
+        },
+        {
+          "name": "OvdLiveResampleTest.CandidateRaceIsRejectedWithoutOverwrite",
+          "disabled": false
+        },
+        {
+          "name": "OvdLiveResampleTest.CandidateIsExclusivelyCreatedAndRecordsLoadableStream",
+          "disabled": false
+        },
+        {
+          "name": "OvdLiveResampleTest.CleanEofPublishesIndexChangesAfterTheLastFrame",
+          "disabled": false
+        },
+        {
+          "name": "OvdLiveResampleTest.CompletedCaptureRemainsReadableWhileNextListenerUsesSamePort",
+          "disabled": false
+        },
+        {
+          "name": "OvdLiveResampleTest.MidConnectionResampleIngestsSegmentConsistently",
+          "disabled": false
+        },
+        {
+          "name": "OvdLiveResampleTest.RefreshDefersWhileNextFrameHasPartialSchema",
+          "disabled": false
+        },
+        {
+          "name": "OvdRepeatedLiveCaptureTest.EmptyReconnectIsStoredWithoutReplacingUsefulCapture",
+          "disabled": false
+        },
+        {
+          "name": "OvdRepeatedLiveCaptureTest.RejectedReconnectIsStoredWithoutReplacingUsefulCapture",
+          "disabled": false
+        },
+        {
+          "name": "OvdRepeatedLiveCaptureTest.NextUsefulReconnectGetsUniqueRecordingAndBecomesLatest",
+          "disabled": false
+        },
+        {
+          "name": "OvdRepeatedLiveCaptureTest.RetentionDisabledStreamsWithoutCreatingARecording",
+          "disabled": false
+        },
+        {
+          "name": "OvdRepeatedLiveCaptureTest.DisabledAcceptanceKeepsUsefulSocketCaptureWithoutRearmingListener",
+          "disabled": false
+        },
+        {
+          "name": "OvdRepeatedLiveCaptureTest.EmptyFinalizeFailureRemovesUndisplayedStagingFile",
+          "disabled": false
+        },
+        {
+          "name": "OvdRepeatedLiveCaptureTest.RejectedFinalizeFailureRemovesUndisplayedStagingFile",
+          "disabled": false
+        },
+        {
+          "name": "OvdRepeatedLiveCaptureTest.MissingDisplayCallbackConsumesUsefulEngineOwnership",
+          "disabled": false
+        },
+        {
+          "name": "OvdRepeatedLiveCaptureTest.MissingDiscardCallbackConsumesEmptyEngineOwnership",
+          "disabled": false
+        },
+        {
+          "name": "OvdRepeatedLiveCaptureTest.MissingDisplayCallbackPreservesAlreadyDisplayedEngineOwnership",
+          "disabled": false
+        },
+        {
+          "name": "OvdRepeatedLiveCaptureTest.MissingDisplayCallbackCleansFailedFinalizeStaging",
+          "disabled": false
+        },
+        {
+          "name": "OvdRepeatedLiveCaptureTest.AlreadyDisplayedFailedFinalizeAdoptsRetainedStagingPath",
+          "disabled": false
+        },
+        {
+          "name": "OvdRepeatedLiveCaptureTest.FailedStagingCleanupKeepsPathRetryable",
+          "disabled": false
+        },
+        {
+          "name": "OvdMemoryRecordingTest.RetentionOffExportsByteExactAndReloadsFromMemory",
+          "disabled": false
+        },
+        {
+          "name": "OvdMemoryRecordingTest.ExportRequiresJoinedWorkerEvenAfterProducerEnded",
+          "disabled": false
+        },
+        {
+          "name": "OvdMemoryRecordingTest.PartialDestinationWriteFailsWithoutLosingRecording",
+          "disabled": false
+        },
+        {
+          "name": "OvdMemoryRecordingTest.OptionalFileMatchesMemoryAndIsNotNeededForExport",
+          "disabled": false
+        },
+        {
+          "name": "OvdMemoryRecordingTest.TruncatedCaptureRetainsConsumedBytesButCannotExport",
+          "disabled": false
+        },
+        {
+          "name": "OvdMemoryRecordingTest.StreamLimitBoundsRetainedBytesAndRejectsExport",
+          "disabled": false
+        },
+        {
+          "name": "OvdMemoryRecordingTest.DestroyedCaptureDoesNotLeakIntoNextListener",
+          "disabled": false
+        },
+        {
+          "name": "OvdSessionClipStoreTest.SequentialCapturesKeepEnginesWithoutCreatingFiles",
+          "disabled": false
+        },
+        {
+          "name": "OvdSessionClipStoreTest.EmptyAndRejectedCapturesPreserveEarlierUsefulCapture",
+          "disabled": false
+        },
+        {
+          "name": "OvdSessionClipStoreTest.IdleListenerIsConsumedWithoutCreatingARow",
+          "disabled": false
+        },
+        {
+          "name": "OvdSessionClipStoreTest.RejectedHeaderIsRetainedWithoutACompletedConnection",
+          "disabled": false
+        },
+        {
+          "name": "OvdSessionClipStoreTest.SaveLaterPreservesExactBytesAndSavedFileAfterRemoval",
+          "disabled": false
+        },
+        {
+          "name": "OvdSessionClipStoreTest.FailedSaveKeepsDestinationAndClipUsableForRetry",
+          "disabled": false
+        },
+        {
+          "name": "OvdSessionClipStoreTest.RejectedSourceCannotReplaceDestinationOrLeaveAPartialSave",
+          "disabled": false
+        },
+        {
+          "name": "OvdSessionClipFileTest.DestinationCreatedDuringWriteIsPreservedAtCommit",
+          "disabled": false
+        },
+        {
+          "name": "OvdSessionClipFileTest.FailedWritePreservesCompetingDestination",
+          "disabled": false
+        },
+        {
+          "name": "OvdLiveWorkflowTest.NormalLaunchListensOnDefaultPort",
+          "disabled": false
+        },
+        {
+          "name": "OvdLiveWorkflowTest.NormalLaunchReusesSavedPort",
+          "disabled": false
+        },
+        {
+          "name": "OvdLiveWorkflowTest.PositionalCaptureOpensFileInsteadOfListening",
+          "disabled": false
+        },
+        {
+          "name": "OvdLiveWorkflowTest.ExplicitConnectOverridesPositionalCapture",
+          "disabled": false
+        },
+        {
+          "name": "OvdLiveWorkflowTest.NewCaptureReusesCurrentLivePort",
+          "disabled": false
+        },
+        {
+          "name": "OvdLiveWorkflowTest.NewCaptureFallsBackToSavedThenDefaultPort",
+          "disabled": false
+        },
+        {
+          "name": "OvdLiveWorkflowTest.UsefulCaptureRequiresSceneAndPublishedFrame",
+          "disabled": false
+        },
+        {
+          "name": "OvdLiveWorkflowTest.EmptyCompletedCaptureIsStoredButNotDisplayed",
+          "disabled": false
+        },
+        {
+          "name": "OvdLiveWorkflowTest.UsefulCompletedCaptureIsDisplayedWhileFollowingLatest",
+          "disabled": false
+        },
+        {
+          "name": "OvdLiveWorkflowTest.BrowsingHistoryStoresUsefulCaptureWithoutReplacingDisplay",
+          "disabled": false
+        },
+        {
+          "name": "OvdLiveWorkflowTest.DisabledRetentionWritesNoFileButKeepsLiveDisplay",
+          "disabled": false
+        },
+        {
+          "name": "OvdLiveWorkflowTest.DisabledAcceptanceKeepsCaptureButStopsAutomaticRearm",
+          "disabled": false
+        },
+        {
+          "name": "OvdLiveWorkflowTest.RetentionChangeRearmsOnlyAnIdleListener",
+          "disabled": false
+        },
+        {
+          "name": "OvdLiveWorkflowTest.BrowsingHistoryKeepsListenerAndDisablesAutoFollow",
+          "disabled": false
+        },
+        {
+          "name": "OvdLiveWorkflowTest.SelectingActiveRecordingResumesAutoFollow",
+          "disabled": false
+        },
+        {
+          "name": "OvdLiveWorkflowTest.NewClearsDisplayButKeepsSavedHistoryAndRearms",
+          "disabled": false
+        },
+        {
+          "name": "OvdLiveWorkflowTest.NewDoesNotRearmWhenConnectionsAreDisabled",
+          "disabled": false
+        },
+        {
+          "name": "OvdRecordingLibraryTest.SameMillisecondCandidatesRemainDistinctAndOrdered",
+          "disabled": false
+        },
+        {
+          "name": "OvdRecordingLibraryTest.ReloadFindsOnlyOvdFilesNewestFirst",
+          "disabled": false
+        },
+        {
+          "name": "OvdRecordingLibraryTest.RemoveRejectsPathsOutsideLibrary",
+          "disabled": false
+        },
+        {
+          "name": "OvdRecordingLibraryTest.RemoveDeletesAnInactiveRecordingInsideLibrary",
+          "disabled": false
+        },
+        {
+          "name": "OvdRecordingLibraryTest.RetentionDefaultsOffWhenSettingIsAbsent",
+          "disabled": false
+        },
+        {
+          "name": "OvdRecordingLibraryTest.StagingFileBecomesDiscoverableOnlyAfterFinalize",
+          "disabled": false
+        },
+        {
+          "name": "OvdRecordingLibraryTest.FinalizeNeverOverwritesAnExistingRecording",
+          "disabled": false
+        },
+        {
+          "name": "PvdRandomAccessIOStreamTest.PreservesRemainingLengthAboveFourGiB",
+          "disabled": false
+        },
+        {
+          "name": "PvdRandomAccessIOStreamTest.TreatsOffsetPastCachedLengthAsEof",
+          "disabled": false
+        },
+        {
+          "name": "PvdInputValidationTest.ConfinesArchiveEntriesToExtractionRoot",
+          "disabled": false
+        },
+        {
+          "name": "PvdInputValidationTest.RejectsOversizedEventGroupsAndQueueGrowth",
+          "disabled": false
+        },
+        {
+          "name": "PvdInputValidationTest.ComputesArrayCapacityWithoutOverflow",
+          "disabled": false
+        },
+        {
+          "name": "PvdInputValidationTest.RejectsPropertyCountAndAccumulatorOverflow",
+          "disabled": false
+        },
+        {
+          "name": "PvdInputValidationTest.ZeroPadsShortStringHandles",
+          "disabled": false
+        },
+        {
+          "name": "PvdInputValidationTest.GeneratesUniqueBackingPathsWithoutFixedBuffers",
+          "disabled": false
+        },
+        {
+          "name": "PvdInputValidationTest.GeneratesDistinctLiveCaptureCandidatesForSameTimestamp",
+          "disabled": false
+        },
+        {
+          "name": "PvdInputValidationTest.LiveCaptureCandidateDoesNotReplaceExistingFile",
+          "disabled": false
+        },
+        {
+          "name": "PvdArchiveSecurityTest.RejectsNamesWithWindowsFilesystemAliases",
+          "disabled": false
+        },
+        {
+          "name": "PvdArchiveSecurityTest.RejectsAmbiguousOrOverlongEntryComponents",
+          "disabled": false
+        },
+        {
+          "name": "PvdArchiveSecurityTest.KeepsFreeSpaceInReserveWithoutCappingLargeCaptures",
+          "disabled": false
+        },
+        {
+          "name": "PvdArchiveSecurityTest.RejectsEntryNamesThatDoNotFitZipEntryBuffer",
+          "disabled": false
+        },
+        {
+          "name": "PvdArchiveSecurityTest.RejectsTruncatedExtendedTimestampField",
+          "disabled": false
+        },
+        {
+          "name": "RendererParserSecurityTest.RejectsTruncatedNativeArrayBeforeAllocation",
+          "disabled": false
+        },
+        {
+          "name": "RendererParserSecurityTest.RejectsOverflowingNativeArrayCount",
+          "disabled": false
+        },
+        {
+          "name": "RendererParserSecurityTest.RejectsTruncatedByteSwappedArrayBeforeAllocation",
+          "disabled": false
+        },
+        {
+          "name": "RendererParserSecurityTest.ParsesValidNativeAndByteSwappedArrays",
+          "disabled": false
+        },
+        {
+          "name": "RendererParserSecurityTest.RejectsTruncatedNativeTextBeforeAllocation",
+          "disabled": false
+        },
+        {
+          "name": "RendererParserSecurityTest.RejectsTruncatedByteSwappedTextBeforeAllocation",
+          "disabled": false
+        },
+        {
+          "name": "RendererParserSecurityTest.RejectsUnterminatedNativeTextBeforeAllocation",
+          "disabled": false
+        },
+        {
+          "name": "RendererParserSecurityTest.ParsesValidNativeAndByteSwappedText",
+          "disabled": false
+        },
+        {
+          "name": "EventSerializerSecurityTest.RejectsTruncatedFixedSizeBlockBeforeAllocation",
+          "disabled": false
+        },
+        {
+          "name": "EventSerializerSecurityTest.RejectsTruncatedByteSwappedBlockBeforeAllocation",
+          "disabled": false
+        },
+        {
+          "name": "EventSerializerSecurityTest.RejectsOverflowingAndExcessiveBlockCounts",
+          "disabled": false
+        },
+        {
+          "name": "EventSerializerSecurityTest.RejectsUnterminatedLengthDelimitedString",
+          "disabled": false
+        },
+        {
+          "name": "EventSerializerSecurityTest.AcceptsTerminatorWithinDeclaredStringBytes",
+          "disabled": false
+        },
+        {
+          "name": "EventSerializerSecurityTest.DoesNotResumeAfterMalformedInput",
+          "disabled": false
+        },
+        {
+          "name": "EventSerializerSecurityTest.ParsesValidFixedSizeBlock",
+          "disabled": false
+        },
+        {
+          "name": "RealWorldCaptures/OvdCaptureSmokeTest.LoadsAndExposesNonZeroCounts/\"2026_04_01_15_21_33_0000019f4952a142.ovd\"",
+          "disabled": false
+        },
+        {
+          "name": "RealWorldCaptures/OvdCaptureSmokeTest.LoadsAndExposesNonZeroCounts/\"2026_04_01_16_42_23_00000062b3443b1b.ovd\"",
+          "disabled": false
+        },
+        {
+          "name": "RealWorldCaptures/OvdCaptureSmokeTest.LoadsAndExposesNonZeroCounts/\"snippet_meshes.ovd\"",
+          "disabled": false
+        },
+        {
+          "name": "RealWorldCaptures/OvdCaptureSmokeTest.LoadsAndExposesNonZeroCounts/\"multi_geom.ovd\"",
+          "disabled": false
+        },
+        {
+          "name": "RealWorldCaptures/OvdCaptureSmokeTest.FrameScrubDoesNotCrash/\"2026_04_01_15_21_33_0000019f4952a142.ovd\"",
+          "disabled": false
+        },
+        {
+          "name": "RealWorldCaptures/OvdCaptureSmokeTest.FrameScrubDoesNotCrash/\"2026_04_01_16_42_23_00000062b3443b1b.ovd\"",
+          "disabled": false
+        },
+        {
+          "name": "RealWorldCaptures/OvdCaptureSmokeTest.FrameScrubDoesNotCrash/\"snippet_meshes.ovd\"",
+          "disabled": false
+        },
+        {
+          "name": "RealWorldCaptures/OvdCaptureSmokeTest.FrameScrubDoesNotCrash/\"multi_geom.ovd\"",
+          "disabled": false
+        },
+        {
+          "name": "RealWorldCaptures/OvdCaptureSmokeTest.DumpSnapshotToStdout/\"2026_04_01_15_21_33_0000019f4952a142.ovd\"",
+          "disabled": true
+        },
+        {
+          "name": "RealWorldCaptures/OvdCaptureSmokeTest.DumpSnapshotToStdout/\"2026_04_01_16_42_23_00000062b3443b1b.ovd\"",
+          "disabled": true
+        },
+        {
+          "name": "RealWorldCaptures/OvdCaptureSmokeTest.DumpSnapshotToStdout/\"snippet_meshes.ovd\"",
+          "disabled": true
+        },
+        {
+          "name": "RealWorldCaptures/OvdCaptureSmokeTest.DumpSnapshotToStdout/\"multi_geom.ovd\"",
+          "disabled": true
+        },
+        {
+          "name": "RealWorldCaptures/OvdCaptureSmokeTest.InstanceEnumerationIsConsistent/\"2026_04_01_15_21_33_0000019f4952a142.ovd\"",
+          "disabled": false
+        },
+        {
+          "name": "RealWorldCaptures/OvdCaptureSmokeTest.InstanceEnumerationIsConsistent/\"2026_04_01_16_42_23_00000062b3443b1b.ovd\"",
+          "disabled": false
+        },
+        {
+          "name": "RealWorldCaptures/OvdCaptureSmokeTest.InstanceEnumerationIsConsistent/\"snippet_meshes.ovd\"",
+          "disabled": false
+        },
+        {
+          "name": "RealWorldCaptures/OvdCaptureSmokeTest.InstanceEnumerationIsConsistent/\"multi_geom.ovd\"",
+          "disabled": false
+        },
+        {
+          "name": "RealWorldCaptures/OvdCaptureSmokeTest.SnapshotMeshRecordsHaveConsistentVertsAndTris/\"2026_04_01_15_21_33_0000019f4952a142.ovd\"",
+          "disabled": false
+        },
+        {
+          "name": "RealWorldCaptures/OvdCaptureSmokeTest.SnapshotMeshRecordsHaveConsistentVertsAndTris/\"2026_04_01_16_42_23_00000062b3443b1b.ovd\"",
+          "disabled": false
+        },
+        {
+          "name": "RealWorldCaptures/OvdCaptureSmokeTest.SnapshotMeshRecordsHaveConsistentVertsAndTris/\"snippet_meshes.ovd\"",
+          "disabled": false
+        },
+        {
+          "name": "RealWorldCaptures/OvdCaptureSmokeTest.SnapshotMeshRecordsHaveConsistentVertsAndTris/\"multi_geom.ovd\"",
+          "disabled": false
+        },
+        {
+          "name": "SessionClipUiTest.DefaultCapturesStayInMemoryAndOlderClipCanBeSelected",
+          "disabled": false
+        },
+        {
+          "name": "SessionClipUiTest.NewPreservesHistoryAndRemovingDisplayedClipLeavesOtherClipUsable",
+          "disabled": false
+        },
+        {
+          "name": "SessionClipUiTest.EmptyReconnectPreservesPreviousDisplayAndHistory",
+          "disabled": false
+        },
+        {
+          "name": "SessionClipUiTest.RejectedUsefulPreviewRestoresPreviousDisplayAndHistory",
+          "disabled": false
+        },
+        {
+          "name": "SessionClipUiTest.AutoSaveWritesCompletedClipsAndCanBeDisabledForNextConnection",
+          "disabled": false
+        },
+        {
+          "name": "SessionClipUiTest.RejectedPreviewRestoresFileBackedReference",
+          "disabled": false
+        }
+      ]
+    },
+    "ovdnext_data_foundation": {
+      "registered_count": 4,
+      "enabled_count": 4,
+      "disabled_count": 0,
+      "tests": [
+        {
+          "name": "ovddata_tests",
+          "disabled": false
+        },
+        {
+          "name": "ovddata_ingest_tests",
+          "disabled": false
+        },
+        {
+          "name": "ovddata_omnipvd_tests",
+          "disabled": false
+        },
+        {
+          "name": "ovdnext_data_probe_tests",
+          "disabled": false
+        }
+      ]
+    },
+    "combined": {
+      "registered_count": 279,
+      "enabled_count": 274,
+      "disabled_count": 5
+    },
+    "allowed_runtime_skips": [
+      {
+        "name": "OvdInputValidationTest.FileLoaderAcceptsLargestAvailableCorpusCapture",
+        "reason": "largest local corpus capture is intentionally uncommitted"
+      },
+      {
+        "name": "OvdMultiSceneTest.FactoryChildrenHaveNoOwningScene",
+        "reason": "committed fixture may contain no PxMaterial"
+      },
+      {
+        "name": "OvdMultiSceneDeformableTest.DeformablesPartitionAcrossScenes",
+        "reason": "VolumeVolumeCollision capture is intentionally uncommitted"
+      },
+      {
+        "name": "ClipSaveUiTest.AccentedTemporaryDirectoryStillOpensPickerAndSavesClip",
+        "reason": "local native filename encoding cannot represent the accented fixture"
+      }
+    ],
+    "maximum_runtime_skip_count": 4,
+    "platform_exclusions": {
+      "windows-x86_64": [],
+      "linux-x86_64": [
+        {
+          "name": "PvdArchiveSecurityTest.RejectsEntryNamesThatDoNotFitZipEntryBuffer",
+          "reason": "_WIN32-guarded test exercises bundled minizip entry-name buffer handling linked only on Windows"
+        },
+        {
+          "name": "PvdArchiveSecurityTest.RejectsTruncatedExtendedTimestampField",
+          "reason": "_WIN32-guarded test exercises bundled minizip extended-timestamp parsing linked only on Windows"
+        }
+      ]
+    },
+    "required_imported_test_names": [
+      "OvdLiveWorkflowTest.DisabledAcceptanceKeepsCaptureButStopsAutomaticRearm",
+      "OvdMemoryRecordingTest.DestroyedCaptureDoesNotLeakIntoNextListener",
+      "OvdMemoryRecordingTest.ExportRequiresJoinedWorkerEvenAfterProducerEnded",
+      "OvdMemoryRecordingTest.OptionalFileMatchesMemoryAndIsNotNeededForExport",
+      "OvdMemoryRecordingTest.PartialDestinationWriteFailsWithoutLosingRecording",
+      "OvdMemoryRecordingTest.RetentionOffExportsByteExactAndReloadsFromMemory",
+      "OvdMemoryRecordingTest.StreamLimitBoundsRetainedBytesAndRejectsExport",
+      "OvdMemoryRecordingTest.TruncatedCaptureRetainsConsumedBytesButCannotExport",
+      "OvdRecordingLibraryTest.RetentionDefaultsOffWhenSettingIsAbsent",
+      "OvdRepeatedLiveCaptureTest.AlreadyDisplayedFailedFinalizeAdoptsRetainedStagingPath",
+      "OvdRepeatedLiveCaptureTest.DisabledAcceptanceKeepsUsefulSocketCaptureWithoutRearmingListener",
+      "OvdRepeatedLiveCaptureTest.EmptyFinalizeFailureRemovesUndisplayedStagingFile",
+      "OvdRepeatedLiveCaptureTest.EmptyReconnectIsStoredWithoutReplacingUsefulCapture",
+      "OvdRepeatedLiveCaptureTest.FailedStagingCleanupKeepsPathRetryable",
+      "OvdRepeatedLiveCaptureTest.MissingDiscardCallbackConsumesEmptyEngineOwnership",
+      "OvdRepeatedLiveCaptureTest.MissingDisplayCallbackCleansFailedFinalizeStaging",
+      "OvdRepeatedLiveCaptureTest.MissingDisplayCallbackConsumesUsefulEngineOwnership",
+      "OvdRepeatedLiveCaptureTest.MissingDisplayCallbackPreservesAlreadyDisplayedEngineOwnership",
+      "OvdRepeatedLiveCaptureTest.NextUsefulReconnectGetsUniqueRecordingAndBecomesLatest",
+      "OvdRepeatedLiveCaptureTest.RejectedFinalizeFailureRemovesUndisplayedStagingFile",
+      "OvdRepeatedLiveCaptureTest.RejectedReconnectIsStoredWithoutReplacingUsefulCapture",
+      "OvdRepeatedLiveCaptureTest.RetentionDisabledStreamsWithoutCreatingARecording",
+      "OvdSessionClipFileTest.DestinationCreatedDuringWriteIsPreservedAtCommit",
+      "OvdSessionClipFileTest.FailedWritePreservesCompetingDestination",
+      "OvdSessionClipStoreTest.EmptyAndRejectedCapturesPreserveEarlierUsefulCapture",
+      "OvdSessionClipStoreTest.FailedSaveKeepsDestinationAndClipUsableForRetry",
+      "OvdSessionClipStoreTest.IdleListenerIsConsumedWithoutCreatingARow",
+      "OvdSessionClipStoreTest.RejectedHeaderIsRetainedWithoutACompletedConnection",
+      "OvdSessionClipStoreTest.RejectedSourceCannotReplaceDestinationOrLeaveAPartialSave",
+      "OvdSessionClipStoreTest.SaveLaterPreservesExactBytesAndSavedFileAfterRemoval",
+      "OvdSessionClipStoreTest.SequentialCapturesKeepEnginesWithoutCreatingFiles",
+      "SessionClipUiTest.AutoSaveWritesCompletedClipsAndCanBeDisabledForNextConnection",
+      "SessionClipUiTest.DefaultCapturesStayInMemoryAndOlderClipCanBeSelected",
+      "SessionClipUiTest.EmptyReconnectPreservesPreviousDisplayAndHistory",
+      "SessionClipUiTest.NewPreservesHistoryAndRemovingDisplayedClipLeavesOtherClipUsable",
+      "SessionClipUiTest.RejectedPreviewRestoresFileBackedReference",
+      "SessionClipUiTest.RejectedUsefulPreviewRestoresPreviousDisplayAndHistory"
+    ]
+  },
+  "pipeline": {
+    "legacy_job_count": 6,
+    "github_job_count": 8,
+    "pull_request_blocking_job_count": 4,
+    "job_mappings": [
+      {
+        "legacy_id": "prepare:release",
+        "category": "release_preparation",
+        "github_ids": [
+          "prepare-release"
+        ],
+        "disposition": "preserved"
+      },
+      {
+        "legacy_id": "verify:windows",
+        "category": "windows_verification",
+        "github_ids": [
+          "verify-root-windows",
+          "verify-ovdnext-data-windows"
+        ],
+        "disposition": "expanded"
+      },
+      {
+        "legacy_id": "verify:linux",
+        "category": "linux_verification",
+        "github_ids": [
+          "verify-root-linux",
+          "verify-ovdnext-data-linux"
+        ],
+        "disposition": "expanded"
+      },
+      {
+        "legacy_id": "package:windows",
+        "category": "windows_packaging",
+        "github_ids": [
+          "package-windows"
+        ],
+        "disposition": "preserved"
+      },
+      {
+        "legacy_id": "package:linux",
+        "category": "linux_packaging",
+        "github_ids": [
+          "package-linux"
+        ],
+        "disposition": "preserved"
+      },
+      {
+        "legacy_id": "release:merged-mr",
+        "category": "release_publication",
+        "github_ids": [
+          "publish-release"
+        ],
+        "disposition": "migrated"
+      }
+    ],
+    "pull_request_blocking_jobs": [
+      "verify-root-windows",
+      "verify-root-linux",
+      "verify-ovdnext-data-windows",
+      "verify-ovdnext-data-linux"
+    ]
+  }
+}
