@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OVD Viewer — Omniverse Labs</title>
+    <link rel="stylesheet" href="../../assets/css/main.css" />
+    <script type="text/javascript">
+    if (location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
+      window.OptanonWrapper = function () {
+        var event = new Event("bannerLoaded");
+        window.dispatchEvent(event);
+      };
+      document.write('<script src="https://cdn.cookielaw.org/scripttemplates/otSDKStub.js" data-document-language="true" type="text/javascript" charset="UTF-8" data-domain-script="019f8341-2fcb-7482-b1aa-375a01df34fb"><\/script>');
+      document.write('<script type="text/javascript" src="https://images.nvidia.com/aem-dam/Solutions/ot-js/ot-custom.js"><\/script>');
+      document.write('<script src="https://assets.adobedtm.com/5d4962a43b79/814eb6e9b4e1/launch-4bc07f1e0b0b.min.js"><\/script>');
+    }
+    </script>
+  </head>
+  <body data-base="../../">
+    <header class="site-header site-header--compact">
+      <div class="brand-row">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">OL</div>
+          <p class="brand-title"><a href="../../">Omniverse Labs</a></p>
+        </div>
+        <nav class="header-links" aria-label="Site">
+          <a href="https://github.com/NVIDIA-Omniverse/omniverse-labs/tree/main/projects/ovdnext" target="_blank" rel="noopener noreferrer">GitHub</a>
+        </nav>
+      </div>
+    </header>
+
+    <article class="article-wrap">
+      <header class="article-hero">
+        <p class="article-kicker">Project</p>
+        <h1 class="article-title">OVD Viewer</h1>
+        <p class="article-deck">Explore PhysX OVD captures and live recordings.</p>
+        <div class="article-meta">
+          <span>Project</span>
+          <span>Release 0.1</span>
+          <span>November 2026</span>
+        </div>
+        <img src="../../assets/images/card-ovdnext.png" alt="OVD Viewer in light mode with scene objects, properties and a frame timeline" width="1600" height="1000" />
+      </header>
+
+      <div class="prose">
+        <p><strong>OVD Viewer</strong> helps you inspect PhysX simulation data recorded
+          in OVD captures. Explore scenes, move between recorded frames, and inspect
+          objects and their properties in a desktop application built with OvUI.</p>
+
+        <h2>What you can do</h2>
+        <ul>
+          <li>Open OVD files and navigate scenes, objects and frames.</li>
+          <li>Inspect recorded properties, contacts, geometry and material references.</li>
+          <li>Record live OVD streams over TCP and select captures for inspection.</li>
+          <li>Use documented headless OVD functions for scripted analysis without opening the viewer.</li>
+        </ul>
+
+        <h2>Run the viewer</h2>
+        <p>Start with the <a href="https://github.com/NVIDIA-Omniverse/omniverse-labs/releases/tag/ovdnext-v0.2.21">qualified release</a>:
+          <a href="https://github.com/NVIDIA-Omniverse/omniverse-labs/releases/download/ovdnext-v0.2.21/OvdNext-windows-x86_64-0.2.21.zip">Windows ZIP</a>
+          (<a href="https://github.com/NVIDIA-Omniverse/omniverse-labs/releases/download/ovdnext-v0.2.21/OvdNext-windows-x86_64-0.2.21.zip.sha256">SHA-256</a>) or
+          <a href="https://github.com/NVIDIA-Omniverse/omniverse-labs/releases/download/ovdnext-v0.2.21/OvdNext-linux-x86_64-0.2.21.zip">Linux ZIP</a>
+          (<a href="https://github.com/NVIDIA-Omniverse/omniverse-labs/releases/download/ovdnext-v0.2.21/OvdNext-linux-x86_64-0.2.21.zip.sha256">SHA-256</a>), plus the
+          <a href="https://github.com/NVIDIA-Omniverse/omniverse-labs/releases/download/ovdnext-v0.2.21/OvdNext-v0.2.21-third-party-licenses-and-sources.zip">matching licenses and sources companion</a>.</p>
+        <ol>
+          <li>Choose the Windows or Linux archive supplied with your release and verify its SHA-256 checksum.</li>
+          <li>Extract the complete archive. On Linux, use <code>unzip</code> to preserve executable permissions.</li>
+          <li>Start <code>OvdNext.cmd</code> on Windows or <code>./OvdNext.sh</code> on Linux.</li>
+          <li>Select <strong>Open capture</strong> and choose an OVD file. Select a body in the scene tree, then read its mass in the attributes panel.</li>
+          <li>Move to a recorded frame to inspect its values. To display contacts, select or focus the matching <strong>Pre-sim</strong> frame.</li>
+        </ol>
+        <p>Python, OvUI and application dependencies are bundled. You do not need a system Python installation or a compiler.</p>
+
+        <h2>Source and developer guide</h2>
+        <p>Browse the <a href="https://github.com/NVIDIA-Omniverse/omniverse-labs/tree/main/projects/ovdnext">published v0.2.21 application source</a>
+          and its <a href="https://github.com/NVIDIA-Omniverse/omniverse-labs/blob/main/projects/ovdnext/SOURCE_DISTRIBUTION.md">source distribution notes</a>.</p>
+        <p>Open the <a href="developer/interactive/">interactive field guide</a>
+          to record and ingest OVD, inspect rigid bodies, articulations and contacts,
+          select TCP recordings while streaming, and side-load evidence files.
+          It uses recorded PhysX attributes and worked inspection cases.</p>
+        <p>The <a href="developer/README.md">developer guide and AI skills</a> include
+          <a href="developer/skills/ovdnext-inspect/references/headless.md">headless inspection examples</a>
+          and <a href="developer/skills/ovdnext-develop/references/development.md">source-build prerequisites</a>.
+          To read offline, keep the complete <code>docs/projects/ovdnext/developer/</code>
+          directory from the Labs checkout and open <code>interactive/index.html</code>.</p>
+
+        <h2>Platforms</h2>
+        <ul>
+          <li><strong>Windows 11 x64:</strong> a graphics driver supporting OpenGL 3.3 and the x64 Vulkan loader.</li>
+          <li><strong>Ubuntu 22.04 x64:</strong> a desktop session using X11 or XWayland,
+            NVIDIA drivers including <code>libcuda.so.1</code>, OpenGL 3.3,
+            <code>libEGL.so.1</code>/<code>libGL.so.1</code>, and host <code>libstdc++</code>/<code>libgcc</code>.</li>
+        </ul>
+        <p>The supported scope is the bundled viewer and documented headless OVD functions.</p>
+
+        <h2>Licensing</h2>
+        <p>NVIDIA-owned application code uses Apache 2.0. Bundled components retain
+          their own licenses; see the LICENSE and NOTICE files and component notices
+          accompanying your release.</p>
+      </div>
+    </article>
+
+    <footer class="site-footer">
+      <div class="site-footer__site">
+        <p class="site-footer__meta">
+          <a href="../../">← All projects</a>
+          <span class="site-footer__sep" aria-hidden="true">·</span>
+          <span>Docs: CC BY 4.0</span>
+          <span class="site-footer__sep" aria-hidden="true">·</span>
+          <a href="https://github.com/nvidia-omniverse/omniverse-labs/issues">Site feedback</a>
+        </p>
+      </div>
+      <nav class="site-footer__policies" aria-label="NVIDIA legal and policies">
+        <ul>
+          <li>
+            <a href="https://www.nvidia.com/en-us/about-nvidia/privacy-policy/">Privacy Policy</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/about-nvidia/privacy-center/">Your Privacy Choices</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/about-nvidia/terms-of-service/">Terms of Service</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/about-nvidia/accessibility/">Accessibility</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/about-nvidia/company-policies/">Corporate Policies</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/product-security/">Product Security</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/contact/">Contact</a>
+          </li>
+        </ul>
+      </nav>
+    </footer>
+  <script type="text/javascript">if (window._satellite) { window._satellite.pageBottom(); }</script>
+  </body>
+</html>

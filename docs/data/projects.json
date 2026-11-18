@@ -3,7 +3,7 @@
     "title": "Omniverse Labs",
     "tagline": "Early Omniverse experiments you can run, fork, and learn from.",
     "description": "A Sketchpad built by NVIDIA Omniverse Teams \u2014 early samples, prototypes, and write-ups for developers exploring Omniverse.",
-    "dataVersion": "20261106"
+    "dataVersion": "20261118-ovd-viewer"
   },
   "projects": [
     {
@@ -227,6 +227,24 @@
       "links": {
         "page": "projects/ov-library-playground/",
         "repo": "https://github.com/NVIDIA-Omniverse/omniverse-labs/tree/main/samples/ov-library-playground-sample"
+      }
+    },
+    {
+      "slug": "ovdnext",
+      "title": "OVD Viewer",
+      "subtitle": "Explore PhysX OVD captures and live recordings.",
+      "type": "project",
+      "date": "2026-11-18",
+      "image": "assets/images/card-ovdnext.png",
+      "accent": [
+        "#0a0c10",
+        "#76b900"
+      ],
+      "featured": false,
+      "source": "projects/ovdnext",
+      "links": {
+        "page": "projects/ovdnext/",
+        "repo": "https://github.com/NVIDIA-Omniverse/omniverse-labs/tree/main/projects/ovdnext"
       }
     }
   ]

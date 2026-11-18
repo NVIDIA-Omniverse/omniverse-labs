@@ -1,0 +1,394 @@
+<!doctype html>
+<!-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved. -->
+<!-- SPDX-License-Identifier: CC-BY-4.0 -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Inspect recorded rigid bodies, articulation joints and contacts with real PhysX attributes, geometry and a tested headless workflow.">
+  <title>OVD Viewer — an interactive field guide</title>
+  <link rel="stylesheet" href="assets/guide.css">
+  <link rel="stylesheet" href="assets/physics.css">
+  <script src="assets/physics-data.js" defer></script>
+  <script src="assets/physics.js" defer></script>
+  <script src="assets/workflow-data.js" defer></script>
+  <script src="assets/workflows.js" defer></script>
+  <script src="assets/fixture-data.js" defer></script>
+  <script src="assets/guide.js" defer></script>
+    <script type="text/javascript">
+    if (location.protocol !== "file:" && location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
+      window.OptanonWrapper = function () {
+        var event = new Event("bannerLoaded");
+        window.dispatchEvent(event);
+      };
+      document.write('<script src="https://cdn.cookielaw.org/scripttemplates/otSDKStub.js" data-document-language="true" type="text/javascript" charset="UTF-8" data-domain-script="019f8341-2fcb-7482-b1aa-375a01df34fb"><\/script>');
+      document.write('<script type="text/javascript" src="https://images.nvidia.com/aem-dam/Solutions/ot-js/ot-custom.js"><\/script>');
+      document.write('<script src="https://assets.adobedtm.com/5d4962a43b79/814eb6e9b4e1/launch-4bc07f1e0b0b.min.js"><\/script>');
+    }
+    </script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to the guide</a>
+  <aside class="rail">
+    <a class="brand" href="#intro"><span class="brand-icon" aria-hidden="true">◉</span><span>OVD<span class="brand-sub">VIEWER / FIELD GUIDE</span></span></a>
+    <p class="rail-caption">LEARN BY EXPLORING</p>
+    <nav aria-label="Guide chapters">
+      <a href="#what-is-ovd"><span>00</span> OVD: record → inspect</a>
+      <a href="#physics-rigid"><span>01</span> Rigid bodies</a>
+      <a href="#physics-chain"><span>02</span> Articulation chain</a>
+      <a href="#physics-drives"><span>03</span> Joint drives</a>
+      <a href="#physics-contacts"><span>04</span> Contacts</a>
+      <a href="#fundamentals"><span>05</span> Lifetime &amp; recorded values</a>
+      <a href="#flow"><span>06</span> Read mass &amp; contact offset</a>
+      <a href="#live-selection"><span>07</span> TCP recording selection</a>
+      <a href="#evidence-import"><span>08</span> Side-load evidence</a>
+      <a href="#missing"><span>09</span> Missing values</a>
+      <a href="#viewer-reference"><span>10</span> The native viewer</a>
+      <a href="#headless"><span>11</span> Headless &amp; AI skills</a>
+      <a href="#build"><span>12</span> Contact &amp; rest offsets</a>
+    </nav>
+    <div class="rail-bottom"><span class="status-dot"></span> OVD Viewer 0.1<br><small>Runtime examples: v0.2.21</small><a href="../README.md">Markdown &amp; AI skills ↗</a><a href="../../">Viewer downloads ↗</a></div>
+  </aside>
+  <main id="main">
+    <header id="intro" class="hero physics-hero">
+      <p class="eyebrow">OVD VIEWER · DEVELOPER FIELD GUIDE · v0.2.21</p>
+      <h1>Rigid bodies, joints &amp; contacts.</h1>
+      <p class="deck">Record PhysX state to OVD. Open it, select a frame, and inspect bodies, joints and contacts.</p>
+      <div class="quick-links"><a href="../skills/ovdnext-inspect/references/headless.md">Headless API ↗</a><a href="../skills/ovdnext-develop/references/development.md">Build &amp; extend ↗</a><a href="../README.md#skills">AI skills ↗</a></div>
+    </header>
+    <noscript><p class="notice">JavaScript is disabled. The explanations and reference links still work; use the <a href="../skills/ovdnext-inspect/references/headless.md">Markdown guide</a> for runnable examples. Interactive controls need JavaScript.</p></noscript>
+
+    <section id="what-is-ovd" aria-labelledby="ovd-title">
+      <div class="section-heading"><span class="chapter">00</span><div><p class="eyebrow">RECORD ONCE. INSPECT THE RECORDED STATE.</p><h2 id="ovd-title">What is an OVD file?</h2></div></div>
+      <p class="lead">PhysX generates <code>.ovd</code> binary recordings using the <b>OmniPVD writer classes in the PhysX SDK</b>. OVD Viewer is a viewer/inspector application that uses the SDK's <b>OmniPVD reader classes</b> to read those recordings and live streams. The recorded data describes object and attribute definitions, object lifetimes, property updates and frame markers, which OVD Viewer uses to visualize the state at a selected frame.</p>
+      <p class="inspection-story"><b>Your task:</b> a teammate asks what mass and collision margin their simulated body had. Open the same capture they recorded, select its frame and read the body's mass and its shape's contact offset. Keep the capture identity with the result so they can reproduce it.</p>
+      <div class="workflow-strip ovd-record-example" aria-label="Actual objects and attributes in the worked capture"><div><b>multi_geom.ovd</b><span>Scene 3 · frame 2</span></div><span aria-hidden="true">→</span><div><b>PxRigidDynamic #11</b><span>mass = 10 · shapes → #10</span></div><span aria-hidden="true">→</span><div><b>PxShape #10</b><span>contactOffset ≈ 0.02</span></div></div>
+      <p class="note">These values come from the worked capture used below. Object IDs are local to this capture/load. The available data depends on the producer's SDK, recording selection and supported writes. Playback inspects recorded state without re-running the simulation.</p>
+
+      <figure class="capture-flow" aria-labelledby="file-flow-title"><figcaption><h3 id="file-flow-title">1. Record a finite file in a PhysX application</h3></figcaption>
+        <div class="workflow-strip"><div><b>Initialize PhysX + PxOmniPvd</b><span>Attach the SDK recorder when creating PxPhysics</span></div><span aria-hidden="true">→</span><div><b>Bind the SDK writer to a file</b><span>startSampling(filter) writes the selected current state</span></div><span aria-hidden="true">→</span><div><b>Step the simulation</b><span>simulate / fetchResults → recorded updates + frame markers</span></div><span aria-hidden="true">→</span><div><b>Stop + close the stream</b><span>Finalized capture.ovd, ready to open</span></div></div>
+        <p>Use a checked, profile or debug SDK build. Start sampling at a safe scene boundary; late sampling can record the current state after simulation has already begun. Stop sampling and close the owned stream before scene teardown when the final state must remain queryable.</p>
+        <p>For an agent, start with the existing <a href="https://github.com/NVIDIA-Omniverse/PhysX/blob/7d6f6ac8b83e1610bdf715f1f2f1d6b718aee586/physx/skills/ovd-record/SKILL.md">PhysX ovd-record skill</a>. Its installed sample command below records a separate named <code>moving-body</code> for six steps and verifies 12 pre/post states; it does not generate <code>multi_geom.ovd</code>.</p>
+        <pre class="record-command" tabindex="0"><code>ovd-record "new capture.ovd" --late-steps 20
+ovd-inspect summary "new capture.ovd"</code></pre>
+        <p class="note">Requires the SDK workflow tools, installed separately from OVD Viewer. Use a new output path. The first command is a finite file example; use the skill's SDK APIs to integrate recording into your own application.</p>
+      </figure>
+
+      <figure class="capture-flow" aria-labelledby="ingest-flow-title"><figcaption><h3 id="ingest-flow-title">2. Ingest that OVD and read a value</h3></figcaption>
+        <div class="workflow-strip"><div><b>Open capture / load_capture</b><span>Choose the saved .ovd file in OVD Viewer</span></div><span aria-hidden="true">→</span><div><b>Decode with the SDK reader</b><span>OmniPvdReader → PvdDom → native Session</span></div><span aria-hidden="true">→</span><div><b>Select scene + frame</b><span>A Presentation supplies one coherent inspection view</span></div><span aria-hidden="true">→</span><div><b>Viewer or Python query</b><span>Read typed properties, references and geometry</span></div></div>
+        <div class="ingest-result"><span>Worked input <code>multi_geom.ovd</code></span><span aria-hidden="true">→</span><span><code>presentation(3, 2, inspect_ids=[11, 10])</code></span><span aria-hidden="true">→</span><strong>mass = 10<br>contactOffset = 0.019999999552965164</strong></div>
+        <p>The desktop viewer opens the capture asynchronously; the headless example uses <code>load_capture</code>. Both query the native recording model. For this file, the loader retains a hashed payload, so the later <a href="#evidence-import">evidence import</a> can verify the capture bytes and source samples. <a href="#flow">Run this exact body/shape inspection ↓</a></p>
+      </figure>
+
+      <figure class="capture-flow" aria-labelledby="stream-flow-title"><figcaption><h3 id="stream-flow-title">3. Or receive the recording live over TCP</h3></figcaption>
+        <div class="workflow-strip"><div><b>OVD Viewer: Live → Listen</b><span>Prepare the receiving port first</span></div><span aria-hidden="true">←</span><div><b>PhysX producer connects</b><span>Outbound connection to the viewer</span></div></div>
+        <div class="workflow-strip"><div><b>PhysX SDK writer</b><span>Selected snapshot + later updates</span></div><span aria-hidden="true">→</span><div><b>TCP stream</b><span>Forward recording data</span></div><span aria-hidden="true">→</span><div><b>OVD Viewer uses the SDK reader</b><span>Retain the stream; inspect completed frames</span></div><span aria-hidden="true">→</span><div><b>Save as → reopen .ovd</b><span>A fixed input for file inspection and evidence binding</span></div></div>
+        <div class="control-flow"><b>Selection control, in the other direction:</b><span>OVD Viewer catalog selection → producer validates and applies → matching acknowledgement + fresh snapshot → next complete frame.</span></div>
+        <p>In the retained TCP case below, request <b>1</b> selected the box with Primary data; request <b>2</b> selected All permitted + Secondary and exposed box mass <b>1</b>. Those are two epochs in one connection's recording. <a href="#live-selection">Replay the actual acknowledgements and recorded results ↓</a></p>
+      </figure>
+      <p class="note">Frames are recording markers, not universal application-step numbers. Verify the producer's pre/post mapping. Unsupported or unwritten data stays unavailable; recording cannot recover attributes the producer never emitted.</p>
+    </section>
+
+    <section id="physics-rigid" data-physics-lab="rigid" class="physics-chapter" aria-labelledby="rigid-title">
+      <div class="section-heading"><span class="chapter">01</span><h2 id="rigid-title">Rigid bodies</h2></div>
+      <p id="rigid-physics-task" data-field="physics-task" class="physics-task"></p>
+      <div class="physics-workspace">
+        <div class="physics-scene">
+          <div class="scene-toolbar"><span id="rigid-physics-capture" data-field="physics-capture"></span><div role="group" aria-label="Camera view"><button type="button" data-camera="iso" aria-pressed="true">3D</button><button type="button" data-camera="front" aria-pressed="false">Front</button><button type="button" data-camera="top" aria-pressed="false">Top</button></div></div>
+          <svg id="rigid-scene-svg" data-field="scene-svg" viewBox="0 0 720 430" role="group" aria-label="Recorded geometry. Select an object here or use the object buttons below."></svg>
+          <div class="scene-options"><label><input type="checkbox" id="rigid-show-vectors" data-field="show-vectors" checked> <span id="rigid-vector-label" data-field="vector-label">Velocity</span></label><label><input type="checkbox" id="rigid-show-wire" data-field="show-wire"> Wireframe</label><label><input type="checkbox" id="rigid-focus-selection" data-field="focus-selection"> Fit selection</label><span id="rigid-scene-legend" data-field="scene-legend"></span></div>
+          <div class="physics-timeline"><button type="button" id="rigid-physics-play" data-field="physics-play" aria-pressed="false" aria-label="Play sampled frames">▶</button><label for="rigid-physics-frame" class="sr-only">Recorded frame sample</label><input type="range" id="rigid-physics-frame" data-field="physics-frame" min="0" max="25" value="1" step="1"><output id="rigid-physics-frame-label" data-field="physics-frame-label" for="rigid-physics-frame"></output></div>
+          <p class="sample-note">Playback steps through recorded samples; no interpolation or live simulation. Frame indices are zero-based.</p>
+          <div id="rigid-object-list" data-field="object-list" class="object-list" role="group" aria-label="Select a recorded body or joint"></div>
+        </div>
+        <aside class="physics-inspector" aria-label="PhysX property inspector">
+          <p class="eyebrow">RECORDED ATTRIBUTES <span id="rigid-object-frame" data-field="object-frame"></span></p>
+          <h3 id="rigid-object-title" data-field="object-title"></h3>
+          <div id="rigid-object-summary" data-field="object-summary" class="object-summary"></div>
+          <p class="sample-note">Open Raw PhysX attributes below for the full attribute list and byte previews.</p>
+        </aside>
+      </div>
+      <details class="attributes-panel raw-attributes">
+        <summary>Raw PhysX attributes</summary>
+          <label for="rigid-attribute-filter">Find a PhysX attribute</label><input id="rigid-attribute-filter" data-field="attribute-filter" type="search" placeholder="mass, globalPose, drive…" autocomplete="off">
+          <p id="rigid-attribute-count" data-field="attribute-count" class="sample-note"></p><div id="rigid-attribute-list" data-field="attribute-list" class="attribute-list"></div>
+      </details>
+      <div class="physics-evidence"><span id="rigid-physics-provenance" data-field="physics-provenance"></span><a href="DATA.md">Data &amp; decoding notes ↗</a></div>
+    </section>
+
+    <section id="physics-chain" data-physics-lab="chain" class="physics-chapter" aria-labelledby="chain-title">
+      <div class="section-heading"><span class="chapter">02</span><h2 id="chain-title">Articulation chain</h2></div>
+      <p id="chain-physics-task" data-field="physics-task" class="physics-task"></p>
+      <div class="physics-workspace">
+        <div class="physics-scene">
+          <div class="scene-toolbar"><span id="chain-physics-capture" data-field="physics-capture"></span><div role="group" aria-label="Camera view"><button type="button" data-camera="iso" aria-pressed="true">3D</button><button type="button" data-camera="front" aria-pressed="false">Front</button><button type="button" data-camera="top" aria-pressed="false">Top</button></div></div>
+          <svg id="chain-scene-svg" data-field="scene-svg" viewBox="0 0 720 430" role="group" aria-label="Recorded geometry. Select an object here or use the object buttons below."></svg>
+          <div class="scene-options"><label><input type="checkbox" id="chain-show-vectors" data-field="show-vectors" checked> <span id="chain-vector-label" data-field="vector-label">Velocity</span></label><label><input type="checkbox" id="chain-show-wire" data-field="show-wire"> Wireframe</label><label><input type="checkbox" id="chain-focus-selection" data-field="focus-selection"> Fit selection</label><span id="chain-scene-legend" data-field="scene-legend"></span></div>
+          <div class="physics-timeline"><button type="button" id="chain-physics-play" data-field="physics-play" aria-pressed="false" aria-label="Play sampled frames">▶</button><label for="chain-physics-frame" class="sr-only">Recorded frame sample</label><input type="range" id="chain-physics-frame" data-field="physics-frame" min="0" max="25" value="1" step="1"><output id="chain-physics-frame-label" data-field="physics-frame-label" for="chain-physics-frame"></output></div>
+          <p class="sample-note">Playback steps through recorded samples; no interpolation or live simulation. Frame indices are zero-based.</p>
+          <div id="chain-object-list" data-field="object-list" class="object-list" role="group" aria-label="Select a recorded body or joint"></div>
+        </div>
+        <aside class="physics-inspector" aria-label="PhysX property inspector">
+          <p class="eyebrow">RECORDED ATTRIBUTES <span id="chain-object-frame" data-field="object-frame"></span></p>
+          <h3 id="chain-object-title" data-field="object-title"></h3>
+          <div id="chain-object-summary" data-field="object-summary" class="object-summary"></div>
+          <p class="sample-note">Open Raw PhysX attributes below for the full attribute list and byte previews.</p>
+        </aside>
+      </div>
+      <div id="chain-joint-panel" data-field="joint-panel" class="physics-detail">
+        <div class="detail-heading"><h3>Six axes, one joint</h3><span id="chain-joint-type" data-field="joint-type" class="badge"></span></div>
+        <div id="chain-joint-chain" data-field="joint-chain" class="joint-chain" aria-label="Parent joint child relationship"></div>
+        <div class="table-scroll" tabindex="0" role="region" aria-label="Joint degree-of-freedom table"><table><thead><tr><th>Axis</th><th>motion</th><th>jointPosition</th><th>limitLow / High</th><th>driveTarget</th><th>driveStiffness</th><th>driveDamping</th></tr></thead><tbody id="chain-joint-rows" data-field="joint-rows"></tbody></table></div>
+        <p class="detail-note">These are the six recorded array slots: twist, swing1, swing2, X, Y, Z. Angular positions use radians; translations use the producer’s scene units. Limits are enforced only for <code>eLIMITED</code> motion. Stored drive parameters on a locked axis do not make that axis movable. <a href="https://nvidia-omniverse.github.io/PhysX/physx/5.4.0/_api_build/struct_px_articulation_axis.html">PhysX axis reference ↗</a></p>
+      </div>
+      <details class="attributes-panel raw-attributes">
+        <summary>Raw PhysX attributes</summary>
+          <label for="chain-attribute-filter">Find a PhysX attribute</label><input id="chain-attribute-filter" data-field="attribute-filter" type="search" placeholder="mass, globalPose, drive…" autocomplete="off">
+          <p id="chain-attribute-count" data-field="attribute-count" class="sample-note"></p><div id="chain-attribute-list" data-field="attribute-list" class="attribute-list"></div>
+      </details>
+      <div class="physics-evidence"><span id="chain-physics-provenance" data-field="physics-provenance"></span><a href="DATA.md">Data &amp; decoding notes ↗</a></div>
+    </section>
+
+    <section id="physics-drives" data-physics-lab="drives" class="physics-chapter" aria-labelledby="drives-title">
+      <div class="section-heading"><span class="chapter">03</span><h2 id="drives-title">Joint drives</h2></div>
+      <p id="drives-physics-task" data-field="physics-task" class="physics-task"></p>
+      <div class="physics-workspace">
+        <div class="physics-scene">
+          <div class="scene-toolbar"><span id="drives-physics-capture" data-field="physics-capture"></span><div role="group" aria-label="Camera view"><button type="button" data-camera="iso" aria-pressed="true">3D</button><button type="button" data-camera="front" aria-pressed="false">Front</button><button type="button" data-camera="top" aria-pressed="false">Top</button></div></div>
+          <svg id="drives-scene-svg" data-field="scene-svg" viewBox="0 0 720 430" role="group" aria-label="Recorded geometry. Select an object here or use the object buttons below."></svg>
+          <div class="scene-options"><label><input type="checkbox" id="drives-show-vectors" data-field="show-vectors" checked> <span id="drives-vector-label" data-field="vector-label">Velocity</span></label><label><input type="checkbox" id="drives-show-wire" data-field="show-wire"> Wireframe</label><label><input type="checkbox" id="drives-focus-selection" data-field="focus-selection"> Fit selection</label><span id="drives-scene-legend" data-field="scene-legend"></span></div>
+          <div class="physics-timeline"><button type="button" id="drives-physics-play" data-field="physics-play" aria-pressed="false" aria-label="Play sampled frames">▶</button><label for="drives-physics-frame" class="sr-only">Recorded frame sample</label><input type="range" id="drives-physics-frame" data-field="physics-frame" min="0" max="25" value="1" step="1"><output id="drives-physics-frame-label" data-field="physics-frame-label" for="drives-physics-frame"></output></div>
+          <p class="sample-note">Playback steps through recorded samples; no interpolation or live simulation. Frame indices are zero-based.</p>
+          <div id="drives-object-list" data-field="object-list" class="object-list" role="group" aria-label="Select a recorded body or joint"></div>
+        </div>
+        <aside class="physics-inspector" aria-label="PhysX property inspector">
+          <p class="eyebrow">RECORDED ATTRIBUTES <span id="drives-object-frame" data-field="object-frame"></span></p>
+          <h3 id="drives-object-title" data-field="object-title"></h3>
+          <div id="drives-object-summary" data-field="object-summary" class="object-summary"></div>
+          <p class="sample-note">Open Raw PhysX attributes below for the full attribute list and byte previews.</p>
+        </aside>
+      </div>
+      <div id="drives-joint-panel" data-field="joint-panel" class="physics-detail">
+        <div class="detail-heading"><h3>Six axes, one joint</h3><span id="drives-joint-type" data-field="joint-type" class="badge"></span></div>
+        <div id="drives-joint-chain" data-field="joint-chain" class="joint-chain" aria-label="Parent joint child relationship"></div>
+        <div class="table-scroll" tabindex="0" role="region" aria-label="Joint degree-of-freedom table"><table><thead><tr><th>Axis</th><th>motion</th><th>jointPosition</th><th>limitLow / High</th><th>driveTarget</th><th>driveStiffness</th><th>driveDamping</th></tr></thead><tbody id="drives-joint-rows" data-field="joint-rows"></tbody></table></div>
+        <p class="detail-note">These are the six recorded array slots: twist, swing1, swing2, X, Y, Z. Angular positions use radians; translations use the producer’s scene units. Limits are enforced only for <code>eLIMITED</code> motion. Stored drive parameters on a locked axis do not make that axis movable. <a href="https://nvidia-omniverse.github.io/PhysX/physx/5.4.0/_api_build/struct_px_articulation_axis.html">PhysX axis reference ↗</a></p>
+      </div>
+      <details class="attributes-panel raw-attributes">
+        <summary>Raw PhysX attributes</summary>
+          <label for="drives-attribute-filter">Find a PhysX attribute</label><input id="drives-attribute-filter" data-field="attribute-filter" type="search" placeholder="mass, globalPose, drive…" autocomplete="off">
+          <p id="drives-attribute-count" data-field="attribute-count" class="sample-note"></p><div id="drives-attribute-list" data-field="attribute-list" class="attribute-list"></div>
+      </details>
+      <div class="physics-evidence"><span id="drives-physics-provenance" data-field="physics-provenance"></span><a href="DATA.md">Data &amp; decoding notes ↗</a></div>
+    </section>
+
+    <section id="physics-contacts" data-physics-lab="contacts" class="physics-chapter" aria-labelledby="contacts-title">
+      <div class="section-heading"><span class="chapter">04</span><h2 id="contacts-title">Contacts</h2></div>
+      <p id="contacts-physics-task" data-field="physics-task" class="physics-task"></p>
+      <div id="contacts-frame-guidance" class="control-flow"><b>In OVD Viewer, select or focus the Pre-sim frame to see contacts.</b>Enable the Contacts overlay and pause on the matching pre-simulation frame. If a Post-sim frame is current, use <strong>Go to Pre-sim</strong>. For the report stored at frame 2 below, select Pre-sim frame 1 in the native viewer. A blank Post-sim overlay does not mean the step had no contacts.</div>
+      <div class="physics-workspace">
+        <div class="physics-scene">
+          <div class="scene-toolbar"><span id="contacts-physics-capture" data-field="physics-capture"></span><div role="group" aria-label="Camera view"><button type="button" data-camera="iso" aria-pressed="true">3D</button><button type="button" data-camera="front" aria-pressed="false">Front</button><button type="button" data-camera="top" aria-pressed="false">Top</button></div></div>
+          <svg id="contacts-scene-svg" data-field="scene-svg" viewBox="0 0 720 430" role="group" aria-label="Recorded geometry. Select an object here or use the object buttons below."></svg>
+          <div class="scene-options"><label><input type="checkbox" id="contacts-show-vectors" data-field="show-vectors" checked> <span id="contacts-vector-label" data-field="vector-label">Velocity</span></label><label><input type="checkbox" id="contacts-show-wire" data-field="show-wire"> Wireframe</label><label><input type="checkbox" id="contacts-focus-selection" data-field="focus-selection"> Fit selection</label><span id="contacts-scene-legend" data-field="scene-legend"></span></div>
+          <div class="physics-timeline"><button type="button" id="contacts-physics-play" data-field="physics-play" aria-pressed="false" aria-label="Play sampled frames">▶</button><label for="contacts-physics-frame" class="sr-only">Recorded frame sample</label><input type="range" id="contacts-physics-frame" data-field="physics-frame" min="0" max="25" value="1" step="1"><output id="contacts-physics-frame-label" data-field="physics-frame-label" for="contacts-physics-frame"></output></div>
+          <p class="sample-note">This lab selects the raw report frame. In the native viewer, contacts require the matching <strong>Pre-sim</strong> frame selected or in focus; its overlay reads the following Post-sim report.</p>
+          <p class="sample-note">Playback steps through recorded samples; no interpolation or live simulation. Frame indices are zero-based.</p>
+          <div id="contacts-object-list" data-field="object-list" class="object-list" role="group" aria-label="Select a recorded body or joint"></div>
+        </div>
+        <aside class="physics-inspector" aria-label="PhysX property inspector">
+          <p class="eyebrow">RECORDED ATTRIBUTES <span id="contacts-object-frame" data-field="object-frame"></span></p>
+          <h3 id="contacts-object-title" data-field="object-title"></h3>
+          <div id="contacts-object-summary" data-field="object-summary" class="object-summary"></div>
+          <p class="sample-note">Open Raw PhysX attributes below for the full attribute list and byte previews.</p>
+        </aside>
+      </div>
+      <div id="contacts-contact-panel" data-field="contact-panel" class="physics-detail">
+        <div class="detail-heading"><h3>Contact manifold</h3><button type="button" id="contacts-inspect-scene" data-field="inspect-scene">Inspect PxScene arrays ↗</button></div>
+        <p id="contacts-contact-detail" data-field="contact-detail" class="contact-detail" aria-live="polite"></p>
+        <div class="table-scroll" tabindex="0" role="region" aria-label="Recorded contact points"><table><thead><tr><th>Point</th><th>Actor pair</th><th>Position · world XYZ</th><th>Normal · world XYZ</th><th>Separation</th><th>Normal impulse</th></tr></thead><tbody id="contacts-contact-rows" data-field="contact-rows"></tbody></table></div>
+        <p class="detail-note">Points, normals, separations and impulses come from the selected frame’s <code>PxScene.pairsContact*</code> arrays. Pair order comes from <code>pairsContactCounts</code> and ordered producer handles, resolved to recorded object IDs. Positive separation can coexist with a contact; the contact distance is not a penetration depth. The native viewer draws contacts only with the matching <strong>Pre-sim frame selected or in focus</strong>, using the following Post-sim report. This lab labels the raw report frame, so report frame 2 corresponds to native Pre-sim frame 1.</p>
+      </div>
+      <details class="attributes-panel raw-attributes">
+        <summary>Raw PhysX attributes</summary>
+          <label for="contacts-attribute-filter">Find a PhysX attribute</label><input id="contacts-attribute-filter" data-field="attribute-filter" type="search" placeholder="mass, globalPose, drive…" autocomplete="off">
+          <p id="contacts-attribute-count" data-field="attribute-count" class="sample-note"></p><div id="contacts-attribute-list" data-field="attribute-list" class="attribute-list"></div>
+      </details>
+      <div class="physics-evidence"><span id="contacts-physics-provenance" data-field="physics-provenance"></span><a href="DATA.md">Data &amp; decoding notes ↗</a></div>
+    </section>
+
+    <div class="reference-fold" id="fundamentals"><h3>Capture cases: read a value, change recording scope, inspect evidence</h3>
+    <section id="explore" aria-labelledby="explore-title">
+      <div class="section-heading"><span class="chapter">05</span><div><p class="eyebrow">THE RECORDING IS YOUR EVIDENCE</p><h2 id="explore-title">Is the sphere stopped, or missing?</h2></div></div>
+      <p class="lead">You see no movement and need to distinguish a stopped body from an absent one. In <code>test_scene.ovd</code>, sphere #8 has <b>velocity Y = 0</b> at frame 2, but is unavailable at frame 0. Scrub between them and compare the inspector with the plot.</p>
+      <div class="lab">
+        <div class="lab-bar"><span><i class="status-dot"></i> test_scene.ovd</span><span class="mono">4 frames · scene 3 · actor 8</span><span class="tag">RECORDED FIXTURE</span></div>
+        <div class="lab-grid">
+          <div class="plot-panel">
+            <div class="plot-heading"><span id="metric-title">Position · Y</span><div class="segmented" role="group" aria-label="Recorded property"><button type="button" data-metric="position" aria-pressed="true">Position</button><button type="button" data-metric="velocity" aria-pressed="false">Velocity</button><button type="button" data-metric="mass" aria-pressed="false">Mass</button></div></div>
+            <svg id="plot" viewBox="0 0 640 290" role="img" aria-labelledby="plot-title plot-description">
+              <title id="plot-title">Recorded Y position across four frames</title><desc id="plot-description">The actor has no available values at frames zero and three. Frames one and two have recorded samples. The diagram does not interpolate a simulation.</desc>
+              <defs><pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="#dfe2e5"/></pattern></defs>
+              <rect width="640" height="290" fill="url(#dots)"/>
+              <g class="grid-lines"><path d="M55 45H595M55 125H595M55 205H595"/><path d="M55 235H595"/></g>
+              <text id="axis-top" x="14" y="48" class="axis-label">—</text><text id="axis-bottom" x="14" y="208" class="axis-label">—</text>
+              <path id="trace" class="trace" d=""/>
+              <g id="plot-points"></g><line id="cursor" class="cursor" x1="235" y1="30" x2="235" y2="235"/>
+              <g class="axis-label"><text x="55" y="264" text-anchor="middle">0</text><text x="235" y="264" text-anchor="middle">1</text><text x="415" y="264" text-anchor="middle">2</text><text x="595" y="264" text-anchor="middle">3</text><text x="320" y="285" text-anchor="middle">RECORDED FRAME</text></g>
+            </svg>
+            <div class="timeline"><button type="button" id="play" class="play" aria-label="Play recorded frames" aria-pressed="false">▶</button><label class="sr-only" for="frame">Recorded frame</label><input id="frame" type="range" min="0" max="3" value="1" step="1"><output id="frame-label" for="frame">01 / 03</output></div>
+            <p class="plot-caption">A plot of selected recorded values, not the viewer or a running physics simulation. The line connects available samples only; it does not imply intermediate states.</p>
+          </div>
+          <div class="inspector">
+            <div class="inspector-heading"><span class="eyebrow">INSPECTOR</span><span id="alive" class="badge">Alive</span></div>
+            <h3 id="object-name">sphere</h3><p class="mono muted">PxRigidDynamic · ID 8</p>
+            <dl class="properties"><div><dt>Selected frame</dt><dd id="inspect-frame">1</dd></div><div><dt>Position Y</dt><dd id="inspect-position">—</dd></div><div><dt>Velocity Y</dt><dd id="inspect-velocity">—</dd></div><div><dt>Mass</dt><dd id="inspect-mass">—</dd></div><div><dt>Shape references</dt><dd id="inspect-shapes">—</dd></div><div><dt>Force</dt><dd id="inspect-force">—</dd></div></dl>
+            <div class="context-card" id="frame-explanation" role="status">Loading recorded values…</div>
+          </div>
+        </div>
+      </div>
+      <div class="lesson-pair"><p><span class="small-label">NOTICE THIS</span>At frame 2, velocity Y is genuinely <b>zero</b>. At frame 0, the actor has <b>no available sample</b>. Those answers mean different things.</p><p><span class="small-label">KEEP THE CONTEXT</span>A value belongs to a capture, scene, frame and object. Keep that identity with any screenshot, exported table or AI finding.</p></div>
+      <div class="provenance"><h3>Where these values come from</h3><p>These are values extracted from the repository test fixture using the unchanged Windows v0.2.21 package. This is a deliberately constructed test capture, not a realistic dynamics benchmark. The chart uses the fixture's own units and frames, without converting them to seconds or metres. IDs shown are from this load; discover IDs again on another load or platform.</p><dl><dt>Fixture</dt><dd><code>test/data/test_scene.ovd</code> · 26,604 bytes</dd><dt>Capture SHA-256</dt><dd class="break mono">0880e98dd415a446bf78a982c8276bb72dde3751dc605a95c506b77374513d47</dd><dt>Application source</dt><dd class="break mono">cd83af8e7c6211be71cc2a82541738e0b1f2018f</dd></dl><p>Position is decoded from the fixture's <code>PxTransform</code> schema (quaternion, then XYZ); velocity is <code>PxVec3</code>, and mass is <code>PxF32</code>. The data and provenance are in <a href="assets/fixture-data.js">fixture-data.js</a>. This browser page reads that small extract; it does not parse OVD files.</p></div>
+    </section>
+
+    <section id="flow" aria-labelledby="flow-title">
+      <div class="section-heading"><span class="chapter">06</span><div><p class="eyebrow">A BODY → ITS SHAPE → TWO RECORDED VALUES</p><h2 id="flow-title">Read mass and contact offset.</h2></div></div>
+      <p class="lead">Use <code>multi_geom.ovd</code>, scene <b>3</b>, zero-based frame <b>2</b>. Start with <code>PxRigidDynamic #11</code> in the rigid-body lab above.</p>
+      <ol class="steps concrete-steps">
+        <li><span>1</span><div><b>Select the body. Read <code>mass = 10</code>.</b><p>Click body #11 in the geometry or object buttons. Its inspector shows mass, pose and velocity. This is a recorded <code>PxF32</code> value, not a mass inferred from the drawn size.</p><button type="button" class="example-action" id="example-mass">Show body #11 and mass ↑</button></div></li>
+        <li><span>2</span><div><b>Follow <code>shapes → #10</code>.</b><p>The body's <code>shapes</code> reference leads to <code>PxShape #10</code>. Read <code>contactOffset ≈ 0.02</code> and <code>restOffset = 0</code> there. Contact offset belongs to the shape; mass belongs to the body.</p><button type="button" class="example-action" id="example-contact-offset">Show shape #10 and contactOffset ↑</button></div></li>
+        <li><span>3</span><div><b>Keep the frame and availability with the answer.</b><p>Both values are <code>present</code> at frame 2. Contact offset is a physical distance used to start contact generation. Compare it with the other shape’s contact offset; <a href="#build">the pair’s margins add together</a>. Scrub the lab to compare another frame. Use the producer's unit convention rather than assuming metres or kilograms.</p></div></li>
+      </ol>
+      <div class="code-box practical-code"><div class="code-toolbar"><h3>Read the same two values in Python</h3></div><pre tabindex="0"><code id="attribute-example-code">import struct
+
+# After load_capture, with these IDs discovered in multi_geom.ovd:
+view = opened.session.presentation(3, 2, inspect_ids=[11, 10])
+assert view.ready and view.request_applied
+assert (view.scene_id, view.frame) == (3, 2)
+objects = {obj.id: obj for obj in view.instances(0, 100)}
+for object_id, name in [(11, "mass"), (10, "contactOffset")]:
+    prop = next(p for p in view.properties(objects[object_id].class_id)
+                if p.name == name)
+    assert view.property_availability(object_id, prop.id) == "present"
+    assert prop.native_type == "PxF32" and not prop.array
+    value, = struct.unpack("&lt;f", view.read(object_id, prop.id, 0, 4))
+    print(object_id, name, value)
+# 11 mass 10.0
+# 10 contactOffset 0.019999999552965164</code></pre></div>
+      <p class="note">This excerpt runs inside the <a href="../skills/ovdnext-inspect/references/headless.md#runnable-example">complete package-loading example</a>, before closing <code>opened</code>. These IDs and the first 100 objects are specific to this small fixture; discover and page objects for another capture. The buttons above navigate this guide's recorded data, without opening a TCP connection.</p>
+    </section>
+
+    <section id="live-selection" aria-labelledby="live-selection-title">
+      <div class="section-heading"><span class="chapter">07</span><div><p class="eyebrow">IN THE NATIVE VIEWER</p><h2 id="live-selection-title">Change what is recorded while streaming.</h2></div></div>
+      <p class="lead">The live catalog lists a box, ground and scene. You want the box's motion first, then the full permitted scene with secondary data. Replay this retained SDK integration capture, then follow the native viewer steps below.</p>
+      <div class="workflow-replay">
+        <div class="lab-bar"><b>Recorded TCP session</b><span>Linux SDK integration · three retained stages</span></div>
+        <div class="tcp-replay-grid">
+          <div><svg id="tcp-scene" viewBox="0 0 560 250" role="img" aria-labelledby="tcp-scene-title"><title id="tcp-scene-title">Recorded box and ground presence</title><line x1="35" y1="210" x2="525" y2="210" stroke="#a8b3ac"/><g id="tcp-ground"><rect x="80" y="208" width="400" height="10" fill="#94a69c"/><text x="380" y="237">ground recorded</text></g><g id="tcp-box"><rect x="220" y="75" width="75" height="75" rx="4" fill="#c4e6cd" stroke="#007f35" stroke-width="2"/><text x="234" y="116">box</text></g><text id="tcp-scene-note" x="30" y="32"></text></svg><label for="tcp-stage">Replay stage</label><input id="tcp-stage" type="range" min="0" max="2" value="1" step="1"><output id="tcp-stage-label" for="tcp-stage"></output><p class="note">Geometry symbols show recorded presence only. This replays saved observations; it sends no TCP requests.</p></div>
+          <dl id="tcp-readout" class="replay-readout"></dl>
+        </div>
+        <div class="table-scroll"><table class="case-table"><caption>Two actual selection requests in the same recording</caption><thead><tr><th>Request</th><th>Desired policy</th><th>Acknowledged</th><th>Recorded result after stepping</th></tr></thead><tbody><tr><td>1 · epoch 1</td><td>box · Primary</td><td>Applied</td><td>box motion; no ground; mass unwritten</td></tr><tr><td>2 · epoch 2</td><td>All permitted · + Secondary</td><td>Applied</td><td>box + ground; box mass = 1</td></tr></tbody></table></div>
+        <p class="note">At request 1's acknowledgement, no frame had completed yet. The replay shows the later recorded writes, including velocity Y = −0.16350001096725464. These stages belong to a different capture from <code>multi_geom.ovd</code>. <a href="DATA.md#tcp-recording-replay">Capture identity and source ↗</a></p>
+      </div>
+      <ol class="steps">
+        <li><span>1</span><div><b>Connect the producer.</b><p>Open <b>Live</b>, set the port and choose <b>Listen</b>. The viewer is the TCP listener; configure your PhysX producer to connect to it. With the connection active, open <b>Live → Recording selection…</b>.</p></div></li>
+        <li><span>2</span><div><b>Select the body in the recording catalog.</b><p>Use <b>Name prefix → Find</b> or the parent rows to locate it, and check its row under <b>Selected</b>. A whole articulation includes its links and joints. Choose <b>Primary</b> or <b>+ Secondary</b>: these are producer policies, not individual attribute switches. <b>All permitted</b> explicitly requests the full permitted scope; an empty Selected list does not.</p></div></li>
+        <li><span>3</span><div><b>Apply, read the acknowledgement, then wait for a frame.</b><p>Press <b>Apply</b> and check the producer's response and <b>Actual</b> policy. The producer may narrow or deny your request. Applied means recording restarted; the new segment appears in follow-latest only after a complete frame arrives.</p></div></li>
+      </ol>
+      <div class="workflow-strip" aria-label="Recording-selection sequence"><div><b>Catalog selection</b><span>Choose producer objects</span></div><span aria-hidden="true">→</span><div><b>Apply + acknowledgement</b><span>Check Actual policy</span></div><span aria-hidden="true">→</span><div><b>First complete frame</b><span>Inspect the new segment</span></div></div>
+      <div class="lesson-pair"><p><span class="small-label">VIEWPORT PICK ≠ RECORDER SELECTION</span>Picking a body to read its mass only changes inspection. It never changes the producer's scope. The recording-selection panel still targets the live producer when you display an older file.</p><p><span class="small-label">ONE CONNECTION, ONE RECORDING</span>Apply keeps the segments in the same retained recording. When a new segment is adopted, object selection resets; camera and render settings remain. <b>Save as</b> on the displayed live capture freezes it.</p></div>
+      <p class="note">Selection and catalog discovery require separate advertised producer capabilities. Telemetry-only streaming still works without them. With no matching acknowledgement after 10 seconds, the request is Unknown; do not assume it failed or blindly resend. Follow the explicit supersession control. <a href="https://github.com/NVIDIA-Omniverse/omniverse-labs/blob/main/projects/ovdnext/docs/TCP_SELECTION.md">Version-matched behavior and limits ↗</a></p>
+    </section>
+
+    <section id="evidence-import" aria-labelledby="evidence-import-title">
+      <div class="section-heading"><span class="chapter">08</span><div><p class="eyebrow">OVD CAPTURE + SEPARATE JSON FINDINGS</p><h2 id="evidence-import-title">Side-load evidence beside the capture.</h2></div></div>
+      <p class="lead">A CPU control run reports an energy increase around a body's tilt change. You want to inspect the seven measured frames behind that warning. Side-load its JSON and select the finding without modifying the OVD.</p>
+      <ol class="steps">
+        <li><span>1</span><div><b>Open the OVD, then import the JSON.</b><p>Choose <b>Import evidence JSON</b> in the application menu or Evidence window. The viewer accepts SDK <code>physx.ovd.inspection-evidence</code> v1/v2 and the <code>ovdnext.timeline-evidence</code> v1 envelope. For a live capture, save it and open the saved file first to enable verified binding.</p></div></li>
+        <li><span>2</span><div><b>Pick a finding and its capture role.</b><p>The <b>Evidence</b> window lists imported sets and findings. Choose Left or Right explicitly if both roles match. Read the measured value, units, tolerance, source and assumptions. A bare SDK record can remain readable even without a hash that binds it to the open capture.</p></div></li>
+        <li><span>3</span><div><b>Select a point, then use Go to.</b><p>A timeline marker selects finding details without moving the playhead. Select the indicated scene and a clip covering its exact frame; <b>Go to</b> then pauses there and selects the verified object. If it is disabled, read the missing prerequisite instead of navigating to an approximate frame.</p></div></li>
+      </ol>
+      <div class="evidence-example"><p class="eyebrow">CONCRETE EXAMPLE · RECORDED CPU CONTROL</p><h3>Inspect <code>right-handover-2</code>.</h3><p>In the <a href="https://github.com/NVIDIA-Omniverse/omniverse-labs/blob/main/projects/ovdnext/docs/EVIDENCE_SHOWCASE.md">CPU evidence walkthrough</a>, open the +1.5° / 240 Hz capture and import <code>initial-conditions.evidence.json</code>. Choose <b>Right</b>, then this finding.</p><dl class="evidence-values"><div><dt>Measured energy change</dt><dd>+8.9907%</dd></div><div><dt>Diagnostic threshold</dt><dd>1.3452%</dd></div><div><dt>Imported status</dt><dd>Warning</dd></div></dl><div class="evidence-point-strip" aria-label="Seven evaluated frames, with 80 selected"><span>74</span><span>76</span><span>78</span><strong>80</strong><span>82</span><span>84</span><span>86</span></div><p class="note">Evaluated frames · individual points, no tested band between them</p><p>Select frame 80's point, inspect its pose/velocity evidence, then <b>Go to</b> the verified body. These seven measured points do not label the intervals between them or establish a solver defect. This example comes from a separate CPU control capture, not the rigid-body lab above.</p></div>
+      <p class="note">Binding checks the actual capture bytes and native source samples; a matching filename is insufficient. Imports are session-local and do not alter the OVD. Reimport the JSON in a later session. Up to four sets are retained; <b>Remove set</b> releases one. <a href="https://github.com/NVIDIA-Omniverse/omniverse-labs/blob/main/projects/ovdnext/docs/EVIDENCE_JSON.md">Formats, verification and import limits ↗</a></p>
+    </section>
+
+    <section id="missing" aria-labelledby="missing-title">
+      <div class="section-heading"><span class="chapter">09</span><div><p class="eyebrow">THE MOST USEFUL DEBUGGING HABIT</p><h2 id="missing-title">Missing is not zero.</h2></div></div>
+      <p class="lead">You are writing an inspection script: should an empty force field become 0? Compare the recorded zero and absent force on sphere #8, then the measured result of requesting body #11's mass with and without its inspector projection.</p>
+      <div id="availability-list" class="availability-list"></div>
+      <div class="workflow-strip measured-projection" aria-label="Observed mass query before and after requesting the object"><div><b>Same capture · scene 3 · frame 2</b><span>multi_geom.ovd · body #11</span></div><span aria-hidden="true">→</span><div><b>inspect_ids=[]</b><span>mass: not_projected</span></div><span aria-hidden="true">→</span><div><b>inspect_ids=[11]</b><span>mass: present · 10</span></div></div><p class="note">Measured with the v0.2.21 package. Change the requested projection, not the capture. <a href="#flow">Run the concrete mass query ↑</a></p>
+      <p class="note">References have their own representation, too. The fixture's <code>shapes</code> property has zero raw bytes but a nonempty reference list. Use <code>view.references(instance_id, property_id)</code>; a byte preview alone is not the full typed value.</p>
+      <div><h3>Why reads are bounded</h3><p>A presentation copies a bounded projection of the captured state. Default byte reads are at most 64 KiB; the reference explains explicit windows, record requests and the 128 MiB copy budget. Keep availability, liveness and truncation in results. Do not fill gaps by mixing data from different frames.</p><a href="../skills/ovdnext-inspect/references/headless.md#api-reference-for-this-workflow">Read the exact API limits ↗</a></div>
+    </section>
+
+    </div>
+    <div class="reference-fold" id="viewer-reference"><h3>Find the same body in the native viewer</h3><p class="lead">Open <code>multi_geom.ovd</code> and select scene 3, frame 2. Select body #11, read mass 10 in the property inspector, then follow its shape #10 to contact offset ≈ 0.02. Use the workspace below to find the hierarchy, inspector and frame controls.</p>
+    <figure class="viewer-shot">
+      <a href="assets/ovdnext-light.png" aria-label="Open the OVD Viewer light-theme screenshot at full size"><img src="assets/ovdnext-light.png" width="1600" height="1000" alt="OVD Viewer in light mode: object hierarchy on the left, captured geometry in the center, property inspector on the right and frame controls along the bottom."></a>
+      <figcaption><b>Your workspace, at a glance.</b> Actual Windows v0.2.21 viewer in light mode, showing <code>multi_geom.ovd</code> at frame 2. Objects left; recorded geometry center; properties right; frames below. <a href="assets/ovdnext-light.png">Open full size ↗</a></figcaption>
+    </figure>
+
+    </div>
+    <section id="headless" aria-labelledby="headless-title">
+      <div class="section-heading"><span class="chapter">11</span><div><p class="eyebrow">SAME QUESTION. NO VIEWER WINDOW.</p><h2 id="headless-title">Ask an agent to reproduce the measurement.</h2></div></div>
+      <p class="lead">You need a reproducible answer to “what mass and contact offset were recorded?” Run the same frame-2 query without a viewer window, then keep the capture, object IDs and availability with the result.</p>
+      <div class="result-receipt"><p class="eyebrow">MEASURED WITH THE v0.2.21 PACKAGE</p><div class="table-scroll"><table class="case-table"><caption>multi_geom.ovd · scene 3 · frame 2</caption><thead><tr><th>Object</th><th>Attribute</th><th>Result</th><th>Availability</th></tr></thead><tbody><tr><td>PxRigidDynamic #11</td><td>mass</td><td>10.0</td><td>present</td></tr><tr><td>PxShape #10</td><td>contactOffset</td><td>0.019999999552965164</td><td>present</td></tr></tbody></table></div><p class="note">These are the outputs of the <a href="#attribute-example-code">executed Python excerpt</a>. The generic inspection script below supplies discovery and bounded raw previews; add the excerpt for decoded scalar values.</p></div>
+      <ol class="steps"><li><span>1</span><div><b>Keep the package whole.</b><p>Verify its checksum and extract it. Keep <code>app/</code>, <code>python/</code> and <code>lib/</code> together.</p></div></li><li><span>2</span><div><b>Save the tested script outside it.</b><p>Copy <code>inspect_ovd.py</code> from the <a href="../skills/ovdnext-inspect/references/headless.md#runnable-example">runnable example</a> into your work directory.</p></div></li><li><span>3</span><div><b>Discover first. Select second.</b><p>Use scene and object IDs returned from your capture, then choose a zero-based frame. Do not reuse the demo IDs blindly.</p></div></li></ol>
+      <div class="platform-commands">
+        <div class="code-box"><div class="code-toolbar"><h3>Windows</h3><button type="button" id="copy-command-windows" class="copy">Copy Windows command</button></div><pre tabindex="0"><code id="command-code-windows"></code></pre><p id="copy-command-status-windows" class="copy-status" role="status"></p></div>
+        <div class="code-box"><div class="code-toolbar"><h3>Linux</h3><button type="button" id="copy-command-linux" class="copy">Copy Linux command</button></div><pre tabindex="0"><code id="command-code-linux"></code></pre><p id="copy-command-status-linux" class="copy-status" role="status"></p></div>
+      </div>
+      <p class="note">Replace the example paths. This is a command to run locally; the browser runs no Python. The launcher's <code>--check</code> is a smoke test. Scene/frame flags belong to the example script, not to <code>OvdNext.cmd</code> or <code>OvdNext.sh</code>.</p>
+      <div class="agent-card"><div><span class="eyebrow">START WITH THE PHYSX SDK SKILLS</span><h3>Record → inspect → compare.</h3><p>For a fresh capture, agents should read the existing <a href="https://github.com/NVIDIA-Omniverse/PhysX/blob/7d6f6ac8b83e1610bdf715f1f2f1d6b718aee586/physx/SKILLS.md">PhysX OVD skill index</a> and <a href="https://github.com/NVIDIA-Omniverse/PhysX/blob/7d6f6ac8b83e1610bdf715f1f2f1d6b718aee586/physx/skills/ovd-record/SKILL.md">ovd-record</a>. For saved SDK captures use <a href="https://github.com/NVIDIA-Omniverse/PhysX/blob/7d6f6ac8b83e1610bdf715f1f2f1d6b718aee586/physx/skills/ovd-inspect/SKILL.md">ovd-inspect</a>; compare aligned captures with <a href="https://github.com/NVIDIA-Omniverse/PhysX/blob/7d6f6ac8b83e1610bdf715f1f2f1d6b718aee586/physx/skills/ovd-compare/SKILL.md">ovd-compare</a>. The recording skill covers finite files, late sampling and producer/TCP selection APIs.</p><p id="agent-prompt">Read the PhysX SDK OVD skills first. For new capture work, use ovd-record and verify producer configuration and finalization. For this existing multi_geom.ovd, reproduce scene 3 / frame 2: body #11 mass = 10, then shapes → #10 contactOffset = 0.019999999552965164. Discover IDs again before querying. Use the OVD Viewer v0.2.21 packaged-runtime example for these scalar values; preserve capture hash, availability and frame. Use SDK ovd-inspect for supported pose/velocity queries and ovd-compare only after object matching and frame alignment.</p><a href="../README.md#skills">Skill routing and tool prerequisites ↗</a></div><button type="button" class="copy" id="copy-prompt">Copy case for an agent</button><p id="copy-prompt-status" class="copy-status" role="status"></p></div>
+      <p class="note">The linked SDK skills are public; use the copy matching your installed SDK. They are separate from the OVD Viewer runtime. <code>ovd-record</code> needs a checked/profile/debug SDK workflow build; its CLI is a finite file example, not a TCP receiver. Do not invent scalar-inspection or selection flags for SDK tools. <code>ovd-compare</code> is a skill name; the command is <code>ovd-inspect compare</code>.</p>
+    </section>
+
+    <section id="build" aria-labelledby="build-title">
+      <div class="section-heading"><span class="chapter">12</span><div><p class="eyebrow">WHY ARE THERE CONTACTS BEFORE THE SURFACES TOUCH?</p><h2 id="build-title">Contact offset is a physical margin.</h2></div></div>
+      <p class="lead">A box approaches the ground. Inspect <code>PxShape #10</code> on body #11 and ground <code>PxShape #7</code> on body #8 in <code>multi_geom.ovd</code>, scene 3, frame 2. Each records <code>contactOffset ≈ 0.02</code> and <code>restOffset = 0</code>. PhysX starts generating contacts when their surface separation falls below the sum of their contact offsets—about <strong>0.04 scene units</strong>.</p>
+      <div class="contact-offset-case"><div><p class="eyebrow">RECORDED OFFSETS · ADJUSTABLE ILLUSTRATED GAP</p><h3>Box → ground</h3>
+        <svg id="offset-diagram" viewBox="0 0 480 300" role="img" aria-labelledby="offset-diagram-title offset-diagram-desc"><title id="offset-diagram-title">Box and ground contact margins</title><desc id="offset-diagram-desc">Dashed regions show contact offsets extending from the collision surfaces. Change the illustrated gap to see when the margins overlap.</desc>
+          <rect x="45" y="198" width="390" height="32" class="offset-margin"/>
+          <g id="offset-box"><rect x="148" y="-32" width="174" height="124" class="offset-margin"/><rect x="180" y="0" width="110" height="60" class="offset-solid"/><text x="235" y="35" text-anchor="middle">Shape #10</text></g>
+          <rect x="45" y="230" width="390" height="22" class="offset-ground"/><text x="235" y="275" text-anchor="middle">Ground · shape #7</text>
+          <path id="offset-gap-line" d="M350 182 V230" class="offset-measure"/><text id="offset-gap-label" x="365" y="211">0.030</text>
+        </svg>
+        <label for="offset-gap">Illustrated surface gap · scene units <output id="offset-gap-value" for="offset-gap">0.030</output></label><input id="offset-gap" type="range" min="0" max="0.08" value="0.03" step="0.005" aria-describedby="offset-model-note"><p id="offset-state" class="offset-state" role="status"></p>
+        <p id="offset-model-note" class="note">Schematic using the captured offsets, not a simulation or a replay of the recorded trajectory. The gap is illustrative; dashed margins are not enlarged collision geometry. Assume collision is enabled for this pair.</p>
+      </div><ol class="steps"><li><span>1</span><div><b>Add the contact offsets.</b><p><code>0.02 + 0.02 ≈ 0.04</code>. At a gap of <code>0.03</code>, contacts can already be generated while the collision surfaces are still separated. At <code>0.06</code>, they are outside this contact distance.</p></div></li><li><span>2</span><div><b>Read rest offset separately.</b><p><code>0 + 0 = 0</code>. The pair’s target separation at rest is zero: the surfaces should settle touching. The contact-generation margin does not mean the box must stop 0.04 above the ground.</p></div></li><li><span>3</span><div><b>Inspect the step’s contacts on Pre-sim.</b><p>In OVD Viewer, enable Contacts and select or focus the matching <strong>Pre-sim</strong> frame. Compare the recorded contact separation and normal impulse in the <a href="#physics-contacts">contact example</a>. Positive separation can have a contact; contact generation and resting separation are different quantities.</p></div></li></ol></div>
+      <div class="workflow-strip"><div><b>Both contact offsets</b><span>≈ 0.02 + 0.02 → contact distance ≈ 0.04</span></div><span aria-hidden="true">→</span><div><b>Gap below contact distance</b><span>Start generating contacts</span></div><span aria-hidden="true">→</span><div><b>Both rest offsets</b><span>0 + 0 → target resting gap 0</span></div></div>
+      <p class="note">Use the producer’s length units. See <a href="https://nvidia-omniverse.github.io/PhysX/physx/5.4.0/_api_build/class_px_shape.html">PhysX PxShape contact/rest offset definitions</a>. The captured scalar values remain unchanged.</p>
+      <div class="quick-links"><a href="../skills/ovdnext-develop/references/development.md">Build prerequisites &amp; verification ↗</a><a href="../skills/ovdnext-develop/SKILL.md">Source-development skill ↗</a><a href="../skills/ovdnext-inspect/references/headless.md">Packaged inspection API ↗</a></div>
+      <p class="note">Using the packaged inspection workflow needs no compiler or extra packages. Building the application requires pinned dependencies, including inputs that need NVIDIA access. The Labs source is an immutable snapshot; application edits belong in the development repository.</p>
+    </section>
+    <footer><div><strong>OVD Viewer 0.1</strong><p>Bundled viewer and documented headless OVD functions.<br>PVD3 is outside this release's tested scope.</p></div><div><a href="../README.md">Read as Markdown ↗</a><p>Documentation: CC-BY-4.0<br>Application and dependency terms remain separate.</p></div>
+<nav class="site-footer__policies" aria-label="NVIDIA legal and policies">
+        <ul>
+          <li>
+            <a href="https://www.nvidia.com/en-us/about-nvidia/privacy-policy/">Privacy Policy</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/about-nvidia/privacy-center/">Your Privacy Choices</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/about-nvidia/terms-of-service/">Terms of Service</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/about-nvidia/accessibility/">Accessibility</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/about-nvidia/company-policies/">Corporate Policies</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/product-security/">Product Security</a>
+          </li>
+          <li>
+            <a href="https://www.nvidia.com/en-us/contact/">Contact</a>
+          </li>
+        </ul>
+      </nav>
+</footer>
+  </main>
+<script type="text/javascript">if (window._satellite) { window._satellite.pageBottom(); }</script>
+</body>
+</html>
