@@ -6,6 +6,7 @@ from pathlib import Path
 
 from pxr import Gf, Sdf, UsdGeom, UsdLux, UsdPhysics, UsdShade
 
+from . import semantics
 from .content import ROOMS
 from .extensions import call, value
 from .campus_assets import CAMPUS_ENABLED, CAMPUS_HIDDEN_ROOMS
@@ -311,6 +312,7 @@ class Gallery:
                 mount.AddScaleOp().Set(Gf.Vec3f(1.))
                 robot = self.stage.DefinePrim(p+"/DisplayScale/IRB4600")
                 robot.GetReferences().AddReference(str(self.data_dir/"models/irb4600/irb4600.usdc"))
+                semantics.label(robot, 'robot_arm')
                 self.bind(robot, mat)
                 # Preserve the recognizable machined wrist/tool flange.
                 wrist = robot.GetPath().AppendPath("base_link/link_1/link_2/link_3/link_4/link_5/link_6/Visual")

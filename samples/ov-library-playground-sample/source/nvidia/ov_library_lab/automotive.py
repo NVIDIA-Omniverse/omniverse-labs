@@ -3,6 +3,7 @@
 """Referenced, attributed automotive asset and its material controls."""
 from pxr import Gf, Sdf, UsdGeom
 import json
+from . import semantics
 
 
 class Automotive:
@@ -27,6 +28,7 @@ class Automotive:
             mount.AddScaleOp().Set(Gf.Vec3f(1.))
             asset = self.stage.DefinePrim('/World/CarDisplay/Turntable/Car')
             asset.GetReferences().AddReference(str(g.data_dir/'models/car/car.usdc'))
+            semantics.label(asset, 'car')
         g.placard('CarLabel', (-3.15, 1.05, -6.4), 2., .70, 'car_label.png', floor_y=.12)
         self.fill = g.rect_light('CarFill', (3.1, 3.1, -4.), (0, .8, -5.4), (.78, .87, 1.), 1600., 3., 2.)
         self._refine_materials()

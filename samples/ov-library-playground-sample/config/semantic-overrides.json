@@ -1,0 +1,6 @@
+{
+  "schema_version": 1,
+  "description": "Reviewed corrections for tools/semantic_labeler. 'labels' maps a prim path to an object class from config/semantic-taxonomy.json; 'materials' maps a Material path to a material word. Overrides win over rules and VLM proposals.",
+  "labels": {},
+  "materials": {}
+}

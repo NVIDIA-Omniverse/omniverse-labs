@@ -1,0 +1,194 @@
+{
+  "schema_version": 3,
+  "description": "Tier-1 deterministic labeling rules, applied top-down; the first matching rule labels a prim and its descendants inherit. All keys are case-insensitive regular expressions. 'asset' searches authored reference/payload asset paths (or the opened file for the default prim); 'name'/'path'/'type' search those strings; 'tokens' must fully match one word of the prim name after splitting on underscores, digits and CamelCase (R43Walls -> r, walls); 'material' must fully match a word of every material bound inside the prim's subtree. Prims that already carry wikidata_qcode labels (for example SimReady assets) are kept and never relabeled. Order matters: specific evidence first, generic architecture last. 'material_rules' label rendered Material prims (SimReady SL.MAT.001) by the words of the material's name.",
+  "skip_types": [
+    "Scope",
+    "Material",
+    "Shader",
+    "NodeGraph",
+    "Camera",
+    "DomeLight",
+    "DistantLight",
+    "SphereLight",
+    "RectLight",
+    "DiskLight",
+    "CylinderLight",
+    "RenderProduct",
+    "RenderSettings",
+    "RenderVar",
+    "GeomSubset"
+  ],
+  "ignore_tokens": "pav|pavilion|r|h|g|f|x|y|xm|ym|[a-z]|[a-z]{2}|rendering|physics|storage|interface|streaming|clash|graph|spatial|package|scene|newton|world|campus|metal|dark|bronze|oak|limestone|plaster|white|ivory|graphite|stone|north|south|east|west|front|rear|side|upper|low|main|open|retained|refine|reference|ref|primary|secondary|sample|seed|cad|detail|[0-9a-f]{6,}",
+  "rules": [
+    {
+      "asset": "models/car/car\\.usdc?$",
+      "label": "car"
+    },
+    {
+      "asset": "irb(120|4600)\\.usdc?$",
+      "label": "robot_arm"
+    },
+    {
+      "asset": "GTCB_Avatar|lab-guide",
+      "label": "guide_avatar"
+    },
+    {
+      "name": "R35_Depth_(distant|middle)",
+      "label": "building"
+    },
+    {
+      "name": "Campus_Wing_\\d+_Core",
+      "label": "building"
+    },
+    {
+      "material": "sky",
+      "label": "sky"
+    },
+    {
+      "material": "water",
+      "label": "water"
+    },
+    {
+      "material": "foliage|trunk|meadow",
+      "label": "plant"
+    },
+    {
+      "material": "board",
+      "label": "sign"
+    },
+    {
+      "material": "wordmark|brand",
+      "label": "decoration"
+    },
+    {
+      "tokens": "ferns?|understory|grass(es)?|trees?|sedge|herbs?|shrubs?|bush(es)?|hedges?|leaves|branch(es)?|stems?|plants?|planters?|trough|moss|foliage|leaf|leafs",
+      "label": "plant"
+    },
+    {
+      "tokens": "rocks?|terrain|soil|landscape|boulders?",
+      "label": "terrain"
+    },
+    {
+      "tokens": "furn|bench(es)?|tables?|chairs?|desks?|seats?|seated|banquette|sofa|stool",
+      "label": "furniture"
+    },
+    {
+      "tokens": "signs?|signage|boards?|labels?|lettering|wayfinding",
+      "label": "sign"
+    },
+    {
+      "tokens": "lights?|lamps?|luminaires?|pendants?|diffusers?",
+      "label": "light_fixture"
+    },
+    {
+      "tokens": "lidar|sensors?",
+      "label": "sensor"
+    },
+    {
+      "tokens": "glass|glazing|windows?|transom",
+      "label": "window"
+    },
+    {
+      "tokens": "doors?|doorway|portals?",
+      "label": "door"
+    },
+    {
+      "tokens": "stairs?|steps?|ramps?|railing|handrail",
+      "label": "stairs"
+    },
+    {
+      "tokens": "floors?|ground|paving|pavement",
+      "label": "floor"
+    },
+    {
+      "tokens": "roofs?",
+      "label": "roof"
+    },
+    {
+      "tokens": "ceilings?",
+      "label": "ceiling"
+    },
+    {
+      "tokens": "walls?|partitions?|facade|skirting|coping|niche",
+      "label": "wall"
+    },
+    {
+      "tokens": "columns?|pillars?|piers?|posts?|beams?|slats?|trim|caps?|ycap|junctions?|joints?|anchors?|suspension|carriers?|structure|frames?|gasket|mullions?|plinth|foundation|raft|reveal|rails?|clips?|washers?|bezels?",
+      "label": "structure"
+    }
+  ],
+  "material_rules": [
+    {
+      "tokens": "glass|lens|mirror|headlight|brakelight|signallight",
+      "label": "glass"
+    },
+    {
+      "tokens": "bronze",
+      "label": "bronze"
+    },
+    {
+      "tokens": "aluminum|aluminium|rims?",
+      "label": "aluminum"
+    },
+    {
+      "tokens": "steel|chrome|brake|disc",
+      "label": "steel"
+    },
+    {
+      "tokens": "metal|hardware|mechanical|plate",
+      "label": "metal"
+    },
+    {
+      "tokens": "oak|wood|plywood|trunk|veneer",
+      "label": "wood"
+    },
+    {
+      "tokens": "stone|limestone|marble|granite|concrete|floor",
+      "label": "stone"
+    },
+    {
+      "tokens": "plaster",
+      "label": "plaster"
+    },
+    {
+      "tokens": "paint|champagne|ivory|graphite|charcoal|service|panel|board|wordmark|brand|backing",
+      "label": "paint"
+    },
+    {
+      "tokens": "fabric|upholstery|acoustic|felt|floormat|carpet",
+      "label": "fabric"
+    },
+    {
+      "tokens": "diffuser|dashboard|plastic",
+      "label": "plastic"
+    },
+    {
+      "tokens": "soil|ground|terrain",
+      "label": "soil"
+    },
+    {
+      "tokens": "foliage|leaves|grass|meadow",
+      "label": "vegetation"
+    },
+    {
+      "tokens": "water",
+      "label": "water"
+    },
+    {
+      "tokens": "sky",
+      "label": "sky"
+    },
+    {
+      "tokens": "led|luminaire|emissive",
+      "label": "light"
+    },
+    {
+      "tokens": "cardboard|carton",
+      "label": "cardboard"
+    },
+    {
+      "tokens": "tires?|tyres?|tiretread|tireside|rubber",
+      "label": "rubber"
+    }
+  ]
+}

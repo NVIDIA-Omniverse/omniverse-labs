@@ -1,0 +1,169 @@
+{
+  "schema_version": 2,
+  "description": "Closed vocabulary for SimReady semantic labels (SemanticsLabelsAPI), following the convention of NVIDIA SimReady assets: each object class is authored on its highest prim as its Wikidata Q-code under 'wikidata_qcode' (SimReady SL.003 / SL.QCODE.001) and its Wikidata English label under 'wikidata_class'. Rendered Material prims get 'material' labels (SL.MAT.001). Prims or materials that already carry labels (for example SimReady assets) are left as they are. Q-codes are checked against wikidata.org by tools/semantic_labeler/verify_qcodes.py.",
+  "object_taxonomies": [
+    "wikidata_qcode",
+    "wikidata_class"
+  ],
+  "material_taxonomy": "material",
+  "unknown_label": "unknown",
+  "classes": {
+    "car": {
+      "qcode": "Q1420",
+      "wikidata_label": "car",
+      "description": "Passenger car or any road vehicle"
+    },
+    "robot_arm": {
+      "qcode": "Q40687",
+      "wikidata_label": "robotic arm",
+      "description": "Articulated industrial robot arm"
+    },
+    "gantry": {
+      "qcode": "Q475354",
+      "wikidata_label": "gantry crane",
+      "description": "Overhead gantry or crane structure"
+    },
+    "carton": {
+      "qcode": "Q1395006",
+      "wikidata_label": "cardboard box",
+      "description": "Cardboard box or carton"
+    },
+    "pallet": {
+      "qcode": "Q505996",
+      "wikidata_label": "pallet",
+      "description": "Shipping pallet"
+    },
+    "shelf": {
+      "qcode": "Q2637814",
+      "wikidata_label": "rack with shelves",
+      "description": "Storage rack or shelving"
+    },
+    "conveyor": {
+      "qcode": "Q17097276",
+      "wikidata_label": "lineshaft roller conveyor",
+      "description": "Conveyor or lift table"
+    },
+    "floor": {
+      "qcode": "Q217164",
+      "wikidata_label": "floor",
+      "description": "Floor, ground plane or paving"
+    },
+    "wall": {
+      "qcode": "Q42948",
+      "wikidata_label": "wall",
+      "description": "Wall, partition, facade, skirting or coping"
+    },
+    "ceiling": {
+      "qcode": "Q221706",
+      "wikidata_label": "ceiling",
+      "description": "Interior ceiling surface"
+    },
+    "roof": {
+      "qcode": "Q83180",
+      "wikidata_label": "roof",
+      "description": "Exterior roof or roof slab"
+    },
+    "door": {
+      "qcode": "Q36794",
+      "wikidata_label": "door",
+      "description": "Door, doorway or portal frame"
+    },
+    "window": {
+      "qcode": "Q35473",
+      "wikidata_label": "window",
+      "description": "Window, glazing or curtain wall"
+    },
+    "stairs": {
+      "qcode": "Q12511",
+      "wikidata_label": "stairs",
+      "description": "Stairs, ramp or railing"
+    },
+    "structure": {
+      "qcode": "Q391414",
+      "wikidata_label": "architectural element",
+      "description": "Architectural framing and detail: columns, piers, posts, beams, slats, trim, caps, joints, anchors, suspension rods"
+    },
+    "furniture": {
+      "qcode": "Q14745",
+      "wikidata_label": "furniture",
+      "description": "Bench, table, chair, seat or desk"
+    },
+    "plant": {
+      "qcode": "Q756",
+      "wikidata_label": "plant",
+      "description": "Tree, shrub, grass, fern or other vegetation, including planters and planting beds"
+    },
+    "terrain": {
+      "qcode": "Q186131",
+      "wikidata_label": "terrain",
+      "description": "Natural ground, soil, rock or landscape surface"
+    },
+    "water": {
+      "qcode": "Q283",
+      "wikidata_label": "water",
+      "description": "Water surface, pool or fountain"
+    },
+    "sky": {
+      "qcode": "Q527",
+      "wikidata_label": "sky",
+      "description": "Sky dome or backdrop"
+    },
+    "building": {
+      "qcode": "Q41176",
+      "wikidata_label": "building",
+      "description": "Whole or distant building massing"
+    },
+    "sign": {
+      "qcode": "Q1211272",
+      "wikidata_label": "signage",
+      "description": "Sign, information board, label or wayfinding lettering"
+    },
+    "display": {
+      "qcode": "Q327065",
+      "wikidata_label": "display device",
+      "description": "Screen, monitor or kiosk"
+    },
+    "light_fixture": {
+      "qcode": "Q815738",
+      "wikidata_label": "light fixture",
+      "description": "Luminaire, lamp, diffuser or light mount"
+    },
+    "sensor": {
+      "qcode": "Q167676",
+      "wikidata_label": "sensor",
+      "description": "Camera, LiDAR or other sensor"
+    },
+    "guide_avatar": {
+      "qcode": "Q11012",
+      "wikidata_label": "robot",
+      "description": "The robot guide character"
+    },
+    "decoration": {
+      "qcode": "Q6149036",
+      "wikidata_label": "decoration",
+      "description": "Artwork, logo, wordmark or ornamental object"
+    }
+  },
+  "materials": [
+    "metal",
+    "steel",
+    "aluminum",
+    "bronze",
+    "wood",
+    "stone",
+    "glass",
+    "plaster",
+    "paint",
+    "fabric",
+    "nylon",
+    "plastic",
+    "rubber",
+    "cardboard",
+    "paper",
+    "soil",
+    "vegetation",
+    "water",
+    "sky",
+    "light"
+  ]
+}

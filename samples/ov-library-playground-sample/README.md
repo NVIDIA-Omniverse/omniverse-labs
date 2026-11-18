@@ -156,6 +156,11 @@ graphics. Setup also installs prepared NVIDIA SimReady models and textures from 
 Asset sources and license terms are listed in [third-party notices](THIRD_PARTY_NOTICES.md).
 Preserve the accompanying attribution when reusing assets.
 
+The campus and the referenced models carry SimReady semantic labels (Wikidata
+Q-codes and material labels) for synthetic-data ground truth. See
+[semantic labels](docs/SEMANTIC_LABELS.md) for how the labels are produced and
+regenerated.
+
 ## Known Limitations
 
 - First launch can take several minutes to compile shaders and prepare sensors.
