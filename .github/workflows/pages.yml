@@ -20,6 +20,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          lfs: true
 
       - name: Sync articles and samples into docs
         run: python scripts/sync-docs-site.py
